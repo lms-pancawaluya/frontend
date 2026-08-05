@@ -1,69 +1,92 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+const pancawaluya = [
+  {
+    title: "Cageur",
+    desc: "Sehat secara fisik dan mental",
+    color: "bg-green-100 text-green-700",
+  },
+  {
+    title: "Bageur",
+    desc: "Percaya diri dan mampu berkolaborasi",
+    color: "bg-blue-100 text-blue-700",
+  },
+  {
+    title: "Bener",
+    desc: "Disiplin dan menjunjung integritas",
+    color: "bg-yellow-100 text-yellow-700",
+  },
+  {
+    title: "Pinter",
+    desc: "Tertib dan taat pada norma",
+    color: "bg-purple-100 text-purple-700",
+  },
+  {
+    title: "Singer",
+    desc: "Responsif dan memiliki jiwa kepemimpinan",
+    color: "bg-red-100 text-red-700",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div>
+      {/* Hero Section */}
+      <section className="bg-gray-50 px-6 py-20 text-center">
+        <div className="max-w-2xl mx-auto">
+          <div className="inline-block bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-4">
+            Untuk Guru SMA
+          </div>
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+            Belajar &amp; Terapkan Nilai Pancawaluya
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-500 mb-8">
+            Platform pembelajaran untuk membantu Guru SMA memahami dan
+            menerapkan lima nilai Pancawaluya dalam proses belajar mengajar.
           </p>
+          <div className="flex justify-center gap-4">
+            <Link
+              href="/register"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+            >
+              Mulai Sekarang
+            </Link>
+            <Link
+              href="/login"
+              className="bg-white text-blue-600 border border-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition"
+            >
+              Login
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* 5 Nilai Pancawaluya */}
+      <section className="px-6 py-16 max-w-5xl mx-auto">
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
+          5 Nilai Pancawaluya
+        </h2>
+        <p className="text-gray-500 text-center mb-10">
+          Fondasi karakter yang dikembangkan melalui platform ini
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          {pancawaluya.map((item) => (
+            <div
+              key={item.title}
+              className="border border-gray-200 rounded-xl p-5 text-center hover:shadow-md transition"
+            >
+              <div
+                className={`w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center font-bold ${item.color}`}
+              >
+                {item.title.charAt(0)}
+              </div>
+              <h3 className="font-semibold text-gray-800 mb-1">{item.title}</h3>
+              <p className="text-sm text-gray-500">{item.desc}</p>
+            </div>
+          ))}
         </div>
-      </main>
+      </section>
     </div>
   );
 }
