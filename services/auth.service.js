@@ -47,3 +47,23 @@ export function logoutUser() {
 
   window.dispatchEvent(new Event("authChange"));
 }
+
+export async function getProfile() {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/auth/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal mengambil data profil");
+  }
+
+  return result.data;
+}
