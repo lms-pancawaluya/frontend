@@ -1,39 +1,69 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { registerUser } from "@/services/auth.service";
 
 export default function RegisterForm() {
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
-    name: "",
+    nama: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Password dan konfirmasi password tidak sama!");
+      setError("Password dan konfirmasi password tidak sama!");
       return;
     }
 
-    console.log("Data register:", formData);
+    setLoading(true);
+
+    try {
+      await registerUser(formData.nama, formData.email, formData.password);
+      alert("Registrasi berhasil! Silakan login.");
+      router.push("/login");
+    } catch (err) {
+  if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Registrasi gagal, silakan coba lagi.");
+      }
+    } finally {
+      setLoading(false);
+    } {
+      setLoading(false);
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {error && (
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
+          {error}
+        </div>
+      )}
+
       <div>
         <label className="block text-sm font-medium mb-1">Nama Lengkap</label>
         <input
           type="text"
-          name="name"
-          value={formData.name}
+          name="nama"
+          value={formData.nama}
           onChange={handleChange}
           className="w-full border border-gray-300 rounded px-3 py-2"
           placeholder="Nama Guru"
@@ -80,9 +110,10 @@ export default function RegisterForm() {
 
       <button
         type="submit"
-        className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+        disabled={loading}
+        className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:bg-gray-400"
       >
-        Daftar
+        {loading ? "Memproses..." : "Daftar"}
       </button>
     </form>
   );
