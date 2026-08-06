@@ -2,13 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getModuleById } from "@/services/module.service";
+import { getModuleById, getModuleContents } from "@/services/module.service";
 
 interface ModuleDetail {
   id: string;
   judul: string;
   deskripsi: string;
   aspekPancawaluya: string;
+  urutan: number;
+}
+
+interface ContentItem {
+  id: string;
+  judul: string;
+  tipe: string;
+  konten: string;
   urutan: number;
 }
 
@@ -20,20 +28,31 @@ const aspekColor: Record<string, string> = {
   singer: "bg-red-100 text-red-700",
 };
 
+function getYoutubeEmbedUrl(url: string): string {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]+)/);
+  const videoId = match ? match[1] : "";
+  return `https://www.youtube.com/embed/${videoId}`;
+}
+
 export default function ModuleDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
   const [module, setModule] = useState<ModuleDetail | null>(null);
+  const [contents, setContents] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchModule() {
+    async function fetchData() {
       try {
-        const data = await getModuleById(id);
-        setModule(data);
+        const [moduleData, contentsData] = await Promise.all([
+          getModuleById(id),
+          getModuleContents(id),
+        ]);
+        setModule(moduleData);
+        setContents(contentsData);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -45,7 +64,7 @@ export default function ModuleDetailPage() {
       }
     }
 
-    fetchModule();
+    fetchData();
   }, [id]);
 
   if (loading) {
@@ -83,11 +102,42 @@ export default function ModuleDetailPage() {
 
       <p className="text-gray-600 leading-relaxed mb-8">{module.deskripsi}</p>
 
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
-        <p className="text-sm text-gray-500">
-          Konten pembelajaran untuk modul ini akan muncul di sini.
-        </p>
-      </div>
+      <h2 className="font-semibold text-gray-800 mb-4">Materi Pembelajaran</h2>
+
+      {contents.length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+          <p className="text-sm text-gray-500">
+            Konten pembelajaran untuk modul ini belum tersedia.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {contents
+            .sort((a, b) => a.urutan - b.urutan)
+            .map((content) => (
+              <div
+                key={content.id}
+                className="bg-white border border-gray-200 rounded-xl p-5"
+              >
+                <h3 className="font-medium text-gray-800 mb-3">{content.judul}</h3>
+
+                {content.tipe === "video" ? (
+                  <div className="aspect-video rounded-lg overflow-hidden">
+                    <iframe
+                      src={getYoutubeEmbedUrl(content.konten)}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {content.konten}
+                  </p>
+                )}
+              </div>
+            ))}
+        </div>
+      )}
     </div>
   );
 }
