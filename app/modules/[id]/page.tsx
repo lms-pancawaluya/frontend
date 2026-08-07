@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
+import { startModule, completeModule, getProgress } from "@/services/progress.service";
 
 interface ModuleDetail {
   id: string;
@@ -44,28 +45,62 @@ export default function ModuleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [moduleData, contentsData] = await Promise.all([
-          getModuleById(id),
-          getModuleContents(id),
-        ]);
-        setModule(moduleData);
-        setContents(contentsData);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Gagal memuat detail modul.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
+  const [completing, setCompleting] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
-    fetchData();
-  }, [id]);
+  useEffect(() => {
+  async function fetchData() {
+    try {
+      const [moduleData, contentsData, progressData] = await Promise.all([
+        getModuleById(id),
+        getModuleContents(id),
+        getProgress(),
+      ]);
+      setModule(moduleData);
+      setContents(contentsData);
+
+      // Cek apakah modul ini sudah pernah diselesaikan sebelumnya
+      const existingProgress = progressData.find(
+        (p: { module: { id: string }; status: string }) => p.module.id === id
+      );
+
+      if (existingProgress && existingProgress.status === "selesai") {
+        setCompleted(true);
+      } else {
+        // Tandai modul sebagai "sedang dipelajari" (hanya kalau belum selesai)
+        startModule(id).catch((err) => {
+          console.error("Gagal memulai modul:", err);
+        });
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Gagal memuat detail modul.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchData();
+}, [id]);
+
+  async function handleComplete() {
+    setCompleting(true);
+    try {
+      await completeModule(id);
+      setCompleted(true);
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("Gagal menyelesaikan modul.");
+      }
+    } finally {
+      setCompleting(false);
+    }
+  }
 
   if (loading) {
     return <p className="text-center mt-16">Memuat modul...</p>;
@@ -104,13 +139,12 @@ export default function ModuleDetailPage() {
 
       <h2 className="font-semibold text-gray-800 mb-4">Materi Pembelajaran</h2>
 
-{contents.length === 0 ? (
+      {contents.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
           <p className="text-sm text-gray-500">
             Konten pembelajaran untuk modul ini belum tersedia.
           </p>
         </div>
-        
       ) : (
         <div className="space-y-6">
           {contents
@@ -140,12 +174,19 @@ export default function ModuleDetailPage() {
         </div>
       )}
 
-      <div className="mt-8">
+      <div className="mt-8 flex gap-3">
         <button
           onClick={() => router.push(`/modules/${id}/evaluation`)}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+          className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
         >
           Kerjakan Evaluasi
+        </button>
+        <button
+          onClick={handleComplete}
+          disabled={completing || completed}
+          className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition disabled:bg-gray-400"
+        >
+          {completed ? "✓ Selesai" : completing ? "Menyimpan..." : "Selesaikan Modul"}
         </button>
       </div>
     </div>
