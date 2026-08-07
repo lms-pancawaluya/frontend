@@ -104,12 +104,13 @@ export default function ModuleDetailPage() {
 
       <h2 className="font-semibold text-gray-800 mb-4">Materi Pembelajaran</h2>
 
-      {contents.length === 0 ? (
+{contents.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
           <p className="text-sm text-gray-500">
             Konten pembelajaran untuk modul ini belum tersedia.
           </p>
         </div>
+        
       ) : (
         <div className="space-y-6">
           {contents
@@ -138,6 +139,15 @@ export default function ModuleDetailPage() {
             ))}
         </div>
       )}
+
+      <div className="mt-8">
+        <button
+          onClick={() => router.push(`/modules/${id}/evaluation`)}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+        >
+          Kerjakan Evaluasi
+        </button>
+      </div>
     </div>
   );
 }
