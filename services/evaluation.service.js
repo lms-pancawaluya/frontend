@@ -60,3 +60,45 @@ export async function submitEvaluation(evaluationId, jawaban) {
 
   return result.data;
 }
+
+export async function createEvaluation(moduleId, judul) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ judul }),
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal membuat evaluasi");
+  }
+
+  return result.data;
+}
+
+export async function addQuestion(evaluationId, questionData) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/evaluations/${evaluationId}/questions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(questionData),
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal menambahkan soal");
+  }
+
+  return result.data;
+}
