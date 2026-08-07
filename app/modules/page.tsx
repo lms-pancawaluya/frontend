@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getModules } from "@/services/module.service";
+import { getProgress } from "@/services/progress.service";
 
 interface Module {
   id: string;
@@ -26,14 +27,25 @@ const aspekColor: Record<string, string> = {
 
 export default function ModulesPage() {
   const [modules, setModules] = useState<Module[]>([]);
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchModules() {
       try {
-        const data = await getModules();
-        setModules(data);
+        const [modulesData, progressData] = await Promise.all([
+          getModules(),
+          getProgress(),
+        ]);
+
+        setModules(modulesData);
+
+        const selesaiIds = progressData
+          .filter((p: { status: string }) => p.status === "selesai")
+          .map((p: { module: { id: string } }) => p.module.id);
+
+        setCompletedIds(selesaiIds);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -70,29 +82,39 @@ export default function ModulesPage() {
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {modules.map((mod) => (
-          <Link
-            key={mod.id}
-            href={`/modules/${mod.id}`}
-            className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition block"
-          >
-            <span
-              className={`inline-block text-xs font-semibold px-2 py-1 rounded-full mb-3 capitalize ${
-                aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700"
-              }`}
+        {modules.map((mod) => {
+          const isCompleted = completedIds.includes(mod.id);
+
+          return (
+            <Link
+              key={mod.id}
+              href={`/modules/${mod.id}`}
+              className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition block relative"
             >
-              {mod.aspekPancawaluya}
-            </span>
-            <h2 className="font-semibold text-gray-800 mb-2">{mod.judul}</h2>
-            <p className="text-sm text-gray-500 line-clamp-2 mb-3">
-              {mod.deskripsi}
-            </p>
-            <div className="text-xs text-gray-400 flex gap-3">
-              <span>{mod._count.contents} konten</span>
-              <span>{mod._count.evaluations} evaluasi</span>
-            </div>
-          </Link>
-        ))}
+              {isCompleted && (
+                <span className="absolute top-4 right-4 text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                  ✓ Selesai
+                </span>
+              )}
+
+              <span
+                className={`inline-block text-xs font-semibold px-2 py-1 rounded-full mb-3 capitalize ${
+                  aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {mod.aspekPancawaluya}
+              </span>
+              <h2 className="font-semibold text-gray-800 mb-2 pr-16">{mod.judul}</h2>
+              <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                {mod.deskripsi}
+              </p>
+              <div className="text-xs text-gray-400 flex gap-3">
+                <span>{mod._count.contents} konten</span>
+                <span>{mod._count.evaluations} evaluasi</span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       {modules.length === 0 && (
