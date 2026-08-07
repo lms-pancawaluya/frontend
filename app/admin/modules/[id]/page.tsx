@@ -2,9 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getModuleById, updateModule } from "@/services/module.service";
+import Link from "next/link";
+import { getModuleById, updateModule, getModuleContents } from "@/services/module.service";
+import { deleteContent } from "@/services/content.service";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer"];
+
+interface ContentItem {
+  id: string;
+  judul: string;
+  tipe: string;
+  konten: string;
+  urutan: number;
+}
 
 export default function EditModulePage() {
   const params = useParams();
@@ -18,33 +28,40 @@ export default function EditModulePage() {
     urutan: 1,
   });
 
+  const [contents, setContents] = useState<ContentItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchModule() {
-      try {
-        const data = await getModuleById(id);
-        setFormData({
-          judul: data.judul,
-          deskripsi: data.deskripsi,
-          aspekPancawaluya: data.aspekPancawaluya,
-          urutan: data.urutan,
-        });
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Gagal memuat data modul.");
-        }
-      } finally {
-        setLoadingData(false);
-      }
-    }
-
-    fetchModule();
+    loadData();
   }, [id]);
+
+  async function loadData() {
+    try {
+      const [moduleData, contentsData] = await Promise.all([
+        getModuleById(id),
+        getModuleContents(id),
+      ]);
+
+      setFormData({
+        judul: moduleData.judul,
+        deskripsi: moduleData.deskripsi,
+        aspekPancawaluya: moduleData.aspekPancawaluya,
+        urutan: moduleData.urutan,
+      });
+      setContents(contentsData);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Gagal memuat data modul.");
+      }
+    } finally {
+      setLoadingData(false);
+    }
+  }
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -75,6 +92,26 @@ export default function EditModulePage() {
     }
   }
 
+  async function handleDeleteContent(contentId: string, judul: string) {
+    const confirmed = window.confirm(`Yakin ingin menghapus konten "${judul}"?`);
+    if (!confirmed) return;
+
+    setDeletingId(contentId);
+
+    try {
+      await deleteContent(contentId);
+      setContents((prev) => prev.filter((c) => c.id !== contentId));
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("Gagal menghapus konten.");
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (loadingData) {
     return <p className="text-center mt-16">Memuat data modul...</p>;
   }
@@ -90,7 +127,7 @@ export default function EditModulePage() {
 
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Edit Modul</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-10">
         {error && (
           <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
             {error}
@@ -158,6 +195,49 @@ export default function EditModulePage() {
           {saving ? "Menyimpan..." : "Simpan Perubahan"}
         </button>
       </form>
+
+      <div className="border-t border-gray-200 pt-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-semibold text-gray-800">Konten Pembelajaran</h2>
+          <Link
+            href={`/admin/modules/${id}/contents/new`}
+            className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition"
+          >
+            + Tambah Konten
+          </Link>
+        </div>
+
+        {contents.length === 0 ? (
+          <p className="text-sm text-gray-500">Belum ada konten untuk modul ini.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {contents
+              .sort((a, b) => a.urutan - b.urutan)
+              .map((content) => (
+                <div
+                  key={content.id}
+                  className="border border-gray-200 rounded-lg p-4 flex justify-between items-center"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">
+                      {content.judul}
+                    </p>
+                    <span className="text-xs text-gray-400 capitalize">
+                      {content.tipe} • urutan {content.urutan}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteContent(content.id, content.judul)}
+                    disabled={deletingId === content.id}
+                    className="text-red-600 text-sm hover:underline disabled:text-gray-400"
+                  >
+                    {deletingId === content.id ? "Menghapus..." : "Hapus"}
+                  </button>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
