@@ -103,92 +103,94 @@ export default function ModuleDetailPage() {
   }
 
   if (loading) {
-    return <p className="text-center mt-16">Memuat modul...</p>;
-  }
+  return <p className="text-center mt-16 text-gray-500">Memuat modul...</p>;
+}
 
-  if (error || !module) {
-    return (
-      <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
-          {error || "Modul tidak ditemukan."}
-        </div>
-      </div>
-    );
-  }
-
+if (error || !module) {
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <button
-        onClick={() => router.push("/modules")}
-        className="text-sm text-blue-600 hover:underline mb-6"
-      >
-        ← Kembali ke daftar modul
-      </button>
-
-      <span
-        className={`inline-block text-xs font-semibold px-2 py-1 rounded-full mb-3 capitalize ${
-          aspekColor[module.aspekPancawaluya] || "bg-gray-100 text-gray-700"
-        }`}
-      >
-        {module.aspekPancawaluya}
-      </span>
-
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">{module.judul}</h1>
-
-      <p className="text-gray-600 leading-relaxed mb-8">{module.deskripsi}</p>
-
-      <h2 className="font-semibold text-gray-800 mb-4">Materi Pembelajaran</h2>
-
-      {contents.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
-          <p className="text-sm text-gray-500">
-            Konten pembelajaran untuk modul ini belum tersedia.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {contents
-            .sort((a, b) => a.urutan - b.urutan)
-            .map((content) => (
-              <div
-                key={content.id}
-                className="bg-white border border-gray-200 rounded-xl p-5"
-              >
-                <h3 className="font-medium text-gray-800 mb-3">{content.judul}</h3>
-
-                {content.tipe === "video" ? (
-                  <div className="aspect-video rounded-lg overflow-hidden">
-                    <iframe
-                      src={getYoutubeEmbedUrl(content.konten)}
-                      className="w-full h-full"
-                      allowFullScreen
-                    />
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {content.konten}
-                  </p>
-                )}
-              </div>
-            ))}
-        </div>
-      )}
-
-      <div className="mt-8 flex gap-3">
-        <button
-          onClick={() => router.push(`/modules/${id}/evaluation`)}
-          className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
-        >
-          Kerjakan Evaluasi
-        </button>
-        <button
-          onClick={handleComplete}
-          disabled={completing || completed}
-          className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition disabled:bg-gray-400"
-        >
-          {completed ? "✓ Selesai" : completing ? "Menyimpan..." : "Selesaikan Modul"}
-        </button>
+    <div className="max-w-md mx-auto mt-16 p-4">
+      <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        {error || "Modul tidak ditemukan."}
       </div>
     </div>
   );
+}
+
+return (
+  <div className="max-w-3xl mx-auto p-6">
+    <button
+      onClick={() => router.push("/modules")}
+      className="text-sm text-[var(--color-accent)] hover:underline mb-6"
+    >
+      ← Kembali ke daftar modul
+    </button>
+
+    <span
+      className={`inline-block text-xs font-semibold px-2 py-1 rounded-full mb-3 capitalize ${
+        aspekColor[module.aspekPancawaluya] || "bg-gray-100 text-gray-700"
+      }`}
+    >
+      {module.aspekPancawaluya}
+    </span>
+
+    <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-4">
+      {module.judul}
+    </h1>
+
+    <p className="text-gray-600 leading-relaxed mb-8">{module.deskripsi}</p>
+
+    <h2 className="font-semibold text-[var(--color-navy)] mb-4">Materi Pembelajaran</h2>
+
+    {contents.length === 0 ? (
+      <div className="bg-[var(--color-pale)] border border-[var(--color-border-soft)] rounded-2xl p-5">
+        <p className="text-sm text-gray-500">
+          Konten pembelajaran untuk modul ini belum tersedia.
+        </p>
+      </div>
+    ) : (
+      <div className="space-y-6">
+        {contents
+          .sort((a, b) => a.urutan - b.urutan)
+          .map((content) => (
+            <div
+              key={content.id}
+              className="bg-white border border-[var(--color-border-soft)] rounded-2xl p-5"
+            >
+              <h3 className="font-medium text-[var(--color-navy)] mb-3">{content.judul}</h3>
+
+              {content.tipe === "video" ? (
+                <div className="aspect-video rounded-xl overflow-hidden">
+                  <iframe
+                    src={getYoutubeEmbedUrl(content.konten)}
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {content.konten}
+                </p>
+              )}
+            </div>
+          ))}
+      </div>
+    )}
+
+    <div className="mt-8 flex gap-3">
+      <button
+        onClick={() => router.push(`/modules/${id}/evaluation`)}
+        className="flex-1 bg-[var(--color-navy)] text-white py-3 rounded-full font-medium hover:opacity-90 transition"
+      >
+        Kerjakan Evaluasi
+      </button>
+      <button
+        onClick={handleComplete}
+        disabled={completing || completed}
+        className="flex-1 bg-[var(--color-accent)] text-white py-3 rounded-full font-medium hover:opacity-90 transition disabled:bg-gray-400"
+      >
+        {completed ? "✓ Selesai" : completing ? "Menyimpan..." : "Selesaikan Modul"}
+      </button>
+    </div>
+  </div>
+);
 }
