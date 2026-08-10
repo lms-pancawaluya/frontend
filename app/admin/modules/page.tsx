@@ -80,44 +80,47 @@ export default function AdminModulesPage() {
   }
 
   if (loading) {
-    return <p className="text-center mt-16">Memuat data modul...</p>;
-  }
+  return <p className="text-center mt-16 text-gray-500">Memuat data modul...</p>;
+}
 
-  return (
-    <div className="max-w-5xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">Kelola Modul</h1>
-          <p className="text-gray-500">Kelola modul pembelajaran Pancawaluya</p>
-        </div>
-        <Link
-          href="/admin/modules/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-        >
-          + Tambah Modul
-        </Link>
+return (
+  <div className="max-w-5xl mx-auto p-6">
+    <div className="flex justify-between items-center mb-8">
+      <div>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-1">
+          Kelola Modul
+        </h1>
+        <p className="text-gray-500">Kelola modul pembelajaran Pancawaluya</p>
       </div>
+      <Link
+        href="/admin/modules/new"
+        className="bg-[var(--color-navy)] text-white px-4 py-2 rounded-full text-sm font-medium hover:opacity-90 transition"
+      >
+        + Tambah Modul
+      </Link>
+    </div>
 
-      {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200 mb-4">
-          {error}
-        </div>
-      )}
+    {error && (
+      <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 mb-4">
+        {error}
+      </div>
+    )}
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden">
+      <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Urutan</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Judul</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Aspek</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Konten</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-600">Aksi</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Urutan</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Judul</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Aspek</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Konten</th>
+              <th className="text-right px-4 py-3 font-medium text-[var(--color-navy)]">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {modules.map((mod) => (
-              <tr key={mod.id} className="border-b border-gray-100 last:border-0">
+              <tr key={mod.id} className="border-b border-[var(--color-border-soft)] last:border-0">
                 <td className="px-4 py-3 text-gray-600">{mod.urutan}</td>
                 <td className="px-4 py-3 text-gray-800">{mod.judul}</td>
                 <td className="px-4 py-3 text-gray-600 capitalize">
@@ -127,7 +130,7 @@ export default function AdminModulesPage() {
                 <td className="px-4 py-3 text-right space-x-3">
                   <Link
                     href={`/admin/modules/${mod.id}`}
-                    className="text-blue-600 hover:underline"
+                    className="text-[var(--color-accent)] hover:underline"
                   >
                     Edit
                   </Link>
@@ -149,5 +152,6 @@ export default function AdminModulesPage() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }

@@ -53,39 +53,42 @@ export default function AdminUsersPage() {
   }, [router]);
 
   if (loading) {
-    return <p className="text-center mt-16">Memuat data pengguna...</p>;
-  }
+  return <p className="text-center mt-16 text-gray-500">Memuat data pengguna...</p>;
+}
 
-  if (error) {
-    return (
-      <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
+if (error) {
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Kelola Akun Guru</h1>
-      <p className="text-gray-500 mb-8">
-        Daftar seluruh pengguna terdaftar di sistem
-      </p>
+    <div className="max-w-md mx-auto mt-16 p-4">
+      <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        {error}
+      </div>
+    </div>
+  );
+}
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+return (
+  <div className="max-w-5xl mx-auto p-6">
+    <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-2">
+      Kelola Akun Guru
+    </h1>
+    <p className="text-gray-500 mb-8">
+      Daftar seluruh pengguna terdaftar di sistem
+    </p>
+
+    <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden">
+      <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Nama</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Modul Selesai</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Nama</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Email</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Role</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Modul Selesai</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} className="border-b border-gray-100 last:border-0">
+              <tr key={u.id} className="border-b border-[var(--color-border-soft)] last:border-0">
                 <td className="px-4 py-3 text-gray-800">{u.nama}</td>
                 <td className="px-4 py-3 text-gray-600">{u.email}</td>
                 <td className="px-4 py-3">
@@ -106,5 +109,6 @@ export default function AdminUsersPage() {
         </table>
       </div>
     </div>
-  );
+  </div>
+);
 }

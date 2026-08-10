@@ -49,86 +49,88 @@ export default function NewModulePage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <button
-        onClick={() => router.push("/admin/modules")}
-        className="text-sm text-blue-600 hover:underline mb-6"
-      >
-        ← Kembali ke daftar modul
-      </button>
+  <div className="max-w-xl mx-auto p-6">
+    <button
+      onClick={() => router.push("/admin/modules")}
+      className="text-sm text-[var(--color-accent)] hover:underline mb-6"
+    >
+      ← Kembali ke daftar modul
+    </button>
 
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Tambah Modul Baru</h1>
+    <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-6">
+      Tambah Modul Baru
+    </h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
-            {error}
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Judul Modul</label>
-          <input
-            type="text"
-            name="judul"
-            value={formData.judul}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            placeholder="Modul Bageur - Percaya Diri & Kolaborasi"
-            required
-          />
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {error && (
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+          {error}
         </div>
+      )}
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Deskripsi</label>
-          <textarea
-            name="deskripsi"
-            value={formData.deskripsi}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            rows={4}
-            placeholder="Jelaskan isi modul ini secara singkat..."
-            required
-          />
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Judul Modul</label>
+        <input
+          type="text"
+          name="judul"
+          value={formData.judul}
+          onChange={handleChange}
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          placeholder="Modul Bageur - Percaya Diri & Kolaborasi"
+          required
+        />
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Aspek Pancawaluya</label>
-          <select
-            name="aspekPancawaluya"
-            value={formData.aspekPancawaluya}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 capitalize"
-          >
-            {aspekOptions.map((aspek) => (
-              <option key={aspek} value={aspek} className="capitalize">
-                {aspek}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Deskripsi</label>
+        <textarea
+          name="deskripsi"
+          value={formData.deskripsi}
+          onChange={handleChange}
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          rows={4}
+          placeholder="Jelaskan isi modul ini secara singkat..."
+          required
+        />
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Urutan</label>
-          <input
-            type="number"
-            name="urutan"
-            value={formData.urutan}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            min={1}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:bg-gray-400 mt-2"
+      <div>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Aspek Pancawaluya</label>
+        <select
+          name="aspekPancawaluya"
+          value={formData.aspekPancawaluya}
+          onChange={handleChange}
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 capitalize focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
         >
-          {loading ? "Menyimpan..." : "Simpan Modul"}
-        </button>
-      </form>
-    </div>
-  );
+          {aspekOptions.map((aspek) => (
+            <option key={aspek} value={aspek} className="capitalize">
+              {aspek}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Urutan</label>
+        <input
+          type="number"
+          name="urutan"
+          value={formData.urutan}
+          onChange={handleChange}
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          min={1}
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="bg-[var(--color-navy)] text-white py-2.5 rounded-full font-medium hover:opacity-90 transition disabled:bg-gray-400 mt-2"
+      >
+        {loading ? "Menyimpan..." : "Simpan Modul"}
+      </button>
+    </form>
+  </div>
+);
 }
