@@ -43,44 +43,44 @@ export default function LoginForm() {
 }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
-          {error}
-        </div>
-      )}
-
-      <div>
-        <label className="center block text-sm text-gray-700 font-medium mb-1">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          placeholder="nama@sekolah.sch.id"
-          required
-        />
+  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    {error && (
+      <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        {error}
       </div>
+    )}
 
-      <div>
-        <label className="block text-sm text-gray-700 font-medium mb-1">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          placeholder="Masukkan password"
-          required
-        />
-      </div>
+    <div>
+      <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Email</label>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+        placeholder="nama@sekolah.sch.id"
+        required
+      />
+    </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:bg-gray-400"
-      >
-        {loading ? "Memproses..." : "Login"}
-      </button>
-    </form>
-  );
+    <div>
+      <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Password</label>
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+        placeholder="Masukkan password"
+        required
+      />
+    </div>
+
+    <button
+      type="submit"
+      disabled={loading}
+      className="bg-[var(--color-navy)] text-white py-2.5 rounded-full font-medium hover:opacity-90 transition disabled:bg-gray-400"
+    >
+      {loading ? "Memproses..." : "Login"}
+    </button>
+  </form>
+);
 }

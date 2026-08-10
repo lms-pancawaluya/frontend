@@ -70,7 +70,7 @@ export default function Header() {
           )}
           <button
             onClick={handleLogout}
-            className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition"
+            className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-10 transition"
           >
             Logout
           </button>
