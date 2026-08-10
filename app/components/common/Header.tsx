@@ -42,54 +42,54 @@ export default function Header() {
   }
 
   return (
-<header className="bg-white/80 backdrop-blur-sm border-b border-[var(--color-border-soft)] sticky top-0 z-10">
-  <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
-    <Link
-      href="/"
-      className="font-[family-name:var(--font-display)] text-xl font-medium text-[var(--color-navy)]"
-    >
-      LMS Pancawaluya
-    </Link>
+    <header className="bg-white/30 backdrop-blur-md border-b border-[var(--color-border-soft)] sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
+        <Link
+          href="/"
+          className="font-[family-name:var(--font-display)] text-xl font-medium text-[var(--color-navy)]"
+        >
+          LMS Pancawaluya
+        </Link>
 
-    <nav className="flex items-center gap-6">
-      {user ? (
-        <>
-          <Link href="/dashboard" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
-            Dashboard
-          </Link>
-          <Link href="/modules" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
-            Modul
-          </Link>
-          <Link href="/profile" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
-            Profil
-          </Link>
-          {user.role === "admin" && (
-            <Link href="/admin/modules" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
-              Admin
-            </Link>
+        <nav className="flex items-center gap-6">
+          {user ? (
+            <>
+              <Link href="/dashboard" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
+                Dashboard
+              </Link>
+              <Link href="/modules" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
+                Modul
+              </Link>
+              <Link href="/profile" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
+                Profil
+              </Link>
+              {user.role === "admin" && (
+                <Link href="/admin/modules" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
+                  Admin
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition"
+              >
+                Daftar
+              </Link>
+            </>
           )}
-          <button
-            onClick={handleLogout}
-            className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-10 transition"
-          >
-            Logout
-          </button>
-        </>
-      ) : (
-        <>
-          <Link href="/login" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition"
-          >
-            Daftar
-          </Link>
-        </>
-      )}
-    </nav>
-  </div>
-</header>
+        </nav>
+      </div>
+    </header>
   );
 }

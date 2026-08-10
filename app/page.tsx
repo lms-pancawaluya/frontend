@@ -59,12 +59,27 @@ const pancawaluya = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[var(--color-pale)] to-white px-6 py-20">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+    <div className="min-h-screen relative bg-white">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden px-6 py-20">
+        
+        {/* Background Gambar dengan Gradasi Masking Halus (Soft Fade) ke Bawah */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0 bg-cover bg-center opacity-15"
+          style={{
+            backgroundImage: "url('/BG-Disdik.jpg')",
+            WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%)",
+            maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)",
+          }}
+        />
+
+        {/* Overlay Gradasi tambahan agar transisi makin menyatu dengan latar belakang */}
+        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-transparent via-white/50 to-white" />
+
+        {/* Konten Hero */}
+        <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Kolom kiri: teks */}
-          <div>
+          <div className="animate-fade-in">
             <span className="inline-flex items-center gap-2 bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-[var(--color-border-soft)]">
               Untuk Guru SMA
             </span>
@@ -99,8 +114,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Kolom kanan: logo dengan radial glow */}
-          <div className="relative flex justify-center items-center">
+          {/* Kolom kanan: logo */}
+          <div className="relative flex justify-center items-center animate-fade-in-delay-1">
             <div className="absolute w-72 h-72 bg-[var(--color-accent)]/20 rounded-full blur-3xl" />
             <img
               src="https://disdik.jabarprov.go.id/assets/image/logo-app/Logo%20fix%20full%20color.png"
@@ -112,15 +127,15 @@ export default function HomePage() {
       </section>
 
       {/* 5 Nilai Pancawaluya */}
-      <section className="px-6 py-20 max-w-6xl mx-auto">
-        <h2 className="font-[family-name:var(--font-display)] text-3xl font-medium text-center text-[var(--color-navy)] mb-3">
+      <section className="px-6 py-20 max-w-6xl mx-auto relative z-10">
+        <h2 className="font-[family-name:var(--font-display)] text-3xl font-medium text-center text-[var(--color-navy)] mb-3 animate-fade-in">
           5 Nilai Pancawaluya
         </h2>
-        <p className="text-gray-500 text-center mb-12 max-w-2xl mx-auto">
+        <p className="text-gray-500 text-center mb-12 max-w-2xl mx-auto animate-fade-in-delay-1">
           Fondasi karakter yang dikembangkan melalui platform ini.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in-delay-2">
           {pancawaluya.map((item) => (
             <div
               key={item.title}
@@ -149,8 +164,8 @@ export default function HomePage() {
       </section>
 
       {/* Apa itu Pancawaluya */}
-      <section className="px-6 py-20 bg-[var(--color-pale)]">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="px-6 py-20 bg-[var(--color-pale)] relative z-10">
+        <div className="max-w-3xl mx-auto text-center animate-fade-in">
           <h3 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-4">
             Apa itu Pancawaluya?
           </h3>
