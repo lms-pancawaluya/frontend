@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getModules, deleteModule } from "@/services/module.service";
+import { getModules } from "@/services/module.service";
+import { getProgress } from "@/services/progress.service";
 
 interface Module {
   id: string;
   judul: string;
+  deskripsi: string;
   aspekPancawaluya: string;
   urutan: number;
   _count: {
@@ -16,142 +17,113 @@ interface Module {
   };
 }
 
-export default function AdminModulesPage() {
-  const router = useRouter();
+const aspekColor: Record<string, string> = {
+  cageur: "bg-green-100 text-green-700",
+  bageur: "bg-blue-100 text-blue-700",
+  bener: "bg-yellow-100 text-yellow-700",
+  pinter: "bg-purple-100 text-purple-700",
+  singer: "bg-red-100 text-red-700",
+};
+
+export default function ModulesPage() {
   const [modules, setModules] = useState<Module[]>([]);
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
+    async function fetchModules() {
+      try {
+        const [modulesData, progressData] = await Promise.all([
+          getModules(),
+          getProgress(),
+        ]);
 
-    if (!userData) {
-      router.push("/login");
-      return;
-    }
+        setModules(modulesData);
 
-    const currentUser = JSON.parse(userData);
+        const selesaiIds = progressData
+          .filter((p: { status: string }) => p.status === "selesai")
+          .map((p: { module: { id: string } }) => p.module.id);
 
-    if (currentUser.role !== "admin") {
-      router.push("/dashboard");
-      return;
-    }
-
-    loadModules();
-  }, [router]);
-
-  async function loadModules() {
-    try {
-      const data = await getModules();
-      setModules(data);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Gagal memuat data modul.");
+        setCompletedIds(selesaiIds);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Gagal memuat daftar modul.");
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
     }
-  }
 
-  async function handleDelete(id: string, judul: string) {
-    const confirmed = window.confirm(
-      `Yakin ingin menghapus modul "${judul}"? Tindakan ini tidak bisa dibatalkan.`
-    );
-
-    if (!confirmed) return;
-
-    setDeletingId(id);
-
-    try {
-      await deleteModule(id);
-      setModules((prev) => prev.filter((mod) => mod.id !== id));
-    } catch (err) {
-      if (err instanceof Error) {
-        alert(err.message);
-      } else {
-        alert("Gagal menghapus modul.");
-      }
-    } finally {
-      setDeletingId(null);
-    }
-  }
+    fetchModules();
+  }, []);
 
   if (loading) {
-  return <p className="text-center mt-16 text-gray-500">Memuat data modul...</p>;
-}
+    return <p className="text-center mt-16 text-gray-500">Memuat modul...</p>;
+  }
 
-return (
-  <div className="max-w-5xl mx-auto p-6">
-    <div className="flex justify-between items-center mb-8">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-1">
-          Kelola Modul
-        </h1>
-        <p className="text-gray-500">Kelola modul pembelajaran Pancawaluya</p>
+  if (error) {
+    return (
+      <div className="max-w-md mx-auto mt-16 p-4">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+          {error}
+        </div>
       </div>
-      <Link
-        href="/admin/modules/new"
-        className="bg-[var(--color-navy)] text-white px-4 py-2 rounded-full text-sm font-medium hover:opacity-90 transition"
-      >
-        + Tambah Modul
-      </Link>
+    );
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto p-6">
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-2 animate-fade-in">
+        Modul Pancawaluya
+      </h1>
+      <p className="text-gray-500 mb-8 animate-fade-in-delay-1">
+        Pilih modul untuk mulai belajar dan mengerjakan evaluasi
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-delay-2">
+        {modules.map((mod) => {
+          const isCompleted = completedIds.includes(mod.id);
+
+          return (
+            <Link
+              key={mod.id}
+              href={`/modules/${mod.id}`}
+              className="border border-[var(--color-border-soft)] rounded-2xl p-5 bg-white hover:shadow-md transition block relative"
+            >
+              {isCompleted && (
+                <span className="absolute top-4 right-4 text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                  ✓ Selesai
+                </span>
+              )}
+
+              <span
+                className={`inline-block text-xs font-semibold px-2 py-1 rounded-full mb-3 capitalize ${
+                  aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {mod.aspekPancawaluya}
+              </span>
+              <h2 className="font-[family-name:var(--font-display)] font-medium text-[var(--color-navy)] mb-2 pr-16">
+                {mod.judul}
+              </h2>
+              <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                {mod.deskripsi}
+              </p>
+              <div className="text-xs text-gray-400 flex gap-3">
+                <span>{mod._count.contents} konten</span>
+                <span>{mod._count.evaluations} evaluasi</span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {modules.length === 0 && (
+        <p className="text-center text-gray-500 mt-8">Belum ada modul tersedia.</p>
+      )}
     </div>
-
-    {error && (
-      <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 mb-4">
-        {error}
-      </div>
-    )}
-
-    <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Urutan</th>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Judul</th>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Aspek</th>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Konten</th>
-              <th className="text-right px-4 py-3 font-medium text-[var(--color-navy)]">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {modules.map((mod) => (
-              <tr key={mod.id} className="border-b border-[var(--color-border-soft)] last:border-0">
-                <td className="px-4 py-3 text-gray-600">{mod.urutan}</td>
-                <td className="px-4 py-3 text-gray-800">{mod.judul}</td>
-                <td className="px-4 py-3 text-gray-600 capitalize">
-                  {mod.aspekPancawaluya}
-                </td>
-                <td className="px-4 py-3 text-gray-600">{mod._count.contents}</td>
-                <td className="px-4 py-3 text-right space-x-3">
-                  <Link
-                    href={`/admin/modules/${mod.id}`}
-                    className="text-[var(--color-accent)] hover:underline"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(mod.id, mod.judul)}
-                    disabled={deletingId === mod.id}
-                    className="text-red-600 hover:underline disabled:text-gray-400"
-                  >
-                    {deletingId === mod.id ? "Menghapus..." : "Hapus"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {modules.length === 0 && (
-          <p className="text-center text-gray-500 py-8">Belum ada modul.</p>
-        )}
-      </div>
-    </div>
-  </div>
-);
+  );
 }

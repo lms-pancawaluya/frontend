@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function LoginPage() {
   return (
     <div className="min-h-[calc(100vh-140px)] flex items-center justify-center bg-[var(--color-pale)] px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-[var(--color-border-soft)] p-8">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-[var(--color-border-soft)] p-8 animate-fade-in">
         <div className="text-center mb-6">
           <div className="inline-block bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-3 py-1 rounded-full mb-3 border border-[var(--color-border-soft)]">
             Pancawaluya

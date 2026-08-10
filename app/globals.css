@@ -13,7 +13,10 @@
 }
 
 body {
-  @keyframes fadeInUp {
+  font-family: var(--font-body), Arial, Helvetica, sans-serif;
+}
+
+@keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(12px);
@@ -34,6 +37,4 @@ body {
 
 .animate-fade-in-delay-2 {
   animation: fadeInUp 0.5s ease-out 0.2s both;
-}
-  font-family: var(--font-body), Arial, Helvetica, sans-serif;
 }
