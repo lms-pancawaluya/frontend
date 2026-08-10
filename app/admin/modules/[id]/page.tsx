@@ -35,33 +35,34 @@ export default function EditModulePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
+    async function loadData() {
+      try {
+        const [moduleData, contentsData] = await Promise.all([
+          getModuleById(id),
+          getModuleContents(id),
+        ]);
+
+        setFormData({
+          judul: moduleData.judul,
+          deskripsi: moduleData.deskripsi,
+          aspekPancawaluya: moduleData.aspekPancawaluya,
+          urutan: moduleData.urutan,
+        });
+
+        setContents(contentsData);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Gagal memuat data modul.");
+        }
+      } finally {
+        setLoadingData(false);
+      }
+    }
+
     loadData();
   }, [id]);
-
-  async function loadData() {
-    try {
-      const [moduleData, contentsData] = await Promise.all([
-        getModuleById(id),
-        getModuleContents(id),
-      ]);
-
-      setFormData({
-        judul: moduleData.judul,
-        deskripsi: moduleData.deskripsi,
-        aspekPancawaluya: moduleData.aspekPancawaluya,
-        urutan: moduleData.urutan,
-      });
-      setContents(contentsData);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Gagal memuat data modul.");
-      }
-    } finally {
-      setLoadingData(false);
-    }
-  }
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

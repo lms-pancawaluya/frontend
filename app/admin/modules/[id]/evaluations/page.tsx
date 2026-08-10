@@ -27,23 +27,37 @@ export default function ModuleEvaluationsPage() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    loadEvaluations();
-  }, [moduleId]);
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
 
-  async function loadEvaluations() {
-    try {
-      const data = await getModuleEvaluations(moduleId);
-      setEvaluations(data);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Gagal memuat daftar evaluasi.");
-      }
-    } finally {
-      setLoading(false);
+    if (!token || !userData) {
+      router.push("/login");
+      return;
     }
-  }
+
+    const currentUser = JSON.parse(userData);
+    if (currentUser.role !== "admin") {
+      router.push("/dashboard");
+      return;
+    }
+
+    async function loadEvaluations() {
+      try {
+        const data = await getModuleEvaluations(moduleId);
+        setEvaluations(data);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Gagal memuat daftar evaluasi.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadEvaluations();
+  }, [moduleId, router]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();

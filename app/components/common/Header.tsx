@@ -54,20 +54,18 @@ export default function Header() {
         <nav className="flex items-center gap-6">
           {user ? (
             <>
-              <Link href="/dashboard" className="text-sm text-gray-600 font-bold hover:text-[var(--color-navy)] transition">
+              <Link
+                href={user.role === "admin" ? "/admin" : "/dashboard"}
+                className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition"
+              >
                 Dashboard
               </Link>
-              <Link href="/modules" className="text-sm text-gray-600 font-bold hover:text-[var(--color-navy)] transition">
+              <Link href="/modules" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
                 Modul
               </Link>
-              <Link href="/profile" className="text-sm text-gray-600 font-bold hover:text-[var(--color-navy)] transition">
+              <Link href="/profile" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
                 Profil
               </Link>
-              {user.role === "admin" && (
-                <Link href="/admin/modules" className="text-sm text-gray-600 font-bold hover:text-[var(--color-navy)] transition">
-                  Admin
-                </Link>
-              )}
               <button
                 onClick={handleLogout}
                 className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition"
@@ -77,7 +75,7 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm text-gray-600 font-bold hover:text-[var(--color-navy)] transition">
+              <Link href="/login" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
                 Login
               </Link>
               <Link

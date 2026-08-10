@@ -35,6 +35,7 @@ export default function EvaluationDetailAdminPage() {
   const [evaluation, setEvaluation] = useState<EvaluationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [pertanyaan, setPertanyaan] = useState("");
   const [tipe, setTipe] = useState("pilihan_ganda");
@@ -46,23 +47,37 @@ export default function EvaluationDetailAdminPage() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    loadEvaluation();
-  }, [evalId]);
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
 
-  async function loadEvaluation() {
-    try {
-      const data = await getEvaluationDetail(evalId);
-      setEvaluation(data);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Gagal memuat detail evaluasi.");
-      }
-    } finally {
-      setLoading(false);
+    if (!token || !userData) {
+      router.push("/login");
+      return;
     }
-  }
+
+    const currentUser = JSON.parse(userData);
+    if (currentUser.role !== "admin") {
+      router.push("/dashboard");
+      return;
+    }
+
+    async function fetchEvaluationDetail() {
+      try {
+        const data = await getEvaluationDetail(evalId);
+        setEvaluation(data);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Gagal memuat detail evaluasi.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchEvaluationDetail();
+  }, [evalId, router, refreshKey]);
 
   function handleOptionTextChange(index: number, value: string) {
     setOptions((prev) =>
@@ -117,7 +132,7 @@ export default function EvaluationDetailAdminPage() {
 
       await addQuestion(evalId, questionData);
       resetForm();
-      await loadEvaluation();
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       if (err instanceof Error) {
         setFormError(err.message);
@@ -130,13 +145,13 @@ export default function EvaluationDetailAdminPage() {
   }
 
   if (loading) {
-    return <p className="text-center mt-16">Memuat evaluasi...</p>;
+    return <p className="text-center mt-16 text-gray-500">Memuat evaluasi...</p>;
   }
 
   if (error || !evaluation) {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
           {error || "Evaluasi tidak ditemukan."}
         </div>
       </div>
@@ -147,15 +162,17 @@ export default function EvaluationDetailAdminPage() {
     <div className="max-w-2xl mx-auto p-6">
       <button
         onClick={() => router.back()}
-        className="text-sm text-blue-600 hover:underline mb-6"
+        className="text-sm text-[var(--color-accent)] font-medium hover:underline mb-6 block"
       >
         ← Kembali
       </button>
 
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">{evaluation.judul}</h1>
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-6">
+        {evaluation.judul}
+      </h1>
 
       <div className="mb-8">
-        <h2 className="font-semibold text-gray-800 mb-3">
+        <h2 className="font-medium text-gray-800 mb-3">
           Soal yang Sudah Ada ({evaluation.questions.length})
         </h2>
 
@@ -164,8 +181,8 @@ export default function EvaluationDetailAdminPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {evaluation.questions.map((q, index) => (
-              <div key={q.id} className="border border-gray-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-gray-800 mb-1">
+              <div key={q.id} className="bg-white border border-[var(--color-border-soft)] rounded-xl p-4">
+                <p className="text-sm font-medium text-[var(--color-navy)] mb-1">
                   {index + 1}. {q.pertanyaan}
                 </p>
                 <span className="text-xs text-gray-400 capitalize">
@@ -178,33 +195,33 @@ export default function EvaluationDetailAdminPage() {
         )}
       </div>
 
-      <div className="border-t border-gray-200 pt-6">
-        <h2 className="font-semibold text-gray-800 mb-4">Tambah Soal Baru</h2>
+      <div className="border-t border-[var(--color-border-soft)] pt-6">
+        <h2 className="font-medium text-gray-800 mb-4">Tambah Soal Baru</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {formError && (
-            <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
+            <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
               {formError}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium mb-1">Pertanyaan</label>
+            <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Pertanyaan</label>
             <textarea
               value={pertanyaan}
               onChange={(e) => setPertanyaan(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
               rows={2}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Tipe Soal</label>
+            <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Tipe Soal</label>
             <select
               value={tipe}
               onChange={(e) => setTipe(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
             >
               <option value="pilihan_ganda">Pilihan Ganda</option>
               <option value="esai">Esai</option>
@@ -213,7 +230,7 @@ export default function EvaluationDetailAdminPage() {
 
           {tipe === "pilihan_ganda" && (
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium text-[var(--color-navy)] mb-2">
                 Opsi Jawaban (pilih 1 sebagai jawaban benar)
               </label>
               <div className="flex flex-col gap-2">
@@ -224,12 +241,13 @@ export default function EvaluationDetailAdminPage() {
                       name="correctOption"
                       checked={opt.isCorrect}
                       onChange={() => handleCorrectChange(index)}
+                      className="accent-[var(--color-navy)]"
                     />
                     <input
                       type="text"
                       value={opt.teksOpsi}
                       onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                      className="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm"
+                      className="flex-1 border border-[var(--color-border-soft)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
                       placeholder={`Opsi ${index + 1}`}
                     />
                     {options.length > 2 && (
@@ -249,7 +267,7 @@ export default function EvaluationDetailAdminPage() {
                 <button
                   type="button"
                   onClick={handleAddOption}
-                  className="text-blue-600 text-sm hover:underline mt-2"
+                  className="text-[var(--color-accent)] text-sm font-medium hover:underline mt-2"
                 >
                   + Tambah Opsi
                 </button>
@@ -260,7 +278,7 @@ export default function EvaluationDetailAdminPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:bg-gray-400 mt-2"
+            className="bg-[var(--color-navy)] text-white py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition disabled:bg-gray-400 mt-2"
           >
             {submitting ? "Menyimpan..." : "Tambah Soal"}
           </button>
