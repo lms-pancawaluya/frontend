@@ -51,7 +51,7 @@ export default function LoginForm() {
       )}
 
       <div>
-        <label className="block text-sm font-medium mb-1">Email</label>
+        <label className="center block text-sm text-gray-700 font-medium mb-1">Email</label>
         <input
           type="email"
           value={email}
@@ -63,7 +63,7 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Password</label>
+        <label className="block text-sm text-gray-700 font-medium mb-1">Password</label>
         <input
           type="password"
           value={password}

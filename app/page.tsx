@@ -31,87 +31,101 @@ const pancawaluya = [
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Hero */}
-      <section className="px-6 py-20">
-        <div className="max-w-4xl mx-auto bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg p-8 md:flex md:items-center md:gap-8">
-          <div className="flex-shrink-0 mx-auto md:mx-0">
-            <img
-              src="https://disdik.jabarprov.go.id/assets/image/logo-app/Logo%20fix%20full%20color.png"
-              alt="Logo Pancawaluya"
-              className="w-28 h-28 md:w-32 md:h-32 object-contain rounded-xl shadow-md transition-transform duration-300 hover:scale-105 animate-pulse"
-            />
-          </div>
+{/* Hero */}
+<section className="relative overflow-hidden bg-gradient-to-b from-[var(--color-pale)] to-white px-6 py-20">
+  <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+    {/* Kolom kiri: teks */}
+    <div>
+      <span className="inline-flex items-center gap-2 bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-[var(--color-border-soft)]">
+        Untuk Guru SMA
+      </span>
 
-          <div className="mt-6 md:mt-0 text-center md:text-left">
-            <span className="inline-block bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-3">
-              Untuk Guru SMA
-            </span>
+      <h1 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-medium text-[var(--color-navy)] leading-[1.15] mb-6">
+        Belajar &amp; terapkan{" "}
+        <span className="italic text-[var(--color-accent)]">
+          nilai Pancawaluya
+        </span>{" "}
+        di ruang kelas.
+      </h1>
 
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 leading-tight mb-3">
-              Belajar & Terapkan Nilai Pancawaluya
-            </h1>
+      <p className="text-gray-600 mb-8 max-w-md leading-relaxed">
+        Platform pembelajaran yang membantu guru memahami dan menerapkan
+        lima nilai Pancawaluya untuk membentuk karakter dan kompetensi
+        siswa.
+      </p>
 
-            <p className="text-gray-600 mb-6 max-w-xl">
-              Platform pembelajaran yang membantu guru memahami dan menerapkan
-              lima nilai Pancawaluya untuk membentuk karakter dan kompetensi
-              siswa.
-            </p>
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href="/register"
+          className="inline-flex items-center gap-2 bg-[var(--color-navy)] text-white px-6 py-3 rounded-full font-medium shadow-sm hover:opacity-90 transition"
+        >
+          Mulai Sekarang →
+        </Link>
+        <Link
+          href="/login"
+          className="bg-white text-[var(--color-navy)] border border-[var(--color-border-soft)] px-6 py-3 rounded-full font-medium hover:bg-[var(--color-pale)] transition"
+        >
+          Saya sudah punya akun
+        </Link>
+      </div>
+    </div>
 
-            <div className="flex justify-center md:justify-start gap-4">
-              <Link
-                href="/register"
-                className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-700 transition transform hover:-translate-y-1"
-              >
-                Mulai Sekarang
-              </Link>
-              <Link
-                href="/login"
-                className="bg-white text-blue-600 border border-blue-600 px-5 py-2 rounded-lg font-medium hover:bg-blue-50 transition"
-              >
-                Login
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+    {/* Kolom kanan: logo dengan radial glow */}
+    <div className="relative flex justify-center items-center">
+      <div className="absolute w-72 h-72 bg-[var(--color-accent)]/20 rounded-full blur-3xl" />
+      <img
+        src="https://disdik.jabarprov.go.id/assets/image/logo-app/Logo%20fix%20full%20color.png"
+        alt="Logo Pancawaluya"
+        className="relative w-56 h-56 md:w-64 md:h-64 object-contain"
+      />
+    </div>
+  </div>
+</section>
 
       {/* 5 Nilai Pancawaluya */}
-      <section className="px-6 py-12 max-w-6xl mx-auto">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
-          5 Nilai Pancawaluya
-        </h2>
-        <p className="text-gray-500 text-center mb-8 max-w-2xl mx-auto">
-          Fondasi karakter yang dikembangkan melalui platform ini.
-        </p>
+      {/* 5 Nilai Pancawaluya */}
+<section className="px-6 py-20 max-w-6xl mx-auto">
+  <h2 className="font-[family-name:var(--font-display)] text-3xl font-medium text-center text-[var(--color-navy)] mb-3">
+    5 Nilai Pancawaluya
+  </h2>
+  <p className="text-gray-500 text-center mb-12 max-w-2xl mx-auto">
+    Fondasi karakter yang dikembangkan melalui platform ini.
+  </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-          {pancawaluya.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-xl p-5 text-center border border-gray-100 bg-white shadow-sm hover:shadow-xl transition transform hover:-translate-y-2"
-            >
-              <div
-                className={`w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center font-bold ${item.color} text-lg`}
-              >
-                {item.title.charAt(0)}
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-1">{item.title}</h3>
-              <p className="text-sm text-gray-500">{item.desc}</p>
-            </div>
-          ))}
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+    {pancawaluya.map((item) => (
+      <div
+        key={item.title}
+        className="rounded-2xl p-6 text-center border border-[var(--color-border-soft)] bg-white shadow-sm hover:shadow-md transition"
+      >
+        <div
+          className={`w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center font-semibold ${item.color} text-lg`}
+        >
+          {item.title.charAt(0)}
         </div>
-      </section>
-
+        <h3 className="font-[family-name:var(--font-display)] font-medium text-[var(--color-navy)] mb-1">
+          {item.title}
+        </h3>
+        <p className="text-sm text-gray-500">{item.desc}</p>
+      </div>
+    ))}
+  </div>
+</section>
       {/* Apa itu Pancawaluya */}
-      <section className="px-6 py-12 max-w-4xl mx-auto">
-        <h3 className="text-xl font-bold text-gray-800 mb-3">Apa itu Pancawaluya?</h3>
-        <p className="text-gray-600 mb-4">
-          Pancawaluya adalah kerangka nilai yang terdiri dari lima prinsip:
-          Cageur, Bageur, Bener, Pinter, dan Singer — bertujuan membentuk
-          karakter siswa melalui kebiasaan sehat, sopan santun, integritas,
-          kepatuhan pada norma, dan kepemimpinan responsif.
-        </p>
-      </section>
+{/* Apa itu Pancawaluya */}
+<section className="px-6 py-20 bg-[var(--color-pale)]">
+  <div className="max-w-3xl mx-auto text-center">
+    <h3 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-4">
+      Apa itu Pancawaluya?
+    </h3>
+    <p className="text-gray-600 leading-relaxed">
+      Pancawaluya adalah kerangka nilai yang terdiri dari lima prinsip:
+      Cageur, Bageur, Bener, Pinter, dan Singer — bertujuan membentuk
+      karakter siswa melalui kebiasaan sehat, sopan santun, integritas,
+      kepatuhan pada norma, dan kepemimpinan responsif.
+    </p>
+  </div>
+</section>
     </div>
   );
 }

@@ -85,7 +85,7 @@ export default function RegisterForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Password</label>
+        <label className="block text-sm text-gray-300 font-medium mb-1">Password</label>
         <input
           type="password"
           name="password"
