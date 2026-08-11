@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const pancawaluya = [
@@ -132,10 +133,13 @@ export default function HomePage() {
           {/* Kolom kanan: logo */}
           <div className="relative flex justify-center items-center animate-fade-in-delay-1">
             <div className="absolute w-72 h-72 bg-[var(--color-accent)]/20 rounded-full blur-3xl" />
-            <img
+            <Image
               src="https://disdik.jabarprov.go.id/assets/image/logo-app/Logo%20fix%20full%20color.png"
               alt="Logo Pancawaluya"
+              width={256}
+              height={256}
               className="relative w-56 h-56 md:w-64 md:h-64 object-contain"
+              priority
             />
           </div>
         </div>

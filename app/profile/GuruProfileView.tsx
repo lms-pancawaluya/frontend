@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent, ChangeEvent } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
 
 interface ProgressItem {
@@ -48,35 +48,34 @@ const DAFTAR_GELAR = [
   "Dr.",
 ];
 
-export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-  const getToken = () => localStorage.getItem("token") || "";
-
-  // Ambil gelar dari localStorage jika API belum mendukung kolom gelar
-  const getSavedGelar = () => {
-    if (profile.gelar) return profile.gelar;
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("user");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          return parsed.gelar || "";
-        } catch {
-          return "";
-        }
+const getProfileFormData = (profile: GuruProfileProps["profile"]) => {
+  let currentGelar = profile.gelar;
+  if (!currentGelar && typeof window !== "undefined") {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      try {
+        currentGelar = JSON.parse(savedUser).gelar || "";
+      } catch {
+        currentGelar = "";
       }
     }
-    return "";
-  };
+  }
 
-  const [formData, setFormData] = useState({
+  return {
     nama: profile.nama || "",
-    gelar: getSavedGelar(),
+    gelar: currentGelar || "",
     email: profile.email || "",
     nip: profile.nip || "",
     sekolah: profile.sekolah || "",
     noHp: profile.noHp || "",
-  });
+  };
+};
+
+export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps) {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+  const getToken = () => localStorage.getItem("token") || "";
+
+  const [formData, setFormData] = useState(() => getProfileFormData(profile));
 
   const [passwordData, setPasswordData] = useState({
     passwordLama: "",
@@ -87,30 +86,6 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
   const [savingPassword, setSavingPassword] = useState(false);
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  // EFEEK SINKRONISASI: Meng-update state input form setiap kali data profile dari API selesai dimuat / di-refresh
-  useEffect(() => {
-    let currentGelar = profile.gelar;
-    if (!currentGelar) {
-      const savedUser = localStorage.getItem("user");
-      if (savedUser) {
-        try {
-          currentGelar = JSON.parse(savedUser).gelar || "";
-        } catch {
-          currentGelar = "";
-        }
-      }
-    }
-
-    setFormData({
-      nama: profile.nama || "",
-      gelar: currentGelar || "",
-      email: profile.email || "",
-      nip: profile.nip || "",
-      sekolah: profile.sekolah || "",
-      noHp: profile.noHp || "",
-    });
-  }, [profile]);
 
   // Format Nama Lengkap Beserta Gelar
   const namaLengkapBerGelar = formData.gelar 

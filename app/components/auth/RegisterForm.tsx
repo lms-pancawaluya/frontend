@@ -76,7 +76,7 @@ export default function RegisterForm() {
       } else {
         setError(data.pesan || "Registrasi gagal, periksa kembali data Anda.");
       }
-    } catch (err) {
+    } catch {
       setError("Terjadi kesalahan jaringan. Silakan coba lagi nanti.");
     } finally {
       setLoading(false);

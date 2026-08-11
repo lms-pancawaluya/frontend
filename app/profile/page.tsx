@@ -4,9 +4,21 @@ import { useState, useEffect, useCallback } from "react";
 import AdminProfileView from "./AdminProfileView";
 import GuruProfileView from "./GuruProfileView";
 
+interface ProfileData {
+  id: string;
+  nama: string;
+  email: string;
+  role: string;
+  gelar?: string;
+  nip?: string;
+  sekolah?: string;
+  noHp?: string;
+  fotoProfil?: string;
+}
+
 export default function ProfilePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +51,11 @@ export default function ProfilePage() {
   }, [API_URL]);
 
   useEffect(() => {
-    fetchProfile();
+    const loadProfile = async () => {
+      await fetchProfile();
+    };
+
+    void loadProfile();
   }, [fetchProfile]);
 
   if (loading) {
@@ -66,9 +82,13 @@ export default function ProfilePage() {
     );
   }
 
+  if (!profile) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-pale)] py-10 px-4">
-      {profile?.role === "admin" ? (
+      {profile.role === "admin" ? (
         <AdminProfileView profile={profile} onRefresh={fetchProfile} />
       ) : (
         <GuruProfileView profile={profile} onRefresh={fetchProfile} />

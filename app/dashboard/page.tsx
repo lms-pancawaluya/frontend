@@ -16,31 +16,32 @@ interface User {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user] = useState<User | null>(() => {
+    if (typeof window === "undefined") return null;
+
+    const userData = localStorage.getItem("user");
+    if (!userData) return null;
+
+    try {
+      return JSON.parse(userData) as User;
+    } catch {
+      return null;
+    }
+  });
   const [totalModules, setTotalModules] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
 
-    if (!token || !userData) {
+    if (!token || !user) {
       router.push("/login");
       return;
     }
 
-    try {
-      const currentUser: User = JSON.parse(userData);
-      if (currentUser?.role === "admin") {
-        router.push("/admin");
-        return;
-      }
-
-      setUser(currentUser);
-    } catch (err) {
-      console.error("Gagal membaca data user:", err);
-      router.push("/login");
+    if (user.role === "admin") {
+      router.push("/admin");
       return;
     }
 
@@ -64,8 +65,8 @@ export default function DashboardPage() {
       }
     }
 
-    fetchDashboardData();
-  }, [router]);
+    void fetchDashboardData();
+  }, [router, user]);
 
   if (!user) {
     return <p className="text-center mt-16 text-gray-500">Memuat dashboard...</p>;
