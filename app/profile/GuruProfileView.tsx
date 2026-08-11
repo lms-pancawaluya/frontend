@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
 
 interface ProgressItem {
@@ -18,6 +18,7 @@ interface GuruProfileProps {
     nama: string;
     email: string;
     role: string;
+    gelar?: string;
     nip?: string;
     sekolah?: string;
     noHp?: string;
@@ -27,12 +28,50 @@ interface GuruProfileProps {
   onRefresh: () => void;
 }
 
+// Daftar Gelar Akademik Guru
+const DAFTAR_GELAR = [
+  "",
+  "S.Pd.",
+  "S.Pd.I.",
+  "S.S.",
+  "S.Si.",
+  "S.T.",
+  "S.Kom.",
+  "S.E.",
+  "S.Sos.",
+  "M.Pd.",
+  "M.Pd.I.",
+  "M.Si.",
+  "M.T.",
+  "M.Kom.",
+  "M.M.",
+  "Dr.",
+];
+
 export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
   const getToken = () => localStorage.getItem("token") || "";
 
+  // Ambil gelar dari localStorage jika API belum mendukung kolom gelar
+  const getSavedGelar = () => {
+    if (profile.gelar) return profile.gelar;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("user");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          return parsed.gelar || "";
+        } catch {
+          return "";
+        }
+      }
+    }
+    return "";
+  };
+
   const [formData, setFormData] = useState({
     nama: profile.nama || "",
+    gelar: getSavedGelar(),
     email: profile.email || "",
     nip: profile.nip || "",
     sekolah: profile.sekolah || "",
@@ -49,6 +88,35 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // EFEEK SINKRONISASI: Meng-update state input form setiap kali data profile dari API selesai dimuat / di-refresh
+  useEffect(() => {
+    let currentGelar = profile.gelar;
+    if (!currentGelar) {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        try {
+          currentGelar = JSON.parse(savedUser).gelar || "";
+        } catch {
+          currentGelar = "";
+        }
+      }
+    }
+
+    setFormData({
+      nama: profile.nama || "",
+      gelar: currentGelar || "",
+      email: profile.email || "",
+      nip: profile.nip || "",
+      sekolah: profile.sekolah || "",
+      noHp: profile.noHp || "",
+    });
+  }, [profile]);
+
+  // Format Nama Lengkap Beserta Gelar
+  const namaLengkapBerGelar = formData.gelar 
+    ? `${formData.nama}, ${formData.gelar}` 
+    : formData.nama;
+
   // Handler NIP: Hanya angka & maksimal 18 digit
   const handleNipChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 18);
@@ -64,7 +132,7 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
   const handleUpdateProfile = async (e: FormEvent) => {
     e.preventDefault();
 
-    // 1. Validasi Wajib Isi Masing-Masing Form
+    // 1. Validasi Form
     if (!formData.nama.trim()) {
       setMessage({ type: "error", text: "Mohon lengkapi form Nama Lengkap" });
       return;
@@ -95,7 +163,7 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
       return;
     }
 
-    // 3. Validasi NIP (wajib 18 digit)
+    // 3. Validasi NIP
     if (formData.nip.length !== 18) {
       setMessage({
         type: "error",
@@ -104,7 +172,7 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
       return;
     }
 
-    // 4. Validasi No HP (harus diawali '08' dan minimal 10 digit)
+    // 4. Validasi No HP
     if (!formData.noHp.startsWith("08")) {
       setMessage({
         type: "error",
@@ -134,6 +202,21 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
       });
 
       const json = await res.json();
+
+      // Selalu simpan ke localStorage sebagai cadangan persistence
+      const existingUser = localStorage.getItem("user");
+      const parsedUser = existingUser ? JSON.parse(existingUser) : {};
+      const updatedUser = {
+        ...parsedUser,
+        nama: formData.nama,
+        gelar: formData.gelar,
+        email: formData.email,
+        nip: formData.nip,
+        sekolah: formData.sekolah,
+        noHp: formData.noHp,
+      };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
       if (json.sukses) {
         setMessage({ type: "success", text: json.pesan || "Profil berhasil diperbarui" });
         onRefresh();
@@ -262,7 +345,7 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
             <hr className="my-4 border-slate-100" />
 
             <div className="text-left space-y-1 text-sm">
-              <p className="font-semibold text-slate-800">{profile.nama}</p>
+              <p className="font-semibold text-slate-800">{namaLengkapBerGelar}</p>
               <p className="text-xs text-gray-500">{profile.email}</p>
               <p className="text-xs text-gray-500">{profile.sekolah || "Sekolah Belum Diatur"}</p>
             </div>
@@ -292,16 +375,36 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
             <h2 className="text-lg font-bold text-[var(--color-navy)] mb-4">Informasi Pribadi</h2>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap</label>
-                <input
-                  type="text"
-                  value={formData.nama}
-                  onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                  required
-                  placeholder="Masukkan Nama Lengkap"
-                  className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
-                />
+              <div className="grid sm:grid-cols-3 gap-4">
+                {/* Input Nama Lengkap */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    value={formData.nama}
+                    onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                    required
+                    placeholder="Masukkan Nama Lengkap"
+                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+                  />
+                </div>
+
+                {/* Dropdown List Gelar Guru */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Gelar (Pilihan)</label>
+                  <select
+                    value={formData.gelar}
+                    onChange={(e) => setFormData({ ...formData, gelar: e.target.value })}
+                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer"
+                  >
+                    <option value="">-- Tanpa Gelar --</option>
+                    {DAFTAR_GELAR.filter(Boolean).map((gelar, idx) => (
+                      <option key={idx} value={gelar}>
+                        {gelar}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">

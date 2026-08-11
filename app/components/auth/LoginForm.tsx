@@ -60,7 +60,7 @@ export default function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 text-sm"
-          placeholder="nama@sekolah.sch.id"
+          placeholder="nama@gmail.com"
           required
         />
       </div>

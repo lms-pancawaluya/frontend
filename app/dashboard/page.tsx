@@ -11,6 +11,7 @@ interface User {
   nama: string;
   email: string;
   role: string;
+  gelar?: string;
 }
 
 export default function DashboardPage() {
@@ -29,15 +30,21 @@ export default function DashboardPage() {
       return;
     }
 
-    const currentUser = JSON.parse(userData);
-    if (currentUser?.role === "admin") {
-      router.push("/admin");
+    try {
+      const currentUser: User = JSON.parse(userData);
+      if (currentUser?.role === "admin") {
+        router.push("/admin");
+        return;
+      }
+
+      setUser(currentUser);
+    } catch (err) {
+      console.error("Gagal membaca data user:", err);
+      router.push("/login");
       return;
     }
 
     async function fetchDashboardData() {
-      setUser(currentUser);
-
       try {
         const [modulesData, progressData] = await Promise.all([
           getModules(),
@@ -64,6 +71,9 @@ export default function DashboardPage() {
     return <p className="text-center mt-16 text-gray-500">Memuat dashboard...</p>;
   }
 
+  // Format Nama Lengkap beserta Gelar
+  const namaBerGelar = user.gelar ? `${user.nama}, ${user.gelar}` : user.nama;
+
   const progressPercent =
     totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
 
@@ -79,7 +89,7 @@ export default function DashboardPage() {
               Portal Pembelajaran Guru
             </div>
             <h1 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-[var(--color-navy)] tracking-normal">
-              Selamat datang kembali, {user.nama}! 👋
+              Selamat datang kembali, {namaBerGelar}! 👋
             </h1>
             <p className="text-sm text-slate-600 max-w-xl leading-relaxed">
               Pantau perkembangan modul, selesaikan refleksi pembelajaran, dan tingkatkan kompetensi Anda bersama Pancawaluya.
@@ -223,7 +233,7 @@ export default function DashboardPage() {
                   {user.nama.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">{user.nama}</h3>
+                  <h3 className="text-sm font-bold text-slate-900">{namaBerGelar}</h3>
                   <p className="text-xs text-slate-500 capitalize">{user.role} LMS</p>
                 </div>
               </div>
