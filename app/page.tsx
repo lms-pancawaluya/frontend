@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const pancawaluya = [
@@ -59,7 +60,7 @@ const pancawaluya = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen relative bg-white">
+    <div className="min-h-screen relative bg-white overflow-hidden">
       {/* Hero Section */}
       <section className="relative overflow-hidden px-6 py-20">
         
@@ -74,7 +75,22 @@ export default function HomePage() {
         />
 
         {/* Overlay Gradasi tambahan agar transisi makin menyatu dengan latar belakang */}
-        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-transparent via-white/50 to-white" />
+        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-transparent via-white/20 to-white" />
+
+        {/* ================= ELEMEN DEKORATIF HERO ================= */}
+        {/* Siku Kuning L-Shape Kiri Atas */}
+        <div className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-amber-400 rounded-tl-sm opacity-80 pointer-events-none z-0" />
+        
+        {/* Pixel Grid Kotak Biru Kiri Atas */}
+        <div className="absolute top-16 left-24 hidden lg:grid grid-cols-2 gap-2 opacity-20 pointer-events-none z-0">
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+        </div>
+
+        {/* Ring Lengkung Biru Kanan Atas Hero */}
+        <div className="absolute -top-20 -right-40 w-64 h-64 border-[20px] border-sky-400/15 rounded-full pointer-events-none z-0" />
 
         {/* Konten Hero */}
         <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
@@ -117,10 +133,13 @@ export default function HomePage() {
           {/* Kolom kanan: logo */}
           <div className="relative flex justify-center items-center animate-fade-in-delay-1">
             <div className="absolute w-72 h-72 bg-[var(--color-accent)]/20 rounded-full blur-3xl" />
-            <img
+            <Image
               src="https://disdik.jabarprov.go.id/assets/image/logo-app/Logo%20fix%20full%20color.png"
               alt="Logo Pancawaluya"
+              width={256}
+              height={256}
               className="relative w-56 h-56 md:w-64 md:h-64 object-contain"
+              priority
             />
           </div>
         </div>
@@ -128,14 +147,36 @@ export default function HomePage() {
 
       {/* 5 Nilai Pancawaluya */}
       <section className="px-6 py-20 max-w-6xl mx-auto relative z-10">
+        
+        {/* ================= ELEMEN DEKORATIF SECTION CARD ================= */}
+        {/* Lingkaran Kuning & Ring Biru Floating di Kiri Section */}
+        <div className="absolute top-1/2 -left-8 hidden xl:block pointer-events-none opacity-60 z-0">
+          <div className="w-6 h-6 bg-amber-400 rounded-full mb-3 shadow-sm" />
+          <div className="w-10 h-10 border-4 border-sky-400 rounded-full" />
+        </div>
+
+        {/* Pixel Grid Kotak Biru Kanan Section */}
+        <div className="absolute bottom-6 -right-6 hidden xl:grid grid-cols-3 gap-2 opacity-20 pointer-events-none z-0">
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+          <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
+        </div>
+
         <h2 className="font-[family-name:var(--font-display)] text-3xl font-medium text-center text-[var(--color-navy)] mb-3 animate-fade-in">
           5 Nilai Pancawaluya
         </h2>
+
+        {/* Bar Gradient Warna Identitas Disdik Jabar (Biru-Hijau-Kuning) */}
+        <div className="w-16 h-1 bg-gradient-to-r from-blue-600 via-emerald-500 to-amber-400 rounded-full mx-auto mb-4" />
+
         <p className="text-gray-500 text-center mb-12 max-w-2xl mx-auto animate-fade-in-delay-1">
           Fondasi karakter yang dikembangkan melalui platform ini.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in-delay-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 animate-fade-in-delay-2 relative z-10">
           {pancawaluya.map((item) => (
             <div
               key={item.title}
@@ -164,8 +205,16 @@ export default function HomePage() {
       </section>
 
       {/* Apa itu Pancawaluya */}
-      <section className="px-6 py-20 bg-[var(--color-pale)] relative z-10">
-        <div className="max-w-3xl mx-auto text-center animate-fade-in">
+      <section className="px-6 py-20 bg-[var(--color-pale)] relative z-10 overflow-hidden">
+        
+        {/* ================= ELEMEN DEKORATIF FOOTER SECTION ================= */}
+        {/* Siku Kuning L-Shape Kanan Bawah */}
+        <div className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-amber-400 rounded-br-sm opacity-80 pointer-events-none" />
+
+        {/* Ring Lengkung Biru Kiri Bawah */}
+        <div className="absolute -bottom-12 -left-12 w-48 h-48 border-[16px] border-sky-400/20 rounded-full pointer-events-none" />
+
+        <div className="max-w-3xl mx-auto text-center animate-fade-in relative z-10">
           <h3 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-4">
             Apa itu Pancawaluya?
           </h3>

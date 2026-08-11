@@ -11,33 +11,41 @@ interface User {
   nama: string;
   email: string;
   role: string;
+  gelar?: string;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user] = useState<User | null>(() => {
+    if (typeof window === "undefined") return null;
+
+    const userData = localStorage.getItem("user");
+    if (!userData) return null;
+
+    try {
+      return JSON.parse(userData) as User;
+    } catch {
+      return null;
+    }
+  });
   const [totalModules, setTotalModules] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
 
-    if (!token || !userData) {
+    if (!token || !user) {
       router.push("/login");
       return;
     }
 
-    const currentUser = JSON.parse(userData);
-    if (currentUser?.role === "admin") {
+    if (user.role === "admin") {
       router.push("/admin");
       return;
     }
 
     async function fetchDashboardData() {
-      setUser(currentUser);
-
       try {
         const [modulesData, progressData] = await Promise.all([
           getModules(),
@@ -57,12 +65,15 @@ export default function DashboardPage() {
       }
     }
 
-    fetchDashboardData();
-  }, [router]);
+    void fetchDashboardData();
+  }, [router, user]);
 
   if (!user) {
     return <p className="text-center mt-16 text-gray-500">Memuat dashboard...</p>;
   }
+
+  // Format Nama Lengkap beserta Gelar
+  const namaBerGelar = user.gelar ? `${user.nama}, ${user.gelar}` : user.nama;
 
   const progressPercent =
     totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
@@ -79,7 +90,7 @@ export default function DashboardPage() {
               Portal Pembelajaran Guru
             </div>
             <h1 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-[var(--color-navy)] tracking-normal">
-              Selamat datang kembali, {user.nama}! 👋
+              Selamat datang kembali, {namaBerGelar}! 👋
             </h1>
             <p className="text-sm text-slate-600 max-w-xl leading-relaxed">
               Pantau perkembangan modul, selesaikan refleksi pembelajaran, dan tingkatkan kompetensi Anda bersama Pancawaluya.
@@ -223,7 +234,7 @@ export default function DashboardPage() {
                   {user.nama.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">{user.nama}</h3>
+                  <h3 className="text-sm font-bold text-slate-900">{namaBerGelar}</h3>
                   <p className="text-xs text-slate-500 capitalize">{user.role} LMS</p>
                 </div>
               </div>
@@ -267,11 +278,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="py-6 border-t border-[var(--color-border-soft)] bg-white text-center text-xs text-slate-400 mt-12">
-        © 2026 LMS Pancawaluya. Dibuat untuk mendukung pembelajaran Guru SMA.
-      </footer>
     </div>
   );
 }
