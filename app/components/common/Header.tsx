@@ -42,7 +42,7 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-white/30 backdrop-blur-md border-b border-[var(--color-border-soft)] sticky top-0 z-50">
+    <header className="bg-white/30 backdrop-blur-md border-b border-[var(--color-border-soft)] sticky top-0 z-30">
       <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
         <Link
           href="/"
@@ -56,14 +56,14 @@ export default function Header() {
             <>
               <Link
                 href={user.role === "admin" ? "/admin" : "/dashboard"}
-                className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition"
+                className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition"
               >
                 Dashboard
               </Link>
-              <Link href="/modules" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
+              <Link href="/modules" className="text-sm text-gray-600 font-mediumhover:text-[var(--color-navy)] transition">
                 Modul
               </Link>
-              <Link href="/profile" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
+              <Link href="/profile" className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition">
                 Profil
               </Link>
               <button
@@ -75,7 +75,7 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm text-gray-600 hover:text-[var(--color-navy)] transition">
+              <Link href="/login" className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition">
                 Login
               </Link>
               <Link

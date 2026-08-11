@@ -267,11 +267,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="py-6 border-t border-[var(--color-border-soft)] bg-white text-center text-xs text-slate-400 mt-12">
-        © 2026 LMS Pancawaluya. Dibuat untuk mendukung pembelajaran Guru SMA.
-      </footer>
     </div>
   );
 }

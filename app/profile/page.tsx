@@ -1,94 +1,78 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getProfile } from "@/services/auth.service";
-
-interface User {
-  id: string;
-  nama: string;
-  email: string;
-  role: string;
-}
+import { useState, useEffect, useCallback } from "react";
+import AdminProfileView from "./AdminProfileView";
+import GuruProfileView from "./GuruProfileView";
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState("");
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchProfile() {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      try {
-        const data = await getProfile();
-        setUser(data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Gagal memuat profil.");
-        }
-      } finally {
-        setLoading(false);
-      }
+  const fetchProfile = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Token tidak ditemukan, silakan login kembali.");
+      setLoading(false);
+      return;
     }
 
+    try {
+      const res = await fetch(`${API_URL}/api/users/profile/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const json = await res.json();
+      if (json.sukses) {
+        setProfile(json.data);
+      } else {
+        setError(json.pesan || "Gagal memuat profil");
+      }
+    } catch {
+      setError("Gagal terhubung ke server");
+    } finally {
+      setLoading(false);
+    }
+  }, [API_URL]);
+
+  useEffect(() => {
     fetchProfile();
-  }, [router]);
+  }, [fetchProfile]);
 
   if (loading) {
-    return <p className="text-center mt-16">Memuat profil...</p>;
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-[var(--color-pale)]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--color-navy)]" />
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded border border-red-200">
-          {error}
+      <div className="min-h-screen flex justify-center items-center bg-[var(--color-pale)] p-4">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-md">
+          <p className="text-red-600 font-medium text-sm mb-4">{error}</p>
+          <a
+            href="/login"
+            className="inline-block bg-[var(--color-navy)] text-white text-xs font-semibold px-4 py-2 rounded-xl"
+          >
+            Kembali ke Login
+          </a>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Profil Saya</h1>
-
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
-            {user?.nama.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800">{user?.nama}</h2>
-            <span className="inline-block bg-blue-100 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full capitalize">
-              {user?.role}
-            </span>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-100 pt-4 text-sm text-gray-600 space-y-2">
-          <div className="flex justify-between">
-            <span className="font-medium">Nama Lengkap</span>
-            <span>{user?.nama}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium">Email</span>
-            <span>{user?.email}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium">Role</span>
-            <span className="capitalize">{user?.role}</span>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[var(--color-pale)] py-10 px-4">
+      {profile?.role === "admin" ? (
+        <AdminProfileView profile={profile} onRefresh={fetchProfile} />
+      ) : (
+        <GuruProfileView profile={profile} onRefresh={fetchProfile} />
+      )}
     </div>
   );
 }
