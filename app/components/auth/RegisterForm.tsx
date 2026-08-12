@@ -1,278 +1,244 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
 export default function RegisterForm() {
   const router = useRouter();
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [formData, setFormData] = useState({
     nama: "",
+    nip: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
+  // Helper untuk format otomatis NIP: YYYY-MM-DD-YYYY-MM-X-NNN
+  const formatNIP = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 18);
+    const parts = [];
+
+    if (digits.length > 0) parts.push(digits.slice(0, 4));   // Tahun Lahir (YYYY)
+    if (digits.length > 4) parts.push(digits.slice(4, 6));   // Bulan Lahir (MM)
+    if (digits.length > 6) parts.push(digits.slice(6, 8));   // Tanggal Lahir (DD)
+    if (digits.length > 8) parts.push(digits.slice(8, 12));  // Tahun TMT (YYYY)
+    if (digits.length > 12) parts.push(digits.slice(12, 14)); // Bulan TMT (MM)
+    if (digits.length > 14) parts.push(digits.slice(14, 15)); // Jenis Kelamin (X)
+    if (digits.length > 15) parts.push(digits.slice(15, 18)); // No. Urut (NNN)
+
+    return parts.join("-");
   };
 
-  const toggleConfirmPasswordVisibility = () => {
-    setShowConfirmPassword((prev) => !prev);
-  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-
-    // Reset error jika pengguna mulai mengetik ulang password / konfirmasi password
-    if (e.target.name === "password" || e.target.name === "confirmPassword") {
-      setError(null);
+    if (name === "nip") {
+      setFormData((prev) => ({ ...prev, nip: formatNIP(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
 
-    // Validasi Kesesuaian Password di Frontend
     if (formData.password !== formData.confirmPassword) {
-      setError("Konfirmasi password tidak cocok dengan password di atas.");
-      setLoading(false);
+      setError("Konfirmasi password tidak cocok.");
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch(
-        "https://backend-production-72a3.up.railway.app/api/auth/register",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            nama: formData.nama,
-            email: formData.email,
-            password: formData.password,
-            role: "guru",
-          }),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: formData.nama,
+          nip: formData.nip, // Mengirim format ber-strip atau bisa gunakan .replace(/\D/g, "") jika backend butuh angka saja
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      const data = await response.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (response.ok && data.sukses !== false) {
-        alert("Registrasi berhasil! Silakan login.");
-        router.push("/login");
-      } else {
-        setError(data.pesan || "Registrasi gagal, periksa kembali data Anda.");
+      if (!res.ok) {
+        throw new Error(data.pesan || data.message || "Gagal mendaftar. Silakan coba lagi.");
       }
-    } catch {
-      setError("Terjadi kesalahan jaringan. Silakan coba lagi nanti.");
+
+      router.push(`/otp?email=${encodeURIComponent(formData.email)}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal mendaftar. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
   };
 
-  const isPasswordMismatch =
-    formData.confirmPassword.length > 0 &&
-    formData.password !== formData.confirmPassword;
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Pesan Error Umum */}
+    <form onSubmit={handleSubmit} className="space-y-3.5">
       {error && (
-        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium leading-relaxed">
-          {error}
+        <div className="p-3 bg-rose-50 text-rose-700 border border-rose-200 text-xs rounded-xl font-medium flex items-center gap-2">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Input Nama */}
+      {/* NAMA LENGKAP */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-xs font-semibold text-slate-700 mb-1">
           Nama Lengkap
         </label>
-        <input
-          type="text"
-          name="nama"
-          value={formData.nama}
-          onChange={handleChange}
-          placeholder="Nama lengkap Anda"
-          className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] text-sm disabled:opacity-50"
-          required
-          disabled={loading}
-        />
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            name="nama"
+            required
+            value={formData.nama}
+            onChange={handleChange}
+            placeholder="Nama lengkap Anda"
+            className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition"
+          />
+        </div>
       </div>
 
-      {/* Input Email */}
+      {/* NIP (AUTO FORMATTING WITH DASHES) */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-xs font-semibold text-slate-700 mb-1">
+          NIP (Nomor Induk Pegawai)
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            name="nip"
+            maxLength={24} // 18 digit + 6 strip
+            required
+            value={formData.nip}
+            onChange={handleChange}
+            placeholder="Nomor Induk Pegawai"
+            className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition"
+          />
+        </div>
+      </div>
+
+      {/* EMAIL */}
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1">
           Email
         </label>
-        <input
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="nama@email.com"
-          className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] text-sm disabled:opacity-50"
-          required
-          disabled={loading}
-        />
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <input
+            type="email"
+            name="email"
+            required
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="nama@gmail.com"
+            className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition"
+          />
+        </div>
       </div>
 
-      {/* Input Password */}
+      {/* PASSWORD */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-xs font-semibold text-slate-700 mb-1">
           Password
         </label>
         <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
           <input
             type={showPassword ? "text" : "password"}
             name="password"
+            required
             value={formData.password}
             onChange={handleChange}
             placeholder="Buat password"
-            className="w-full px-4 py-2.5 pr-11 rounded-xl border border-[var(--color-border-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] text-sm disabled:opacity-50"
-            required
-            disabled={loading}
+            className="w-full pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition"
           />
           <button
             type="button"
-            onClick={togglePasswordVisibility}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none p-1 transition-colors"
-            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-            disabled={loading}
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition"
           >
-            {showPassword ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.8}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
-                />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.8}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M2.036 12c1.274 4.057 5.065 7 9.542 7 4.477 0 8.268-2.943 9.542-7-1.274-4.057-5.065-7-9.542-7-4.477 0-8.268 2.943-9.542 7z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            )}
+            {showPassword ? "Sembunyi" : "Lihat"}
           </button>
         </div>
       </div>
 
-      {/* Input Konfirmasi Password */}
+      {/* KONFIRMASI PASSWORD */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-xs font-semibold text-slate-700 mb-1">
           Konfirmasi Password
         </label>
         <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
           <input
             type={showConfirmPassword ? "text" : "password"}
             name="confirmPassword"
+            required
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Ulangi password Anda"
-            className={`w-full px-4 py-2.5 pr-11 rounded-xl border text-sm focus:outline-none focus:ring-2 disabled:opacity-50 transition-colors ${
-              isPasswordMismatch
-                ? "border-rose-400 focus:ring-rose-400 bg-rose-50/30"
-                : "border-[var(--color-border-soft)] focus:ring-[var(--color-accent)]"
-            }`}
-            required
-            disabled={loading}
+            className="w-full pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition"
           />
           <button
             type="button"
-            onClick={toggleConfirmPasswordVisibility}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none p-1 transition-colors"
-            aria-label={showConfirmPassword ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"}
-            disabled={loading}
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition"
           >
-            {showConfirmPassword ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.8}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
-                />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.8}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M2.036 12c1.274 4.057 5.065 7 9.542 7 4.477 0 8.268-2.943 9.542-7-1.274-4.057-5.065-7-9.542-7-4.477 0-8.268 2.943-9.542 7z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            )}
+            {showConfirmPassword ? "Sembunyi" : "Lihat"}
           </button>
         </div>
-        {/* Teks Peringatan Real-time saat mengetik */}
-        {isPasswordMismatch && (
-          <p className="mt-1.5 text-xs text-rose-600 font-medium">
-            Password tidak cocok!
-          </p>
-        )}
       </div>
 
-      {/* Tombol Submit */}
       <button
         type="submit"
-        disabled={loading || isPasswordMismatch}
-        className="w-full bg-[var(--color-navy)] text-white font-medium py-2.5 rounded-xl hover:opacity-90 transition shadow-sm mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+        disabled={loading}
+        className="w-full bg-[var(--color-navy)] text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:cursor-not-allowed mt-2"
       >
-        {loading ? "Memproses..." : "Daftar"}
+        {loading ? (
+          <>
+            <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <span>Mendaftarkan...</span>
+          </>
+        ) : (
+          "Daftar"
+        )}
       </button>
     </form>
   );
