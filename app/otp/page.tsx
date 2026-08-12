@@ -3,13 +3,17 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+
+// Konfigurasi URL Backend Railway
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
 function OtpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(60);
@@ -28,7 +32,6 @@ function OtpContent() {
   }, [timer]);
 
   const handleChange = (index: number, value: string) => {
-    // Jika user mengetik angka 1 digit
     const digitOnly = value.replace(/\D/g, "");
     if (!digitOnly && value !== "") return;
 
@@ -37,7 +40,6 @@ function OtpContent() {
     setOtp(newOtp);
     setError(null);
 
-    // Otomatis pindah fokus ke kotak berikutnya
     if (digitOnly && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -49,11 +51,9 @@ function OtpContent() {
     }
   };
 
-  // Handler Khusus Copy & Paste OTP
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData("text");
-    // Hapus semua karakter selain angka & ambil maksimal 6 digit
     const digitsOnly = pastedText.replace(/\D/g, "").slice(0, 6);
 
     if (digitsOnly.length > 0) {
@@ -65,7 +65,6 @@ function OtpContent() {
       setOtp(newOtp);
       setError(null);
 
-      // Arahkan kursor ke kotak sesuai jumlah angka yang di-paste
       const nextFocusIndex = Math.min(digitsOnly.length, 5);
       inputRefs.current[nextFocusIndex]?.focus();
     }
@@ -83,15 +82,17 @@ function OtpContent() {
     setError(null);
 
     try {
-      const res = await fetch("/api/auth/verify-otp", {
+      // Menembak langsung ke Backend Railway
+      const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: code }),
+        body: JSON.stringify({ email, otpCode: code }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Kode OTP salah atau telah kadaluwarsa.");
+        throw new Error(data.pesan || data.message || "Kode OTP salah atau telah kadaluwarsa.");
       }
 
       router.push("/login?verified=true");
@@ -109,7 +110,8 @@ function OtpContent() {
     setError(null);
 
     try {
-      await fetch("/api/auth/resend-otp", {
+      // Menembak langsung ke Backend Railway
+      await fetch(`${API_URL}/api/auth/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -120,13 +122,13 @@ function OtpContent() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white/90 rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-10">
+    <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20">
       <div className="text-center mb-6">
         <div className="inline-block bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-3 py-1 rounded-full mb-3 border border-[var(--color-border-soft)]">
           Pancawaluya
         </div>
 
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)]">
+        <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight">
           Verifikasi Kode OTP
         </h1>
 
@@ -166,9 +168,35 @@ function OtpContent() {
         <button
           type="submit"
           disabled={loading || otp.join("").length < 6}
-          className="w-full bg-[var(--color-navy)] text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+          className="w-full bg-[var(--color-navy)] text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:cursor-not-allowed"
         >
-          {loading ? "Memverifikasi..." : "Verifikasi OTP"}
+          {loading ? (
+            <>
+              <svg
+                className="animate-spin h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span>Memverifikasi...</span>
+            </>
+          ) : (
+            "Verifikasi OTP"
+          )}
         </button>
       </form>
 
@@ -202,12 +230,25 @@ function OtpContent() {
 export default function OtpPage() {
   return (
     <div className="min-h-[calc(100vh-140px)] flex items-center justify-center bg-[var(--color-pale)] px-4 py-10 relative overflow-hidden">
-      {/* ELEMEN DEKORATIF BACKGROUND */}
-      <div className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-amber-400 rounded-tl-sm opacity-80 pointer-events-none" />
-      <div className="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-amber-400 rounded-bl-sm opacity-80 pointer-events-none" />
-      <div className="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-amber-400 rounded-tr-sm opacity-80 pointer-events-none" />
+      {/* BACKGROUND GAMBAR SAMAR */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-15 mix-blend-multiply">
+        <Image
+          src="/bg-classroom.jpg"
+          alt="Classroom Background"
+          fill
+          priority
+          className="object-cover object-center grayscale-[20%]"
+        />
+      </div>
 
-      <div className="absolute top-12 right-16 hidden sm:grid grid-cols-3 gap-2 opacity-25 pointer-events-none">
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-[var(--color-pale)] via-transparent to-[var(--color-pale)] opacity-80 pointer-events-none" />
+
+      {/* ELEMEN DEKORATIF BACKGROUND */}
+      <div className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-amber-400 rounded-tl-sm opacity-80 pointer-events-none z-10" />
+      <div className="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-amber-400 rounded-bl-sm opacity-80 pointer-events-none z-10" />
+      <div className="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-amber-400 rounded-tr-sm opacity-80 pointer-events-none z-10" />
+
+      <div className="absolute top-12 right-16 hidden sm:grid grid-cols-3 gap-2 opacity-25 pointer-events-none z-10">
         <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
         <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
         <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
@@ -216,14 +257,14 @@ export default function OtpPage() {
         <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
       </div>
 
-      <div className="absolute -bottom-16 -right-16 w-72 h-72 border-[24px] border-sky-400/20 rounded-full pointer-events-none" />
+      <div className="absolute -bottom-16 -right-16 w-72 h-72 border-[24px] border-sky-400/20 rounded-full pointer-events-none z-10" />
 
-      <div className="absolute top-1/3 left-12 hidden md:block pointer-events-none opacity-70">
+      <div className="absolute top-1/3 left-12 hidden md:block pointer-events-none opacity-70 z-10">
         <div className="w-7 h-7 bg-amber-400 rounded-full mb-4 shadow-sm" />
         <div className="w-12 h-12 border-4 border-sky-500 rounded-full" />
       </div>
 
-      <div className="absolute bottom-16 left-20 hidden md:grid grid-cols-2 gap-2 opacity-20 pointer-events-none">
+      <div className="absolute bottom-16 left-20 hidden md:grid grid-cols-2 gap-2 opacity-20 pointer-events-none z-10">
         <div className="w-6 h-6 bg-sky-500 rounded-md"></div>
         <div className="w-6 h-6 bg-sky-500 rounded-md"></div>
         <div className="w-6 h-6 bg-sky-500 rounded-md"></div>
@@ -231,7 +272,7 @@ export default function OtpPage() {
       </div>
 
       {/* CARD UTAMA OTP */}
-      <Suspense fallback={<p className="text-sm text-slate-500">Memuat halaman OTP...</p>}>
+      <Suspense fallback={<p className="text-sm text-slate-500 z-20">Memuat halaman OTP...</p>}>
         <OtpContent />
       </Suspense>
     </div>
