@@ -60,7 +60,10 @@ export default function Header() {
               >
                 Dashboard
               </Link>
-              <Link href="/modules" className="text-sm text-gray-600 font-mediumhover:text-[var(--color-navy)] transition">
+              <Link
+                href={user.role === "admin" ? "/admin/modules" : "/modules"}
+                className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition"
+              >
                 Modul
               </Link>
               <Link href="/profile" className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition">

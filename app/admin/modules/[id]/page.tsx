@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, updateModule, getModuleContents } from "@/services/module.service";
-import { deleteContent } from "@/services/content.service";
+import { deleteContent, updateContent } from "@/services/content.service";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer"];
 
@@ -33,6 +33,18 @@ export default function EditModulePage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [savingContent, setSavingContent] = useState(false);
+  const [contentMessage, setContentMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [editContentData, setEditContentData] = useState({
+    judul: "",
+    tipe: "teks",
+    konten: "",
+    urutan: 1,
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -110,6 +122,58 @@ export default function EditModulePage() {
       }
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  function handleOpenEditContent(content: ContentItem) {
+    setContentMessage(null);
+    setEditingContentId(content.id);
+    setEditContentData({
+      judul: content.judul,
+      tipe: content.tipe,
+      konten: content.konten,
+      urutan: content.urutan,
+    });
+  }
+
+  function handleEditContentChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) {
+    const { name, value } = e.target;
+    setEditContentData((prev) => ({
+      ...prev,
+      [name]: name === "urutan" ? Number(value) : value,
+    }));
+  }
+
+  async function handleUpdateContent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingContentId) return;
+
+    setSavingContent(true);
+    setContentMessage(null);
+
+    try {
+      const updatedContent = await updateContent(editingContentId, editContentData);
+      setContents((prev) =>
+        prev.map((content) =>
+          content.id === editingContentId
+            ? { ...content, ...editContentData, ...updatedContent }
+            : content
+        )
+      );
+      setEditingContentId(null);
+      setContentMessage({
+        type: "success",
+        text: "Konten berhasil diperbarui.",
+      });
+    } catch (err) {
+      setContentMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Gagal memperbarui konten.",
+      });
+    } finally {
+      setSavingContent(false);
     }
   }
 
@@ -214,28 +278,132 @@ return (
         <p className="text-sm text-gray-500">Belum ada konten untuk modul ini.</p>
       ) : (
         <div className="flex flex-col gap-3">
-          {contents
+          {contentMessage && (
+            <div
+              className={`text-sm px-3 py-2 rounded-lg border ${
+                contentMessage.type === "success"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-red-50 text-red-600 border-red-200"
+              }`}
+            >
+              {contentMessage.text}
+            </div>
+          )}
+
+          {[...contents]
             .sort((a, b) => a.urutan - b.urutan)
             .map((content) => (
               <div
                 key={content.id}
-                className="border border-[var(--color-border-soft)] rounded-xl p-4 flex justify-between items-center"
+                className="border border-[var(--color-border-soft)] rounded-xl p-4"
               >
-                <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    {content.judul}
-                  </p>
-                  <span className="text-xs text-gray-400 capitalize">
-                    {content.tipe} • urutan {content.urutan}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleDeleteContent(content.id, content.judul)}
-                  disabled={deletingId === content.id}
-                  className="text-red-600 text-sm hover:underline disabled:text-gray-400"
-                >
-                  {deletingId === content.id ? "Menghapus..." : "Hapus"}
-                </button>
+                {editingContentId === content.id ? (
+                  <form onSubmit={handleUpdateContent} className="flex flex-col gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">
+                        Judul Konten
+                      </label>
+                      <input
+                        type="text"
+                        name="judul"
+                        value={editContentData.judul}
+                        onChange={handleEditContentChange}
+                        className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">
+                        Tipe Konten
+                      </label>
+                      <select
+                        name="tipe"
+                        value={editContentData.tipe}
+                        onChange={handleEditContentChange}
+                        className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+                      >
+                        <option value="teks">Teks</option>
+                        <option value="video">Video (YouTube)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">
+                        {editContentData.tipe === "video" ? "Link Video YouTube" : "Isi Konten"}
+                      </label>
+                      <textarea
+                        name="konten"
+                        value={editContentData.konten}
+                        onChange={handleEditContentChange}
+                        className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+                        rows={editContentData.tipe === "video" ? 2 : 6}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">
+                        Urutan
+                      </label>
+                      <input
+                        type="number"
+                        name="urutan"
+                        value={editContentData.urutan}
+                        onChange={handleEditContentChange}
+                        className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+                        min={1}
+                        required
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditingContentId(null)}
+                        disabled={savingContent}
+                        className="text-sm text-gray-500 hover:underline disabled:text-gray-400"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={savingContent}
+                        className="bg-[var(--color-navy)] text-white text-sm px-4 py-2 rounded-full font-medium hover:opacity-90 transition disabled:bg-gray-400"
+                      >
+                        {savingContent ? "Menyimpan..." : "Simpan Perubahan"}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex justify-between items-center gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">
+                        {content.judul}
+                      </p>
+                      <span className="text-xs text-gray-400 capitalize">
+                        {content.tipe} • urutan {content.urutan}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleOpenEditContent(content)}
+                        disabled={savingContent || deletingId === content.id}
+                        className="text-blue-600 text-sm hover:underline disabled:text-gray-400"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteContent(content.id, content.judul)}
+                        disabled={deletingId === content.id || savingContent}
+                        className="text-red-600 text-sm hover:underline disabled:text-gray-400"
+                      >
+                        {deletingId === content.id ? "Menghapus..." : "Hapus"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
         </div>
