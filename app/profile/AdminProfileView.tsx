@@ -20,7 +20,6 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
 
   const [formData, setFormData] = useState({
     nama: profile.nama || "",
-    email: profile.email || "",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -46,7 +45,9 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          nama: formData.nama,
+        }),
       });
 
       const json = await res.json();
@@ -192,10 +193,9 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Email</label>
                 <input
                   type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-purple-500 outline-none"
+                  value={profile.email}
+                  disabled
+                  className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-500 cursor-not-allowed outline-none"
                 />
               </div>
               <div className="pt-2 flex justify-end">
