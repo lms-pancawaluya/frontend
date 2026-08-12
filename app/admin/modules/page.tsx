@@ -122,9 +122,12 @@ export default function AdminModulesPage() {
             .map((mod) => (
               <div
                 key={mod.id}
-                className="border border-[var(--color-border-soft)] rounded-2xl p-5 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                className="border border-[var(--color-border-soft)] rounded-2xl p-5 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-md transition"
               >
-                <div className="flex-1 min-w-0">
+                <Link
+                  href={`/admin/modules/${mod.id}`}
+                  className="flex-1 min-w-0 cursor-pointer"
+                >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs text-gray-400">#{mod.urutan}</span>
                     <span
@@ -141,9 +144,9 @@ export default function AdminModulesPage() {
                     <span>{mod._count.contents} konten</span>
                     <span>{mod._count.evaluations} evaluasi</span>
                   </div>
-                </div>
+                </Link>
 
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                   <Link
                     href={`/admin/modules/${mod.id}`}
                     className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
