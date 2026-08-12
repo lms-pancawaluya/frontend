@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent } from "react";
+import { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import Image from "next/image";
+import { formatNipDisplay } from "@/lib/formatNip";
 
 interface ProgressItem {
   status: string;
@@ -21,6 +22,7 @@ interface GuruProfileProps {
     gelar?: string;
     nip?: string;
     sekolah?: string;
+    alamatSekolah?: string;
     noHp?: string;
     fotoProfil?: string;
     progress?: ProgressItem[];
@@ -28,7 +30,121 @@ interface GuruProfileProps {
   onRefresh: () => void;
 }
 
-// Daftar Gelar Akademik Guru
+interface SekolahData {
+  nama: string;
+  alamat: string;
+}
+
+// Data Kabupaten/Kota & Sekolah di Jawa Barat beserta Alamatnya
+const DATA_SEKOLAH_JABAR: Record<string, SekolahData[]> = {
+  "Kota Bandung": [
+    { nama: "SMA Negeri 1 Bandung", alamat: "Jl. Ir. H. Juanda No.93, Lb. Siliwangi, Kec. Coblong, Kota Bandung" },
+    { nama: "SMA Negeri 2 Bandung", alamat: "Jl. Cihampelas No.173, Cipaganti, Kec. Coblong, Kota Bandung" },
+    { nama: "SMA Negeri 3 Bandung", alamat: "Jl. Belitung No.8, Merdeka, Kec. Sumur Bandung, Kota Bandung" },
+    { nama: "SMA Negeri 4 Bandung", alamat: "Jl. Gardujati No.20, Kebon Jeruk, Kec. Andir, Kota Bandung" },
+    { nama: "SMA Negeri 5 Bandung", alamat: "Jl. Belitung No.8, Merdeka, Kec. Sumur Bandung, Kota Bandung" },
+    { nama: "SMA Negeri 8 Bandung", alamat: "Jl. Solontongan No.3, Turangga, Kec. Lengkong, Kota Bandung" },
+    { nama: "SMA Negeri 11 Bandung", alamat: "Jl. Kembar VII No.9, Cigereleng, Kec. Regol, Kota Bandung" },
+    { nama: "SMK Negeri 1 Bandung", alamat: "Jl. Wastukencana No.3, Babakan Ciamis, Kec. Sumur Bandung, Kota Bandung" },
+    { nama: "SMK Negeri 3 Bandung", alamat: "Jl. Solontongan No.10, Turangga, Kec. Lengkong, Kota Bandung" },
+  ],
+  "Kab. Bandung": [
+    { nama: "SMA Negeri 1 Baleendah", alamat: "Jl. R.A.A. Wiranatakoesoemah No.30, Baleendah, Kab. Bandung" },
+    { nama: "SMA Negeri 1 Katapang", alamat: "Jl. Terusan Kopo KM.12.5, Katapang, Kab. Bandung" },
+    { nama: "SMA Negeri 1 Margahayu", alamat: "Jl. KH. Wahid Hasyim No.387, Sulaiman, Kec. Margahayu, Kab. Bandung" },
+    { nama: "SMA Negeri 1 Cileunyi", alamat: "Jl. Stasiun Cimekar, Cileunyi, Kab. Bandung" },
+  ],
+  "Kab. Bandung Barat": [
+    { nama: "SMA Negeri 1 Lembang", alamat: "Jl. Raya Lembang No.137, Lembang, Kab. Bandung Barat" },
+    { nama: "SMA Negeri 1 Padalarang", alamat: "Jl. Perintis Kemerdekaan No.2, Padalarang, Kab. Bandung Barat" },
+    { nama: "SMA Negeri 1 Cisarua", alamat: "Jl. Kolonel Masturi No.64, Cisarua, Kab. Bandung Barat" },
+  ],
+  "Kota Cimahi": [
+    { nama: "SMA Negeri 1 Cimahi", alamat: "Jl. Pasir Kumeli No.1, Pasirkaliki, Kec. Cimahi Utara, Kota Cimahi" },
+    { nama: "SMA Negeri 2 Cimahi", alamat: "Jl. Sriwijaya No.32, Setiamanah, Kec. Cimahi Tengah, Kota Cimahi" },
+    { nama: "SMA Negeri 3 Cimahi", alamat: "Jl. Pesantren No.108, Cibabat, Kec. Cimahi Utara, Kota Cimahi" },
+  ],
+  "Kota Bogor": [
+    { nama: "SMA Negeri 1 Bogor", alamat: "Jl. Ir. H. Juanda No.16, Paledang, Kec. Bogor Tengah, Kota Bogor" },
+    { nama: "SMA Negeri 2 Bogor", alamat: "Jl. Keranji No.1, Budi Agung, Kec. Tanah Sereal, Kota Bogor" },
+    { nama: "SMA Negeri 3 Bogor", alamat: "Jl. Pakuan No.4, Baranangsiang, Kec. Bogor Timur, Kota Bogor" },
+  ],
+  "Kab. Bogor": [
+    { nama: "SMA Negeri 1 Cibinong", alamat: "Jl. Mayor Oking Jaya Atmaja No.73, Cibinong, Kab. Bogor" },
+    { nama: "SMA Negeri 1 Ciawi", alamat: "Jl. Raya Tapos No.63, Ciawi, Kab. Bogor" },
+  ],
+  "Kota Depok": [
+    { nama: "SMA Negeri 1 Depok", alamat: "Jl. Nusantara Raya No.317, Depok Jaya, Kec. Pancoran Mas, Kota Depok" },
+    { nama: "SMA Negeri 2 Depok", alamat: "Jl. Limo Raya No.1, Limo, Kota Depok" },
+  ],
+  "Kota Bekasi": [
+    { nama: "SMA Negeri 1 Bekasi", alamat: "Jl. KH. Agus Salim No.181, Bekasi Timur, Kota Bekasi" },
+    { nama: "SMA Negeri 2 Bekasi", alamat: "Jl. Tangkuban Perahu Raya No.1, Kayuringin Jaya, Kota Bekasi" },
+  ],
+  "Kab. Bekasi": [
+    { nama: "SMA Negeri 1 Cikarang Pusat", alamat: "Jl. Komplek Pemda Kab. Bekasi, Sukamahi, Cikarang Pusat" },
+    { nama: "SMA Negeri 1 Cikarang Utara", alamat: "Jl. Fatahillah No.1, Cikarang Utara, Kab. Bekasi" },
+  ],
+  "Kota Sukabumi": [
+    { nama: "SMA Negeri 1 Sukabumi", alamat: "Jl. R.E. Martadinata No.166, Cikole, Kota Sukabumi" },
+    { nama: "SMA Negeri 2 Sukabumi", alamat: "Jl. Karamat No.93, Karamat, Kec. Gunungpuruh, Kota Sukabumi" },
+  ],
+  "Kab. Sukabumi": [
+    { nama: "SMA Negeri 1 Cibadak", alamat: "Jl. Siliwangi No.123, Cibadak, Kab. Sukabumi" },
+    { nama: "SMA Negeri 1 Palabuhanratu", alamat: "Jl. Raya Cisolok KM.1, Palabuhanratu, Kab. Sukabumi" },
+  ],
+  "Kab. Cianjur": [
+    { nama: "SMA Negeri 1 Cianjur", alamat: "Jl. Pangeran Hidayatullah No.42, Skanagara, Kab. Cianjur" },
+    { nama: "SMA Negeri 2 Cianjur", alamat: "Jl. Didi Prawiranataku No.1, Cianjur, Kab. Cianjur" },
+  ],
+  "Kab. Karawang": [
+    { nama: "SMA Negeri 1 Karawang", alamat: "Jl. Ahmad Yani No.22, Nagasari, Kec. Karawang Barat, Kab. Karawang" },
+    { nama: "SMA Negeri 2 Karawang", alamat: "Jl. Laks. L RE. Martadinata No.3, Karawang Barat, Kab. Karawang" },
+  ],
+  "Kab. Purwakarta": [
+    { nama: "SMA Negeri 1 Purwakarta", alamat: "Jl. KK Singawinata No.83, Nagri Tengah, Kab. Purwakarta" },
+  ],
+  "Kab. Subang": [
+    { nama: "SMA Negeri 1 Subang", alamat: "Jl. Ki Hajar Dewantara No.14, Karanganyar, Kab. Subang" },
+  ],
+  "Kab. Sumedang": [
+    { nama: "SMA Negeri 1 Sumedang", alamat: "Jl. Prabu Geusan Ulun No.39, Regol Wetan, Kab. Sumedang" },
+  ],
+  "Kab. Garut": [
+    { nama: "SMA Negeri 1 Garut", alamat: "Jl. Merdeka No.91, Jayaraga, Kec. Tarogong Kidul, Kab. Garut" },
+  ],
+  "Kota Tasikmalaya": [
+    { nama: "SMA Negeri 1 Tasikmalaya", alamat: "Jl. Rumah Sakit No.28, Empangsari, Kec. Tawang, Kota Tasikmalaya" },
+  ],
+  "Kab. Tasikmalaya": [
+    { nama: "SMA Negeri 1 Singaparna", alamat: "Jl. Pahlawan KHZ. Musthafa, Singaparna, Kab. Tasikmalaya" },
+  ],
+  "Kab. Ciamis": [
+    { nama: "SMA Negeri 1 Ciamis", alamat: "Jl. Gunung Galunggung No.37, Ciamis, Kab. Ciamis" },
+  ],
+  "Kota Banjar": [
+    { nama: "SMA Negeri 1 Banjar", alamat: "Jl. KH. Mustofa No.1, Banjar, Kota Banjar" },
+  ],
+  "Kab. Pangandaran": [
+    { nama: "SMA Negeri 1 Pangandaran", alamat: "Jl. Merdeka No.182, Pananjung, Kab. Pangandaran" },
+  ],
+  "Kota Cirebon": [
+    { nama: "SMA Negeri 1 Cirebon", alamat: "Jl. Wahidin Sudirohusodo No.81, Kejaksan, Kota Cirebon" },
+  ],
+  "Kab. Cirebon": [
+    { nama: "SMA Negeri 1 Sumber", alamat: "Jl. Sultan Agung No.2, Sumber, Kab. Cirebon" },
+  ],
+  "Kab. Indramayu": [
+    { nama: "SMA Negeri 1 Indramayu", alamat: "Jl. Soekarno Hatta No.2, Indramayu, Kab. Indramayu" },
+  ],
+  "Kab. Majalengka": [
+    { nama: "SMA Negeri 1 Majalengka", alamat: "Jl. KH. Abdul Halim No.50, Majalengka, Kab. Majalengka" },
+  ],
+  "Kab. Kuningan": [
+    { nama: "SMA Negeri 1 Kuningan", alamat: "Jl. Siliwangi No.55, Kuningan, Kab. Kuningan" },
+  ],
+};
+
 const DAFTAR_GELAR = [
   "",
   "S.Pd.",
@@ -50,13 +166,17 @@ const DAFTAR_GELAR = [
 
 const getProfileFormData = (profile: GuruProfileProps["profile"]) => {
   let currentGelar = profile.gelar;
-  if (!currentGelar && typeof window !== "undefined") {
+  let currentNip = profile.nip;
+
+  if (typeof window !== "undefined") {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       try {
-        currentGelar = JSON.parse(savedUser).gelar || "";
+        const parsed = JSON.parse(savedUser);
+        if (!currentGelar) currentGelar = parsed.gelar || "";
+        if (!currentNip) currentNip = parsed.nip || "";
       } catch {
-        currentGelar = "";
+        // Abaikan error parse JSON jika terjadi masalah
       }
     }
   }
@@ -65,8 +185,9 @@ const getProfileFormData = (profile: GuruProfileProps["profile"]) => {
     nama: profile.nama || "",
     gelar: currentGelar || "",
     email: profile.email || "",
-    nip: profile.nip || "",
+    nip: currentNip || "",
     sekolah: profile.sekolah || "",
+    alamatSekolah: profile.alamatSekolah || "",
     noHp: profile.noHp || "",
   };
 };
@@ -76,6 +197,8 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
   const getToken = () => localStorage.getItem("token") || "";
 
   const [formData, setFormData] = useState(() => getProfileFormData(profile));
+  const [selectedDaerah, setSelectedDaerah] = useState<string>("");
+  const [ketikManual, setKetikManual] = useState<boolean>(false);
 
   const [passwordData, setPasswordData] = useState({
     passwordLama: "",
@@ -87,27 +210,65 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Format Nama Lengkap Beserta Gelar
+  // Cari daerah dan alamat sekolah saat awal memuat profil
+  useEffect(() => {
+    const initialData = getProfileFormData(profile);
+    setFormData(initialData);
+
+    const currentSchool = profile.sekolah || "";
+    if (currentSchool) {
+      let foundDaerah = "";
+      let foundAlamat = profile.alamatSekolah || "";
+
+      for (const [daerah, listSekolah] of Object.entries(DATA_SEKOLAH_JABAR)) {
+        const item = listSekolah.find((s) => s.nama === currentSchool);
+        if (item) {
+          foundDaerah = daerah;
+          if (!foundAlamat) foundAlamat = item.alamat;
+          break;
+        }
+      }
+
+      if (foundDaerah) {
+        setSelectedDaerah(foundDaerah);
+        setFormData((prev) => ({ ...prev, alamatSekolah: foundAlamat }));
+        setKetikManual(false);
+      } else {
+        setKetikManual(true);
+      }
+    }
+  }, [profile]);
+
   const namaLengkapBerGelar = formData.gelar 
     ? `${formData.nama}, ${formData.gelar}` 
     : formData.nama;
 
-  // Handler NIP: Hanya angka & maksimal 18 digit
-  const handleNipChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "").slice(0, 18);
-    setFormData((prev) => ({ ...prev, nip: value }));
-  };
-
-  // Handler No HP: Hanya angka & maksimal 13 digit
   const handleNoHpChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 13);
     setFormData((prev) => ({ ...prev, noHp: value }));
   };
 
+  const handleDaerahChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const daerah = e.target.value;
+    setSelectedDaerah(daerah);
+    setFormData((prev) => ({ ...prev, sekolah: "", alamatSekolah: "" }));
+  };
+
+  const handleSekolahSelect = (e: ChangeEvent<HTMLSelectElement>) => {
+    const namaSekolah = e.target.value;
+    const listSekolah = DATA_SEKOLAH_JABAR[selectedDaerah] || [];
+    const itemTarget = listSekolah.find((s) => s.nama === namaSekolah);
+
+    setFormData((prev) => ({
+      ...prev,
+      sekolah: namaSekolah,
+      alamatSekolah: itemTarget ? itemTarget.alamat : "",
+    }));
+  };
+
   const handleUpdateProfile = async (e: FormEvent) => {
     e.preventDefault();
 
-    // 1. Validasi Form
     if (!formData.nama.trim()) {
       setMessage({ type: "error", text: "Mohon lengkapi form Nama Lengkap" });
       return;
@@ -116,12 +277,8 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
       setMessage({ type: "error", text: "Mohon lengkapi form Email" });
       return;
     }
-    if (!formData.nip.trim()) {
-      setMessage({ type: "error", text: "Mohon lengkapi form NIP" });
-      return;
-    }
     if (!formData.sekolah.trim()) {
-      setMessage({ type: "error", text: "Mohon lengkapi form Sekolah" });
+      setMessage({ type: "error", text: "Mohon pilih atau isi asal Sekolah Anda" });
       return;
     }
     if (!formData.noHp.trim()) {
@@ -129,7 +286,6 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
       return;
     }
 
-    // 2. Validasi Format Email
     if (!formData.email.trim().toLowerCase().endsWith("@gmail.com")) {
       setMessage({
         type: "error",
@@ -138,16 +294,6 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
       return;
     }
 
-    // 3. Validasi NIP
-    if (formData.nip.length !== 18) {
-      setMessage({
-        type: "error",
-        text: "NIP harus berjumlah 18 digit angka",
-      });
-      return;
-    }
-
-    // 4. Validasi No HP
     if (!formData.noHp.startsWith("08")) {
       setMessage({
         type: "error",
@@ -178,7 +324,6 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
 
       const json = await res.json();
 
-      // Selalu simpan ke localStorage sebagai cadangan persistence
       const existingUser = localStorage.getItem("user");
       const parsedUser = existingUser ? JSON.parse(existingUser) : {};
       const updatedUser = {
@@ -188,6 +333,7 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
         email: formData.email,
         nip: formData.nip,
         sekolah: formData.sekolah,
+        alamatSekolah: formData.alamatSekolah,
         noHp: formData.noHp,
       };
       localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -228,7 +374,7 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
         setMessage({ type: "error", text: json.pesan || "Gagal mengubah password" });
       }
     } catch {
-      setMessage({ type: "error", text: "Terjadi kesalahan" });
+      setMessage({ type: "error", text: "Terjadi kesalahan koneksi" });
     } finally {
       setSavingPassword(false);
     }
@@ -322,7 +468,7 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
             <div className="text-left space-y-1 text-sm">
               <p className="font-semibold text-slate-800">{namaLengkapBerGelar}</p>
               <p className="text-xs text-gray-500">{profile.email}</p>
-              <p className="text-xs text-gray-500">{profile.sekolah || "Sekolah Belum Diatur"}</p>
+              <p className="text-xs text-gray-500">{formData.sekolah || "Sekolah Belum Diatur"}</p>
             </div>
           </div>
 
@@ -346,12 +492,10 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
 
         {/* Kolom Kanan - Form Utama */}
         <div className="md:col-span-2 space-y-6">
-          {/* Form Informasi Pribadi */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
             <h2 className="text-lg font-bold text-[var(--color-navy)] mb-4">Informasi Pribadi</h2>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="grid sm:grid-cols-3 gap-4">
-                {/* Input Nama Lengkap */}
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap</label>
                   <input
@@ -364,7 +508,6 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
                   />
                 </div>
 
-                {/* Dropdown List Gelar Guru */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">Gelar (Pilihan)</label>
                   <select
@@ -394,46 +537,130 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
                     className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">NIP (Maks. 18 Angka)</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">NIP (Nomor Induk Pegawai)</label>
                   <input
                     type="text"
-                    inputMode="numeric"
-                    maxLength={18}
-                    value={formData.nip}
-                    onChange={handleNipChange}
-                    placeholder="198501012010011001"
-                    required
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+                    value={formatNipDisplay(formData.nip)}
+                    disabled
+                    readOnly
+                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-500 cursor-not-allowed outline-none select-none font-mono"
                   />
+                  <p className="text-[11px] text-slate-400 mt-1">NIP bersifat permanen dan tidak dapat diubah.</p>
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Sekolah</label>
-                  <input
-                    type="text"
-                    value={formData.sekolah}
-                    onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
-                    placeholder="SMA Negeri 1 Bandung"
-                    required
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
-                  />
+              {/* SECTION PILIH KOTA, SEKOLAH, & ALAMAT JAWA BARAT */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+                <div className="flex justify-between items-center">
+                  <label className="block text-xs font-bold text-slate-700">Asal Sekolah (Jawa Barat)</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setKetikManual(!ketikManual);
+                      setSelectedDaerah("");
+                      setFormData((prev) => ({ ...prev, sekolah: "", alamatSekolah: "" }));
+                    }}
+                    className="text-[11px] text-sky-600 hover:underline font-semibold"
+                  >
+                    {ketikManual ? "Pilih dari List Sekolah" : "Sekolah tidak ada di list? Ketik manual"}
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nomor HP (08xx, Maks 13 Angka)</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={13}
-                    value={formData.noHp}
-                    onChange={handleNoHpChange}
-                    placeholder="081234567890"
-                    required
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
-                  />
-                </div>
+
+                {!ketikManual ? (
+                  <div className="space-y-3">
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {/* Filter Kota / Kabupaten */}
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">Kabupaten / Kota</label>
+                        <select
+                          value={selectedDaerah}
+                          onChange={handleDaerahChange}
+                          className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-slate-700"
+                        >
+                          <option value="">-- Pilih Kab/Kota --</option>
+                          {Object.keys(DATA_SEKOLAH_JABAR).map((kota, idx) => (
+                            <option key={idx} value={kota}>
+                              {kota}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* List Sekolah Sesuai Daerah */}
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nama Sekolah</label>
+                        <select
+                          value={formData.sekolah}
+                          disabled={!selectedDaerah}
+                          onChange={handleSekolahSelect}
+                          className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                        >
+                          <option value="">-- Pilih Sekolah --</option>
+                          {selectedDaerah &&
+                            DATA_SEKOLAH_JABAR[selectedDaerah]?.map((s, idx) => (
+                              <option key={idx} value={s.nama}>
+                                {s.nama}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Field Alamat Otomatis */}
+                    {formData.alamatSekolah && (
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">Alamat Sekolah (Otomatis)</label>
+                        <textarea
+                          value={formData.alamatSekolah}
+                          readOnly
+                          rows={2}
+                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-600 outline-none resize-none cursor-not-allowed"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Form Input Manual */
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nama Sekolah</label>
+                      <input
+                        type="text"
+                        value={formData.sekolah}
+                        onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
+                        placeholder="Contoh: SMA Negeri 1 Bandung"
+                        required
+                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Alamat Sekolah</label>
+                      <input
+                        type="text"
+                        value={formData.alamatSekolah}
+                        onChange={(e) => setFormData({ ...formData, alamatSekolah: e.target.value })}
+                        placeholder="Masukkan jalan, kecamatan, kabupaten/kota"
+                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Nomor HP (08xx, Maks 13 Angka)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={13}
+                  value={formData.noHp}
+                  onChange={handleNoHpChange}
+                  placeholder="081234567890"
+                  required
+                  className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+                />
               </div>
 
               <div className="pt-2 flex justify-end">

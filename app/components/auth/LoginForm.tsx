@@ -24,7 +24,28 @@ export default function LoginForm() {
       const data = await loginUser(email, password);
       console.log("2. Login berhasil, data diterima:", data);
 
-      if (data.user.role === "admin") {
+      // 🟢 SOLUSI UTAMA: Simpan data user LENGKAP ke localStorage (Termasuk NIP)
+      if (data && data.user) {
+        const userDataToSave = {
+          id: data.user.id || "",
+          nama: data.user.nama || "",
+          email: data.user.email || "",
+          role: data.user.role || "",
+          gelar: data.user.gelar || null,
+          nip: data.user.nip || "", // 👈 Pastikan NIP tersimpan ke localStorage
+          sekolah: data.user.sekolah || "",
+          noHp: data.user.noHp || "",
+        };
+
+        localStorage.setItem("user", JSON.stringify(userDataToSave));
+        
+        // Simpan token jika ada di respon
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+        }
+      }
+
+      if (data?.user?.role === "admin") {
         console.log("3. Redirect ke /admin");
         router.push("/admin");
       } else {
@@ -60,7 +81,7 @@ export default function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 text-sm"
-          placeholder="nama@gmail.com"
+          placeholder="guru@gmail.com"
           required
         />
       </div>
