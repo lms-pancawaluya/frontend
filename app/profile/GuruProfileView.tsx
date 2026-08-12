@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent, useEffect } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
 import { formatNipDisplay } from "@/lib/formatNip";
 
@@ -192,13 +192,70 @@ const getProfileFormData = (profile: GuruProfileProps["profile"]) => {
   };
 };
 
-export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps) {
+const getInitialProfileState = (profile: GuruProfileProps["profile"]) => {
+  const initialData = getProfileFormData(profile);
+  const currentSchool = profile.sekolah || "";
+
+  if (!currentSchool) {
+    return {
+      formData: initialData,
+      selectedDaerah: "",
+      ketikManual: false,
+    };
+  }
+
+  let foundDaerah = "";
+  let foundAlamat = profile.alamatSekolah || "";
+
+  for (const [daerah, listSekolah] of Object.entries(DATA_SEKOLAH_JABAR)) {
+    const item = listSekolah.find((s) => s.nama === currentSchool);
+    if (item) {
+      foundDaerah = daerah;
+      if (!foundAlamat) foundAlamat = item.alamat;
+      break;
+    }
+  }
+
+  if (foundDaerah) {
+    return {
+      formData: { ...initialData, alamatSekolah: foundAlamat },
+      selectedDaerah: foundDaerah,
+      ketikManual: false,
+    };
+  }
+
+  return {
+    formData: initialData,
+    selectedDaerah: "",
+    ketikManual: true,
+  };
+};
+
+const getProfileStateKey = (profile: GuruProfileProps["profile"]) =>
+  JSON.stringify({
+    id: profile.id,
+    nama: profile.nama,
+    email: profile.email,
+    gelar: profile.gelar,
+    nip: profile.nip,
+    sekolah: profile.sekolah,
+    alamatSekolah: profile.alamatSekolah,
+    noHp: profile.noHp,
+    fotoProfil: profile.fotoProfil,
+  });
+
+export default function GuruProfileView(props: GuruProfileProps) {
+  return <GuruProfileViewContent key={getProfileStateKey(props.profile)} {...props} />;
+}
+
+function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
   const getToken = () => localStorage.getItem("token") || "";
 
-  const [formData, setFormData] = useState(() => getProfileFormData(profile));
-  const [selectedDaerah, setSelectedDaerah] = useState<string>("");
-  const [ketikManual, setKetikManual] = useState<boolean>(false);
+  const [initialProfileState] = useState(() => getInitialProfileState(profile));
+  const [formData, setFormData] = useState(initialProfileState.formData);
+  const [selectedDaerah, setSelectedDaerah] = useState<string>(initialProfileState.selectedDaerah);
+  const [ketikManual, setKetikManual] = useState<boolean>(initialProfileState.ketikManual);
 
   const [passwordData, setPasswordData] = useState({
     passwordLama: "",
@@ -209,35 +266,6 @@ export default function GuruProfileView({ profile, onRefresh }: GuruProfileProps
   const [savingPassword, setSavingPassword] = useState(false);
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  // Cari daerah dan alamat sekolah saat awal memuat profil
-  useEffect(() => {
-    const initialData = getProfileFormData(profile);
-    setFormData(initialData);
-
-    const currentSchool = profile.sekolah || "";
-    if (currentSchool) {
-      let foundDaerah = "";
-      let foundAlamat = profile.alamatSekolah || "";
-
-      for (const [daerah, listSekolah] of Object.entries(DATA_SEKOLAH_JABAR)) {
-        const item = listSekolah.find((s) => s.nama === currentSchool);
-        if (item) {
-          foundDaerah = daerah;
-          if (!foundAlamat) foundAlamat = item.alamat;
-          break;
-        }
-      }
-
-      if (foundDaerah) {
-        setSelectedDaerah(foundDaerah);
-        setFormData((prev) => ({ ...prev, alamatSekolah: foundAlamat }));
-        setKetikManual(false);
-      } else {
-        setKetikManual(true);
-      }
-    }
-  }, [profile]);
 
   const namaLengkapBerGelar = formData.gelar 
     ? `${formData.nama}, ${formData.gelar}` 

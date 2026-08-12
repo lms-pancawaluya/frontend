@@ -51,8 +51,8 @@ export default function LoginForm() {
 
       // Gunakan window.location.href agar middleware dipaksa membaca cookie baru tanpa race condition
       window.location.href = redirectPath;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal masuk. Periksa kembali akun Anda.");
       setLoading(false);
     }
   };

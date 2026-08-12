@@ -75,8 +75,8 @@ export default function RegisterForm() {
       }
 
       router.push(`/otp?email=${encodeURIComponent(formData.email)}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal mendaftar. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
