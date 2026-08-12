@@ -12,7 +12,15 @@ interface UserItem {
   role: string;
   createdAt: string;
   modulSelesai: number;
+  status?: string;
 }
+
+const statusColor: Record<string, string> = {
+  aktif: "bg-green-100 text-green-700",
+  nonaktif: "bg-gray-100 text-gray-600",
+  pensiun: "bg-amber-100 text-amber-700",
+  wafat: "bg-red-100 text-red-700",
+};
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -102,11 +110,12 @@ return (
         <table className="w-full text-sm">
           <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Nama</th>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Email</th>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Role</th>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Modul Selesai</th>
-              <th className="text-right px-4 py-3 font-medium text-[var(--color-navy)]">Aksi</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Nama</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Email</th>
+              <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Role</th>
+              <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Modul Selesai</th>
+              <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Status</th>
+              <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -114,7 +123,7 @@ return (
               <tr key={u.id} className="border-b border-[var(--color-border-soft)] last:border-0">
                 <td className="px-4 py-3 text-gray-800">{u.nama}</td>
                 <td className="px-4 py-3 text-gray-600">{u.email}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-center">
                   <span
                     className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
                       u.role === "admin"
@@ -125,12 +134,25 @@ return (
                     {u.role}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{u.modulSelesai}</td>
+                <td className="px-4 py-3 text-gray-600 text-center">{u.modulSelesai}</td>
+                <td className="px-4 py-3 text-center">
+                  {u.status ? (
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
+                        statusColor[u.status] || "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {u.status}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   {u.role === "admin" ? (
-                    <span className="text-xs text-gray-400 block text-right">—</span>
+                    <span className="text-xs text-gray-400 block text-center">—</span>
                   ) : (
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex gap-2 justify-center">
                       <Link
                         href={`/admin/users/${u.id}`}
                         className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
