@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUsers } from "@/services/user.service";
+import Link from "next/link";
+import { getUsers, deleteUser } from "@/services/user.service";
 
 interface UserItem {
   id: string;
@@ -18,6 +19,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -52,6 +54,26 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [router]);
 
+  async function handleDelete(id: string, nama: string) {
+    const confirmed = window.confirm(`Yakin ingin menghapus akun guru "${nama}"?`);
+    if (!confirmed) return;
+
+    setDeletingId(id);
+
+    try {
+      await deleteUser(id);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("Gagal menghapus pengguna.");
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (loading) {
   return <p className="text-center mt-16 text-gray-500">Memuat data pengguna...</p>;
 }
@@ -84,6 +106,7 @@ return (
               <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Email</th>
               <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Role</th>
               <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)]">Modul Selesai</th>
+              <th className="text-right px-4 py-3 font-medium text-[var(--color-navy)]">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -103,6 +126,27 @@ return (
                   </span>
                 </td>
                 <td className="px-4 py-3 text-gray-600">{u.modulSelesai}</td>
+                <td className="px-4 py-3">
+                  {u.role === "admin" ? (
+                    <span className="text-xs text-gray-400 block text-right">—</span>
+                  ) : (
+                    <div className="flex gap-2 justify-end">
+                      <Link
+                        href={`/admin/users/${u.id}`}
+                        className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(u.id, u.nama)}
+                        disabled={deletingId === u.id}
+                        className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
+                      >
+                        {deletingId === u.id ? "Menghapus..." : "Hapus"}
+                      </button>
+                    </div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
