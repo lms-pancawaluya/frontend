@@ -1,103 +1,138 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
+// Helper internal untuk menyusun header request & Authorization token
+function getHeaders() {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+// ----------------------------------------------------
+// FITUR EVALUASI HALAMAN GURU
+// ----------------------------------------------------
+
+/**
+ * Get daftar evaluasi berdasarkan ID Modul
+ */
 export async function getModuleEvaluations(moduleId) {
-  const token = localStorage.getItem("token");
-
   const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: getHeaders(),
   });
 
   const result = await response.json();
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal mengambil daftar evaluasi");
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal mengambil daftar evaluasi");
   }
 
   return result.data;
 }
 
-export async function getEvaluationDetail(evaluationId) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`${API_URL}/api/evaluations/${evaluationId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+/**
+ * Get detail evaluasi & daftar soal
+ * URL: GET /api/modules/:moduleId/evaluations/:evaluationId
+ */
+export async function getEvaluationDetail(moduleId, evaluationId) {
+  const response = await fetch(
+    `${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}`,
+    {
+      method: "GET",
+      headers: getHeaders(),
+    }
+  );
 
   const result = await response.json();
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal mengambil detail evaluasi");
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal mengambil detail evaluasi");
   }
 
   return result.data;
 }
 
-export async function submitEvaluation(evaluationId, jawaban) {
-  const token = localStorage.getItem("token");
+/**
+ * Submit jawaban evaluasi modul
+ * URL: POST /api/modules/:moduleId/evaluations/:evaluationId/submit
+ */
+export async function submitEvaluation(moduleId, evaluationId, jawaban) {
+  const response = await fetch(
+    `${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/submit`,
+    {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ jawaban }),
+    }
+  );
 
-  const response = await fetch(`${API_URL}/api/evaluations/${evaluationId}/submit`, {
+  const result = await response.json();
+
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal mengirim jawaban evaluasi");
+  }
+
+  return result.data;
+}
+
+/**
+ * Kirim saran & kritik per modul oleh Guru
+ * URL: POST /api/feedbacks/module/:moduleId
+ */
+export async function sendModuleFeedback(moduleId, payload) {
+  const response = await fetch(`${API_URL}/api/feedbacks/module/${moduleId}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ jawaban }),
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
   });
 
   const result = await response.json();
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal mengirim jawaban evaluasi");
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal mengirim saran dan kritik");
   }
 
   return result.data;
 }
 
+// ----------------------------------------------------
+// FITUR MANAGEMENT EVALUASI (ADMIN / AUTHORING)
+// ----------------------------------------------------
+
+/**
+ * Buat evaluasi baru di dalam modul
+ */
 export async function createEvaluation(moduleId, judul) {
-  const token = localStorage.getItem("token");
-
   const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: getHeaders(),
     body: JSON.stringify({ judul }),
   });
 
   const result = await response.json();
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal membuat evaluasi");
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal membuat evaluasi");
   }
 
   return result.data;
 }
 
+/**
+ * Tambah soal ke dalam evaluasi
+ */
 export async function addQuestion(evaluationId, questionData) {
-  const token = localStorage.getItem("token");
-
   const response = await fetch(`${API_URL}/api/evaluations/${evaluationId}/questions`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: getHeaders(),
     body: JSON.stringify(questionData),
   });
 
   const result = await response.json();
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal menambahkan soal");
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal menambahkan soal");
   }
 
   return result.data;
