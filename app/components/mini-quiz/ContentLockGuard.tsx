@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LockStatusResponse } from "@/types/miniQuiz";
+
+const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
 
 interface ContentLockGuardProps {
   contentId: string;
@@ -9,64 +10,55 @@ interface ContentLockGuardProps {
   children: React.ReactNode;
 }
 
-const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
-
 export const ContentLockGuard: React.FC<ContentLockGuardProps> = ({
   contentId,
   authToken,
   children,
 }) => {
-  const [isLocked, setIsLocked] = useState<boolean | null>(null);
-  const [reason, setReason] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState<boolean>(false);
+  const [reason, setReason] = useState<string>("");
+  const [checking, setChecking] = useState<boolean>(true);
 
   useEffect(() => {
-    const checkLock = async () => {
-      // Fallback jika token kosong agar UI tidak hang
-      if (!authToken) {
-        console.warn("Token belum tersedia di LocalStorage.");
-        setIsLocked(false);
-        return;
-      }
+    if (!contentId) return;
 
+    const checkLock = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/mini-quizzes/check-lock/${contentId}`, {
-          headers: { Authorization: `Bearer ${authToken}` },
+        const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${contentId}/check-lock`, {
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
         });
-        const json: LockStatusResponse = await res.json();
-        
-        if (json.sukses) {
+        const json = await res.json();
+
+        if (json.sukses && json.data) {
           setIsLocked(json.data.isLocked);
-          setReason(json.data.alasan);
-        } else {
-          setIsLocked(false);
+          setReason(json.data.alasan || "Selesaikan materi sebelumnya untuk membuka materi ini.");
         }
       } catch (err) {
-        console.error("Gagal mengecek penguncian materi:", err);
-        setIsLocked(false); // Buka akses jika API error/unreachable
+        console.error("Gagal memeriksa status kuncian materi:", err);
+      } finally {
+        setChecking(false);
       }
     };
 
-    if (contentId) {
-      checkLock();
-    }
+    checkLock();
   }, [contentId, authToken]);
 
-  if (isLocked === null) {
-    return <div className="p-12 text-center text-slate-500 text-sm">Mengecek akses materi...</div>;
+  if (checking) {
+    return (
+      <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500 font-medium">
+        Memeriksa akses materi...
+      </div>
+    );
   }
 
   if (isLocked) {
     return (
-      <div className="p-8 max-w-md mx-auto my-8 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-3">
-        <div className="w-10 h-10 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center mx-auto">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 002-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+      <div className="p-8 bg-slate-900 border border-slate-800 rounded-2xl text-center space-y-3">
+        <div className="w-12 h-12 bg-slate-800 text-amber-400 rounded-full flex items-center justify-center mx-auto text-xl">
+          🔒
         </div>
-        <h3 className="text-base font-bold text-slate-800">Materi Terkunci</h3>
-        <p className="text-xs text-slate-600 leading-relaxed">
-          {reason || "Selesaikan mini quiz pada materi sebelumnya untuk mengakses materi ini."}
-        </p>
+        <h4 className="text-base font-bold text-white">Materi Ini Terkunci</h4>
+        <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">{reason}</p>
       </div>
     );
   }

@@ -1,289 +1,400 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { QuizScoreScreen, QuizAttemptResult } from "./QuizScoreScreen";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 
 const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
 
-// Helper untuk mengubah link YouTube biasa/shortlink ke format Embed YouTube
-function getYouTubeEmbedUrl(url: string): string | null {
-  if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11
-    ? `https://www.youtube.com/embed/${match[2]}?enablejsapi=1`
-    : null;
-}
-
 interface Option {
   id: string;
-  teks: string;
+  teksOpsi: string;
 }
 
 interface Question {
   id: string;
   pertanyaan: string;
-  pilihan: Option[] | string[];
+  options: Option[];
 }
 
-interface MiniQuizData {
+interface MiniQuiz {
   id: string;
-  contentId: string;
+  judul: string;
   timestampSeconds: number;
-  judul?: string;
-  soal: Question[];
+  passingScore: number;
+  maxAttempts: number;
+  questions: Question[];
+}
+
+interface AttemptResult {
+  skor: number;
+  isLolos: boolean;
+  passingScore: number;
+  sisaPercobaan: number;
+  mustRepeat: boolean;
+  benar?: number;
+  totalSoal?: number;
 }
 
 interface VideoPlayerWithQuizProps {
   videoUrl: string;
   contentId: string;
   authToken: string;
-  onNextContent?: () => void;
+}
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
 }
 
 export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
   videoUrl,
   contentId,
   authToken,
-  onNextContent,
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const [quizData, setQuizData] = useState<MiniQuizData | null>(null);
-  const [hasPassedBefore, setHasPassedBefore] = useState<boolean>(false);
-  const [quizTriggered, setQuizTriggered] = useState<boolean>(false);
-  const [showQuizModal, setShowQuizModal] = useState<boolean>(false);
-
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
+  const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
+  const [activeQuiz, setActiveQuiz] = useState<MiniQuiz | null>(null);
+  
+  // Quiz Form & Submission
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [attemptResult, setAttemptResult] = useState<AttemptResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [quizResult, setQuizResult] = useState<QuizAttemptResult | null>(null);
 
-  const youtubeEmbedUrl = getYouTubeEmbedUrl(videoUrl);
+  // YouTube Player Ref
+  const playerRef = useRef<any>(null);
+  const iframeContainerRef = useRef<HTMLDivElement>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Fetch data Mini Quiz & Cek Attempt Sebelumnya
+  // Extract YouTube Video ID
+  const getYoutubeId = (url: string) => {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]+)/);
+    return match ? match[1] : "";
+  };
+
+  const videoId = getYoutubeId(videoUrl);
+
+  // 1. Fetch Mini Quizzes & Initial Attempt History
   useEffect(() => {
     if (!contentId) return;
 
-    const fetchQuizAndAttempts = async () => {
+    const fetchQuizzesAndAttempts = async () => {
       try {
-        const headers: HeadersInit = {};
-        if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
-
         const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${contentId}`, {
-          headers,
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
         });
+        const json = await res.json();
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json.sukses && json.data) {
-            const quiz: MiniQuizData = json.data;
-            setQuizData(quiz);
+        if (json.sukses && json.data && Array.isArray(json.data)) {
+          const quizzes: MiniQuiz[] = json.data.sort(
+            (a: MiniQuiz, b: MiniQuiz) => a.timestampSeconds - b.timestampSeconds
+          );
+          setMiniQuizzes(quizzes);
 
-            if (authToken && quiz.id) {
-              const attemptRes = await fetch(
-                `${API_BASE_URL}/mini-quizzes/${quiz.id}/my-attempts`,
-                { headers }
-              );
-              if (attemptRes.ok) {
-                const attemptJson = await attemptRes.json();
-                if (attemptJson.sukses && attemptJson.data?.isLolos) {
-                  setHasPassedBefore(true);
-                }
+          // Check previous attempts for each quiz
+          const passedIds: string[] = [];
+          for (const q of quizzes) {
+            try {
+              const attRes = await fetch(`${API_BASE_URL}/mini-quizzes/${q.id}/my-attempts`, {
+                headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+              });
+              const attJson = await attRes.json();
+              if (attJson.sukses && attJson.data?.isLolos) {
+                passedIds.push(q.id);
               }
+            } catch (err) {
+              console.error(`Error checking attempts for quiz ${q.id}:`, err);
             }
           }
+          setAnsweredQuizIds(passedIds);
         }
-      } catch (error) {
-        console.error("Gagal mengambil data mini quiz:", error);
+      } catch (err) {
+        console.error("Gagal memuat mini quiz:", err);
       }
     };
 
-    fetchQuizAndAttempts();
+    fetchQuizzesAndAttempts();
   }, [contentId, authToken]);
 
-  // Handler untuk video HTML5 biasa (.mp4)
-  const handleTimeUpdate = () => {
-    if (!videoRef.current || !quizData || quizTriggered || hasPassedBefore) return;
+  // 2. Setup YouTube Player API & Time Listener
+  const checkTimeAndTriggerQuiz = useCallback(
+    (currentTime: number) => {
+      if (activeQuiz) return;
 
-    const currentTime = videoRef.current.currentTime;
-    if (currentTime >= quizData.timestampSeconds) {
-      videoRef.current.pause();
-      setQuizTriggered(true);
-      setShowQuizModal(true);
+      const currentSecond = Math.floor(currentTime);
+      const quizToTrigger = miniQuizzes.find(
+        (quiz) =>
+          quiz.timestampSeconds === currentSecond &&
+          !answeredQuizIds.includes(quiz.id)
+      );
+
+      if (quizToTrigger) {
+        if (playerRef.current && typeof playerRef.current.pauseVideo === "function") {
+          playerRef.current.pauseVideo();
+        }
+        setActiveQuiz(quizToTrigger);
+        setUserAnswers({});
+        setAttemptResult(null);
+      }
+    },
+    [activeQuiz, miniQuizzes, answeredQuizIds]
+  );
+
+  useEffect(() => {
+    if (!videoId) return;
+
+    const initPlayer = () => {
+      if (playerRef.current) return;
+
+      playerRef.current = new window.YT.Player(`yt-player-${contentId}`, {
+        videoId: videoId,
+        events: {
+          onStateChange: (event: any) => {
+            // YT.PlayerState.PLAYING === 1
+            if (event.data === 1) {
+              if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+              timerIntervalRef.current = setInterval(() => {
+                if (playerRef.current && typeof playerRef.current.getCurrentTime === "function") {
+                  const time = playerRef.current.getCurrentTime();
+                  checkTimeAndTriggerQuiz(time);
+                }
+              }, 500);
+            } else {
+              if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            }
+          },
+        },
+      });
+    };
+
+    if (!window.YT) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      window.onYouTubeIframeAPIReady = () => initPlayer();
+    } else {
+      initPlayer();
     }
-  };
 
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, [videoId, contentId, checkTimeAndTriggerQuiz]);
+
+  // 3. Handle Answer Selection
   const handleSelectOption = (questionId: string, optionId: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: optionId,
-    }));
+    setUserAnswers((prev) => ({ ...prev, [questionId]: optionId }));
   };
 
-  const handleSubmitQuiz = async () => {
-    if (!quizData) return;
+  // 4. Submit Quiz Handler
+  const handleSubmitQuiz = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeQuiz) return;
+
+    // Build payload
+    const jawabanPayload = Object.entries(userAnswers).map(([questionId, optionId]) => ({
+      questionId,
+      optionId,
+    }));
+
+    if (jawabanPayload.length < activeQuiz.questions.length) {
+      alert("Mohon jawab semua pertanyaan terlebih dahulu!");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      const payload = {
-        jawaban: Object.entries(answers).map(([questionId, optionId]) => ({
-          questionId,
-          optionId,
-        })),
-      };
-
-      const res = await fetch(`${API_BASE_URL}/mini-quizzes/${quizData.id}/attempt`, {
+      const res = await fetch(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}/attempt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ jawaban: jawabanPayload }),
       });
 
       const json = await res.json();
-
       if (json.sukses && json.data) {
-        const data = json.data;
-        const result: QuizAttemptResult = {
-          skor: data.skor,
-          isLolos: data.isLolos,
-          passingScore: data.passingScore || 80,
-          sisaPercobaan: data.sisaPercobaan,
-          mustRepeat: data.mustRepeat,
-          pesan: json.pesan,
-        };
+        setAttemptResult(json.data);
 
-        setQuizResult(result);
-
-        if (data.isLolos) {
-          setHasPassedBefore(true);
+        if (json.data.isLolos) {
+          setAnsweredQuizIds((prev) => [...prev, activeQuiz.id]);
         }
       } else {
         alert(json.pesan || "Gagal mengirim jawaban.");
       }
-    } catch (error) {
-      console.error("Error submit quiz:", error);
+    } catch (err) {
+      console.error("Submit quiz error:", err);
       alert("Terjadi kesalahan koneksi saat mengirim jawaban.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleNext = () => {
-    setShowQuizModal(false);
-    if (onNextContent) {
-      onNextContent();
-    } else if (videoRef.current) {
-      videoRef.current.play();
+  // 5. Action Handlers for Score Screen
+  const handleContinueVideo = () => {
+    setActiveQuiz(null);
+    setAttemptResult(null);
+    if (playerRef.current && typeof playerRef.current.playVideo === "function") {
+      playerRef.current.playVideo();
     }
   };
 
-  const handleRetry = () => {
-    setQuizResult(null);
-    setAnswers({});
+  const handleRetryQuiz = () => {
+    setUserAnswers({});
+    setAttemptResult(null);
   };
 
-  const handleRepeatVideo = () => {
-    setQuizResult(null);
-    setAnswers({});
-    setQuizTriggered(false);
-    setShowQuizModal(false);
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play();
+  const handleWatchFromBeginning = () => {
+    setActiveQuiz(null);
+    setAttemptResult(null);
+    setUserAnswers({});
+    if (playerRef.current && typeof playerRef.current.seekTo === "function") {
+      playerRef.current.seekTo(0, true);
+      playerRef.current.playVideo();
     }
   };
 
   return (
-    <div className="relative w-full space-y-4">
-      {/* Pemutar Video */}
-      <div className="relative bg-black rounded-xl overflow-hidden aspect-video shadow-md">
-        {youtubeEmbedUrl ? (
-          <iframe
-            src={youtubeEmbedUrl}
-            title="YouTube Video Player"
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        ) : (
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            controls
-            onTimeUpdate={handleTimeUpdate}
-            className="w-full h-full object-contain"
-          >
-            Browser Anda tidak mendukung tag video.
-          </video>
-        )}
-      </div>
+    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-md border border-slate-200">
+      {/* Video Container */}
+      <div id={`yt-player-${contentId}`} className="w-full h-full" ref={iframeContainerRef} />
 
-      {/* Pop-up Modal Kuis & Halaman Skor */}
-      {showQuizModal && quizData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="border-b border-slate-100 pb-3">
-              <span className="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-full">
-                Mini Quiz
-              </span>
-              <h3 className="text-lg font-bold text-slate-800 mt-2">
-                {quizData.judul || "Uji Pemahaman Materi"}
-              </h3>
-            </div>
+      {/* POP-UP MODAL KUIS */}
+      {activeQuiz && (
+        <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-200">
+            
+            {!attemptResult ? (
+              /* FORM PERTANYAAN */
+              <form onSubmit={handleSubmitQuiz} className="space-y-5">
+                <div className="border-b border-slate-100 pb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
+                    Mini Quiz Pop-Up
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-800 mt-1">{activeQuiz.judul}</h3>
+                  <p className="text-xs text-slate-500">
+                    Batas Lulus: {activeQuiz.passingScore}% | Maksimal Percobaan: {activeQuiz.maxAttempts}x
+                  </p>
+                </div>
 
-            {!quizResult ? (
-              <div className="space-y-6">
-                {quizData.soal.map((q, idx) => (
-                  <div key={q.id || idx} className="space-y-3">
-                    <p className="text-sm font-semibold text-slate-800">
-                      {idx + 1}. {q.pertanyaan}
-                    </p>
-                    <div className="space-y-2">
-                      {q.pilihan.map((opt: any, optIdx: number) => {
-                        const optionId = typeof opt === "string" ? String(optIdx) : opt.id;
-                        const optionText = typeof opt === "string" ? opt : opt.teks;
-
-                        return (
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                  {activeQuiz.questions.map((q, idx) => (
+                    <div key={q.id} className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-sm font-semibold text-slate-800">
+                        {idx + 1}. {q.pertanyaan}
+                      </p>
+                      <div className="space-y-1.5 pt-1">
+                        {q.options.map((opt) => (
                           <label
-                            key={optionId || optIdx}
-                            className={`flex items-center gap-3 p-3 rounded-lg border text-sm cursor-pointer transition-all ${
-                              answers[q.id] === optionId
-                                ? "border-indigo-600 bg-indigo-50/50 text-indigo-900 font-medium"
-                                : "border-slate-200 hover:bg-slate-50 text-slate-700"
+                            key={opt.id}
+                            className={`flex items-start gap-3 p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
+                              userAnswers[q.id] === opt.id
+                                ? "bg-emerald-50 border-emerald-500 text-emerald-900 font-medium"
+                                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
                             }`}
                           >
                             <input
                               type="radio"
                               name={`question-${q.id}`}
-                              checked={answers[q.id] === optionId}
-                              onChange={() => handleSelectOption(q.id, optionId)}
-                              className="text-indigo-600 focus:ring-indigo-500"
+                              value={opt.id}
+                              checked={userAnswers[q.id] === opt.id}
+                              onChange={() => handleSelectOption(q.id, opt.id)}
+                              className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
                             />
-                            <span>{optionText}</span>
+                            <span>{opt.teksOpsi}</span>
                           </label>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
 
                 <button
-                  onClick={handleSubmitQuiz}
-                  disabled={isSubmitting || Object.keys(answers).length < quizData.soal.length}
-                  className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-100"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-200"
                 >
                   {isSubmitting ? "Mengirim Jawaban..." : "Submit Jawaban"}
                 </button>
-              </div>
+              </form>
             ) : (
-              <QuizScoreScreen
-                result={quizResult}
-                onNext={handleNext}
-                onRetry={handleRetry}
-                onRepeatVideo={handleRepeatVideo}
-              />
+              /* HALAMAN SKOR (SCORE SCREEN) */
+              <div className="text-center space-y-5 py-2">
+                {/* KONDISI A: LULUS */}
+                {attemptResult.isLolos && (
+                  <>
+                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                      ✓
+                    </div>
+                    <div>
+                      <span className="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                        Lulus
+                      </span>
+                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2">
+                        Selamat! Kamu telah berhasil melampaui passing grade ({attemptResult.passingScore}%).
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleContinueVideo}
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-200"
+                    >
+                      Lanjut ke Materi Selanjutnya
+                    </button>
+                  </>
+                )}
+
+                {/* KONDISI B: GAGAL MASIH ADA KESEMPATAN */}
+                {!attemptResult.isLolos && !attemptResult.mustRepeat && (
+                  <>
+                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                      !
+                    </div>
+                    <div>
+                      <span className="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                        Belum Lulus
+                      </span>
+                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2">
+                        Skor minimal lulus adalah {attemptResult.passingScore}%. Sisa kesempatan kamu:{" "}
+                        <span className="font-bold text-amber-600">{attemptResult.sisaPercobaan} kali</span>.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRetryQuiz}
+                      className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-amber-200"
+                    >
+                      Coba Lagi
+                    </button>
+                  </>
+                )}
+
+                {/* KONDISI C: GAGAL 3X (KESEMPATAN HABIS) */}
+                {!attemptResult.isLolos && attemptResult.mustRepeat && (
+                  <>
+                    <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                      ✕
+                    </div>
+                    <div>
+                      <span className="inline-block bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                        Kesempatan Habis
+                      </span>
+                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                        Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleWatchFromBeginning}
+                      className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-200"
+                    >
+                      Tonton Ulang Materi
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>
