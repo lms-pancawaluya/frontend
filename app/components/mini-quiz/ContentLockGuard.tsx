@@ -21,27 +21,38 @@ export const ContentLockGuard: React.FC<ContentLockGuardProps> = ({
 
   useEffect(() => {
     const checkLock = async () => {
+      // Fallback jika token kosong agar UI tidak hang
+      if (!authToken) {
+        console.warn("Token belum tersedia di LocalStorage.");
+        setIsLocked(false);
+        return;
+      }
+
       try {
         const res = await fetch(`${API_BASE_URL}/mini-quizzes/check-lock/${contentId}`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
         const json: LockStatusResponse = await res.json();
+        
         if (json.sukses) {
           setIsLocked(json.data.isLocked);
           setReason(json.data.alasan);
+        } else {
+          setIsLocked(false);
         }
       } catch (err) {
         console.error("Gagal mengecek penguncian materi:", err);
+        setIsLocked(false); // Buka akses jika API error/unreachable
       }
     };
 
-    if (contentId && authToken) {
+    if (contentId) {
       checkLock();
     }
   }, [contentId, authToken]);
 
   if (isLocked === null) {
-    return <div className="p-6 text-center text-slate-500 text-sm">Mengecek akses materi...</div>;
+    return <div className="p-12 text-center text-slate-500 text-sm">Mengecek akses materi...</div>;
   }
 
   if (isLocked) {
