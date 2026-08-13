@@ -57,6 +57,8 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
   }, [contentId, authToken]);
 
   useEffect(() => {
+    // Effect ini memang mengambil data eksternal lalu menyinkronkan state komponen.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchQuizzesAndHistory();
   }, [fetchQuizzesAndHistory]);
 

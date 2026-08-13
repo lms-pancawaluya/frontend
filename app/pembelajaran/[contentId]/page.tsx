@@ -12,15 +12,16 @@ export default function PembelajaranPage() {
   const contentId = params?.contentId as string;
 
   const [videoUrl, setVideoUrl] = useState<string>("");
-  const [authToken, setAuthToken] = useState<string>("");
+  const [authToken] = useState<string>(() => {
+    return (
+      localStorage.getItem("token") || localStorage.getItem("authToken") || ""
+    );
+  });
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Ambil token dari localStorage
-    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || "";
-    setAuthToken(token);
-
     if (!contentId) return;
+    const token = authToken;
 
     const fetchContent = async () => {
       try {
@@ -41,7 +42,7 @@ export default function PembelajaranPage() {
     };
 
     fetchContent();
-  }, [contentId]);
+  }, [contentId, authToken]);
 
   if (loading) {
     return (

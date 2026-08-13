@@ -4,19 +4,26 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getModuleContents } from "@/services/module.service";
 
+interface ModuleContent {
+  id?: string;
+  judul?: string;
+  tipe?: string;
+  konten?: string;
+}
+
 export default function ModuleTextPage() {
   const params = useParams();
   const router = useRouter();
   const moduleId = params.id as string;
 
-  const [textContent, setTextContent] = useState<any>(null);
+  const [textContent, setTextContent] = useState<ModuleContent | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadText() {
       try {
-        const contents = await getModuleContents(moduleId);
-        const txt = contents.find((c: any) => c.tipe === "teks" || c.tipe === "text");
+        const contents = (await getModuleContents(moduleId)) as ModuleContent[];
+        const txt = contents.find((c) => c.tipe === "teks" || c.tipe === "text");
         setTextContent(txt || contents[0]);
       } catch (err) {
         console.error(err);

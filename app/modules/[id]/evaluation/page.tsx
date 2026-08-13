@@ -4,6 +4,11 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { completeModule } from "@/services/progress.service";
 
+interface ScoreResult {
+  skor: number;
+  isLolos: boolean;
+}
+
 export default function ModuleEvaluationPage() {
   const params = useParams();
   const router = useRouter();
@@ -12,7 +17,7 @@ export default function ModuleEvaluationPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState({ kritik: "", saran: "" });
   const [submitted, setSubmitted] = useState(false);
-  const [scoreResult, setScoreResult] = useState<any>(null);
+  const [scoreResult, setScoreResult] = useState<ScoreResult | null>(null);
 
   // Mock evaluasi pilihan ganda
   const sampleQuestions = [
@@ -142,7 +147,7 @@ export default function ModuleEvaluationPage() {
                 <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full uppercase tracking-wider">
                   Selesai & Lolos
                 </span>
-                <h2 className="text-3xl font-black text-slate-900">Skor Evaluasi: {scoreResult.skor}</h2>
+                <h2 className="text-3xl font-black text-slate-900">Skor Evaluasi: {scoreResult?.skor}</h2>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   Selamat! Anda telah menyelesaikan seluruh tahapan pembelajaran dalam modul ini dengan sukses.
                 </p>
@@ -163,7 +168,7 @@ export default function ModuleEvaluationPage() {
                 <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-3 py-1 rounded-full uppercase tracking-wider">
                   Belum Lolos
                 </span>
-                <h2 className="text-3xl font-black text-slate-900">Skor Evaluasi: {scoreResult.skor}</h2>
+                <h2 className="text-3xl font-black text-slate-900">Skor Evaluasi: {scoreResult?.skor}</h2>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   Skor minimal lulus adalah 80%. Silakan pelajari ulang materi video dari awal untuk dapat mengulang evaluasi.
                 </p>

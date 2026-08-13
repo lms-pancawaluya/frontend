@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getModuleById } from "@/services/module.service";
 
+interface ModuleDetail {
+  kategori?: string;
+  judul?: string;
+  deskripsi?: string;
+}
+
 export default function ModuleDetailPage() {
   const params = useParams();
   const router = useRouter();
   const moduleId = params.id as string;
 
-  const [moduleData, setModuleData] = useState<any>(null);
+  const [moduleData, setModuleData] = useState<ModuleDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -163,8 +169,8 @@ export default function ModuleDetailPage() {
         <div>
           <button
             onClick={() => router.push(`/modules/${moduleId}/video`)}
-            className="w-full inline-flex items-center justify-center gap-2 py-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg shadow-emerald-700/10 hover:shadow-emerald-700/20 transition-all duration-200 cursor-pointer"
-          >
+            className="inline-flex items-center gap-2 bg-[var(--color-navy)] text-white px-6 py-3 rounded-full font-medium shadow-sm hover:opacity-90 transition"
+              >
             <span>Mulai Pembelajaran Sekarang</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />

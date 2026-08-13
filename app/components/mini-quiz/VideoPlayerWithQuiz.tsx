@@ -40,10 +40,30 @@ interface VideoPlayerWithQuizProps {
   authToken: string;
 }
 
+interface YouTubePlayer {
+  pauseVideo: () => void;
+  playVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  getCurrentTime: () => number;
+}
+
+interface YouTubeStateChangeEvent {
+  data: number;
+}
+
+interface YouTubePlayerOptions {
+  videoId: string;
+  events: {
+    onStateChange: (event: YouTubeStateChangeEvent) => void;
+  };
+}
+
 declare global {
   interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
+    YT?: {
+      Player: new (elementId: string, options: YouTubePlayerOptions) => YouTubePlayer;
+    };
+    onYouTubeIframeAPIReady?: () => void;
   }
 }
 
@@ -62,7 +82,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // YouTube Player Ref
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
   const iframeContainerRef = useRef<HTMLDivElement>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -144,12 +164,12 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
     if (!videoId) return;
 
     const initPlayer = () => {
-      if (playerRef.current) return;
+      if (playerRef.current || !window.YT) return;
 
       playerRef.current = new window.YT.Player(`yt-player-${contentId}`, {
         videoId: videoId,
         events: {
-          onStateChange: (event: any) => {
+          onStateChange: (event) => {
             // YT.PlayerState.PLAYING === 1
             if (event.data === 1) {
               if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);

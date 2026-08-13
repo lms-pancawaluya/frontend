@@ -7,6 +7,10 @@ interface ModuleFeedbackFormProps {
   moduleId: string;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function ModuleFeedbackForm({ moduleId }: ModuleFeedbackFormProps) {
   const [saran, setSaran] = useState("");
   const [kritik, setKritik] = useState("");
@@ -29,8 +33,8 @@ export default function ModuleFeedbackForm({ moduleId }: ModuleFeedbackFormProps
       setSuccessMsg("Terima kasih! Saran dan kritik Anda berhasil dikirim.");
       setSaran("");
       setKritik("");
-    } catch (err: any) {
-      setErrorMsg(err.message || "Gagal mengirimkan feedback.");
+    } catch (err: unknown) {
+      setErrorMsg(getErrorMessage(err, "Gagal mengirimkan feedback."));
     } finally {
       setLoading(false);
     }

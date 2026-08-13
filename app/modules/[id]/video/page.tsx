@@ -22,23 +22,75 @@ interface MiniQuiz {
   isEndQuiz?: boolean;
 }
 
+interface ModuleContent {
+  id: string;
+  judul?: string;
+  tipe?: string;
+  konten?: string;
+}
+
+interface AttemptResult {
+  skor: number;
+  isLolos: boolean;
+  passingScore?: number;
+  mustRepeat?: boolean;
+}
+
+interface YouTubePlayer {
+  pauseVideo: () => void;
+  playVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  getCurrentTime?: () => number;
+  getDuration?: () => number;
+}
+
+interface YouTubeStateChangeEvent {
+  data: number;
+}
+
+interface YouTubePlayerOptions {
+  videoId: string;
+  playerVars: {
+    controls: number;
+    disablekb: number;
+    enablejsapi: number;
+    rel: number;
+    modestbranding: number;
+  };
+  events: {
+    onStateChange: (event: YouTubeStateChangeEvent) => void;
+  };
+}
+
+type YouTubeWindow = Window & {
+  YT?: {
+    Player: new (elementId: string, options: YouTubePlayerOptions) => YouTubePlayer;
+  };
+  onYouTubeIframeAPIReady?: () => void;
+};
+
+const getStoredAuthToken = () =>
+  typeof window !== "undefined"
+    ? localStorage.getItem("token") || localStorage.getItem("authToken") || ""
+    : "";
+
 export default function ModuleVideoPage() {
   const params = useParams();
   const router = useRouter();
   const moduleId = params.id as string;
 
-  const [videoContent, setVideoContent] = useState<any>(null);
+  const [videoContent, setVideoContent] = useState<ModuleContent | null>(null);
   const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<MiniQuiz | null>(null);
 
   const [isVideoFinished, setIsVideoFinished] = useState(false);
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
-  const [attemptResult, setAttemptResult] = useState<any>(null);
+  const [attemptResult, setAttemptResult] = useState<AttemptResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authToken, setAuthToken] = useState("");
+  const [authToken] = useState(getStoredAuthToken);
 
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
   const maxWatchedTimeRef = useRef<number>(0);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -59,7 +111,7 @@ export default function ModuleVideoPage() {
     miniQuizzesRef.current = miniQuizzes;
   }, [miniQuizzes]);
 
-  const getYoutubeId = (url: string) => {
+  const getYoutubeId = (url?: string) => {
     if (!url) return "";
     const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]+)/);
     return match ? match[1] : "";
@@ -67,18 +119,15 @@ export default function ModuleVideoPage() {
 
   // Memuat konten modul dan mini quiz
   useEffect(() => {
-    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || "";
-    setAuthToken(token);
-
     async function init() {
       try {
-        const contents = await getModuleContents(moduleId);
-        const vid = contents.find((c: any) => c.tipe === "video");
+        const contents = (await getModuleContents(moduleId)) as ModuleContent[];
+        const vid = contents.find((c) => c.tipe === "video");
         if (vid) {
           setVideoContent(vid);
 
           const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
           });
           const json = await res.json();
           
@@ -113,7 +162,7 @@ export default function ModuleVideoPage() {
       }
     }
     init();
-  }, [moduleId]);
+  }, [moduleId, authToken]);
 
   // Evaluasi waktu pemutaran video
   const checkTimeAndTriggers = useCallback((cTime: number, dur: number) => {
@@ -176,8 +225,9 @@ export default function ModuleVideoPage() {
     if (!vId) return;
 
     const initYT = () => {
-      if (playerRef.current) return;
-      playerRef.current = new (window as any).YT.Player("player-iframe", {
+      const youtubeWindow = window as YouTubeWindow;
+      if (playerRef.current || !youtubeWindow.YT) return;
+      playerRef.current = new youtubeWindow.YT.Player("player-iframe", {
         videoId: vId,
         playerVars: {
           controls: 1,
@@ -187,13 +237,14 @@ export default function ModuleVideoPage() {
           modestbranding: 1,
         },
         events: {
-          onStateChange: (evt: any) => {
+          onStateChange: (evt) => {
             if (evt.data === 1) { // Playing
               if (!timerIntervalRef.current) {
                 timerIntervalRef.current = setInterval(() => {
-                  if (playerRef.current?.getCurrentTime) {
-                    const cTime = playerRef.current.getCurrentTime() || 0;
-                    const dur = playerRef.current.getDuration() || 0;
+                  const player = playerRef.current;
+                  if (player && typeof player.getCurrentTime === "function") {
+                    const cTime = player.getCurrentTime() || 0;
+                    const dur = player.getDuration ? player.getDuration() || 0 : 0;
                     checkTimeAndTriggers(cTime, dur);
                   }
                 }, 400);
@@ -219,11 +270,12 @@ export default function ModuleVideoPage() {
       });
     };
 
-    if (!(window as any).YT) {
+    const youtubeWindow = window as YouTubeWindow;
+    if (!youtubeWindow.YT) {
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
       document.body.appendChild(tag);
-      (window as any).onYouTubeIframeAPIReady = () => initYT();
+      youtubeWindow.onYouTubeIframeAPIReady = () => initYT();
     } else {
       initYT();
     }
@@ -264,7 +316,7 @@ export default function ModuleVideoPage() {
         setAttemptResult({ skor: 100, isLolos: true });
         setAnsweredQuizIds((prev) => [...prev, activeQuiz.id]);
       }
-    } catch (err) {
+    } catch {
       setAttemptResult({ skor: 100, isLolos: true });
       setAnsweredQuizIds((prev) => [...prev, activeQuiz.id]);
     } finally {

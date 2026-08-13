@@ -5,6 +5,40 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getEvaluationDetail } from "@/services/evaluation.service";
 
+interface EvaluationOption {
+  id?: string;
+  value?: string;
+  key?: string;
+  teksOpsi?: string;
+  text?: string;
+  label?: string;
+  optionText?: string;
+  jawaban?: string;
+}
+
+type EvaluationOptionItem = string | EvaluationOption;
+
+interface EvaluationQuestion {
+  id?: string;
+  question?: string;
+  pertanyaan?: string;
+  teks?: string;
+  content?: string;
+  prompt?: string;
+  options?: EvaluationOptionItem[];
+  pilihan?: EvaluationOptionItem[];
+  optionsList?: EvaluationOptionItem[];
+  opsi?: EvaluationOptionItem[];
+}
+
+interface EvaluationDetail {
+  title?: string;
+  judul?: string;
+  questions?: EvaluationQuestion[];
+  soal?: EvaluationQuestion[];
+  items?: EvaluationQuestion[];
+}
+
 export default function EvaluationDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -12,7 +46,7 @@ export default function EvaluationDetailPage() {
   const moduleId = params.id as string;
   const evaluationId = params.evaluationId as string;
 
-  const [evaluation, setEvaluation] = useState<any>(null);
+  const [evaluation, setEvaluation] = useState<EvaluationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -22,7 +56,7 @@ export default function EvaluationDetailPage() {
       try {
         setLoading(true);
         const data = await getEvaluationDetail(moduleId, evaluationId);
-        setEvaluation(data?.data || data);
+        setEvaluation((data?.data || data) as EvaluationDetail);
       } catch (err) {
         console.error("Gagal mengambil data evaluasi:", err);
       } finally {
@@ -144,7 +178,7 @@ export default function EvaluationDetailPage() {
       {/* Daftar Soal */}
       {questionsList.length > 0 ? (
         <div className="space-y-6">
-          {questionsList.map((q: any, index: number) => {
+          {questionsList.map((q, index) => {
             const questionId = q.id || `q-${index}`;
             const questionText =
               q.question || q.pertanyaan || q.teks || q.content || q.prompt || "";
@@ -168,7 +202,7 @@ export default function EvaluationDetailPage() {
 
                 {/* Pilihan Jawaban */}
                 <div className="space-y-3 pl-0 md:pl-10">
-                  {optionsList.map((opt: any, optIdx: number) => {
+                  {optionsList.map((opt, optIdx) => {
                     const isStringOption = typeof opt === "string";
                     const optionId = isStringOption
                       ? opt

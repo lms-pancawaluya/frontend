@@ -1,22 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const [userData, setUserData] = useState<any>({
+  const userData = {
     name: "Rahmat Kosasih Anjai, S.T.",
     role: "Guru LMS",
     email: "vargielarentzio@gmail.com",
     status: "GURU AKTIF",
-  });
+  };
 
-  const [stats, setStats] = useState({
+  const stats = {
     completedModules: 1,
     totalModules: 1,
     learningStatus: "Lengkap",
     overallProgress: 100,
-  });
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">

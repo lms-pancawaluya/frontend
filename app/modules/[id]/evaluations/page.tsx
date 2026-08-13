@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getModuleEvaluations } from "@/services/evaluation.service";
 
+interface ModuleEvaluationSummary {
+  id: string;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function ModuleEvaluationsIndexPage() {
   const router = useRouter();
   const params = useParams();
@@ -14,7 +22,7 @@ export default function ModuleEvaluationsIndexPage() {
     async function redirectFirstEvaluation() {
       try {
         // Fetch daftar evaluasi berdasarkan moduleId
-        const evaluations = await getModuleEvaluations(moduleId);
+        const evaluations = (await getModuleEvaluations(moduleId)) as ModuleEvaluationSummary[];
 
         if (evaluations && evaluations.length > 0) {
           // Ambil ID dari evaluasi pertama dan redirect
@@ -23,8 +31,8 @@ export default function ModuleEvaluationsIndexPage() {
         } else {
           setError("Belum ada evaluasi yang dibuat untuk modul ini.");
         }
-      } catch (err: any) {
-        setError(err.message || "Gagal mengambil data evaluasi modul.");
+      } catch (err: unknown) {
+        setError(getErrorMessage(err, "Gagal mengambil data evaluasi modul."));
       }
     }
 
