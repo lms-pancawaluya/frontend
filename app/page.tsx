@@ -69,13 +69,13 @@ export default function HomePage() {
           className="pointer-events-none absolute inset-0 z-0 bg-cover bg-center opacity-15"
           style={{
             backgroundImage: "url('/BG-Disdik.jpg')",
-            WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%)",
-            maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%)",
+            maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%)",
           }}
         />
 
         {/* Overlay Gradasi tambahan agar transisi makin menyatu dengan latar belakang */}
-        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-transparent via-white/20 to-white" />
+        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-transparent via-white/0 to-white" />
 
         {/* ================= ELEMEN DEKORATIF HERO ================= */}
         {/* Siku Kuning L-Shape Kiri Atas */}

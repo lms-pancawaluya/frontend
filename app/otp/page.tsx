@@ -231,9 +231,9 @@ export default function OtpPage() {
   return (
     <div className="min-h-[calc(100vh-140px)] flex items-center justify-center bg-[var(--color-pale)] px-4 py-10 relative overflow-hidden">
       {/* BACKGROUND GAMBAR SAMAR */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-15 mix-blend-multiply">
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-30 mix-blend-multiply">
         <Image
-          src="/bg-classroom.jpg"
+          src="/BG-OTP.jpeg"
           alt="Classroom Background"
           fill
           priority
