@@ -178,7 +178,7 @@ return (
 
     <div className="mt-8 flex gap-3">
       <button
-        onClick={() => router.push(`/modules/${id}/evaluation`)}
+        onClick={() => router.push(`/modules/${id}/evaluations`)}
         className="flex-1 bg-[var(--color-navy)] text-white py-3 rounded-full font-medium hover:opacity-90 transition"
       >
         Kerjakan Evaluasi

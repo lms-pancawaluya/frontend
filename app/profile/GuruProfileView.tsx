@@ -176,7 +176,7 @@ const getProfileFormData = (profile: GuruProfileProps["profile"]) => {
         if (!currentGelar) currentGelar = parsed.gelar || "";
         if (!currentNip) currentNip = parsed.nip || "";
       } catch {
-        // Abaikan error parse JSON jika terjadi masalah
+        // Abaikan error parse JSON
       }
     }
   }
@@ -450,19 +450,32 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
       <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-navy)]">Pengaturan Profil Guru</h1>
-          <p className="text-sm text-gray-500 mt-1">Kelola data diri dan informasi akun Anda</p>
+          <p className="text-sm text-slate-500 mt-1">Kelola data diri dan informasi akun Anda</p>
         </div>
-        <span className="bg-sky-100 text-sky-700 font-semibold px-3 py-1 rounded-full text-xs uppercase">
+        <span className="bg-sky-100 text-sky-700 font-semibold px-3 py-1 rounded-full text-xs uppercase tracking-wider">
           Guru
         </span>
       </div>
 
       {/* Alert Notifikasi */}
       {message && (
-        <div className={`p-4 rounded-xl text-sm font-medium border ${
-          message.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
-        }`}>
-          {message.text}
+        <div
+          className={`p-4 rounded-xl text-sm font-medium border flex items-center gap-3 ${
+            message.type === "success" 
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
+              : "bg-rose-50 text-rose-800 border-rose-200"
+          }`}
+        >
+          {message.type === "success" ? (
+            <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
+          <span>{message.text}</span>
         </div>
       )}
 
@@ -474,29 +487,49 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
               {profile.fotoProfil ? (
                 <Image src={profile.fotoProfil} alt="Foto Profil" fill className="rounded-full object-cover border-2 border-[var(--color-navy)]" />
               ) : (
-                <div className="w-full h-full rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-3xl font-bold border-2 border-slate-300">
+                <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-3xl font-bold border-2 border-slate-200">
                   {profile.nama?.charAt(0) || "G"}
                 </div>
               )}
               {uploadingFoto && (
-                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white text-xs">
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-xs font-medium backdrop-blur-xs">
                   Mengunggah...
                 </div>
               )}
             </div>
 
-            <label className="cursor-pointer inline-block bg-[var(--color-pale)] hover:bg-slate-200 text-[var(--color-navy)] text-xs font-semibold px-4 py-2 rounded-full transition">
-              {uploadingFoto ? "Memproses..." : "Ubah Foto Profil"}
+            <label className="cursor-pointer inline-flex items-center gap-1.5 bg-[var(--color-pale)] hover:bg-slate-200 text-[var(--color-navy)] text-xs font-semibold px-4 py-2 rounded-full transition-colors duration-200">
+              <svg className="w-3.5 h-3.5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>{uploadingFoto ? "Memproses..." : "Ubah Foto Profil"}</span>
               <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoUpload} disabled={uploadingFoto} />
             </label>
-            <p className="text-[11px] text-gray-400 mt-2">Maks. 5MB (JPG, PNG, WebP)</p>
+            <p className="text-[11px] text-slate-400 mt-2">Maks. 5MB (JPG, PNG, WebP)</p>
 
             <hr className="my-4 border-slate-100" />
 
-            <div className="text-left space-y-1 text-sm">
-              <p className="font-semibold text-slate-800">{namaLengkapBerGelar}</p>
-              <p className="text-xs text-gray-500">{profile.email}</p>
-              <p className="text-xs text-gray-500">{formData.sekolah || "Sekolah Belum Diatur"}</p>
+            <div className="text-left space-y-1">
+              <p className="font-semibold text-slate-800 text-sm">{namaLengkapBerGelar}</p>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Guru Aktif
+              </span>
+              <div className="space-y-2 pt-1 text-xs text-slate-600">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span className="truncate">{profile.email}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
+                  </svg>
+                  <span className="leading-tight">{formData.sekolah || "Sekolah Belum Diatur"}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -506,9 +539,9 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
               <h3 className="font-bold text-sm text-[var(--color-navy)] mb-3">Modul Selesai</h3>
               <div className="space-y-2">
                 {profile.progress.map((item, idx) => (
-                  <div key={idx} className="bg-[var(--color-pale)] p-2.5 rounded-xl text-xs flex justify-between items-center">
+                  <div key={idx} className="bg-[var(--color-pale)] p-2.5 rounded-xl text-xs flex justify-between items-center border border-slate-100">
                     <span className="font-medium text-slate-700">{item.module.judul}</span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full capitalize">
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full capitalize">
                       {item.status}
                     </span>
                   </div>
@@ -580,7 +613,7 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
               </div>
 
               {/* SECTION PILIH KOTA, SEKOLAH, & ALAMAT JAWA BARAT */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+              <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-3">
                 <div className="flex justify-between items-center">
                   <label className="block text-xs font-bold text-slate-700">Asal Sekolah (Jawa Barat)</label>
                   <button
@@ -590,7 +623,7 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
                       setSelectedDaerah("");
                       setFormData((prev) => ({ ...prev, sekolah: "", alamatSekolah: "" }));
                     }}
-                    className="text-[11px] text-sky-600 hover:underline font-semibold"
+                    className="text-[11px] text-sky-600 hover:text-sky-800 hover:underline font-semibold transition-colors duration-200"
                   >
                     {ketikManual ? "Pilih dari List Sekolah" : "Sekolah tidak ada di list? Ketik manual"}
                   </button>
@@ -678,7 +711,7 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Nomor HP 08xx </label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Nomor HP 08xx</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -692,7 +725,11 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
               </div>
 
               <div className="pt-2 flex justify-end">
-                <button type="submit" disabled={savingProfile} className="bg-[var(--color-navy)] text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition">
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="bg-[var(--color-navy)] text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 disabled:opacity-60 transition-opacity duration-200 shadow-xs cursor-pointer"
+                >
                   {savingProfile ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
@@ -727,7 +764,11 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
               </div>
 
               <div className="pt-2 flex justify-end">
-                <button type="submit" disabled={savingPassword} className="bg-amber-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-amber-600 transition">
+                <button
+                  type="submit"
+                  disabled={savingPassword}
+                  className="bg-amber-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-amber-600 disabled:opacity-60 transition-colors duration-200 shadow-xs cursor-pointer"
+                >
                   {savingPassword ? "Memperbarui..." : "Update Password"}
                 </button>
               </div>

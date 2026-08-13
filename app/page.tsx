@@ -102,7 +102,7 @@ export default function HomePage() {
 
             <h1 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-medium text-[var(--color-navy)] leading-[1.15] mb-6">
               Belajar &amp; terapkan{" "}
-              <span className="italic text-[var(--color-accent)]">
+              <span className="italic text-[var(--color-accent)] font-semibold">
                 nilai Pancawaluya
               </span>{" "}
               di ruang kelas.
