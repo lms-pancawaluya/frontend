@@ -18,6 +18,7 @@ interface Question {
 
 interface EvaluationDetail {
   id: string;
+  moduleId: string;
   judul: string;
   questions: Question[];
 }
@@ -114,10 +115,21 @@ export default function EvaluationDetailAdminPage() {
     e.preventDefault();
     setFormError("");
 
+    if (!evaluation) return;
+
     if (tipe === "pilihan_ganda") {
+      if (options.length < 2) {
+        setFormError("Minimal 2 opsi jawaban.");
+        return;
+      }
       const emptyOption = options.some((opt) => opt.teksOpsi.trim() === "");
       if (emptyOption) {
         setFormError("Semua opsi jawaban harus diisi.");
+        return;
+      }
+      const correctCount = options.filter((opt) => opt.isCorrect).length;
+      if (correctCount !== 1) {
+        setFormError("Pilih tepat 1 opsi sebagai jawaban benar.");
         return;
       }
     }
@@ -127,10 +139,10 @@ export default function EvaluationDetailAdminPage() {
     try {
       const questionData =
         tipe === "pilihan_ganda"
-          ? { pertanyaan, tipe, options }
+          ? { pertanyaan, options }
           : { pertanyaan, tipe };
 
-      await addQuestion(evalId, questionData);
+      await addQuestion(evaluation.moduleId, evalId, questionData);
       resetForm();
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
