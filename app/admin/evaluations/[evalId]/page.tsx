@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getEvaluationDetail, addQuestion, updateQuestion } from "@/services/evaluation.service";
+import { getEvaluationDetail, addQuestion, updateQuestion, deleteQuestion } from "@/services/evaluation.service";
 
 interface Option {
   id: string;
@@ -49,6 +49,24 @@ export default function EvaluationDetailAdminPage() {
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
+
+  async function handleDelete(questionId: string) {
+    if (!evaluation) return;
+    const confirmed = window.confirm("Yakin ingin menghapus soal ini?");
+    if (!confirmed) return;
+
+    setDeletingQuestionId(questionId);
+
+    try {
+      await deleteQuestion(evaluation.moduleId, questionId);
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Gagal menghapus soal.");
+    } finally {
+      setDeletingQuestionId(null);
+    }
+  }
 
   function getInitialOptions() {
     return [
@@ -254,14 +272,24 @@ export default function EvaluationDetailAdminPage() {
                       {q.tipe === "pilihan_ganda" && ` • ${q.options.length} opsi`}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => startEdit(q)}
-                    disabled={q.tipe !== "pilihan_ganda"}
-                    className="text-sm text-[var(--color-accent)] font-medium hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
-                  >
-                    {q.tipe === "pilihan_ganda" ? "Edit" : "Edit belum tersedia"}
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(q)}
+                      disabled={q.tipe !== "pilihan_ganda"}
+                      className="text-sm text-[var(--color-accent)] font-medium hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
+                    >
+                      {q.tipe === "pilihan_ganda" ? "Edit" : "Edit belum tersedia"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(q.id)}
+                      disabled={deletingQuestionId === q.id}
+                      className="text-sm text-red-600 font-medium hover:underline disabled:text-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {deletingQuestionId === q.id ? "Menghapus..." : "Hapus"}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

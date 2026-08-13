@@ -157,3 +157,22 @@ export async function updateQuestion(moduleId, questionId, questionData) {
 
   return result.data;
 }
+
+export async function deleteQuestion(moduleId, questionId) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal menghapus soal");
+  }
+
+  return result.data;
+}
