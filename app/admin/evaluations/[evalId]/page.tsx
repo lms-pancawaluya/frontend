@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getEvaluationDetail, addQuestion } from "@/services/evaluation.service";
+import { getEvaluationDetail, addQuestion, updateQuestion } from "@/services/evaluation.service";
 
 interface Option {
   id: string;
-  teksOpsi: string;
+  teksOpsi?: string;
+  teks?: string;
+  isCorrect?: boolean;
 }
 
 interface Question {
@@ -44,8 +46,25 @@ export default function EvaluationDetailAdminPage() {
     { teksOpsi: "", isCorrect: true },
     { teksOpsi: "", isCorrect: false },
   ]);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+
+  function getInitialOptions() {
+    return [
+      { teksOpsi: "", isCorrect: true },
+      { teksOpsi: "", isCorrect: false },
+    ];
+  }
+
+  function mapQuestionOptions(questionOptions: Option[]) {
+    const mapped = questionOptions.map((opt) => ({
+      teksOpsi: (opt.teksOpsi || opt.teks || "").trim(),
+      isCorrect: opt.isCorrect === true,
+    }));
+
+    return mapped.length >= 2 ? mapped : getInitialOptions();
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -105,31 +124,51 @@ export default function EvaluationDetailAdminPage() {
   function resetForm() {
     setPertanyaan("");
     setTipe("pilihan_ganda");
-    setOptions([
-      { teksOpsi: "", isCorrect: true },
-      { teksOpsi: "", isCorrect: false },
-    ]);
+    setOptions(getInitialOptions());
+    setEditingQuestionId(null);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function startEdit(question: Question) {
+    if (question.tipe !== "pilihan_ganda") {
+      setFormError("Edit soal saat ini hanya tersedia untuk pilihan ganda.");
+      return;
+    }
+
+    setEditingQuestionId(question.id);
+    setPertanyaan(question.pertanyaan);
+    setTipe("pilihan_ganda");
+    setOptions(mapQuestionOptions(question.options || []));
+    setFormError("");
+  }
+
+  function validateMultipleChoice() {
+    if (options.length < 2) {
+      return "Minimal 2 opsi jawaban.";
+    }
+
+    const emptyOption = options.some((opt) => opt.teksOpsi.trim() === "");
+    if (emptyOption) {
+      return "Semua opsi jawaban harus diisi.";
+    }
+
+    const correctCount = options.filter((opt) => opt.isCorrect).length;
+    if (correctCount !== 1) {
+      return "Pilih tepat 1 opsi sebagai jawaban benar.";
+    }
+
+    return "";
+  }
+
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setFormError("");
 
     if (!evaluation) return;
 
-    if (tipe === "pilihan_ganda") {
-      if (options.length < 2) {
-        setFormError("Minimal 2 opsi jawaban.");
-        return;
-      }
-      const emptyOption = options.some((opt) => opt.teksOpsi.trim() === "");
-      if (emptyOption) {
-        setFormError("Semua opsi jawaban harus diisi.");
-        return;
-      }
-      const correctCount = options.filter((opt) => opt.isCorrect).length;
-      if (correctCount !== 1) {
-        setFormError("Pilih tepat 1 opsi sebagai jawaban benar.");
+    if (editingQuestionId || tipe === "pilihan_ganda") {
+      const validationError = validateMultipleChoice();
+      if (validationError) {
+        setFormError(validationError);
         return;
       }
     }
@@ -137,24 +176,35 @@ export default function EvaluationDetailAdminPage() {
     setSubmitting(true);
 
     try {
-      const questionData =
-        tipe === "pilihan_ganda"
-          ? { pertanyaan, options }
-          : { pertanyaan, tipe };
+      if (editingQuestionId) {
+        await updateQuestion(evaluation.moduleId, editingQuestionId, {
+          pertanyaan: pertanyaan.trim(),
+          options: options.map((opt) => ({
+            teks: opt.teksOpsi.trim(),
+            isCorrect: opt.isCorrect,
+          })),
+        });
+      } else {
+        const questionData =
+          tipe === "pilihan_ganda"
+            ? { pertanyaan, options }
+            : { pertanyaan, tipe };
 
-      await addQuestion(evaluation.moduleId, evalId, questionData);
+        await addQuestion(evaluation.moduleId, evalId, questionData);
+      }
+
       resetForm();
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
       if (err instanceof Error) {
         setFormError(err.message);
       } else {
-        setFormError("Gagal menambahkan soal.");
+        setFormError(editingQuestionId ? "Gagal memperbarui soal." : "Gagal menambahkan soal.");
       }
     } finally {
       setSubmitting(false);
     }
-  }
+  };
 
   if (loading) {
     return <p className="text-center mt-16 text-gray-500">Memuat evaluasi...</p>;
@@ -194,13 +244,25 @@ export default function EvaluationDetailAdminPage() {
           <div className="flex flex-col gap-3">
             {evaluation.questions.map((q, index) => (
               <div key={q.id} className="bg-white border border-[var(--color-border-soft)] rounded-xl p-4">
-                <p className="text-sm font-medium text-[var(--color-navy)] mb-1">
-                  {index + 1}. {q.pertanyaan}
-                </p>
-                <span className="text-xs text-gray-400 capitalize">
-                  {q.tipe.replace("_", " ")}
-                  {q.tipe === "pilihan_ganda" && ` • ${q.options.length} opsi`}
-                </span>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-navy)] mb-1">
+                      {index + 1}. {q.pertanyaan}
+                    </p>
+                    <span className="text-xs text-gray-400 capitalize">
+                      {q.tipe.replace("_", " ")}
+                      {q.tipe === "pilihan_ganda" && ` • ${q.options.length} opsi`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => startEdit(q)}
+                    disabled={q.tipe !== "pilihan_ganda"}
+                    className="text-sm text-[var(--color-accent)] font-medium hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
+                  >
+                    {q.tipe === "pilihan_ganda" ? "Edit" : "Edit belum tersedia"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -208,7 +270,20 @@ export default function EvaluationDetailAdminPage() {
       </div>
 
       <div className="border-t border-[var(--color-border-soft)] pt-6">
-        <h2 className="font-medium text-gray-800 mb-4">Tambah Soal Baru</h2>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="font-medium text-gray-800">
+            {editingQuestionId ? "Edit Soal" : "Tambah Soal Baru"}
+          </h2>
+          {editingQuestionId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="text-sm text-gray-500 hover:underline"
+            >
+              Batal
+            </button>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {formError && (
@@ -228,19 +303,21 @@ export default function EvaluationDetailAdminPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Tipe Soal</label>
-            <select
-              value={tipe}
-              onChange={(e) => setTipe(e.target.value)}
-              className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
-            >
-              <option value="pilihan_ganda">Pilihan Ganda</option>
-              <option value="esai">Esai</option>
-            </select>
-          </div>
+          {!editingQuestionId && (
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Tipe Soal</label>
+              <select
+                value={tipe}
+                onChange={(e) => setTipe(e.target.value)}
+                className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+              >
+                <option value="pilihan_ganda">Pilihan Ganda</option>
+                <option value="esai">Esai</option>
+              </select>
+            </div>
+          )}
 
-          {tipe === "pilihan_ganda" && (
+          {(editingQuestionId || tipe === "pilihan_ganda") && (
             <div>
               <label className="block text-sm font-medium text-[var(--color-navy)] mb-2">
                 Opsi Jawaban (pilih 1 sebagai jawaban benar)
@@ -292,7 +369,7 @@ export default function EvaluationDetailAdminPage() {
             disabled={submitting}
             className="bg-[var(--color-navy)] text-white py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition disabled:bg-gray-400 mt-2"
           >
-            {submitting ? "Menyimpan..." : "Tambah Soal"}
+            {submitting ? "Menyimpan..." : editingQuestionId ? "Simpan Perubahan" : "Tambah Soal"}
           </button>
         </form>
       </div>

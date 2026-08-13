@@ -136,3 +136,24 @@ export async function addQuestion(moduleId, evaluationId, questionData) {
 
   return result.data;
 }
+
+export async function updateQuestion(moduleId, questionId, questionData) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(questionData),
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal memperbarui soal");
+  }
+
+  return result.data;
+}
