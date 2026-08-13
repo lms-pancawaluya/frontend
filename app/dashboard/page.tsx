@@ -14,6 +14,48 @@ interface User {
   gelar?: string;
 }
 
+// Ring progress lingkaran kecil (SVG murni, tanpa library chart).
+// stroke-dasharray = keliling lingkaran; stroke-dashoffset dikurangi sesuai
+// persen untuk "mengisi" ring-nya, lalu transition-all bikin isiannya animasi.
+function CircularProgress({
+  percent,
+  size = 44,
+  stroke = 4,
+}: {
+  percent: number;
+  size?: number;
+  stroke?: number;
+}) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(percent, 100) / 100) * circumference;
+
+  return (
+    <svg width={size} height={size} className="-rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke="var(--color-border-soft)"
+        strokeWidth={stroke}
+        fill="none"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke="var(--color-navy)"
+        strokeWidth={stroke}
+        fill="none"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="transition-all duration-700 ease-out"
+      />
+    </svg>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user] = useState<User | null>(() => {
@@ -31,6 +73,12 @@ export default function DashboardPage() {
   const [totalModules, setTotalModules] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Memicu animasi fade-in + slide-up pada hero setelah komponen selesai mount.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -75,6 +123,18 @@ export default function DashboardPage() {
   // Format Nama Lengkap beserta Gelar
   const namaBerGelar = user.gelar ? `${user.nama}, ${user.gelar}` : user.nama;
 
+  // Sapaan berubah sesuai jam saat halaman dibuka: pagi/siang/sore/malam.
+  const jamSekarang = new Date().getHours();
+  const sapaan =
+    jamSekarang < 11
+      ? "Selamat pagi"
+      : jamSekarang < 15
+      ? "Selamat siang"
+      : jamSekarang < 19
+      ? "Selamat sore"
+      : "Selamat malam";
+  const emojiSapaan = jamSekarang < 19 ? "👋" : "🌙";
+
   const progressPercent =
     totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
 
@@ -83,14 +143,18 @@ export default function DashboardPage() {
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
         {/* Welcome Hero Banner */}
-        <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div
+          className={`bg-white border border-[var(--color-border-soft)] rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-700 ease-out ${
+            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+          }`}
+        >
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-50 border border-teal-100 rounded-full text-xs font-semibold text-[var(--color-navy)]">
-              <span className="w-2 h-2 rounded-full bg-[var(--color-navy)]"></span>
+              <span className="w-2 h-2 rounded-full bg-[var(--color-navy)] animate-pulse"></span>
               Portal Pembelajaran Guru
             </div>
             <h1 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-[var(--color-navy)] tracking-normal">
-              Selamat datang kembali, {namaBerGelar}! 👋
+              {sapaan}, {namaBerGelar}! {emojiSapaan}
             </h1>
             <p className="text-sm text-slate-600 max-w-xl leading-relaxed">
               Pantau perkembangan modul, selesaikan refleksi pembelajaran, dan tingkatkan kompetensi Anda bersama Pancawaluya.
@@ -100,7 +164,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 self-start md:self-auto shrink-0">
             <Link
               href="/modules"
-              className="px-5 py-2.5 bg-[var(--color-navy)] hover:opacity-90 text-white text-sm font-semibold rounded-xl shadow-sm transition-all"
+              className="px-5 py-2.5 bg-[var(--color-navy)] hover:opacity-90 hover:scale-105 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-300"
             >
               Mulai Belajar
             </Link>
@@ -109,7 +173,7 @@ export default function DashboardPage() {
 
         {/* Quick Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-[var(--color-border-soft)] shadow-sm flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl border border-[var(--color-border-soft)] shadow-sm flex items-center justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Modul Selesai</p>
               <p className="text-2xl font-bold text-slate-900">
@@ -117,12 +181,15 @@ export default function DashboardPage() {
                 <span className="text-xs font-normal text-slate-500">/ {totalModules} Modul</span>
               </p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-teal-50 text-[var(--color-navy)] flex items-center justify-center font-bold text-sm border border-teal-100">
-              {progressPercent}%
+            <div className="relative w-11 h-11 flex items-center justify-center shrink-0">
+              <CircularProgress percent={progressPercent} />
+              <span className="absolute text-[10px] font-bold text-[var(--color-navy)]">
+                {progressPercent}%
+              </span>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-[var(--color-border-soft)] shadow-sm flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl border border-[var(--color-border-soft)] shadow-sm flex items-center justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Modul Tersedia</p>
               <p className="text-2xl font-bold text-slate-900">
@@ -135,7 +202,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-[var(--color-border-soft)] shadow-sm flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl border border-[var(--color-border-soft)] shadow-sm flex items-center justify-between hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Status Pembelajaran</p>
               <p className="text-xl font-bold text-slate-900">
@@ -158,9 +225,14 @@ export default function DashboardPage() {
                 <h2 className="font-[family-name:var(--font-display)] text-base font-bold text-[var(--color-navy)]">
                   Overall Progress Belajar
                 </h2>
-                <span className="text-xs font-semibold text-[var(--color-navy)] bg-teal-50 border border-teal-100 px-3 py-1 rounded-full">
-                  {progressPercent}% Selesai
-                </span>
+                <div className="flex items-center gap-2">
+                  <div className="relative w-9 h-9 flex items-center justify-center shrink-0">
+                    <CircularProgress percent={progressPercent} size={36} stroke={3.5} />
+                  </div>
+                  <span className="text-xs font-semibold text-[var(--color-navy)] bg-teal-50 border border-teal-100 px-3 py-1 rounded-full">
+                    {progressPercent}% Selesai
+                  </span>
+                </div>
               </div>
 
               {loadingProgress ? (
@@ -195,7 +267,7 @@ export default function DashboardPage() {
                 </Link>
               </div>
 
-              <div className="p-4 rounded-xl border border-[var(--color-border-soft)] bg-white space-y-4">
+              <div className="p-4 rounded-xl border border-[var(--color-border-soft)] bg-white space-y-4 hover:shadow-md hover:border-[var(--color-accent)] transition-all duration-300">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="space-y-2">
                     <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md">
@@ -211,7 +283,7 @@ export default function DashboardPage() {
 
                   <Link
                     href="/modules"
-                    className="px-4 py-2 bg-slate-100 hover:bg-[var(--color-navy)] text-slate-700 hover:text-white text-xs font-semibold rounded-lg text-center transition whitespace-nowrap self-start sm:self-auto"
+                    className="px-4 py-2 bg-slate-100 hover:bg-[var(--color-navy)] hover:scale-105 text-slate-700 hover:text-white text-xs font-semibold rounded-lg text-center transition-all duration-300 whitespace-nowrap self-start sm:self-auto"
                   >
                     Buka Daftar Modul
                   </Link>

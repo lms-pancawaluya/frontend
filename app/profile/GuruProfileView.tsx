@@ -678,7 +678,7 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Nomor HP (08xx, Maks 13 Angka)</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Nomor HP 08xx </label>
                 <input
                   type="text"
                   inputMode="numeric"
