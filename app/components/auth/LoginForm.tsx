@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -56,8 +58,7 @@ export default function LoginForm() {
         redirectPath = "/dashboard";
       }
 
-      // Gunakan window.location.href agar middleware dipaksa membaca cookie baru tanpa race condition
-      window.location.href = redirectPath;
+      router.push(redirectPath);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal masuk. Periksa kembali akun Anda.");
       setLoading(false);

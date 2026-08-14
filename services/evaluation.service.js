@@ -120,8 +120,6 @@ export async function createEvaluation(moduleId, judul) {
 }
 
 export async function addQuestion(moduleId, evaluationId, questionData) {
-  const token = localStorage.getItem("token");
-
   const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/questions`, {
     method: "POST",
     headers: getHeaders(),
