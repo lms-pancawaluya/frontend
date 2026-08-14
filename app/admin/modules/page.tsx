@@ -125,7 +125,7 @@ export default function AdminModulesPage() {
                 className="border border-[var(--color-border-soft)] rounded-2xl p-5 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-md transition"
               >
                 <Link
-                  href={`/modules/${mod.id}`}
+                  href={`/admin/modules/${mod.id}`}
                   className="flex-1 min-w-0 cursor-pointer"
                 >
                   <div className="flex items-center gap-2 mb-1">

@@ -119,11 +119,8 @@ export async function createEvaluation(moduleId, judul) {
   return result.data;
 }
 
-/**
- * Tambah soal ke dalam evaluasi
- */
-export async function addQuestion(evaluationId, questionData) {
-  const response = await fetch(`${API_URL}/api/evaluations/${evaluationId}/questions`, {
+export async function addQuestion(moduleId, evaluationId, questionData) {
+  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/questions`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify(questionData),
@@ -133,6 +130,46 @@ export async function addQuestion(evaluationId, questionData) {
 
   if (!response.ok || !result.sukses) {
     throw new Error(result.pesan || result.message || "Gagal menambahkan soal");
+  }
+
+  return result.data;
+}
+
+export async function updateQuestion(moduleId, questionId, questionData) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(questionData),
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal memperbarui soal");
+  }
+
+  return result.data;
+}
+
+export async function deleteQuestion(moduleId, questionId) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal menghapus soal");
   }
 
   return result.data;
