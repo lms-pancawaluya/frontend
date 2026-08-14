@@ -45,9 +45,16 @@ export default function LoginForm() {
         document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
       }
 
-      // Tentukan target URL (Cek role dengan case-insensitive atau fallback)
+      // Tentukan target URL berdasarkan role pengguna (case-insensitive)
       const userRole = String(user?.role || "").toUpperCase();
-      const redirectPath = userRole === "GURU" ? "/dashboard" : "/dashboard";
+      let redirectPath: string;
+      if (userRole === "ADMIN") {
+        redirectPath = "/admin";
+      } else if (userRole === "GURU") {
+        redirectPath = "/dashboard";
+      } else {
+        redirectPath = "/dashboard";
+      }
 
       // Gunakan window.location.href agar middleware dipaksa membaca cookie baru tanpa race condition
       window.location.href = redirectPath;
