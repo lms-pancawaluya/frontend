@@ -43,8 +43,9 @@ export default function ForgotPasswordPage() {
         text: `Kode OTP 6 digit telah dikirim ke ${email}`,
       });
       setStep(2);
-    } catch (err: any) {
-      setMessage({ type: "error", text: err?.message || "Gagal mengirim OTP" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessage({ type: "error", text: msg || "Gagal mengirim OTP" });
     } finally {
       setLoading(false);
     }
@@ -68,8 +69,9 @@ export default function ForgotPasswordPage() {
         text: "Kode OTP valid. Silakan buat password baru Anda.",
       });
       setStep(3);
-    } catch (err: any) {
-      setMessage({ type: "error", text: err?.message || "Kode OTP tidak valid" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessage({ type: "error", text: msg || "Kode OTP tidak valid" });
     } finally {
       setLoading(false);
     }
@@ -102,8 +104,9 @@ export default function ForgotPasswordPage() {
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-    } catch (err: any) {
-      setMessage({ type: "error", text: err?.message || "Gagal mereset password" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessage({ type: "error", text: msg || "Gagal mereset password" });
     } finally {
       setLoading(false);
     }

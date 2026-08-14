@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { getModules } from "@/services/module.service";
 import { getProgress } from "@/services/progress.service";
@@ -96,14 +97,15 @@ export default function DashboardPage() {
       setTotalModules(modulesArr.length);
 
       // Pengecekan status yang fleksibel (menangani string 'selesai'/'completed' maupun boolean)
-      const selesai = progressArr.filter((p: any) => {
-        const statusStr = String(p.status || "").toLowerCase();
+      const selesai = progressArr.filter((p: unknown) => {
+        const pp = p as { status?: string; isCompleted?: boolean; selesai?: boolean };
+        const statusStr = String(pp.status || "").toLowerCase();
         return (
           statusStr === "selesai" ||
           statusStr === "completed" ||
           statusStr === "finish" ||
-          p.isCompleted === true ||
-          p.selesai === true
+          pp.isCompleted === true ||
+          pp.selesai === true
         );
       });
 
@@ -116,14 +118,18 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
-    loadUserData();
+    void Promise.resolve().then(() => {
+      setMounted(true);
+      loadUserData();
+    });
 
     // Auto-refresh data & progress saat kembali ke tab/halaman dashboard
     const handleRefresh = () => {
       if (document.visibilityState === "visible") {
         loadUserData();
-        void fetchDashboardData();
+        void (async () => {
+          await fetchDashboardData();
+        })();
       }
     };
 
@@ -150,7 +156,9 @@ export default function DashboardPage() {
     }
 
     if (user) {
-      void fetchDashboardData();
+      void (async () => {
+        await fetchDashboardData();
+      })();
     }
   }, [router, user, mounted, fetchDashboardData]);
 
@@ -398,9 +406,11 @@ export default function DashboardPage() {
             <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
               <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100">
                 {fotoUrl && !imgError ? (
-                  <img
+                  <Image
                     src={fotoUrl}
                     alt={user.nama}
+                    width={48}
+                    height={48}
                     onError={() => setImgError(true)}
                     className="w-12 h-12 rounded-2xl object-cover border border-slate-200/80 shadow-sm shrink-0"
                   />

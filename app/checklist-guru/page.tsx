@@ -24,25 +24,29 @@ export default function ChecklistGuruPage() {
     setMessage(null);
     try {
       const data = await getTodayChecklist();
-      
+
       // Validasi penanganan data array
       if (Array.isArray(data)) {
         setItems(data);
-      } else if (data && Array.isArray((data as any).items)) {
-        setItems((data as any).items);
+      } else if (data && Array.isArray((data as unknown as { items?: TeacherChecklistItem[] }).items)) {
+        const asData = data as { items?: TeacherChecklistItem[] };
+        setItems(asData.items || []);
       } else {
         setItems([]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       setItems([]);
-      setMessage({ text: err.message, type: "error" });
+      setMessage({ text: msg, type: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadChecklist();
+    void (async () => {
+      await loadChecklist();
+    })();
   }, []);
 
   // Handle Checkbox
@@ -77,8 +81,9 @@ export default function ChecklistGuruPage() {
         )
       );
       setMessage({ text: "Foto bukti berhasil diunggah!", type: "success" });
-    } catch (err: any) {
-      setMessage({ text: err.message, type: "error" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessage({ text: msg, type: "error" });
     } finally {
       setUploadingId(null);
     }
@@ -103,8 +108,9 @@ export default function ChecklistGuruPage() {
         text: "Checklist harian berhasil disimpan!",
         type: "success",
       });
-    } catch (err: any) {
-      setMessage({ text: err.message, type: "error" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessage({ text: msg, type: "error" });
     } finally {
       setSubmitting(false);
     }
