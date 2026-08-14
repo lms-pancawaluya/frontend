@@ -20,11 +20,20 @@ interface ProgressData {
   persentase: number;
 }
 
-interface EvaluationResult {
-  id: string;
-  judul: string;
-  skor: number;
-  isLolos: boolean;
+interface EvaluationItem {
+  moduleId: string;
+  moduleJudul: string;
+  evaluationId: string;
+  evaluationJudul: string;
+  dikerjakan: boolean;
+  skor: number | null;
+  status: string;
+}
+
+interface UserEvaluations {
+  userId: string;
+  namaGuru: string;
+  evaluations: EvaluationItem[];
 }
 
 export default function AdminMonitoringPage() {
@@ -35,9 +44,10 @@ export default function AdminMonitoringPage() {
   const [error, setError] = useState("");
   const [loadingProgress, setLoadingProgress] = useState(false);
 
-  const [evaluatingUserId, setEvaluatingUserId] = useState<string | null>(null);
-  const [evaluationResult, setEvaluationResult] = useState<EvaluationResult[] | null>(null);
-  const [evaluationError, setEvaluationError] = useState("");
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [evaluatingUserIds, setEvaluatingUserIds] = useState<Set<string>>(new Set());
+  const [evaluationData, setEvaluationData] = useState<Record<string, UserEvaluations>>({});
+  const [evaluationErrors, setEvaluationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -66,7 +76,7 @@ export default function AdminMonitoringPage() {
           guruOnly.map(async (guru: UserItem) => {
             try {
               const prog = await getUserProgress(guru.id);
-              return { userId: guru.id, progress: prog };
+              return { userId: guru.id, progress: prog as ProgressData };
             } catch {
               return { userId: guru.id, progress: null };
             }
@@ -95,26 +105,42 @@ export default function AdminMonitoringPage() {
     fetchUsers();
   }, [router]);
 
-  async function handleCheckEvaluations(userId: string) {
-    setEvaluatingUserId(userId);
-    setEvaluationResult(null);
-    setEvaluationError("");
+  async function toggleEvaluations(userId: string) {
+    if (expandedUserId === userId) {
+      setExpandedUserId(null);
+      return;
+    }
 
-    try {
-      const data = await getUserEvaluations(userId);
-      const results: EvaluationResult[] = Array.isArray(data)
-        ? data.map((e: { id?: string; judul?: string; skor?: number; score?: number; isLolos?: boolean; isPassed?: boolean }) => ({
-            id: e.id || "",
-            judul: e.judul || "",
-            skor: e.skor ?? e.score ?? 0,
-            isLolos: e.isLolos ?? e.isPassed ?? false,
-          }))
-        : [];
-      setEvaluationResult(results);
-    } catch (err) {
-      setEvaluationError(err instanceof Error ? err.message : "Gagal memuat hasil evaluasi.");
-    } finally {
-      setEvaluatingUserId(null);
+    // Only allow one expanded at a time
+    setExpandedUserId(userId);
+
+    // Only fetch if not already loaded
+    if (!evaluationData[userId]) {
+      setEvaluatingUserIds((prev) => new Set([...prev, userId]));
+      setEvaluationErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[userId];
+        return copy;
+      });
+
+      try {
+        const data = await getUserEvaluations(userId);
+        setEvaluationData((prev) => ({
+          ...prev,
+          [userId]: data as UserEvaluations,
+        }));
+      } catch (err) {
+        setEvaluationErrors((prev) => ({
+          ...prev,
+          [userId]: err instanceof Error ? err.message : "Gagal memuat hasil evaluasi.",
+        }));
+      } finally {
+        setEvaluatingUserIds((prev) => {
+          const copy = new Set(prev);
+          copy.delete(userId);
+          return copy;
+        });
+      }
     }
   }
 
@@ -168,30 +194,6 @@ export default function AdminMonitoringPage() {
         {error && (
           <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
             {error}
-          </div>
-        )}
-        {evaluationError && (
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
-            {evaluationError}
-          </div>
-        )}
-        {evaluationResult && (
-          <div className="bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-xl border border-emerald-200">
-            <div className="font-semibold mb-2">Hasil Evaluasi Guru:</div>
-            {evaluationResult.length === 0 ? (
-              <p className="text-xs">Belum ada hasil evaluasi.</p>
-            ) : (
-              <div className="space-y-2">
-                {evaluationResult.map((ev) => (
-                  <div key={ev.id} className="text-xs flex justify-between">
-                    <span>{ev.judul}</span>
-                    <span className={ev.isLolos ? "text-emerald-700 font-medium" : "text-rose-600 font-medium"}>
-                      Skor: {ev.skor}% — {ev.isLolos ? "Lulus" : "Tidak Lulus"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
@@ -267,11 +269,10 @@ export default function AdminMonitoringPage() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button
-                          onClick={() => handleCheckEvaluations(guru.id)}
-                          disabled={evaluatingUserId === guru.id}
-                          className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition disabled:opacity-50"
+                          onClick={() => toggleEvaluations(guru.id)}
+                          className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition"
                         >
-                          {evaluatingUserId === guru.id ? "Memuat..." : "Hasil Evaluasi"}
+                          {evaluatingUserIds.has(guru.id) ? "Memuat..." : expandedUserId === guru.id ? "Tutup" : "Hasil Evaluasi"}
                         </button>
                       </td>
                     </tr>
@@ -287,6 +288,82 @@ export default function AdminMonitoringPage() {
             </div>
           )}
         </div>
+
+        {/* Expandable Evaluation Detail */}
+        {expandedUserId && (
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="p-5 sm:p-6 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                Hasil Evaluasi —{" "}
+                {evaluationData[expandedUserId]?.namaGuru ||
+                  users.find((u) => u.id === expandedUserId)?.nama ||
+                  "Guru"}
+              </h3>
+            </div>
+
+            <div className="p-5 sm:p-6">
+              {evaluationErrors[expandedUserId] ? (
+                <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
+                  {evaluationErrors[expandedUserId]}
+                </div>
+              ) : evaluatingUserIds.has(expandedUserId) ? (
+                <div className="text-center py-8 text-slate-500 text-sm">
+                  Memuat hasil evaluasi...
+                </div>
+              ) : (
+                (() => {
+                  const evData = evaluationData[expandedUserId];
+                  const evaluations = evData?.evaluations ?? [];
+
+                  if (evaluations.length === 0) {
+                    return (
+                      <p className="text-sm text-slate-500">
+                        Belum ada data hasil evaluasi untuk guru ini.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      {evaluations.map((ev) => (
+                        <div
+                          key={ev.evaluationId}
+                          className="border border-slate-200 rounded-2xl p-4 space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">
+                                {ev.moduleJudul} — {ev.evaluationJudul}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {ev.dikerjakan ? (
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    Sudah dikerjakan
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                    Belum dikerjakan
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            {ev.dikerjakan && ev.skor !== null && (
+                              <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">
+                                Skor: {ev.skor}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
