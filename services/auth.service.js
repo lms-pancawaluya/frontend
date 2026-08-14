@@ -1,5 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
+// --- Registrasi & Login ---
 export async function registerUser(nama, email, password) {
   const response = await fetch(`${API_URL}/api/auth/register`, {
     method: "POST",
@@ -66,4 +67,59 @@ export async function getProfile() {
   }
 
   return result.data;
+}
+
+// --- Lupa Password & Reset OTP ---
+export async function forgotPassword(email) {
+  const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal mengirimkan kode OTP");
+  }
+
+  return result;
+}
+
+export async function verifyResetOtp(email, otpCode) {
+  const response = await fetch(`${API_URL}/api/auth/verify-reset-otp`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, otpCode }),
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Kode OTP salah atau sudah kedaluwarsa");
+  }
+
+  return result;
+}
+
+export async function resetPassword(email, passwordBaru) {
+  const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, passwordBaru }),
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal memperbarui password");
+  }
+
+  return result;
 }

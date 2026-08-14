@@ -61,8 +61,6 @@ export default function LoginPage() {
       {/* ================= CARD UTAMA LOGIN ================= */}
       <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20">
         <div className="text-center mb-6">
-
-
           <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight">
             Selamat Datang
           </h1>

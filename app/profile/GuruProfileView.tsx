@@ -363,8 +363,11 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
         sekolah: formData.sekolah,
         alamatSekolah: formData.alamatSekolah,
         noHp: formData.noHp,
+        foto: parsedUser.foto || profile.fotoProfil,
+        fotoProfil: parsedUser.fotoProfil || profile.fotoProfil,
       };
       localStorage.setItem("user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event("storage"));
 
       if (json.sukses) {
         setMessage({ type: "success", text: json.pesan || "Profil berhasil diperbarui" });
@@ -432,6 +435,22 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
 
       const json = await res.json();
       if (json.sukses) {
+        // Ambil URL foto dari respon backend (foto / fotoProfil / url)
+        const urlFotoBaru = json.fotoProfil || json.foto || json.url || json.data?.fotoProfil || json.data?.foto;
+
+        if (urlFotoBaru) {
+          const existingUser = localStorage.getItem("user");
+          const parsedUser = existingUser ? JSON.parse(existingUser) : {};
+          const updatedUser = {
+            ...parsedUser,
+            foto: urlFotoBaru,
+            fotoProfil: urlFotoBaru,
+          };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          // Emit event storage agar komponen lain (seperti Dashboard) dapat langsung mendeteksi perubahan
+          window.dispatchEvent(new Event("storage"));
+        }
+
         setMessage({ type: "success", text: "Foto profil berhasil diperbarui" });
         onRefresh();
       } else {
