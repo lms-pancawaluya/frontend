@@ -31,7 +31,7 @@ interface MiniQuizData {
   timestampSeconds: number;
   passingScore: number;
   maxAttempts: number;
-  questions: { id: string; pertanyaan: string; options: { id: string; teksOpsi: string }[] }[];
+  questions: { id: string; pertanyaan: string; options: { id: string; teksOpsi: string; isCorrect: boolean }[] }[];
 }
 
 const formatTimestamp = (seconds: number) => {
@@ -666,7 +666,7 @@ export default function AdminQuizManagementPage() {
                                       options: q.options.map((o) => ({
                                         id: o.id,
                                         teksOpsi: o.teksOpsi,
-                                        isCorrect: false,
+                                        isCorrect: o.isCorrect,
                                       })),
                                     });
                                     setQuestionForm({
@@ -674,7 +674,7 @@ export default function AdminQuizManagementPage() {
                                       options: q.options.map((o) => ({
                                         id: o.id,
                                         teksOpsi: o.teksOpsi,
-                                        isCorrect: false,
+                                        isCorrect: o.isCorrect,
                                       })),
                                     });
                                     setShowQuestionForm(true);
