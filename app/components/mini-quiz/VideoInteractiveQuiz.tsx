@@ -187,7 +187,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
             </div>
 
             {errorMessage && (
-              <div className="mb-4 p-3 rounded-lg bg-rose-50 text-rose-700 text-xs font-medium border border-rose-200">
+              <div className="alert-error mb-4">
                 {errorMessage}
               </div>
             )}
@@ -230,7 +230,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                     </p>
                     <button
                       onClick={handleRetryQuiz}
-                      className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-medium text-sm rounded-lg transition-colors"
+                      className="btn-primary w-full py-2.5 px-4 text-sm"
                     >
                       Coba Lagi
                     </button>
