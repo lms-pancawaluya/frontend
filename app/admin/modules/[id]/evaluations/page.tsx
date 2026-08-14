@@ -65,7 +65,7 @@ export default function ModuleEvaluationsPage() {
 
     try {
       const newEvaluation = await createEvaluation(moduleId, newTitle);
-      router.push(`/admin/evaluations/${newEvaluation.id}`);
+      router.push(`/admin/modules/${moduleId}/evaluations/${newEvaluation.id}`);
     } catch (err) {
       if (err instanceof Error) {
         alert(err.message);
@@ -149,7 +149,7 @@ return (
         {evaluations.map((evaluasi) => (
           <Link
             key={evaluasi.id}
-            href={`/admin/evaluations/${evaluasi.id}`}
+            href={`/admin/modules/${moduleId}/evaluations/${evaluasi.id}`}
             className="border border-[var(--color-border-soft)] rounded-xl p-4 flex justify-between items-center hover:shadow-sm transition"
           >
             <div>

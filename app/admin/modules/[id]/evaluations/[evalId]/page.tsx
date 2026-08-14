@@ -20,7 +20,6 @@ interface Question {
 
 interface EvaluationDetail {
   id: string;
-  moduleId: string;
   judul: string;
   questions: Question[];
 }
@@ -33,6 +32,7 @@ interface OptionInput {
 export default function EvaluationDetailAdminPage() {
   const params = useParams();
   const router = useRouter();
+  const moduleId = params.id as string;
   const evalId = params.evalId as string;
 
   const [evaluation, setEvaluation] = useState<EvaluationDetail | null>(null);
@@ -52,14 +52,13 @@ export default function EvaluationDetailAdminPage() {
   const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
 
   async function handleDelete(questionId: string) {
-    if (!evaluation) return;
     const confirmed = window.confirm("Yakin ingin menghapus soal ini?");
     if (!confirmed) return;
 
     setDeletingQuestionId(questionId);
 
     try {
-      await deleteQuestion(evaluation.moduleId, questionId);
+      await deleteQuestion(moduleId, questionId);
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Gagal menghapus soal.");
@@ -101,7 +100,7 @@ export default function EvaluationDetailAdminPage() {
 
     async function fetchEvaluationDetail() {
       try {
-        const data = await getEvaluationDetail(evalId);
+        const data = await getEvaluationDetail(moduleId, evalId);
         setEvaluation(data);
       } catch (err) {
         if (err instanceof Error) {
@@ -115,7 +114,7 @@ export default function EvaluationDetailAdminPage() {
     }
 
     fetchEvaluationDetail();
-  }, [evalId, router, refreshKey]);
+  }, [moduleId, evalId, router, refreshKey]);
 
   function handleOptionTextChange(index: number, value: string) {
     setOptions((prev) =>
@@ -195,7 +194,7 @@ export default function EvaluationDetailAdminPage() {
 
     try {
       if (editingQuestionId) {
-        await updateQuestion(evaluation.moduleId, editingQuestionId, {
+        await updateQuestion(moduleId, editingQuestionId, {
           pertanyaan: pertanyaan.trim(),
           options: options.map((opt) => ({
             teks: opt.teksOpsi.trim(),
@@ -208,7 +207,7 @@ export default function EvaluationDetailAdminPage() {
             ? { pertanyaan, options }
             : { pertanyaan, tipe };
 
-        await addQuestion(evaluation.moduleId, evalId, questionData);
+        await addQuestion(moduleId, evalId, questionData);
       }
 
       resetForm();
