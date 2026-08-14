@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUsers, getUserProgress, getUserEvaluations } from "@/services/user.service";
 
@@ -243,39 +243,112 @@ export default function AdminMonitoringPage() {
                   if (pct < 50) progressColor = "bg-rose-500";
                   else if (pct < 80) progressColor = "bg-amber-500";
 
+                  const isExpanded = expandedUserId === guru.id;
+                  const isEvaluationLoading = evaluatingUserIds.has(guru.id);
+                  const evaluationError = evaluationErrors[guru.id];
+                  const evaluations = evaluationData[guru.id]?.evaluations ?? [];
+
                   return (
-                    <tr key={guru.id} className="hover:bg-slate-50/80 transition">
-                      <td className="text-center px-4 py-3 font-semibold text-slate-400 text-xs">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-slate-900">
-                        {guru.nama}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm text-slate-700">
-                        {prog ? `${modulSelesai}/${totalModul} modul` : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                            <div
-                              className={`h-full ${progressColor} transition-all duration-500 rounded-full`}
-                              style={{ width: `${pct}%` }}
-                            />
+                    <Fragment key={guru.id}>
+                      <tr className={`hover:bg-slate-50/80 transition ${isExpanded ? "bg-slate-50/60" : ""}`}>
+                        <td className="text-center px-4 py-3 font-semibold text-slate-400 text-xs">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-900">
+                          {guru.nama}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm text-slate-700">
+                          {prog ? `${modulSelesai}/${totalModul} modul` : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                              <div
+                                className={`h-full ${progressColor} transition-all duration-500 rounded-full`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-bold text-slate-700 w-10 text-right">
+                              {pct}%
+                            </span>
                           </div>
-                          <span className="text-xs font-bold text-slate-700 w-10 text-right">
-                            {pct}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => toggleEvaluations(guru.id)}
-                          className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition"
-                        >
-                          {evaluatingUserIds.has(guru.id) ? "Memuat..." : expandedUserId === guru.id ? "Tutup" : "Hasil Evaluasi"}
-                        </button>
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => toggleEvaluations(guru.id)}
+                            className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition"
+                          >
+                            {isEvaluationLoading ? "Memuat..." : isExpanded ? "Tutup" : "Hasil Evaluasi"}
+                          </button>
+                        </td>
+                      </tr>
+
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={5} className="bg-slate-50/70 p-0">
+                            <div className="px-4 py-5 sm:px-6">
+                              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                                <h3 className="mb-4 text-sm font-bold text-slate-900">
+                                  Hasil Evaluasi — {evaluationData[guru.id]?.namaGuru || guru.nama}
+                                </h3>
+
+                                {evaluationError ? (
+                                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                                    {evaluationError}
+                                  </div>
+                                ) : isEvaluationLoading ? (
+                                  <div className="py-6 text-center text-sm text-slate-500">
+                                    Memuat hasil evaluasi...
+                                  </div>
+                                ) : evaluations.length === 0 ? (
+                                  <p className="text-sm text-slate-500">
+                                    Belum ada data hasil evaluasi untuk guru ini.
+                                  </p>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {evaluations.map((ev) => (
+                                      <div
+                                        key={ev.evaluationId}
+                                        className="rounded-xl border border-slate-200 p-4"
+                                      >
+                                        <div className="flex items-center justify-between gap-3">
+                                          <div>
+                                            <p className="text-sm font-bold text-slate-800">
+                                              {ev.moduleJudul}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-slate-500">
+                                              {ev.evaluationJudul}
+                                            </p>
+                                            <p className="mt-2 text-xs text-slate-500">
+                                              {ev.dikerjakan ? (
+                                                <span className="inline-flex items-center gap-1.5">
+                                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                  Sudah dikerjakan
+                                                </span>
+                                              ) : (
+                                                <span className="inline-flex items-center gap-1.5">
+                                                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                                                  Belum dikerjakan
+                                                </span>
+                                              )}
+                                            </p>
+                                          </div>
+                                          {ev.dikerjakan && ev.skor !== null && (
+                                            <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                                              Skor: {ev.skor}%
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -288,82 +361,6 @@ export default function AdminMonitoringPage() {
             </div>
           )}
         </div>
-
-        {/* Expandable Evaluation Detail */}
-        {expandedUserId && (
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div className="p-5 sm:p-6 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                Hasil Evaluasi —{" "}
-                {evaluationData[expandedUserId]?.namaGuru ||
-                  users.find((u) => u.id === expandedUserId)?.nama ||
-                  "Guru"}
-              </h3>
-            </div>
-
-            <div className="p-5 sm:p-6">
-              {evaluationErrors[expandedUserId] ? (
-                <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
-                  {evaluationErrors[expandedUserId]}
-                </div>
-              ) : evaluatingUserIds.has(expandedUserId) ? (
-                <div className="text-center py-8 text-slate-500 text-sm">
-                  Memuat hasil evaluasi...
-                </div>
-              ) : (
-                (() => {
-                  const evData = evaluationData[expandedUserId];
-                  const evaluations = evData?.evaluations ?? [];
-
-                  if (evaluations.length === 0) {
-                    return (
-                      <p className="text-sm text-slate-500">
-                        Belum ada data hasil evaluasi untuk guru ini.
-                      </p>
-                    );
-                  }
-
-                  return (
-                    <div className="space-y-4">
-                      {evaluations.map((ev) => (
-                        <div
-                          key={ev.evaluationId}
-                          className="border border-slate-200 rounded-2xl p-4 space-y-2"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div>
-                              <p className="text-sm font-bold text-slate-800">
-                                {ev.moduleJudul} — {ev.evaluationJudul}
-                              </p>
-                              <p className="text-xs text-slate-500 mt-0.5">
-                                {ev.dikerjakan ? (
-                                  <span className="inline-flex items-center gap-1.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    Sudah dikerjakan
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                    Belum dikerjakan
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                            {ev.dikerjakan && ev.skor !== null && (
-                              <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">
-                                Skor: {ev.skor}%
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
