@@ -67,7 +67,7 @@ export default function ModulesPage() {
 if (error) {
   return (
     <div className="max-w-md mx-auto mt-16 p-4">
-      <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+      <div className="alert-error">
         {error}
       </div>
     </div>

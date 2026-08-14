@@ -767,7 +767,7 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
                 <button
                   type="submit"
                   disabled={savingPassword}
-                  className="bg-amber-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-amber-600 disabled:opacity-60 transition-colors duration-200 shadow-xs cursor-pointer"
+                  className="btn-primary text-xs disabled:opacity-60 shadow-xs cursor-pointer"
                 >
                   {savingPassword ? "Memperbarui..." : "Update Password"}
                 </button>

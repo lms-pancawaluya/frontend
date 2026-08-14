@@ -56,7 +56,7 @@ export default function ModuleFeedbackForm({ moduleId }: ModuleFeedbackFormProps
       )}
 
       {errorMsg && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium">
+        <div className="alert-error">
           {errorMsg}
         </div>
       )}
