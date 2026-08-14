@@ -256,6 +256,14 @@ export default function AdminModuleDetailPage() {
             >
               Edit Evaluasi
             </Link>
+            {contents.some((c) => c.tipe === "video") && (
+              <Link
+                href={`/admin/modules/${module.id}/quiz/${contents.find((c) => c.tipe === "video")!.id}`}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
+              >
+                Kelola Quiz
+              </Link>
+            )}
           </div>
         </div>
       </div>
