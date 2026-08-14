@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -45,12 +47,18 @@ export default function LoginForm() {
         document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
       }
 
-      // Tentukan target URL (Cek role dengan case-insensitive atau fallback)
+      // Tentukan target URL berdasarkan role pengguna (case-insensitive)
       const userRole = String(user?.role || "").toUpperCase();
-      const redirectPath = userRole === "GURU" ? "/dashboard" : "/dashboard";
+      let redirectPath: string;
+      if (userRole === "ADMIN") {
+        redirectPath = "/admin";
+      } else if (userRole === "GURU") {
+        redirectPath = "/dashboard";
+      } else {
+        redirectPath = "/dashboard";
+      }
 
-      // Gunakan window.location.href agar middleware dipaksa membaca cookie baru tanpa race condition
-      window.location.href = redirectPath;
+      router.push(redirectPath);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal masuk. Periksa kembali akun Anda.");
       setLoading(false);

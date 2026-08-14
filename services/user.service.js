@@ -100,3 +100,43 @@ export async function deleteUser(id) {
 
   return result;
 }
+
+export async function getUserProgress(userId) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/admin/users/${userId}/progress`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal mengambil progres pengguna");
+  }
+
+  return result.data;
+}
+
+export async function getUserEvaluations(userId) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/api/admin/users/${userId}/evaluations`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+
+  if (!result.sukses) {
+    throw new Error(result.pesan || "Gagal mengambil hasil evaluasi pengguna");
+  }
+
+  return result.data;
+}
