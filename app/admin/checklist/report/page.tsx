@@ -2,206 +2,277 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { getChecklistReport } from "@/services/checklist.service";
+import { getUsers, getUserProgress, getUserEvaluations } from "@/services/user.service";
 
-interface TeacherReport {
+interface UserItem {
   id: string;
   nama: string;
   email: string;
-  hariAktif: number;
-  totalHari: number;
-  persentaseKonsistensi: number;
+  role: string;
+  createdAt: string;
+  modulSelesai: number;
+  status?: string;
 }
 
-interface ReportData {
-  periodeHari: number;
-  totalGuru: number;
-  report: TeacherReport[];
+interface ProgressData {
+  totalModul: number;
+  modulSelesai: number;
+  persentase: number;
 }
 
-export default function AdminChecklistReportPage() {
+interface EvaluationResult {
+  id: string;
+  judul: string;
+  skor: number;
+  isLolos: boolean;
+}
+
+export default function AdminMonitoringPage() {
   const router = useRouter();
-  const [days, setDays] = useState<number>(7);
-  const [data, setData] = useState<ReportData | null>(null);
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<string, ProgressData>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sortBy, setSortBy] = useState<"konsistensi" | "nama">("konsistensi");
+  const [loadingProgress, setLoadingProgress] = useState(false);
+
+  const [evaluatingUserId, setEvaluatingUserId] = useState<string | null>(null);
+  const [evaluationResult, setEvaluationResult] = useState<EvaluationResult[] | null>(null);
+  const [evaluationError, setEvaluationError] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
-    if (!token || !userData) {
+    if (!userData) {
       router.push("/login");
       return;
     }
 
     const currentUser = JSON.parse(userData);
+
     if (currentUser.role !== "admin") {
       router.push("/dashboard");
       return;
     }
 
-    async function fetchReport(periodDays: number) {
+    async function fetchUsers() {
       try {
-        setLoading(true);
-        setError("");
-        const result = await getChecklistReport(periodDays);
-        setData(result);
+        const data = await getUsers();
+        const guruOnly = data.filter((u: UserItem) => u.role === "guru");
+        setUsers(guruOnly);
+
+        // Fetch progress for each guru
+        setLoadingProgress(true);
+        const progressEntries = await Promise.all(
+          guruOnly.map(async (guru: UserItem) => {
+            try {
+              const prog = await getUserProgress(guru.id);
+              return { userId: guru.id, progress: prog };
+            } catch {
+              return { userId: guru.id, progress: null };
+            }
+          })
+        );
+
+        const map: Record<string, ProgressData> = {};
+        progressEntries.forEach((entry) => {
+          if (entry.progress) {
+            map[entry.userId] = entry.progress;
+          }
+        });
+        setProgressMap(map);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat laporan konsistensi.");
+          setError("Gagal memuat data monitoring.");
         }
       } finally {
         setLoading(false);
+        setLoadingProgress(false);
       }
     }
 
-    fetchReport(days);
-  }, [router, days]);
+    fetchUsers();
+  }, [router]);
 
-  const sortedReport = data?.report ? [...data.report].sort((a, b) => {
-    if (sortBy === "konsistensi") {
-      return b.persentaseKonsistensi - a.persentaseKonsistensi;
+  async function handleCheckEvaluations(userId: string) {
+    setEvaluatingUserId(userId);
+    setEvaluationResult(null);
+    setEvaluationError("");
+
+    try {
+      const data = await getUserEvaluations(userId);
+      const results: EvaluationResult[] = Array.isArray(data)
+        ? data.map((e: { id?: string; judul?: string; skor?: number; score?: number; isLolos?: boolean; isPassed?: boolean }) => ({
+            id: e.id || "",
+            judul: e.judul || "",
+            skor: e.skor ?? e.score ?? 0,
+            isLolos: e.isLolos ?? e.isPassed ?? false,
+          }))
+        : [];
+      setEvaluationResult(results);
+    } catch (err) {
+      setEvaluationError(err instanceof Error ? err.message : "Gagal memuat hasil evaluasi.");
+    } finally {
+      setEvaluatingUserId(null);
     }
-    return a.nama.localeCompare(b.nama);
-  }) : [];
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6">
+        <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
+          <svg className="w-5 h-5 animate-spin text-emerald-700" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          Memuat data monitoring...
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
+        {/* Tombol Navigasi Kembali */}
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Link href="/admin/checklist" className="text-xs text-[var(--color-navy)] hover:underline font-medium">
-              ← Kembali ke Kelola Checklist
-            </Link>
-          </div>
-          <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)]">
-            Laporan Konsistensi Checklist
+          <button
+            onClick={() => router.push("/admin")}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm"
+          >
+            <span className="p-1 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </span>
+            Kembali ke Dashboard Admin
+          </button>
+        </div>
+
+        {/* Judul Halaman */}
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            Monitoring Pengerjaan Modul Guru
           </h1>
-          <p className="text-sm text-gray-500">
-            Rekapitulasi tingkat konsistensi pengisian daily checklist oleh Guru
+          <p className="text-sm text-slate-500 mt-1">
+            Pantau progres pengerjaan modul dan hasil evaluasi tiap guru.
           </p>
         </div>
 
-        {/* Filter Periode */}
-        <div className="flex items-center bg-gray-100 p-1 rounded-full border border-gray-200">
-          <button
-            onClick={() => setDays(7)}
-            className={`text-xs font-semibold px-4 py-1.5 rounded-full transition ${
-              days === 7
-                ? "bg-[var(--color-navy)] text-white shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            7 Hari Terakhir
-          </button>
-          <button
-            onClick={() => setDays(30)}
-            className={`text-xs font-semibold px-4 py-1.5 rounded-full transition ${
-              days === 30
-                ? "bg-[var(--color-navy)] text-white shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            30 Hari Terakhir
-          </button>
-        </div>
-      </div>
+        {/* Feedback */}
+        {error && (
+          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
+            {error}
+          </div>
+        )}
+        {evaluationError && (
+          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
+            {evaluationError}
+          </div>
+        )}
+        {evaluationResult && (
+          <div className="bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-xl border border-emerald-200">
+            <div className="font-semibold mb-2">Hasil Evaluasi Guru:</div>
+            {evaluationResult.length === 0 ? (
+              <p className="text-xs">Belum ada hasil evaluasi.</p>
+            ) : (
+              <div className="space-y-2">
+                {evaluationResult.map((ev) => (
+                  <div key={ev.id} className="text-xs flex justify-between">
+                    <span>{ev.judul}</span>
+                    <span className={ev.isLolos ? "text-emerald-700 font-medium" : "text-rose-600 font-medium"}>
+                      Skor: {ev.skor}% — {ev.isLolos ? "Lulus" : "Tidak Lulus"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-      {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200 mb-6">
-          {error}
-        </div>
-      )}
-
-      {/* Ringkasan Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white border border-[var(--color-border-soft)] p-5 rounded-2xl shadow-sm">
-          <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Periode Pengamatan</span>
-          <div className="text-2xl font-bold text-[var(--color-navy)] mt-1">{days} Hari</div>
-        </div>
-        <div className="bg-white border border-[var(--color-border-soft)] p-5 rounded-2xl shadow-sm">
-          <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Total Guru Terdaftar</span>
-          <div className="text-2xl font-bold text-[var(--color-navy)] mt-1">{data?.totalGuru ?? 0} Guru</div>
-        </div>
-      </div>
-
-      {/* Control Sorting & Header Tabel */}
-      <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-[var(--color-border-soft)] flex justify-between items-center bg-[var(--color-pale)]">
-          <h3 className="font-medium text-sm text-[var(--color-navy)]">
-            Daftar Konsistensi Guru ({sortedReport.length})
-          </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Urutkan:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "konsistensi" | "nama")}
-              className="text-xs bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-gray-700 focus:outline-none"
-            >
-              <option value="konsistensi">Konsistensi Tertinggi</option>
-              <option value="nama">Nama Guru (A-Z)</option>
-            </select>
+        {/* Ringkasan Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-1">
+            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Guru</span>
+            <div className="text-2xl font-bold text-slate-900">{users.length} Guru</div>
+          </div>
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-1">
+            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+              {loadingProgress ? "Memuat Progres..." : "Modul Selesai"}
+            </span>
+            <div className="text-2xl font-bold text-slate-900">
+              {loadingProgress
+                ? "—"
+                : `${users.filter((u) => {
+                    const prog = progressMap[u.id];
+                    return prog && prog.modulSelesai >= prog.totalModul && prog.totalModul > 0;
+                  }).length}/${users.length}`}
+            </div>
           </div>
         </div>
 
-        {loading ? (
-          <p className="text-center py-12 text-sm text-gray-400">Memuat laporan konsistensi...</p>
-        ) : sortedReport.length === 0 ? (
-          <p className="text-center py-12 text-sm text-gray-400">Belum ada data konsistensi guru.</p>
-        ) : (
+        {/* Tabel Monitoring */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs font-semibold uppercase border-b border-gray-100">
+              <thead className="bg-slate-50/80 border-b border-slate-200/80">
                 <tr>
-                  <th className="text-center px-4 py-3 w-12">#</th>
-                  <th className="text-left px-4 py-3">Nama Guru</th>
-                  <th className="text-left px-4 py-3">Email</th>
-                  <th className="text-center px-4 py-3">Hari Aktif</th>
-                  <th className="text-left px-4 py-3 w-64">Konsistensi</th>
+                  <th className="text-center px-4 py-3 w-12 text-xs font-semibold text-slate-500 uppercase tracking-wider">#</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Guru</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Modul Dikerjakan</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Progress</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {sortedReport.map((guru, index) => {
-                  const pct = Math.min(100, Math.max(0, guru.persentaseKonsistensi));
-                  
-                  // Color spectrum based on percentage
+              <tbody className="divide-y divide-slate-100">
+                {users.map((guru, index) => {
+                  const prog = progressMap[guru.id];
+                  const totalModul = prog?.totalModul ?? 0;
+                  const modulSelesai = prog?.modulSelesai ?? 0;
+                  const persentase = prog?.persentase ?? 0;
+                  const pct = Math.min(100, Math.max(0, persentase));
+
                   let progressColor = "bg-emerald-500";
                   if (pct < 50) progressColor = "bg-rose-500";
                   else if (pct < 80) progressColor = "bg-amber-500";
 
                   return (
-                    <tr key={guru.id} className="hover:bg-gray-50/80 transition">
-                      <td className="text-center px-4 py-3 font-semibold text-gray-400 text-xs">
+                    <tr key={guru.id} className="hover:bg-slate-50/80 transition">
+                      <td className="text-center px-4 py-3 font-semibold text-slate-400 text-xs">
                         {index + 1}
                       </td>
-                      <td className="px-4 py-3 font-medium text-[var(--color-navy)]">
+                      <td className="px-4 py-3 font-medium text-slate-900">
                         {guru.nama}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
-                        {guru.email}
-                      </td>
-                      <td className="text-center px-4 py-3 font-medium text-gray-700">
-                        <span className="bg-gray-100 text-gray-800 text-xs px-2.5 py-1 rounded-full border border-gray-200">
-                          {guru.hariAktif}/{guru.totalHari} hari
-                        </span>
+                      <td className="px-4 py-3 text-center text-sm text-slate-700">
+                        {prog ? `${modulSelesai}/${totalModul} modul` : "—"}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+                          <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                             <div
                               className={`h-full ${progressColor} transition-all duration-500 rounded-full`}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <span className="text-xs font-bold text-gray-700 w-10 text-right">
+                          <span className="text-xs font-bold text-slate-700 w-10 text-right">
                             {pct}%
                           </span>
                         </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => handleCheckEvaluations(guru.id)}
+                          disabled={evaluatingUserId === guru.id}
+                          className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition disabled:opacity-50"
+                        >
+                          {evaluatingUserId === guru.id ? "Memuat..." : "Hasil Evaluasi"}
+                        </button>
                       </td>
                     </tr>
                   );
@@ -209,7 +280,13 @@ export default function AdminChecklistReportPage() {
               </tbody>
             </table>
           </div>
-        )}
+
+          {users.length === 0 && (
+            <div className="p-6 sm:p-8 text-center">
+              <p className="text-sm text-slate-500">Belum ada guru terdaftar.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
