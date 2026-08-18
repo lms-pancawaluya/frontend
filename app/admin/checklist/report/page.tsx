@@ -60,6 +60,7 @@ export default function AdminMonitoringPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [loadingProgress, setLoadingProgress] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [evaluatingUserIds, setEvaluatingUserIds] = useState<Set<string>>(new Set());
@@ -214,6 +215,11 @@ export default function AdminMonitoringPage() {
     );
   }
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredUsers = normalizedQuery
+    ? users.filter((guru) => guru.nama.toLowerCase().includes(normalizedQuery))
+    : users;
+
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
@@ -270,6 +276,35 @@ export default function AdminMonitoringPage() {
           </div>
         </div>
 
+        {/* Pencarian Guru */}
+        <div className="relative w-full sm:max-w-sm">
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari nama guru..."
+            aria-label="Cari nama guru"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="Bersihkan pencarian"
+              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
         {/* Tabel Monitoring */}
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -284,7 +319,7 @@ export default function AdminMonitoringPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {users.map((guru, index) => {
+                {filteredUsers.map((guru, index) => {
                   const prog = progressMap[guru.id];
                   const totalModul = prog?.totalModul ?? 0;
                   const modulSelesai = prog?.modulSelesai ?? 0;
@@ -465,6 +500,12 @@ export default function AdminMonitoringPage() {
           {users.length === 0 && (
             <div className="p-6 sm:p-8 text-center">
               <p className="text-sm text-slate-500">Belum ada guru terdaftar.</p>
+            </div>
+          )}
+
+          {users.length > 0 && filteredUsers.length === 0 && (
+            <div className="p-6 sm:p-8 text-center">
+              <p className="text-sm text-slate-500">Guru tidak ditemukan.</p>
             </div>
           )}
         </div>
