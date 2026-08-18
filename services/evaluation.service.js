@@ -96,6 +96,26 @@ export async function sendModuleFeedback(moduleId, payload) {
   return result.data;
 }
 
+/**
+ * Get seluruh saran & kritik guru (untuk monitoring admin)
+ * URL: GET /api/feedbacks
+ * Backend menjamin satu feedback per guru per modul.
+ */
+export async function getAllFeedbacks() {
+  const response = await fetch(`${API_URL}/api/feedbacks`, {
+    method: "GET",
+    headers: getHeaders(),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.pesan || result.message || "Gagal mengambil data saran & kritik");
+  }
+
+  return result.data ?? [];
+}
+
 // ----------------------------------------------------
 // FITUR MANAGEMENT EVALUASI (ADMIN / AUTHORING)
 // ----------------------------------------------------

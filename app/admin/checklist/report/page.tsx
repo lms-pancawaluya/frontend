@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUsers, getUserProgress, getUserEvaluations } from "@/services/user.service";
+import { getAllFeedbacks } from "@/services/evaluation.service";
 
 interface UserItem {
   id: string;
@@ -36,6 +37,22 @@ interface UserEvaluations {
   evaluations: EvaluationItem[];
 }
 
+interface FeedbackItem {
+  id: string;
+  saran: string;
+  kritik: string;
+  createdAt: string;
+  user: {
+    id: string;
+    nama: string;
+    email: string;
+  };
+  module: {
+    id: string;
+    judul: string;
+  };
+}
+
 export default function AdminMonitoringPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -48,6 +65,11 @@ export default function AdminMonitoringPage() {
   const [evaluatingUserIds, setEvaluatingUserIds] = useState<Set<string>>(new Set());
   const [evaluationData, setEvaluationData] = useState<Record<string, UserEvaluations>>({});
   const [evaluationErrors, setEvaluationErrors] = useState<Record<string, string>>({});
+
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
+  const [expandedFeedbackKeys, setExpandedFeedbackKeys] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -103,7 +125,37 @@ export default function AdminMonitoringPage() {
     }
 
     fetchUsers();
+
+    async function fetchFeedbacks() {
+      setFeedbackLoading(true);
+      setFeedbackError("");
+      try {
+        const data = await getAllFeedbacks();
+        setFeedbacks((data as FeedbackItem[]) ?? []);
+      } catch (err) {
+        setFeedbackError(
+          err instanceof Error ? err.message : "Gagal memuat saran & kritik."
+        );
+      } finally {
+        setFeedbackLoading(false);
+      }
+    }
+
+    fetchFeedbacks();
   }, [router]);
+
+  function toggleFeedback(userId: string, moduleId: string) {
+    const key = `${userId}:${moduleId}`;
+    setExpandedFeedbackKeys((prev) => {
+      const copy = new Set(prev);
+      if (copy.has(key)) {
+        copy.delete(key);
+      } else {
+        copy.add(key);
+      }
+      return copy;
+    });
+  }
 
   async function toggleEvaluations(userId: string) {
     if (expandedUserId === userId) {
@@ -306,7 +358,14 @@ export default function AdminMonitoringPage() {
                                   </p>
                                 ) : (
                                   <div className="space-y-3">
-                                    {evaluations.map((ev) => (
+                                    {evaluations.map((ev) => {
+                                      const feedbackKey = `${guru.id}:${ev.moduleId}`;
+                                      const isFeedbackExpanded = expandedFeedbackKeys.has(feedbackKey);
+                                      const moduleFeedback = feedbacks.find(
+                                        (fb) => fb.user?.id === guru.id && fb.module?.id === ev.moduleId
+                                      );
+
+                                      return (
                                       <div
                                         key={ev.evaluationId}
                                         className="rounded-xl border border-slate-200 p-4"
@@ -339,8 +398,56 @@ export default function AdminMonitoringPage() {
                                             </span>
                                           )}
                                         </div>
+
+                                        {ev.dikerjakan && (
+                                          <div className="mt-3 border-t border-slate-100 pt-3">
+                                            <button
+                                              onClick={() => toggleFeedback(guru.id, ev.moduleId)}
+                                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors"
+                                              aria-expanded={isFeedbackExpanded}
+                                            >
+                                              <svg
+                                                className={`w-3.5 h-3.5 transition-transform ${isFeedbackExpanded ? "rotate-90" : ""}`}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                              </svg>
+                                              Saran &amp; Kritik
+                                            </button>
+
+                                            {isFeedbackExpanded && (
+                                              <div className="mt-3">
+                                                {feedbackLoading ? (
+                                                  <p className="text-xs text-slate-400">Memuat saran &amp; kritik...</p>
+                                                ) : feedbackError ? (
+                                                  <p className="text-xs text-rose-500">{feedbackError}</p>
+                                                ) : moduleFeedback ? (
+                                                  <div className="space-y-2.5">
+                                                    <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+                                                      <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Saran</p>
+                                                      <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
+                                                        {moduleFeedback.saran || "—"}
+                                                      </p>
+                                                    </div>
+                                                    <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+                                                      <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Kritik</p>
+                                                      <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
+                                                        {moduleFeedback.kritik || "—"}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                ) : (
+                                                  <p className="text-xs italic text-slate-400">Belum ada saran &amp; kritik</p>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
