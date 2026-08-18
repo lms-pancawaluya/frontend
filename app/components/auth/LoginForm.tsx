@@ -45,6 +45,10 @@ export default function LoginForm() {
 
         // Simpan Cookie (Set path=/ dan SameSite)
         document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
+
+        // Beritahu komponen yang mendengarkan status auth (Header, HeroCta)
+        // agar langsung re-render tanpa perlu refresh halaman.
+        window.dispatchEvent(new Event("authChange"));
       }
 
       // Tentukan target URL berdasarkan role pengguna (case-insensitive)
