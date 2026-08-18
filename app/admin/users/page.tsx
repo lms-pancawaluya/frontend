@@ -12,6 +12,7 @@ interface UserItem {
   role: string;
   createdAt: string;
   modulSelesai: number;
+  sekolah?: string;
   status?: string;
 }
 
@@ -97,14 +98,15 @@ if (error) {
   );
 }
 
+const guruUsers = users.filter((u) => u.role === "guru");
 const normalizedQuery = searchQuery.trim().toLowerCase();
 const filteredUsers = normalizedQuery
-  ? users.filter(
+  ? guruUsers.filter(
       (u) =>
         u.nama.toLowerCase().includes(normalizedQuery) ||
         u.email.toLowerCase().includes(normalizedQuery)
     )
-  : users;
+  : guruUsers;
 
 return (
   <div className="max-w-5xl mx-auto p-6">
@@ -149,9 +151,9 @@ return (
           <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Nama</th>
+              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Sekolah</th>
               <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Email</th>
               <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Role</th>
-              <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Modul Selesai</th>
               <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Status</th>
               <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Aksi</th>
             </tr>
@@ -167,6 +169,9 @@ return (
               filteredUsers.map((u) => (
               <tr key={u.id} className="border-b border-[var(--color-border-soft)] last:border-0">
                 <td className="px-4 py-3 text-gray-800">{u.nama}</td>
+                <td className="px-4 py-3 text-gray-600">
+                  {u.sekolah ? u.sekolah : <span className="text-gray-400">—</span>}
+                </td>
                 <td className="px-4 py-3 text-gray-600">{u.email}</td>
                 <td className="px-4 py-3 text-center">
                   <span
@@ -179,7 +184,6 @@ return (
                     {u.role}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-600 text-center">{u.modulSelesai}</td>
                 <td className="px-4 py-3 text-center">
                   {u.status ? (
                     <span
