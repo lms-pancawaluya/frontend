@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import HeroCta from "./HeroCta";
 
 const pancawaluya = [
   {
@@ -114,20 +114,7 @@ export default function HomePage() {
               siswa.
             </p>
 
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 bg-[var(--color-navy)] text-white px-6 py-3 rounded-full font-medium shadow-sm hover:opacity-90 transition"
-              >
-                Mulai Sekarang →
-              </Link>
-              <Link
-                href="/login"
-                className="bg-white text-[var(--color-navy)] border border-[var(--color-border-soft)] px-6 py-3 rounded-full font-medium hover:bg-[var(--color-pale)] transition"
-              >
-                Saya sudah punya akun
-              </Link>
-            </div>
+            <HeroCta />
           </div>
 
           {/* Kolom kanan: logo */}

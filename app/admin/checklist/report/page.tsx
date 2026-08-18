@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUsers, getUserProgress, getUserEvaluations } from "@/services/user.service";
+import { getAllFeedbacks } from "@/services/evaluation.service";
 
 interface UserItem {
   id: string;
@@ -36,6 +37,22 @@ interface UserEvaluations {
   evaluations: EvaluationItem[];
 }
 
+interface FeedbackItem {
+  id: string;
+  saran: string;
+  kritik: string;
+  createdAt: string;
+  user: {
+    id: string;
+    nama: string;
+    email: string;
+  };
+  module: {
+    id: string;
+    judul: string;
+  };
+}
+
 export default function AdminMonitoringPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -43,11 +60,17 @@ export default function AdminMonitoringPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [loadingProgress, setLoadingProgress] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [evaluatingUserIds, setEvaluatingUserIds] = useState<Set<string>>(new Set());
   const [evaluationData, setEvaluationData] = useState<Record<string, UserEvaluations>>({});
   const [evaluationErrors, setEvaluationErrors] = useState<Record<string, string>>({});
+
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
+  const [expandedFeedbackKeys, setExpandedFeedbackKeys] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -103,7 +126,37 @@ export default function AdminMonitoringPage() {
     }
 
     fetchUsers();
+
+    async function fetchFeedbacks() {
+      setFeedbackLoading(true);
+      setFeedbackError("");
+      try {
+        const data = await getAllFeedbacks();
+        setFeedbacks((data as FeedbackItem[]) ?? []);
+      } catch (err) {
+        setFeedbackError(
+          err instanceof Error ? err.message : "Gagal memuat saran & kritik."
+        );
+      } finally {
+        setFeedbackLoading(false);
+      }
+    }
+
+    fetchFeedbacks();
   }, [router]);
+
+  function toggleFeedback(userId: string, moduleId: string) {
+    const key = `${userId}:${moduleId}`;
+    setExpandedFeedbackKeys((prev) => {
+      const copy = new Set(prev);
+      if (copy.has(key)) {
+        copy.delete(key);
+      } else {
+        copy.add(key);
+      }
+      return copy;
+    });
+  }
 
   async function toggleEvaluations(userId: string) {
     if (expandedUserId === userId) {
@@ -162,6 +215,11 @@ export default function AdminMonitoringPage() {
     );
   }
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredUsers = normalizedQuery
+    ? users.filter((guru) => guru.nama.toLowerCase().includes(normalizedQuery))
+    : users;
+
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
@@ -218,6 +276,35 @@ export default function AdminMonitoringPage() {
           </div>
         </div>
 
+        {/* Pencarian Guru */}
+        <div className="relative w-full sm:max-w-sm">
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari nama guru..."
+            aria-label="Cari nama guru"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="Bersihkan pencarian"
+              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
         {/* Tabel Monitoring */}
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -232,7 +319,7 @@ export default function AdminMonitoringPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {users.map((guru, index) => {
+                {filteredUsers.map((guru, index) => {
                   const prog = progressMap[guru.id];
                   const totalModul = prog?.totalModul ?? 0;
                   const modulSelesai = prog?.modulSelesai ?? 0;
@@ -306,7 +393,14 @@ export default function AdminMonitoringPage() {
                                   </p>
                                 ) : (
                                   <div className="space-y-3">
-                                    {evaluations.map((ev) => (
+                                    {evaluations.map((ev) => {
+                                      const feedbackKey = `${guru.id}:${ev.moduleId}`;
+                                      const isFeedbackExpanded = expandedFeedbackKeys.has(feedbackKey);
+                                      const moduleFeedback = feedbacks.find(
+                                        (fb) => fb.user?.id === guru.id && fb.module?.id === ev.moduleId
+                                      );
+
+                                      return (
                                       <div
                                         key={ev.evaluationId}
                                         className="rounded-xl border border-slate-200 p-4"
@@ -339,8 +433,56 @@ export default function AdminMonitoringPage() {
                                             </span>
                                           )}
                                         </div>
+
+                                        {ev.dikerjakan && (
+                                          <div className="mt-3 border-t border-slate-100 pt-3">
+                                            <button
+                                              onClick={() => toggleFeedback(guru.id, ev.moduleId)}
+                                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors"
+                                              aria-expanded={isFeedbackExpanded}
+                                            >
+                                              <svg
+                                                className={`w-3.5 h-3.5 transition-transform ${isFeedbackExpanded ? "rotate-90" : ""}`}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                              </svg>
+                                              Saran &amp; Kritik
+                                            </button>
+
+                                            {isFeedbackExpanded && (
+                                              <div className="mt-3">
+                                                {feedbackLoading ? (
+                                                  <p className="text-xs text-slate-400">Memuat saran &amp; kritik...</p>
+                                                ) : feedbackError ? (
+                                                  <p className="text-xs text-rose-500">{feedbackError}</p>
+                                                ) : moduleFeedback ? (
+                                                  <div className="space-y-2.5">
+                                                    <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+                                                      <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Saran</p>
+                                                      <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
+                                                        {moduleFeedback.saran || "—"}
+                                                      </p>
+                                                    </div>
+                                                    <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+                                                      <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Kritik</p>
+                                                      <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
+                                                        {moduleFeedback.kritik || "—"}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                ) : (
+                                                  <p className="text-xs italic text-slate-400">Belum ada saran &amp; kritik</p>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
@@ -358,6 +500,12 @@ export default function AdminMonitoringPage() {
           {users.length === 0 && (
             <div className="p-6 sm:p-8 text-center">
               <p className="text-sm text-slate-500">Belum ada guru terdaftar.</p>
+            </div>
+          )}
+
+          {users.length > 0 && filteredUsers.length === 0 && (
+            <div className="p-6 sm:p-8 text-center">
+              <p className="text-sm text-slate-500">Guru tidak ditemukan.</p>
             </div>
           )}
         </div>

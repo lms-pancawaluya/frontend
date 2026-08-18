@@ -31,6 +31,7 @@ export default function AdminModulesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -99,6 +100,15 @@ export default function AdminModulesPage() {
     );
   }
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredModules = normalizedQuery
+    ? modules.filter(
+        (m) =>
+          m.judul.toLowerCase().includes(normalizedQuery) ||
+          m.deskripsi.toLowerCase().includes(normalizedQuery)
+      )
+    : modules;
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
@@ -113,11 +123,41 @@ export default function AdminModulesPage() {
         </Link>
       </div>
 
+      <div className="relative w-full sm:max-w-sm mb-6">
+        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+          </svg>
+        </span>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Cari nama atau deskripsi modul..."
+          aria-label="Cari nama atau deskripsi modul"
+          className="w-full rounded-full border border-[var(--color-border-soft)] bg-white py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery("")}
+            aria-label="Bersihkan pencarian"
+            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
+
       {modules.length === 0 ? (
         <p className="text-center text-gray-500 mt-8">Belum ada modul tersedia.</p>
+      ) : filteredModules.length === 0 ? (
+        <p className="text-center text-gray-500 mt-8">Modul tidak ditemukan</p>
       ) : (
         <div className="flex flex-col gap-3">
-          {modules
+          {filteredModules
             .sort((a, b) => a.urutan - b.urutan)
             .map((mod) => (
               <div
