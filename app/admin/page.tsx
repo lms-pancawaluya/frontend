@@ -103,8 +103,8 @@ export default function AdminDashboardPage() {
       color: "bg-purple-50 border-purple-100",
     },
     {
-      title: "Laporan Konsistensi Checklist",
-      desc: "Lihat rekapitulasi persentase konsistensi harian guru (7/30 hari).",
+      title: "Monitoring Pengerjaan Modul Guru",
+      desc: "Pantau progres pengerjaan modul dan hasil evaluasi tiap guru.",
       href: "/admin/checklist/report",
       icon: (
         <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
