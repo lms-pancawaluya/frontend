@@ -35,7 +35,6 @@ interface SekolahData {
   alamat: string;
 }
 
-// Data Kabupaten/Kota & Sekolah di Jawa Barat beserta Alamatnya
 const DATA_SEKOLAH_JABAR: Record<string, SekolahData[]> = {
   "Kota Bandung": [
     { nama: "SMA Negeri 1 Bandung", alamat: "Jl. Ir. H. Juanda No.93, Lb. Siliwangi, Kec. Coblong, Kota Bandung" },
@@ -176,7 +175,7 @@ const getProfileFormData = (profile: GuruProfileProps["profile"]) => {
         if (!currentGelar) currentGelar = parsed.gelar || "";
         if (!currentNip) currentNip = parsed.nip || "";
       } catch {
-        // Abaikan error parse JSON
+        // Abaikan error parse
       }
     }
   }
@@ -257,6 +256,8 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
   const [selectedDaerah, setSelectedDaerah] = useState<string>(initialProfileState.selectedDaerah);
   const [ketikManual, setKetikManual] = useState<boolean>(initialProfileState.ketikManual);
 
+  const [activeTab, setActiveTab] = useState<"profil" | "progres" | "keamanan">("profil");
+
   const [passwordData, setPasswordData] = useState({
     passwordLama: "",
     passwordBaru: "",
@@ -270,6 +271,8 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
   const namaLengkapBerGelar = formData.gelar 
     ? `${formData.nama}, ${formData.gelar}` 
     : formData.nama;
+
+  const totalModul = profile.progress?.length || 0;
 
   const handleNoHpChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 13);
@@ -445,25 +448,94 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header Profile */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-navy)]">Pengaturan Profil Guru</h1>
-          <p className="text-sm text-slate-500 mt-1">Kelola data diri dan informasi akun Anda</p>
+    <div className="max-w-6xl mx-auto space-y-6 pb-12 font-sans">
+      {/* BANNER UTAMA — gradient navy → hijau, selaras dengan Dashboard */}
+      <div className="relative bg-gradient-to-r from-[#002B66] via-[#0047A5] to-[#109B51] rounded-3xl p-6 sm:p-10 text-white shadow-xl overflow-hidden">
+        {/* Glow efek — aksen biru muda & emas khas Disdik Jabar */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#419AD6]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-10 left-1/3 w-64 h-64 bg-[#F3BF10]/15 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 space-y-6">
+          {/* Badge Atas */}
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md text-amber-300 border border-white/20">
+              <span className="w-2 h-2 rounded-full bg-[#F3BF10] animate-pulse" />
+              LMS Panca Waluya Jabar
+            </span>
+          </div>
+
+          {/* Profil Header & Foto */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="relative shrink-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-white/20 shadow-lg bg-white/10 backdrop-blur-md flex items-center justify-center">
+                  {profile.fotoProfil ? (
+                    <Image src={profile.fotoProfil} alt="Foto Profil" fill className="object-cover" />
+                  ) : (
+                    <span className="text-3xl font-extrabold text-[#419AD6]">
+                      {profile.nama?.charAt(0) || "G"}
+                    </span>
+                  )}
+                  {uploadingFoto && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-[10px] text-white font-medium">
+                      Mengunggah...
+                    </div>
+                  )}
+                </div>
+                <label className="absolute -bottom-1 -right-1 bg-white hover:bg-slate-50 text-[#0047A5] p-2 rounded-xl shadow-md cursor-pointer transition-transform hover:scale-105">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  </svg>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoUpload} disabled={uploadingFoto} />
+                </label>
+              </div>
+
+              <div className="space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                  {namaLengkapBerGelar}
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-100/90 flex items-center gap-1.5 font-medium">
+                  <svg className="w-4 h-4 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
+                  </svg>
+                  {formData.sekolah || "Sekolah Belum Diatur"}
+                </p>
+                <p className="text-[11px] text-slate-200/70 font-mono">
+                  NIP: {formData.nip ? formatNipDisplay(formData.nip) : "Belum diatur"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 WIDGET KARTU DI DALAM BANNER */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2">
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4">
+              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">Peran Akun</p>
+              <p className="text-lg font-bold text-white mt-1 capitalize">{profile.role || "Pendidik"}</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4">
+              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">Total Modul Dikelola</p>
+              <p className="text-lg font-bold text-white mt-1">{totalModul} Modul</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4">
+              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">Status Verifikasi NIP</p>
+              <p className="text-lg font-bold text-white mt-1">
+                {formData.nip ? "Terverifikasi" : "Belum Set"}
+              </p>
+            </div>
+          </div>
         </div>
-        <span className="bg-sky-100 text-sky-700 font-semibold px-3 py-1 rounded-full text-xs uppercase tracking-wider">
-          Guru
-        </span>
       </div>
 
-      {/* Alert Notifikasi */}
+      {/* ALERT MESSAGES */}
       {message && (
         <div
-          className={`p-4 rounded-xl text-sm font-medium border flex items-center gap-3 ${
+          className={`p-4 rounded-2xl text-sm font-medium border flex items-center gap-3 transition-all ${
             message.type === "success" 
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
-              : "bg-rose-50 text-rose-800 border-rose-200"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200 shadow-xs" 
+              : "bg-rose-50 text-rose-800 border-rose-200 shadow-xs"
           }`}
         >
           {message.type === "success" ? (
@@ -479,303 +551,336 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Kolom Kiri - Foto & Info Ringkas */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)] text-center">
-            <div className="relative w-28 h-28 mx-auto mb-4">
-              {profile.fotoProfil ? (
-                <Image src={profile.fotoProfil} alt="Foto Profil" fill className="rounded-full object-cover border-2 border-[var(--color-navy)]" />
-              ) : (
-                <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-3xl font-bold border-2 border-slate-200">
-                  {profile.nama?.charAt(0) || "G"}
-                </div>
-              )}
-              {uploadingFoto && (
-                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-xs font-medium backdrop-blur-xs">
-                  Mengunggah...
-                </div>
-              )}
-            </div>
+      {/* TAB NAVIGATION PILL STYLE */}
+      <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex gap-1 text-xs font-semibold">
+        <button
+          onClick={() => setActiveTab("profil")}
+          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+            activeTab === "profil"
+              ? "bg-white text-slate-900 shadow-xs font-bold"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Data Pribadi & Instansi
+        </button>
 
-            <label className="cursor-pointer inline-flex items-center gap-1.5 bg-[var(--color-pale)] hover:bg-slate-200 text-[var(--color-navy)] text-xs font-semibold px-4 py-2 rounded-full transition-colors duration-200">
-              <svg className="w-3.5 h-3.5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>{uploadingFoto ? "Memproses..." : "Ubah Foto Profil"}</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFotoUpload} disabled={uploadingFoto} />
-            </label>
-            <p className="text-[11px] text-slate-400 mt-2">Maks. 5MB (JPG, PNG, WebP)</p>
+        <button
+          onClick={() => setActiveTab("progres")}
+          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+            activeTab === "progres"
+              ? "bg-white text-slate-900 shadow-xs font-bold"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Progres Modul ({totalModul})
+        </button>
 
-            <hr className="my-4 border-slate-100" />
+        <button
+          onClick={() => setActiveTab("keamanan")}
+          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+            activeTab === "keamanan"
+              ? "bg-white text-slate-900 shadow-xs font-bold"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          Keamanan Akun
+        </button>
+      </div>
 
-            <div className="text-left space-y-1">
-              <p className="font-semibold text-slate-800 text-sm">{namaLengkapBerGelar}</p>
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Guru Aktif
-              </span>
-              <div className="space-y-2 pt-1 text-xs text-slate-600">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <span className="truncate">{profile.email}</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
-                  </svg>
-                  <span className="leading-tight">{formData.sekolah || "Sekolah Belum Diatur"}</span>
-                </div>
-              </div>
-            </div>
+      {/* TAB 1: DATA PRIBADI & INSTANSI */}
+      {activeTab === "profil" && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">Informasi Profil Pendidik</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Kelola data personal dan instansi pendidikan di Jawa Barat.</p>
           </div>
 
-          {/* Modul Selesai */}
-          {profile.progress && profile.progress.length > 0 && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
-              <h3 className="font-bold text-sm text-[var(--color-navy)] mb-3">Modul Selesai</h3>
-              <div className="space-y-2">
-                {profile.progress.map((item, idx) => (
-                  <div key={idx} className="bg-[var(--color-pale)] p-2.5 rounded-xl text-xs flex justify-between items-center border border-slate-100">
-                    <span className="font-medium text-slate-700">{item.module.judul}</span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full capitalize">
-                      {item.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Kolom Kanan - Form Utama */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
-            <h2 className="text-lg font-bold text-[var(--color-navy)] mb-4">Informasi Pribadi</h2>
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div className="grid sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap</label>
-                  <input
-                    type="text"
-                    value={formData.nama}
-                    onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                    required
-                    placeholder="Masukkan Nama Lengkap"
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Gelar (Pilihan)</label>
-                  <select
-                    value={formData.gelar}
-                    onChange={(e) => setFormData({ ...formData, gelar: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer"
-                  >
-                    <option value="">-- Tanpa Gelar --</option>
-                    {DAFTAR_GELAR.filter(Boolean).map((gelar, idx) => (
-                      <option key={idx} value={gelar}>
-                        {gelar}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Email (@gmail.com)</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="contoh@gmail.com"
-                    required
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">NIP (Nomor Induk Pegawai)</label>
-                  <input
-                    type="text"
-                    value={formatNipDisplay(formData.nip)}
-                    disabled
-                    readOnly
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-500 cursor-not-allowed outline-none select-none font-mono"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">NIP bersifat permanen dan tidak dapat diubah.</p>
-                </div>
-              </div>
-
-              {/* SECTION PILIH KOTA, SEKOLAH, & ALAMAT JAWA BARAT */}
-              <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-3">
-                <div className="flex justify-between items-center">
-                  <label className="block text-xs font-bold text-slate-700">Asal Sekolah (Jawa Barat)</label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setKetikManual(!ketikManual);
-                      setSelectedDaerah("");
-                      setFormData((prev) => ({ ...prev, sekolah: "", alamatSekolah: "" }));
-                    }}
-                    className="text-[11px] text-sky-600 hover:text-sky-800 hover:underline font-semibold transition-colors duration-200"
-                  >
-                    {ketikManual ? "Pilih dari List Sekolah" : "Sekolah tidak ada di list? Ketik manual"}
-                  </button>
-                </div>
-
-                {!ketikManual ? (
-                  <div className="space-y-3">
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      {/* Filter Kota / Kabupaten */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">Kabupaten / Kota</label>
-                        <select
-                          value={selectedDaerah}
-                          onChange={handleDaerahChange}
-                          className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-slate-700"
-                        >
-                          <option value="">-- Pilih Kab/Kota --</option>
-                          {Object.keys(DATA_SEKOLAH_JABAR).map((kota, idx) => (
-                            <option key={idx} value={kota}>
-                              {kota}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* List Sekolah Sesuai Daerah */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nama Sekolah</label>
-                        <select
-                          value={formData.sekolah}
-                          disabled={!selectedDaerah}
-                          onChange={handleSekolahSelect}
-                          className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
-                        >
-                          <option value="">-- Pilih Sekolah --</option>
-                          {selectedDaerah &&
-                            DATA_SEKOLAH_JABAR[selectedDaerah]?.map((s, idx) => (
-                              <option key={idx} value={s.nama}>
-                                {s.nama}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Field Alamat Otomatis */}
-                    {formData.alamatSekolah && (
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">Alamat Sekolah (Otomatis)</label>
-                        <textarea
-                          value={formData.alamatSekolah}
-                          readOnly
-                          rows={2}
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-600 outline-none resize-none cursor-not-allowed"
-                        />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* Form Input Manual */
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Nama Sekolah</label>
-                      <input
-                        type="text"
-                        value={formData.sekolah}
-                        onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
-                        placeholder="Contoh: SMA Negeri 1 Bandung"
-                        required
-                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Alamat Sekolah</label>
-                      <input
-                        type="text"
-                        value={formData.alamatSekolah}
-                        onChange={(e) => setFormData({ ...formData, alamatSekolah: e.target.value })}
-                        placeholder="Masukkan jalan, kecamatan, kabupaten/kota"
-                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Nomor HP 08xx</label>
+          <form onSubmit={handleUpdateProfile} className="space-y-5">
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap</label>
                 <input
                   type="text"
-                  inputMode="numeric"
-                  maxLength={13}
-                  value={formData.noHp}
-                  onChange={handleNoHpChange}
-                  placeholder="081234567890"
+                  value={formData.nama}
+                  onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   required
-                  className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+                  placeholder="Masukkan Nama Lengkap"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={savingProfile}
-                  className="bg-[var(--color-navy)] text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 disabled:opacity-60 transition-opacity duration-200 shadow-xs cursor-pointer"
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Gelar Akademik</label>
+                <select
+                  value={formData.gelar}
+                  onChange={(e) => setFormData({ ...formData, gelar: e.target.value })}
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer transition-all"
                 >
-                  {savingProfile ? "Menyimpan..." : "Simpan Perubahan"}
-                </button>
+                  <option value="">-- Tanpa Gelar --</option>
+                  {DAFTAR_GELAR.filter(Boolean).map((gelar, idx) => (
+                    <option key={idx} value={gelar}>
+                      {gelar}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </form>
-          </div>
+            </div>
 
-          {/* Form Ganti Password */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
-            <h2 className="text-lg font-bold text-[var(--color-navy)] mb-4">Ganti Password</h2>
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Password Saat Ini</label>
-                  <input
-                    type="password"
-                    value={passwordData.passwordLama}
-                    onChange={(e) => setPasswordData({ ...passwordData, passwordLama: e.target.value })}
-                    required
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Password Baru</label>
-                  <input
-                    type="password"
-                    value={passwordData.passwordBaru}
-                    onChange={(e) => setPasswordData({ ...passwordData, passwordBaru: e.target.value })}
-                    required
-                    className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
-                  />
-                </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Email Resmi (@gmail.com)</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="contoh@gmail.com"
+                  required
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                />
               </div>
 
-              <div className="pt-2 flex justify-end">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">NIP (Nomor Induk Pegawai)</label>
+                <input
+                  type="text"
+                  value={formatNipDisplay(formData.nip)}
+                  disabled
+                  readOnly
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none font-mono"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">NIP terverifikasi secara resmi.</p>
+              </div>
+            </div>
+
+            {/* BOX PILIH SEKOLAH & WILAYAH DISDIK JABAR */}
+            <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-bold text-slate-800 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-[#0047A5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
+                  </svg>
+                  Instansi Sekolah Wilayah Jawa Barat
+                </label>
                 <button
-                  type="submit"
-                  disabled={savingPassword}
-                  className="btn-primary text-xs disabled:opacity-60 shadow-xs cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    setKetikManual(!ketikManual);
+                    setSelectedDaerah("");
+                    setFormData((prev) => ({ ...prev, sekolah: "", alamatSekolah: "" }));
+                  }}
+                  className="text-xs text-[#0047A5] hover:text-[#002B66] font-semibold transition-colors"
                 >
-                  {savingPassword ? "Memperbarui..." : "Update Password"}
+                  {ketikManual ? "Pilih dari Daftar Wilayah" : "Sekolah tidak ada? Ketik manual"}
                 </button>
               </div>
-            </form>
-          </div>
+
+              {!ketikManual ? (
+                <div className="space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Kabupaten / Kota</label>
+                      <select
+                        value={selectedDaerah}
+                        onChange={handleDaerahChange}
+                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700"
+                      >
+                        <option value="">-- Pilih Kab/Kota --</option>
+                        {Object.keys(DATA_SEKOLAH_JABAR).map((kota, idx) => (
+                          <option key={idx} value={kota}>
+                            {kota}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Nama Sekolah</label>
+                      <select
+                        value={formData.sekolah}
+                        disabled={!selectedDaerah}
+                        onChange={handleSekolahSelect}
+                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="">-- Pilih Sekolah --</option>
+                        {selectedDaerah &&
+                          DATA_SEKOLAH_JABAR[selectedDaerah]?.map((s, idx) => (
+                            <option key={idx} value={s.nama}>
+                              {s.nama}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {formData.alamatSekolah && (
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Alamat Sekolah</label>
+                      <textarea
+                        value={formData.alamatSekolah}
+                        readOnly
+                        rows={2}
+                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-600 outline-none resize-none cursor-not-allowed"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Nama Sekolah</label>
+                    <input
+                      type="text"
+                      value={formData.sekolah}
+                      onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
+                      placeholder="Contoh: SMA Negeri 1 Bandung"
+                      required
+                      className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Alamat Sekolah</label>
+                    <input
+                      type="text"
+                      value={formData.alamatSekolah}
+                      onChange={(e) => setFormData({ ...formData, alamatSekolah: e.target.value })}
+                      placeholder="Masukkan jalan, kecamatan, kabupaten/kota"
+                      className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Nomor WhatsApp/HP Aktif</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={13}
+                value={formData.noHp}
+                onChange={handleNoHpChange}
+                placeholder="081234567890"
+                required
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+              />
+            </div>
+
+            {/* BUTTON UTAMA — navy Disdik Jabar */}
+            <div className="pt-3 flex justify-end">
+              <button
+                type="submit"
+                disabled={savingProfile}
+                className="bg-[#0047A5] hover:bg-[#002B66] text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-60"
+              >
+                {savingProfile ? "Memproses..." : "Simpan Perubahan Profil"}
+              </button>
+            </div>
+          </form>
         </div>
-      </div>
+      )}
+
+      {/* TAB 2: PROGRES MODUL */}
+      {activeTab === "progres" && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">Progres Pembelajaran Panca Waluya</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Sertifikasi & kelengkapan modul karakter Sunda.</p>
+          </div>
+
+          {profile.progress && profile.progress.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {profile.progress.map((item, idx) => (
+                <div key={idx} className="p-5 rounded-2xl border border-slate-200/90 bg-white hover:shadow-md transition-all space-y-4">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <span className="text-[10px] bg-[#109B51]/10 text-[#109B51] font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-[#109B51]/20">
+                        {item.module.aspekPancawaluya || "Panca Waluya"}
+                      </span>
+                      <h3 className="text-sm font-bold text-slate-800 mt-1 line-clamp-1">
+                        {item.module.judul}
+                      </h3>
+                    </div>
+                    <span className="text-[10px] bg-[#109B51] text-white font-bold px-2 py-0.5 rounded-md capitalize shrink-0">
+                      {item.status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[11px] font-medium text-slate-500">
+                      <span>Progres Kelulusan</span>
+                      <span className="font-bold text-[#109B51]">100%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div className="bg-[#109B51] h-full w-full rounded-full" />
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-1 border-t border-slate-100">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Selesai: {item.completedAt ? new Date(item.completedAt).toLocaleDateString("id-ID") : "-"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+              <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <p className="text-sm font-semibold text-slate-600">Belum ada modul yang diselesaikan</p>
+              <p className="text-xs text-slate-400 mt-1">Selesaikan modul pelatihan Anda untuk memperbarui progres di sini.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: KEAMANAN AKUN */}
+      {activeTab === "keamanan" && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">Keamanan & Kata Sandi</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.</p>
+          </div>
+
+          <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-xl">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Password Saat Ini</label>
+              <input
+                type="password"
+                value={passwordData.passwordLama}
+                onChange={(e) => setPasswordData({ ...passwordData, passwordLama: e.target.value })}
+                required
+                placeholder="••••••••"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Password Baru</label>
+              <input
+                type="password"
+                value={passwordData.passwordBaru}
+                onChange={(e) => setPasswordData({ ...passwordData, passwordBaru: e.target.value })}
+                required
+                placeholder="••••••••"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={savingPassword}
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60"
+              >
+                {savingPassword ? "Memperbarui..." : "Update Password Akun"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
