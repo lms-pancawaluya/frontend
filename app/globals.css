@@ -6,11 +6,25 @@
   --color-pale: #EAF3FB;
   --color-border-soft: #CFE3F0;
   --color-biru-muda: #459ed6;
+
+  /* ============================================
+     Warna Resmi Disdik Jabar
+     ============================================ */
+  --disdik-blue: #0047BA;   /* Biru Utama / Teks 'disdik' */
+  --disdik-sky: #409ED8;    /* Biru Cerah / Teks 'jabar' */
+  --disdik-yellow: #F2B200; /* Kuning Aksesori & Lipatan */
+  --disdik-green: #0F9848;  /* Hijau Aksesori & Lipatan */
 }
 
 @theme inline {
   --font-display: var(--font-display);
   --font-body: var(--font-body);
+
+  /* Pendaftaran ke Utility Class Tailwind (e.g. bg-disdik-blue, text-disdik-yellow) */
+  --color-disdik-blue: var(--disdik-blue);
+  --color-disdik-sky: var(--disdik-sky);
+  --color-disdik-yellow: var(--disdik-yellow);
+  --color-disdik-green: var(--disdik-green);
 }
 
 body {
@@ -42,10 +56,6 @@ body {
 
 /* ============================================
    Kotak pesan error — dipakai di semua form/halaman.
-   Dulu ada yang pakai bg-red-50, ada yang bg-rose-50.
-   Sekarang seragam pakai "rose" (lebih cocok sama tema
-   soft blue) lewat 1 class ini, biar nggak nulis warna
-   manual lagi di tiap halaman.
    ============================================ */
 .alert-error {
   padding: 0.75rem 1rem;
@@ -58,11 +68,7 @@ body {
 }
 
 /* ============================================
-   Tombol pill (rounded-full) sesuai tema awal.
-   Dulu beberapa tombol pakai warna di luar palet resmi
-   (amber, purple) dan radius berbeda-beda (rounded-xl,
-   rounded-lg). Sekarang tombol utama pakai 1 dari 2 class
-   ini, warnanya dari CSS variable yang sudah ada.
+   Tombol pill (rounded-full)
    ============================================ */
 .btn-primary {
   background-color: var(--color-navy);

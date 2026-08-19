@@ -27,7 +27,6 @@ interface ModuleContent {
   judul?: string;
   tipe?: string;
   konten?: string;
-  miniQuizzes?: MiniQuiz[];
 }
 
 interface AttemptResult {
@@ -43,6 +42,7 @@ interface YouTubePlayer {
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   getCurrentTime?: () => number;
   getDuration?: () => number;
+  destroy?: () => void;
 }
 
 interface YouTubeStateChangeEvent {
@@ -76,21 +76,19 @@ const getStoredAuthToken = () =>
     : "";
 
 /**
- * Pemotong/Extractor ID YouTube murni (11 Karakter)
- * Mampu memproses format:
- * - https://youtu.be/C0PQt4rh_io?si=pl4QV...
- * - https://www.youtube.com/watch?v=C0PQt4rh_io
- * - https://www.youtube.com/embed/C0PQt4rh_io
- * - C0PQt4rh_io (Murni ID)
+ * Robust YouTube ID Extractor
+ * Mengisolasi persis 11 karakter ID YouTube & membuang query parameter seperti ?si=..., &t=..., dll.
  */
-const extractYoutubeId = (rawUrl?: string): string => {
-  if (!rawUrl) return "";
-  const cleanUrl = rawUrl.trim();
+const getYoutubeId = (url?: string): string => {
+  if (!url) return "";
+  const cleanUrl = url.trim();
 
+  // Jika input sudah merupakan 11-character ID murni
   if (/^[a-zA-Z0-9_-]{11}$/.test(cleanUrl)) {
     return cleanUrl;
   }
 
+  // Matching format URL YouTube umum (watch, embed, shorturl/youtu.be)
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const match = cleanUrl.match(regExp);
 
@@ -111,9 +109,11 @@ export default function ModuleVideoPage() {
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [attemptResult, setAttemptResult] = useState<AttemptResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [authToken] = useState(getStoredAuthToken);
+
+  // Loading & Error States
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const playerRef = useRef<YouTubePlayer | null>(null);
   const maxWatchedTimeRef = useRef<number>(0);
@@ -136,59 +136,74 @@ export default function ModuleVideoPage() {
     miniQuizzesRef.current = miniQuizzes;
   }, [miniQuizzes]);
 
-  // 1. Memuat konten modul dan mini quiz
+  // Memuat konten modul dan mini quiz
   useEffect(() => {
     async function init() {
       setIsLoadingContent(true);
-      setFetchError(null);
+      setErrorMessage(null);
       try {
         const contents = (await getModuleContents(moduleId)) as ModuleContent[];
-        
         if (Array.isArray(contents) && contents.length > 0) {
           const vid = contents.find((c) => c.tipe === "video");
           if (vid) {
             setVideoContent(vid);
 
-            const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
-              headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-            });
-            const json = await res.json();
-            
-            if (json.sukses && Array.isArray(json.data) && json.data.length > 0) {
-              setMiniQuizzes(json.data);
-            } else {
-              // Fallback data kuis jika API backend belum menyediakan data
-              setMiniQuizzes([
-                {
-                  id: "quiz-60s",
-                  judul: "Evaluasi Pemahaman Awal (Detik ke-60)",
-                  timestampSeconds: 60,
-                  passingScore: 80,
-                  maxAttempts: 3,
-                  questions: [
-                    {
-                      id: "q1",
-                      pertanyaan: "Berdasarkan pemaparan materi, apa tujuan utama dari penerapan nilai Panca Waluya dalam proses pembelajaran?",
-                      options: [
-                        { id: "opt1", teksOpsi: "Mengintegrasikan lima karakter luhur Sunda ke dalam proses pembentukan kecerdasan peserta didik" },
-                        { id: "opt2", teksOpsi: "Memenuhi dokumentasi administratif kurikulum tanpa implementasi praktis" },
-                        { id: "opt3", teksOpsi: "Menggantikan seluruh struktur kurikulum nasional secara menyeluruh" },
-                      ],
-                    },
-                  ],
-                },
-              ]);
+            try {
+              const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
+                headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+              });
+              const json = await res.json();
+
+              if (json.sukses && Array.isArray(json.data) && json.data.length > 0) {
+                setMiniQuizzes(json.data);
+              } else {
+                // Fallback kuis default
+                setMiniQuizzes([
+                  {
+                    id: "quiz-60s",
+                    judul: "Evaluasi Pemahaman Awal (Detik ke-60)",
+                    timestampSeconds: 60,
+                    passingScore: 80,
+                    maxAttempts: 3,
+                    questions: [
+                      {
+                        id: "q1",
+                        pertanyaan:
+                          "Berdasarkan pemaparan materi, apa tujuan utama dari penerapan nilai Panca Waluya dalam proses pembelajaran?",
+                        options: [
+                          {
+                            id: "opt1",
+                            teksOpsi:
+                              "Mengintegrasikan lima karakter luhur Sunda ke dalam proses pembentukan kecerdasan peserta didik",
+                          },
+                          {
+                            id: "opt2",
+                            teksOpsi:
+                              "Memenuhi dokumentasi administratif kurikulum tanpa implementasi praktis",
+                          },
+                          {
+                            id: "opt3",
+                            teksOpsi:
+                              "Menggantikan seluruh struktur kurikulum nasional secara menyeluruh",
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ]);
+              }
+            } catch {
+              console.warn("Gagal memuat mini quiz dari API, menggunakan fallback.");
             }
           } else {
-            setFetchError("Materi video belum tersedia untuk modul ini.");
+            setErrorMessage("Modul ini tidak memiliki konten video pembelajaran.");
           }
         } else {
-          setFetchError(`Modul dengan ID "${moduleId}" tidak ditemukan.`);
-          setVideoContent(null);
+          setErrorMessage(`Modul tidak ditemukan atau tidak memiliki konten.`);
         }
       } catch (err) {
         console.error("Gagal memuat konten pembelajaran:", err);
-        setFetchError("Gagal terhubung ke server backend.");
+        setErrorMessage("Gagal terhubung ke server backend.");
       } finally {
         setIsLoadingContent(false);
       }
@@ -196,7 +211,7 @@ export default function ModuleVideoPage() {
     init();
   }, [moduleId, authToken]);
 
-  // 2. Fetch Pertanyaan Detail Kuis Aktif jika belum termuat
+  // Fetch detail kuis aktif jika array questions belum termuat (misal hanya summary)
   useEffect(() => {
     if (activeQuiz && (!activeQuiz.questions || activeQuiz.questions.length === 0)) {
       const fetchQuizDetail = async () => {
@@ -206,17 +221,19 @@ export default function ModuleVideoPage() {
           });
           const json = await res.json();
           if (json.sukses && json.data) {
-            setActiveQuiz((prev) => (prev ? { ...prev, questions: json.data.questions || [] } : null));
+            setActiveQuiz((prev) =>
+              prev ? { ...prev, questions: json.data.questions || [] } : null
+            );
           }
         } catch (err) {
-          console.error("Gagal mengambil detail pertanyaan kuis:", err);
+          console.error("Gagal mengambil detail kuis:", err);
         }
       };
       fetchQuizDetail();
     }
   }, [activeQuiz, authToken]);
 
-  // 3. Evaluasi waktu pemutaran video
+  // Evaluasi waktu pemutaran video
   const checkTimeAndTriggers = useCallback((cTime: number, dur: number) => {
     // Membatasi fungsi percepatan video (fast-forward)
     if (cTime > maxWatchedTimeRef.current + 2) {
@@ -256,8 +273,9 @@ export default function ModuleVideoPage() {
     if (dur > 0 && cTime >= dur - 1) {
       setIsVideoFinished(true);
       const endQuiz = quizzes.find(
-        (q) => (q.isEndQuiz || q.timestampSeconds >= Math.floor(dur) - 2) &&
-               !answeredIds.includes(q.id)
+        (q) =>
+          (q.isEndQuiz || q.timestampSeconds >= Math.floor(dur) - 2) &&
+          !answeredIds.includes(q.id)
       );
 
       if (endQuiz && !activeQuizRef.current) {
@@ -269,86 +287,119 @@ export default function ModuleVideoPage() {
     }
   }, []);
 
-  // 4. Inisialisasi Pemutar YouTube Iframe API
+  // Inisialisasi Pemutar YouTube Iframe API
   useEffect(() => {
-    if (!videoContent?.konten) return;
+    if (!videoContent) return;
 
-    const videoId = extractYoutubeId(videoContent.konten);
-    if (!videoId) return;
+    const vId = getYoutubeId(videoContent.konten);
+    if (!vId) {
+      setErrorMessage("URL Video tidak valid atau ID YouTube tidak ditemukan.");
+      return;
+    }
 
-    const createPlayer = () => {
+    let isMounted = true;
+
+    const initYT = () => {
       const youtubeWindow = window as YouTubeWindow;
-      if (!youtubeWindow.YT || !youtubeWindow.YT.Player) return;
-      if (playerRef.current) return;
+      // Memastikan elemen DOM target (#player-iframe) sudah dirender di DOM
+      const targetElement = document.getElementById("player-iframe");
 
-      playerRef.current = new youtubeWindow.YT.Player("player-iframe", {
-        videoId: videoId,
-        playerVars: {
-          controls: 1,
-          disablekb: 1,
-          enablejsapi: 1,
-          rel: 0,
-          modestbranding: 1,
-        },
-        events: {
-          onStateChange: (evt) => {
-            if (evt.data === 1) { // Playing
-              if (!timerIntervalRef.current) {
-                timerIntervalRef.current = setInterval(() => {
-                  const player = playerRef.current;
-                  if (player && typeof player.getCurrentTime === "function") {
-                    const cTime = player.getCurrentTime() || 0;
-                    const dur = player.getDuration ? player.getDuration() || 0 : 0;
-                    checkTimeAndTriggers(cTime, dur);
-                  }
-                }, 400);
-              }
-            } else {
-              if (timerIntervalRef.current) {
-                clearInterval(timerIntervalRef.current);
-                timerIntervalRef.current = null;
-              }
-            }
+      if (!targetElement || !youtubeWindow.YT || !youtubeWindow.YT.Player) {
+        return;
+      }
 
-            if (evt.data === 0) { // Ended
-              setIsVideoFinished(true);
-              const quizzes = miniQuizzesRef.current;
-              const answeredIds = answeredQuizIdsRef.current;
-              const endQuiz = quizzes.find((q) => !answeredIds.includes(q.id));
-              if (endQuiz && !activeQuizRef.current) {
-                setActiveQuiz(endQuiz);
-              }
-            }
+      // Hapus player lama jika ada
+      if (playerRef.current && typeof playerRef.current.destroy === "function") {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+
+      try {
+        playerRef.current = new youtubeWindow.YT.Player("player-iframe", {
+          videoId: vId,
+          playerVars: {
+            controls: 1,
+            disablekb: 1,
+            enablejsapi: 1,
+            rel: 0,
+            modestbranding: 1,
           },
-        },
-      });
+          events: {
+            onStateChange: (evt) => {
+              if (!isMounted) return;
+
+              if (evt.data === 1) {
+                // Playing
+                if (!timerIntervalRef.current) {
+                  timerIntervalRef.current = setInterval(() => {
+                    const player = playerRef.current;
+                    if (player && typeof player.getCurrentTime === "function") {
+                      const cTime = player.getCurrentTime() || 0;
+                      const dur = player.getDuration ? player.getDuration() || 0 : 0;
+                      checkTimeAndTriggers(cTime, dur);
+                    }
+                  }, 400);
+                }
+              } else {
+                if (timerIntervalRef.current) {
+                  clearInterval(timerIntervalRef.current);
+                  timerIntervalRef.current = null;
+                }
+              }
+
+              if (evt.data === 0) {
+                // Ended
+                setIsVideoFinished(true);
+                const quizzes = miniQuizzesRef.current;
+                const answeredIds = answeredQuizIdsRef.current;
+                const endQuiz = quizzes.find((q) => !answeredIds.includes(q.id));
+                if (endQuiz && !activeQuizRef.current) {
+                  setActiveQuiz(endQuiz);
+                }
+              }
+            },
+          },
+        });
+      } catch (err) {
+        console.error("Gagal menginisialisasi YouTube Player:", err);
+      }
     };
 
     const youtubeWindow = window as YouTubeWindow;
 
+    // Jika YT sudah dimuat sebelumnya
     if (youtubeWindow.YT && youtubeWindow.YT.Player) {
-      createPlayer();
+      // Gunakan setTimeout kecil untuk menjamin DOM sudah dirender penuh oleh Next.js
+      const timer = setTimeout(() => {
+        if (isMounted) initYT();
+      }, 50);
+      return () => clearTimeout(timer);
     } else {
-      if (!document.getElementById("youtube-iframe-script")) {
+      // Inject script YouTube Iframe API jika belum terpasang
+      if (!document.getElementById("yt-iframe-api-script")) {
         const tag = document.createElement("script");
-        tag.id = "youtube-iframe-script";
+        tag.id = "yt-iframe-api-script";
         tag.src = "https://www.youtube.com/iframe_api";
         document.body.appendChild(tag);
       }
 
-      const previousOnReady = youtubeWindow.onYouTubeIframeAPIReady;
+      const originalOnReady = youtubeWindow.onYouTubeIframeAPIReady;
       youtubeWindow.onYouTubeIframeAPIReady = () => {
-        if (previousOnReady) previousOnReady();
-        createPlayer();
+        if (originalOnReady) originalOnReady();
+        if (isMounted) initYT();
       };
     }
 
     return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      isMounted = false;
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
     };
   }, [videoContent, checkTimeAndTriggers]);
 
-  // 5. Pengiriman jawaban kuis
+  // Pengiriman jawaban kuis
   const handleSubmitQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeQuiz) return;
@@ -369,7 +420,7 @@ export default function ModuleVideoPage() {
         body: JSON.stringify({ jawaban: jawabanPayload }),
       });
       const json = await res.json();
-      
+
       if (json.sukses) {
         setAttemptResult(json.data);
         if (json.data.isLolos) {
@@ -387,30 +438,23 @@ export default function ModuleVideoPage() {
     }
   };
 
-  const parsedVideoId = extractYoutubeId(videoContent?.konten);
-
   return (
     <div className="min-h-screen bg-slate-50/70 pb-16 pt-6 relative overflow-hidden">
-      
       {/* ================= BACKGROUND DEKORATIF DISDIK JABAR ================= */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* 1. Gradient Soft Glows */}
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#0047A5]/10 rounded-full blur-3xl" />
         <div className="absolute top-1/4 -right-20 w-80 h-80 bg-[#419AD6]/15 rounded-full blur-3xl" />
         <div className="absolute top-2/3 -left-16 w-80 h-80 bg-[#F3BF10]/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-20 right-1/4 w-96 h-96 bg-[#109B51]/10 rounded-full blur-3xl" />
 
-        {/* 2. Siku Accent Frame - Kiri Atas */}
         <div className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-[#F3BF10] rounded-tl-sm opacity-70" />
         <div className="absolute top-6 left-12 w-2.5 h-2.5 bg-[#109B51] rounded-full" />
 
-        {/* 3. Decorative Shapes - Kanan Atas */}
         <div className="absolute top-16 right-10 hidden md:block opacity-20 transform rotate-12">
           <div className="w-16 h-16 bg-[#109B51] rounded-tl-2xl rounded-br-2xl mb-2" />
           <div className="w-20 h-12 bg-[#F3BF10] rounded-tr-2xl rounded-bl-2xl -mt-6 ml-4" />
         </div>
 
-        {/* 4. Pattern Dots Grid - Samping Kiri */}
         <div className="absolute top-1/3 left-6 hidden lg:grid grid-cols-4 gap-2.5 opacity-25">
           <div className="w-2 h-2 bg-[#0047A5] rounded-full" />
           <div className="w-2 h-2 bg-[#419AD6] rounded-full" />
@@ -422,17 +466,14 @@ export default function ModuleVideoPage() {
           <div className="w-2 h-2 bg-[#109B51] rounded-full" />
         </div>
 
-        {/* 5. Decorative Ring Lines - Bawah Kanan */}
         <div className="absolute -bottom-10 right-8 w-64 h-64 border-4 border-[#419AD6]/20 rounded-full" />
         <div className="absolute bottom-6 right-24 w-36 h-36 border-4 border-[#109B51]/20 rounded-full" />
 
-        {/* 6. Siku Accent Frame - Kanan Bawah */}
         <div className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-[#0047A5] rounded-br-sm opacity-70" />
       </div>
 
       {/* ================= KONTEN UTAMA ================= */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
-        
         {/* Bilah Navigasi dan Status */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <button
@@ -472,41 +513,36 @@ export default function ModuleVideoPage() {
 
         {/* Container Pemutar Video */}
         <div className="relative aspect-video bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 ring-1 ring-slate-900/10">
-          
-          {/* Status Loading atau Error Display */}
-          {isLoadingContent ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-sm space-y-2 z-20 bg-slate-950">
-              <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-              <p>Memuat Video Pembelajaran...</p>
+          {/* Tampilan Loading */}
+          {isLoadingContent && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950 text-slate-300 space-y-3">
+              <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs font-medium">Memuat Konten Pembelajaran...</p>
             </div>
-          ) : fetchError || !videoContent || !parsedVideoId ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-6 text-center space-y-3 z-20 bg-slate-950">
+          )}
+
+          {/* Tampilan Error Fallback */}
+          {!isLoadingContent && errorMessage && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950 p-6 text-center text-slate-300 space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <div className="space-y-1">
-                <p className="font-semibold text-white text-base">
-                  {fetchError || "Video Pembelajaran Belum Tersedia"}
-                </p>
-                <p className="text-xs text-slate-400 max-w-md leading-relaxed">
-                  {fetchError?.includes("tidak ditemukan")
-                    ? `URL saat ini menggunakan ID "${moduleId}". Pastikan ID sesuai dengan data Supabase/Backend.`
-                    : "URL YouTube belum diisi dengan benar di database."}
-                </p>
-              </div>
+              <p className="font-semibold text-white text-base">{errorMessage}</p>
+              <p className="text-xs text-slate-400 max-w-sm">
+                Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.
+              </p>
             </div>
-          ) : null}
+          )}
 
-          {/* Target Frame Iframe Player YouTube */}
+          {/* Target Element Iframe Player YouTube */}
           <div id="player-iframe" className="w-full h-full" />
 
           {/* Modal Pop-up Mini Quiz */}
           {activeQuiz && (
             <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
               <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-100 relative my-auto">
-                
                 {!attemptResult ? (
                   <form onSubmit={handleSubmitQuiz} className="space-y-5">
                     <div className="border-b border-slate-100 pb-4">
@@ -521,7 +557,9 @@ export default function ModuleVideoPage() {
                           Batas Kelulusan: {activeQuiz.passingScore}%
                         </span>
                       </div>
-                      <h3 className="font-bold text-slate-800 text-base leading-snug">{activeQuiz.judul}</h3>
+                      <h3 className="font-bold text-slate-800 text-base leading-snug">
+                        {activeQuiz.judul}
+                      </h3>
                     </div>
 
                     <div className="space-y-5 max-h-[55vh] overflow-y-auto pr-1">
@@ -529,7 +567,8 @@ export default function ModuleVideoPage() {
                         activeQuiz.questions.map((q, idx) => (
                           <div key={q.id} className="space-y-3">
                             <p className="font-semibold text-slate-800 text-sm leading-relaxed">
-                              <span className="text-emerald-700 font-bold">{idx + 1}.</span> {q.pertanyaan}
+                              <span className="text-emerald-700 font-bold">{idx + 1}.</span>{" "}
+                              {q.pertanyaan}
                             </p>
                             <div className="space-y-2">
                               {q.options.map((opt, optIdx) => {
@@ -544,16 +583,22 @@ export default function ModuleVideoPage() {
                                         : "bg-slate-50/80 border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
                                     }`}
                                   >
-                                    <div className={`flex-shrink-0 w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
-                                      isSelected ? "bg-emerald-700 text-white" : "bg-slate-200 text-slate-600"
-                                    }`}>
+                                    <div
+                                      className={`flex-shrink-0 w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
+                                        isSelected
+                                          ? "bg-emerald-700 text-white"
+                                          : "bg-slate-200 text-slate-600"
+                                      }`}
+                                    >
                                       {optionLabels[optIdx] || optIdx + 1}
                                     </div>
                                     <input
                                       type="radio"
                                       name={`q-${q.id}`}
                                       checked={isSelected}
-                                      onChange={() => setUserAnswers((p) => ({ ...p, [q.id]: opt.id }))}
+                                      onChange={() =>
+                                        setUserAnswers((p) => ({ ...p, [q.id]: opt.id }))
+                                      }
                                       className="sr-only"
                                     />
                                     <span className="pt-0.5 leading-snug">{opt.teksOpsi}</span>
@@ -564,9 +609,9 @@ export default function ModuleVideoPage() {
                           </div>
                         ))
                       ) : (
-                        <div className="text-center py-8 text-slate-400 text-xs">
-                          Memuat pertanyaan kuis...
-                        </div>
+                        <p className="text-xs text-slate-400 text-center py-4">
+                          Memuat pertanyaan evaluasi...
+                        </p>
                       )}
                     </div>
 
@@ -671,7 +716,11 @@ export default function ModuleVideoPage() {
         {/* Panel Langkah Selanjutnya */}
         <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isVideoFinished ? "bg-emerald-600" : "bg-amber-500"}`} />
+            <div
+              className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                isVideoFinished ? "bg-emerald-600" : "bg-amber-500"
+              }`}
+            />
             <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
               {!isVideoFinished
                 ? "Selesaikan penayangan video dan evaluasi pembelajaran untuk melanjutkan ke modul teks."
@@ -694,7 +743,6 @@ export default function ModuleVideoPage() {
             </svg>
           </button>
         </div>
-
       </div>
     </div>
   );

@@ -18,18 +18,26 @@ export async function getModules() {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
 
-    const result = await response.json();
-
-    if (!result.sukses) {
-      console.warn("API Warning (getModules):", result.pesan || "Gagal mengambil data modul");
+    if (!response.ok) {
+      console.warn(`API Warning (getModules): Status ${response.status}`);
       return [];
     }
 
-    return result.data || [];
+    const result = await response.json();
+
+    if (Array.isArray(result)) {
+      return result;
+    } else if (result && result.sukses && Array.isArray(result.data)) {
+      return result.data;
+    } else if (result && Array.isArray(result.data)) {
+      return result.data;
+    }
+
+    return [];
   } catch (error) {
     console.error("Fetch Error pada getModules:", error);
     return [];
@@ -37,6 +45,8 @@ export async function getModules() {
 }
 
 export async function getModuleById(id) {
+  if (!id) return null;
+
   try {
     const token = getStoredAuthToken();
 
@@ -44,18 +54,29 @@ export async function getModuleById(id) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
 
-    const result = await response.json();
-
-    if (!result.sukses) {
-      console.warn("API Warning (getModuleById):", result.pesan || "Gagal mengambil detail modul");
+    if (response.status === 404) {
+      console.warn(`API Warning (getModuleById): Modul ID ${id} tidak ditemukan (404).`);
       return null;
     }
 
-    return result.data || null;
+    if (!response.ok) {
+      console.warn(`API Warning (getModuleById): Status ${response.status}`);
+      return null;
+    }
+
+    const result = await response.json();
+
+    if (result && result.sukses && result.data) {
+      return result.data;
+    } else if (result && result.data) {
+      return result.data;
+    }
+
+    return result || null;
   } catch (error) {
     console.error("Fetch Error pada getModuleById:", error);
     return null;
@@ -63,6 +84,8 @@ export async function getModuleById(id) {
 }
 
 export async function getModuleContents(moduleId) {
+  if (!moduleId) return [];
+
   try {
     const token = getStoredAuthToken();
 
@@ -70,18 +93,33 @@ export async function getModuleContents(moduleId) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
 
-    const result = await response.json();
-
-    if (!result.sukses) {
-      console.warn("API Warning (getModuleContents):", result.pesan || "Gagal mengambil konten modul");
+    // Handle 404 secara mulus tanpa melempar error agar UI fallback dapat dirender
+    if (response.status === 404) {
+      console.warn(`API Warning (getModuleContents): Konten modul ID ${moduleId} tidak ditemukan (404).`);
       return [];
     }
 
-    return result.data || [];
+    if (!response.ok) {
+      console.warn(`API Warning (getModuleContents): Status ${response.status}`);
+      return [];
+    }
+
+    const result = await response.json();
+
+    // Penanganan fleksibel: array murni [...] atau dibungkus { sukses: true, data: [...] }
+    if (Array.isArray(result)) {
+      return result;
+    } else if (result && result.sukses && Array.isArray(result.data)) {
+      return result.data;
+    } else if (result && Array.isArray(result.data)) {
+      return result.data;
+    }
+
+    return [];
   } catch (error) {
     console.error("Fetch Error pada getModuleContents:", error);
     return [];
@@ -96,18 +134,18 @@ export async function createModule(moduleData) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(moduleData),
     });
 
     const result = await response.json();
 
-    if (!result.sukses) {
+    if (!response.ok || !result.sukses) {
       throw new Error(result.pesan || "Gagal menambahkan modul");
     }
 
-    return result.data;
+    return result.data || result;
   } catch (error) {
     console.error("Error pada createModule:", error);
     throw error;
@@ -122,18 +160,18 @@ export async function updateModule(id, moduleData) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(moduleData),
     });
 
     const result = await response.json();
 
-    if (!result.sukses) {
+    if (!response.ok || !result.sukses) {
       throw new Error(result.pesan || "Gagal memperbarui modul");
     }
 
-    return result.data;
+    return result.data || result;
   } catch (error) {
     console.error("Error pada updateModule:", error);
     throw error;
@@ -147,13 +185,14 @@ export async function deleteModule(id) {
     const response = await fetch(`${API_URL}/api/modules/${id}`, {
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
 
     const result = await response.json();
 
-    if (!result.sukses) {
+    if (!response.ok || !result.sukses) {
       throw new Error(result.pesan || "Gagal menghapus modul");
     }
 
