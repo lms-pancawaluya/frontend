@@ -52,3 +52,46 @@ export async function createTicket({ subject, category, description }) {
   if (!result.sukses) throw new Error(result.pesan || "Gagal membuat tiket");
   return result.data;
 }
+
+/**
+ * Ambil detail satu tiket (termasuk daftar balasan).
+ * GET /api/helpdesk/tickets/:ticketId
+ * Response backend: { sukses, data: Ticket } (objek tiket + replies[]).
+ */
+export async function getTicketDetail(ticketId) {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_URL}/api/helpdesk/tickets/${ticketId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+  if (!result.sukses) throw new Error(result.pesan || "Gagal mengambil detail tiket");
+  return result.data;
+}
+
+/**
+ * Kirim balasan pada tiket.
+ * POST /api/helpdesk/tickets/:ticketId/replies
+ * Body: { message }
+ */
+export async function replyToTicket(ticketId, message) {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_URL}/api/helpdesk/tickets/${ticketId}/replies`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ message }),
+  });
+
+  const result = await response.json();
+  if (!result.sukses) throw new Error(result.pesan || "Gagal mengirim balasan");
+  return result.data;
+}

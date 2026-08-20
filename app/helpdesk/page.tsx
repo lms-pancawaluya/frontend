@@ -286,11 +286,8 @@ export default function HelpdeskPage() {
           <div className="space-y-3">
             {tickets.map((t, idx) => {
               const badge = getStatusBadge(t.status);
-              return (
-                <div
-                  key={t.id || idx}
-                  className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-300 transition-all duration-200"
-                >
+              const rowInner = (
+                <>
                   <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
@@ -306,11 +303,40 @@ export default function HelpdeskPage() {
                     <p className="text-xs text-slate-400">Dibuat {getCreatedDate(t)}</p>
                   </div>
 
-                  <span
-                    className={`shrink-0 self-start sm:self-center text-[11px] font-bold uppercase tracking-wide px-3 py-1 rounded-full border ${badge.className}`}
-                  >
-                    {badge.label}
-                  </span>
+                  <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
+                    <span
+                      className={`text-[11px] font-bold uppercase tracking-wide px-3 py-1 rounded-full border ${badge.className}`}
+                    >
+                      {badge.label}
+                    </span>
+                    {t.id && (
+                      <svg
+                        className="w-4 h-4 text-slate-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    )}
+                  </div>
+                </>
+              );
+
+              const rowClass =
+                "bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200";
+
+              return t.id ? (
+                <Link
+                  key={t.id}
+                  href={`/helpdesk/${t.id}`}
+                  className={`${rowClass} hover:border-[#419AD6]/60 hover:shadow-md`}
+                >
+                  {rowInner}
+                </Link>
+              ) : (
+                <div key={idx} className={`${rowClass} hover:border-slate-300`}>
+                  {rowInner}
                 </div>
               );
             })}
