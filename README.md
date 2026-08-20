@@ -50,7 +50,7 @@ Aplikasi mengenal dua peran pengguna (field `role` pada data user):
   2. **Materi teks** (`/modules/[id]/text`) — menampilkan konten bertipe `teks`/`text`.
   3. **Evaluasi** (`/modules/[id]/evaluation`) — soal pilihan ganda, skor dihitung lokal (lulus jika ≥ 80%); jika lulus memanggil `completeModule`.
 - **Profil guru** (`/profile`) — edit nama, gelar, email, asal sekolah (dropdown data sekolah Jawa Barat atau input manual) + alamat, no. HP; upload foto profil (maks. 5MB); ganti password; melihat daftar modul selesai. NIP **read-only**.
-- **Bantuan / Tiket** (`/helpdesk`) — melihat daftar tiket milik guru (nomor, subjek, kategori, status, tanggal dibuat) + membuat tiket baru via modal (subjek, kategori, deskripsi). Bagian dari **Helpdesk V1** (sisi guru). Detail tiket, balasan, dan manajemen admin **belum** tersedia.
+- **Bantuan / Tiket** (`/helpdesk`) — melihat daftar tiket milik guru (nomor, subjek, kategori, status, tanggal dibuat) + membuat tiket baru via modal (subjek, kategori, deskripsi). Dilengkapi **Panduan Singkat** (Quick Tutorial): accordion statis berisi 4 topik (cara membuat tiket, cara melihat & membalas tiket, arti status tiket, kapan sebaiknya membuat tiket) — tanpa API. Bagian dari **Helpdesk V1** (sisi guru). Detail tiket, balasan, dan manajemen admin **belum** tersedia.
 - **Lupa password** (`/forgot-password`) — alur 3 langkah: kirim email → verifikasi OTP → password baru.
 
 ### Fitur Admin
@@ -92,7 +92,7 @@ Semua route berupa App Router. Sebagian besar halaman adalah **client component*
 | `/modules/[id]/video` | Video + mini-quiz |
 | `/modules/[id]/text` | Materi teks |
 | `/modules/[id]/evaluation` | Evaluasi (soal statis, skor lokal) — **rute yang tertaut dari alur** |
-| `/helpdesk` | Bantuan/Tiket guru — daftar tiket + buat tiket (Helpdesk V1) |
+| `/helpdesk` | Bantuan/Tiket guru — daftar tiket + buat tiket + Panduan Singkat (Helpdesk V1) |
 | `/profile` | Profil (view guru/admin sesuai `role`) |
 
 ### Rute Admin

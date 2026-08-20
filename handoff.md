@@ -38,7 +38,8 @@ Two roles, carried on the user object as `role` (lowercase in stored data: `"adm
 Helpdesk / Ticketing V1 is the current product direction. **Commit 1 (guru side) is done:**
 
 - `services/helpdesk.service.js` — `getMyTickets()` (GET `/api/helpdesk/tickets/my`) + `createTicket({ subject, category, description })` (POST `/api/helpdesk/tickets`), following the standard service pattern (`{ sukses, pesan, data }`, Bearer token).
-- `app/helpdesk/page.tsx` — guru route: lists the authenticated guru's tickets (ticket number, subject, category, status badge, created date) with loading/error/empty states, plus a **"Buat Tiket"** modal form (subject / category / description; required-field validation; refreshes list via a `refreshKey` counter on success). Category is a **free-text input** (no fixed enum — backend category values are not confirmed).
+- `app/helpdesk/page.tsx` — guru route: lists the authenticated guru's tickets (ticket number, subject, category, status badge, created date) with loading/error/empty states, plus a **"Buat Tiket"** modal form (subject / category / description; required-field validation; refreshes list via a `refreshKey` counter on success). Category is a **free-text input** (no fixed enum — backend category values are not confirmed). Also includes a **static "Panduan Singkat" (Quick Tutorial) accordion** — see below.
+- **Quick Tutorial (static, no API):** a "Panduan Singkat" accordion at the bottom of `/helpdesk`, rendered from a module-level `TUTORIAL_ITEMS` array (4 items: *Cara membuat tiket, Cara melihat dan membalas tiket, Arti status tiket, Kapan sebaiknya membuat tiket*). Multiple items can be open at once (state `openTutorials: number[]`); each header is a `<button>` with `aria-expanded` + `aria-controls` pointing at its panel (`role="region"`). Purely presentational — no service/API/network. Visually secondary to the ticket list (muted slate card, smaller text).
 - Navigation: `Header.tsx` shows a **"Bantuan"** link for guru only; the dashboard "Pusat Bantuan & Layanan" card now links to `/helpdesk`.
 
 ⚠️ **Ticket response shape is NOT confirmed by the backend contract.** The page reads fields **defensively** (fallback names: `ticketNumber`/`nomor`/`number`/`kode`/`id`, `subject`/`subjek`/`judul`, `category`/`kategori`, `status`, `createdAt`/`created_at`/`createdDate`/`tanggal`) — consistent with the repo's existing tolerant-field pattern. Status-badge mapping is tolerant (open/proses/selesai → blue/amber/green, unknown → neutral). Confirm the real shape against the live API and tighten when known.
@@ -108,7 +109,7 @@ app/
     [id]/evaluations/page.tsx           redirects to first evaluation
     [id]/evaluations/[evaluationId]/page.tsx  API-backed eval (submit NOT wired)
   pembelajaran/[contentId]/page.tsx     alt video page (ContentLockGuard + VideoPlayerWithQuiz), NOT linked
-  helpdesk/page.tsx          guru helpdesk: ticket list + "Buat Tiket" modal (Helpdesk V1, commit 1)
+  helpdesk/page.tsx          guru helpdesk: ticket list + "Buat Tiket" modal + static Quick Tutorial accordion (Helpdesk V1, commit 1)
   admin/
     page.tsx                 admin dashboard (4 nav cards)
     modules/page.tsx         module list + delete
@@ -158,7 +159,7 @@ Most pages are client components (`"use client"`). Server components: `/`, `/log
 | `/modules/[id]/evaluations` | Redirect to first eval | no guard | `getModuleEvaluations` |
 | `/modules/[id]/evaluations/[evaluationId]` | API-backed eval | no guard | **submit not wired** (console.log + alert) |
 | `/pembelajaran/[contentId]` | Alt video page | no guard | **not linked**; `ContentLockGuard` + `VideoPlayerWithQuiz` |
-| `/helpdesk` | Guru ticket list + create | no guard | `getMyTickets`, `createTicket`; loading/error/empty + "Buat Tiket" modal |
+| `/helpdesk` | Guru ticket list + create | no guard | `getMyTickets`, `createTicket`; loading/error/empty + "Buat Tiket" modal; static Quick Tutorial accordion |
 | `/profile` | Profile (role-branched view) | token required | `GET /api/users/profile/me` |
 
 ### Admin (`/admin/*`)
@@ -253,6 +254,7 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 | Profile mgmt | ✅ | `/profile` | profile GET/PUT, password PUT, photo upload | guru: 3 tabs; hardcoded Jabar school list |
 | Daily checklist (guru side) | ❌ no UI | — | `getTodayChecklist`, `submitTodayChecklist`, `getChecklistHistory`, `uploadFotoBukti` | services exist, **no page consumes them** |
 | Helpdesk — ticket list + create (guru) | 🔌 | `/helpdesk` | `getMyTickets`, `createTicket` | Helpdesk V1 commit 1; ticket response shape **unconfirmed** → defensive rendering; category free-text; **no detail/replies/admin/status-update** |
+| Helpdesk — Quick Tutorial (guru) | ✅ | `/helpdesk` | — (static) | "Panduan Singkat" accordion, 4 items from `TUTORIAL_ITEMS`; multi-open, `aria-expanded`/`aria-controls`; no API |
 
 ---
 

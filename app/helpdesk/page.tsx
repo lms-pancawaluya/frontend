@@ -80,6 +80,26 @@ function getStatusBadge(status?: string): { label: string; className: string } {
   };
 }
 
+// Konten Quick Tutorial (statis, tanpa API). Penjelasan singkat untuk guru.
+const TUTORIAL_ITEMS: { title: string; body: string }[] = [
+  {
+    title: "Cara membuat tiket",
+    body: "Klik tombol \"Buat Tiket\" di bagian atas halaman. Isi Subjek (ringkasan singkat kendala), Kategori, dan Deskripsi selengkap mungkin, lalu klik \"Kirim Tiket\". Tiket yang berhasil dibuat langsung muncul di daftar tiket Anda.",
+  },
+  {
+    title: "Cara melihat dan membalas tiket",
+    body: "Seluruh tiket yang Anda buat tampil pada daftar di halaman ini beserta status terkininya. Halaman detail tiket dan fitur membalas percakapan masih dalam pengembangan dan belum tersedia — untuk saat ini Anda dapat memantau status tiket melalui daftar tersebut.",
+  },
+  {
+    title: "Arti status tiket",
+    body: "Terbuka (biru): tiket baru diterima dan belum diproses. Diproses (kuning): tiket sedang ditangani oleh tim/fasilitator. Selesai (hijau): kendala sudah ditangani dan tiket ditutup. Status di luar itu ditampilkan netral (abu-abu).",
+  },
+  {
+    title: "Kapan sebaiknya membuat tiket",
+    body: "Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan evaluasi, atau masalah pada akun. Untuk masukan atau saran umum terhadap modul, gunakan fitur Saran & Kritik, bukan tiket bantuan.",
+  },
+];
+
 export default function HelpdeskPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +114,15 @@ export default function HelpdeskPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  // Quick Tutorial: indeks item yang sedang terbuka (bisa lebih dari satu).
+  const [openTutorials, setOpenTutorials] = useState<number[]>([]);
+
+  function toggleTutorial(index: number) {
+    setOpenTutorials((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  }
 
   useEffect(() => {
     let active = true;
@@ -287,6 +316,77 @@ export default function HelpdeskPage() {
             })}
           </div>
         )}
+
+        {/* ================= QUICK TUTORIAL (statis) ================= */}
+        <section aria-labelledby="tutorial-heading" className="space-y-3">
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-4 h-4 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <h2 id="tutorial-heading" className="text-sm font-bold text-slate-700">
+              Panduan Singkat
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
+            {TUTORIAL_ITEMS.map((item, idx) => {
+              const isOpen = openTutorials.includes(idx);
+              const panelId = `tutorial-panel-${idx}`;
+              const btnId = `tutorial-btn-${idx}`;
+              return (
+                <div key={idx}>
+                  <h3>
+                    <button
+                      id={btnId}
+                      type="button"
+                      onClick={() => toggleTutorial(idx)}
+                      aria-expanded={isOpen}
+                      aria-controls={panelId}
+                      className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition-colors"
+                    >
+                      <span className="text-sm font-semibold text-slate-800">{item.title}</span>
+                      <svg
+                        className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                          isOpen ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                  </h3>
+                  {isOpen && (
+                    <div
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={btnId}
+                      className="px-5 pb-4 -mt-1 text-xs text-slate-500 leading-relaxed"
+                    >
+                      {item.body}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <div className="text-center">
           <Link
