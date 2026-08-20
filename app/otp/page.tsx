@@ -17,19 +17,18 @@ function OtpContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(60);
-  const canResend = timer === 0;
+  const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (timer <= 0) {
-      return;
+    if (timer > 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setCanResend(true);
     }
-
-    const interval = setInterval(() => {
-      setTimer((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
   }, [timer]);
 
   const handleChange = (index: number, value: string) => {
@@ -97,8 +96,8 @@ function OtpContent() {
       }
 
       router.push("/login?verified=true");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Kode OTP salah. Silakan coba lagi.");
+    } catch (err: any) {
+      setError(err.message || "Kode OTP salah. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -106,6 +105,7 @@ function OtpContent() {
 
   const handleResend = async () => {
     if (!canResend) return;
+    setCanResend(false);
     setTimer(60);
     setError(null);
 
@@ -139,7 +139,7 @@ function OtpContent() {
       </div>
 
       {error && (
-        <div className="alert-error mb-4 flex items-center gap-2">
+        <div className="p-3 mb-4 bg-rose-50 text-rose-700 border border-rose-200 text-xs rounded-xl font-medium flex items-center gap-2">
           <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -231,9 +231,9 @@ export default function OtpPage() {
   return (
     <div className="min-h-[calc(100vh-140px)] flex items-center justify-center bg-[var(--color-pale)] px-4 py-10 relative overflow-hidden">
       {/* BACKGROUND GAMBAR SAMAR */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-30 mix-blend-multiply">
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-15 mix-blend-multiply">
         <Image
-          src="/BG-OTP.jpeg"
+          src="/bg-classroom.jpg"
           alt="Classroom Background"
           fill
           priority
