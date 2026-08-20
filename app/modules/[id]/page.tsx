@@ -118,6 +118,11 @@ export default function ModuleVideoPage() {
   const playerRef = useRef<YouTubePlayer | null>(null);
   const maxWatchedTimeRef = useRef<number>(0);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const invalidVideoMessage =
+    videoContent && !getYoutubeId(videoContent.konten)
+      ? "URL Video tidak valid atau ID YouTube tidak ditemukan."
+      : null;
+  const displayErrorMessage = errorMessage || invalidVideoMessage;
 
   // REFS untuk mencegah stale closure pada event loop YouTube API
   const activeQuizRef = useRef<MiniQuiz | null>(null);
@@ -293,7 +298,6 @@ export default function ModuleVideoPage() {
 
     const vId = getYoutubeId(videoContent.konten);
     if (!vId) {
-      setErrorMessage("URL Video tidak valid atau ID YouTube tidak ditemukan.");
       return;
     }
 
@@ -522,14 +526,14 @@ export default function ModuleVideoPage() {
           )}
 
           {/* Tampilan Error Fallback */}
-          {!isLoadingContent && errorMessage && (
+          {!isLoadingContent && displayErrorMessage && (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950 p-6 text-center text-slate-300 space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <p className="font-semibold text-white text-base">{errorMessage}</p>
+              <p className="font-semibold text-white text-base">{displayErrorMessage}</p>
               <p className="text-xs text-slate-400 max-w-sm">
                 Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.
               </p>

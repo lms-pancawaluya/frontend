@@ -18,6 +18,26 @@ interface Module {
   badgeColor: string;
 }
 
+interface ModuleApiItem {
+  id: string;
+  code?: string;
+  judul?: string;
+  title?: string;
+  deskripsi?: string;
+  description?: string;
+  kategori?: Module["category"];
+  category?: Module["category"];
+  progress?: number;
+  isLocked?: boolean;
+  totalContents?: number;
+  totalQuizzes?: number;
+  durationMinutes?: number;
+  badgeColor?: string;
+  _count?: {
+    contents?: number;
+  };
+}
+
 // Mock Data Fallback Pancawaluya dengan ID Modul Utama yang benar
 const FALLBACK_MODULE_DATA: Module[] = [
   {
@@ -106,7 +126,7 @@ export default function ModulesPage() {
         const apiData = await getModules();
         if (Array.isArray(apiData) && apiData.length > 0) {
           // Map data dari API agar kompatibel dengan interface UI
-          const mappedModules: Module[] = apiData.map((item: any, idx: number) => ({
+          const mappedModules: Module[] = apiData.map((item: ModuleApiItem, idx: number) => ({
             id: item.id, // Selalu mengambil ID Modul
             code: item.code || `Modul ${idx + 1}`,
             title: item.judul || item.title || "Modul Pembelajaran",

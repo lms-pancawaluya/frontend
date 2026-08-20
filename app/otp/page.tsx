@@ -17,18 +17,17 @@ function OtpContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(60);
-  const [canResend, setCanResend] = useState(false);
+  const canResend = timer <= 0;
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    } else {
-      setCanResend(true);
-    }
+    if (timer <= 0) return;
+
+    const interval = setInterval(() => {
+      setTimer((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [timer]);
 
   const handleChange = (index: number, value: string) => {
@@ -96,8 +95,9 @@ function OtpContent() {
       }
 
       router.push("/login?verified=true");
-    } catch (err: any) {
-      setError(err.message || "Kode OTP salah. Silakan coba lagi.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Kode OTP salah. Silakan coba lagi.";
+      setError(message || "Kode OTP salah. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,6 @@ function OtpContent() {
 
   const handleResend = async () => {
     if (!canResend) return;
-    setCanResend(false);
     setTimer(60);
     setError(null);
 
