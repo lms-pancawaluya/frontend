@@ -490,12 +490,13 @@ export default function DashboardPage() {
               <div className="space-y-1.5">
                 <h3 className="text-sm font-bold text-white">Pusat Bantuan & Layanan</h3>
                 <p className="text-xs text-slate-200 leading-relaxed">
-                  Bila mengalami kendala teknis saat mengakses materi atau soal evaluasi, hubungi fasilitator pelatihan.
+                  Bila mengalami kendala teknis saat mengakses materi atau soal evaluasi, ajukan
+                  tiket bantuan ke fasilitator pelatihan.
                 </p>
               </div>
 
               <Link
-                href="/modules"
+                href="/helpdesk"
                 className="inline-flex items-center gap-2 text-xs bg-[#109B51] hover:bg-[#0e8847] text-white px-4 py-2.5 rounded-xl font-semibold transition-colors duration-200"
               >
                 <span>Buka Pusat Bantuan</span>
