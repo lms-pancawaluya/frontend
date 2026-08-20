@@ -17,6 +17,8 @@ Aplikasi mengenal dua peran pengguna (field `role` pada data user):
 
 > Ini adalah **frontend saja**. Seluruh data berasal dari backend API eksternal; frontend tidak berisi logika server/basis data.
 
+> **Arah pengembangan berikutnya — Helpdesk V1:** integrasi Helpdesk/Ticketing V1 adalah target produk saat ini, namun **belum diimplementasikan** di frontend (tidak ada rute/service/tipe terkait). Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
+
 ---
 
 ## Tech Stack
@@ -281,7 +283,30 @@ npm run dev
 - **Data sekolah**: daftar sekolah Jawa Barat di-hardcode dalam `app/profile/GuruProfileView.tsx`.
 - **Tema**: warna tema didefinisikan sebagai CSS variables di `app/globals.css` (`--color-navy`, `--color-accent`, `--color-pale`, `--color-border-soft`, `--color-biru-muda`) plus util `.btn-primary`, `.btn-secondary`, `.alert-error`.
 - **Keamanan**: JWT disimpan di `localStorage` (rentan XSS); proteksi route hanya client-side. Validasi keamanan sesungguhnya menjadi tanggung jawab backend.
-- **Artefak repo**: `handoff-lms-pancawaluya.md` dan `repomix-output.xml` merupakan catatan pengembangan, bukan bagian dari aplikasi.
+- **Aturan dokumentasi (wajib)**: setiap perubahan fitur/bug fix/UI/integrasi API **wajib** memperbarui `README.md` **dan** `handoff.md` di task yang sama.
+- **Artefak repo**: `handoff.md` (referensi mendalam untuk agen/developer) dan `repomix-output.xml` (snapshot repo) merupakan catatan pengembangan, bukan bagian runtime aplikasi.
+
+---
+
+## Status Proyek
+
+Ringkasan; detail lengkap ada di `handoff.md`.
+
+**Sudah berjalan:** auth (login/register/OTP/reset password), sinkronisasi header, dashboard guru & admin, katalog modul, CRUD admin (modul, konten, evaluasi, mini-quiz, akun guru, item checklist), manajemen profil, monitoring admin (progres + hasil evaluasi + baca feedback), dan mini-quiz interaktif pada video (gating + anti fast-forward).
+
+**Sebagian / catatan penting:**
+
+- **Evaluasi guru belum tersambung penuh.** `/modules/[id]/evaluation` memakai soal **mock hardcode** dengan skor lokal; `/modules/[id]/evaluations/[evaluationId]` menampilkan soal dari API tetapi **submit hanya `console.log` + alert** (belum memanggil `submitEvaluation`).
+- **Edit soal evaluasi** hanya untuk tipe `pilihan_ganda`; soal `esai` belum bisa diedit (tombol dinonaktifkan).
+- **Mini-quiz video default LULUS saat API gagal** (`{ skor:100, isLolos:true }`) — perlu diperbaiki.
+- **Feedback (Saran & Kritik):** `ModuleFeedbackForm` + `sendModuleFeedback` sudah dibuat tetapi **belum dipasang** di alur guru (admin tetap bisa membaca feedback lama).
+- **Label menu monitoring:** halaman berada di `/admin/checklist/report` namun isinya monitoring modul/evaluasi (bukan data checklist); `getChecklistReport` di service **tidak dipakai**.
+
+**Belum ada UI / dead code:** checklist harian guru (service ada, tanpa halaman), `startModule` (tidak dipanggil), sertifikat ("Belum Tersedia"), `lib/api.ts` (axios tak terpakai).
+
+**Direncanakan:** Helpdesk V1 (belum ada kode di repo).
+
+**Validasi terakhir:** `npx tsc --noEmit` lolos; `npx eslint` lolos.
 
 ---
 
