@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
@@ -27,31 +28,24 @@ export default function LoginForm() {
 
       const data = await res.json().catch(() => ({}));
 
-      // Cek di browser console jika ada kejanggalan struktur data dari backend
       console.log("Response dari Backend:", data);
 
       if (!res.ok) {
         throw new Error(data.pesan || data.message || "Gagal masuk. Periksa kembali akun Anda.");
       }
 
-      // Ambil token dari berbagai kemungkinan penamaan atribut backend
       const token = data.token || data.accessToken || data.data?.token;
       const user = data.user || data.data?.user || data;
 
       if (token) {
-        // Simpan LocalStorage
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
 
-        // Simpan Cookie (Set path=/ dan SameSite)
         document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
 
-        // Beritahu komponen yang mendengarkan status auth (Header, HeroCta)
-        // agar langsung re-render tanpa perlu refresh halaman.
         window.dispatchEvent(new Event("authChange"));
       }
 
-      // Tentukan target URL berdasarkan role pengguna (case-insensitive)
       const userRole = String(user?.role || "").toUpperCase();
       let redirectPath: string;
       if (userRole === "ADMIN") {
@@ -72,7 +66,7 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="alert-error flex items-center gap-2">
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
           <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -129,12 +123,23 @@ export default function LoginForm() {
             {showPassword ? "Sembunyi" : "Lihat"}
           </button>
         </div>
+
+        {/* TOMBOL LUPA PASSWORD (UI/UX Adjusted) */}
+        <div className="flex justify-end mt-1.5">
+          <Link
+            href="/forgot-password"
+            className="text-xs font-medium text-sky-600 hover:text-sky-700 hover:underline transition-colors"
+          >
+            Lupa Password?
+          </Link>
+        </div>
       </div>
 
+      {/* TOMBOL SUBMIT */}
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-[var(--color-navy)] text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:cursor-not-allowed mt-2"
+        className="w-full bg-[var(--color-navy)] text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:cursor-not-allowed mt-5"
       >
         {loading ? (
           <>

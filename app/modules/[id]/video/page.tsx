@@ -325,11 +325,51 @@ export default function ModuleVideoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
+    <div className="min-h-screen bg-slate-50/70 pb-16 pt-6 relative overflow-hidden">
+      
+      {/* ================= BACKGROUND DEKORATIF DISDIK JABAR ================= */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* 1. Gradient Soft Glows (Aura Warna Disdik Jabar) */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#0047A5]/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 -right-20 w-80 h-80 bg-[#419AD6]/15 rounded-full blur-3xl" />
+        <div className="absolute top-2/3 -left-16 w-80 h-80 bg-[#F3BF10]/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-20 right-1/4 w-96 h-96 bg-[#109B51]/10 rounded-full blur-3xl" />
+
+        {/* 2. Siku Accent Frame - Kiri Atas */}
+        <div className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-[#F3BF10] rounded-tl-sm opacity-70" />
+        <div className="absolute top-6 left-12 w-2.5 h-2.5 bg-[#109B51] rounded-full" />
+
+        {/* 3. Decorative Shapes - Kanan Atas */}
+        <div className="absolute top-16 right-10 hidden md:block opacity-20 transform rotate-12">
+          <div className="w-16 h-16 bg-[#109B51] rounded-tl-2xl rounded-br-2xl mb-2" />
+          <div className="w-20 h-12 bg-[#F3BF10] rounded-tr-2xl rounded-bl-2xl -mt-6 ml-4" />
+        </div>
+
+        {/* 4. Pattern Dots Grid - Samping Kiri */}
+        <div className="absolute top-1/3 left-6 hidden lg:grid grid-cols-4 gap-2.5 opacity-25">
+          <div className="w-2 h-2 bg-[#0047A5] rounded-full" />
+          <div className="w-2 h-2 bg-[#419AD6] rounded-full" />
+          <div className="w-2 h-2 bg-[#109B51] rounded-full" />
+          <div className="w-2 h-2 bg-[#F3BF10] rounded-full" />
+          <div className="w-2 h-2 bg-[#419AD6] rounded-full" />
+          <div className="w-2 h-2 bg-[#0047A5] rounded-full" />
+          <div className="w-2 h-2 bg-[#F3BF10] rounded-full" />
+          <div className="w-2 h-2 bg-[#109B51] rounded-full" />
+        </div>
+
+        {/* 5. Decorative Ring Lines - Bawah Kanan */}
+        <div className="absolute -bottom-10 right-8 w-64 h-64 border-4 border-[#419AD6]/20 rounded-full" />
+        <div className="absolute bottom-6 right-24 w-36 h-36 border-4 border-[#109B51]/20 rounded-full" />
+
+        {/* 6. Siku Accent Frame - Kanan Bawah */}
+        <div className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-[#0047A5] rounded-br-sm opacity-70" />
+      </div>
+
+      {/* ================= KONTEN UTAMA ================= */}
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
         
         {/* Bilah Navigasi dan Status */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <button
             onClick={() => router.push(`/modules/${moduleId}`)}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group"
@@ -343,7 +383,7 @@ export default function ModuleVideoPage() {
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-xl">
+            <span className="inline-flex items-center gap-2 text-xs font-medium text-amber-800 bg-amber-50/90 border border-amber-200/80 px-3 py-1.5 rounded-xl">
               <svg className="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
@@ -354,7 +394,7 @@ export default function ModuleVideoPage() {
 
         {/* Informasi Utama Modul */}
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200/60">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/60 backdrop-blur-sm">
             <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
@@ -529,7 +569,7 @@ export default function ModuleVideoPage() {
         </div>
 
         {/* Panel Langkah Selanjutnya */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isVideoFinished ? "bg-emerald-600" : "bg-amber-500"}`} />
             <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
