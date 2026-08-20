@@ -17,7 +17,7 @@ Aplikasi mengenal dua peran pengguna (field `role` pada data user):
 
 > Ini adalah **frontend saja**. Seluruh data berasal dari backend API eksternal; frontend tidak berisi logika server/basis data.
 
-> **Arah pengembangan berikutnya — Helpdesk V1:** integrasi Helpdesk/Ticketing V1 adalah target produk saat ini, namun **belum diimplementasikan** di frontend (tidak ada rute/service/tipe terkait). Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
+> **Arah pengembangan berikutnya — Helpdesk V1:** Helpdesk/Ticketing V1 adalah target produk saat ini. **Sudah diimplementasikan (sisi guru, commit 1):** halaman `/helpdesk` untuk melihat daftar tiket milik guru dan membuat tiket baru (`services/helpdesk.service.js`). **Belum** ada: detail tiket, balasan, manajemen tiket oleh admin, dan pembaruan status. Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
 
 ---
 
@@ -50,6 +50,7 @@ Aplikasi mengenal dua peran pengguna (field `role` pada data user):
   2. **Materi teks** (`/modules/[id]/text`) — menampilkan konten bertipe `teks`/`text`.
   3. **Evaluasi** (`/modules/[id]/evaluation`) — soal pilihan ganda, skor dihitung lokal (lulus jika ≥ 80%); jika lulus memanggil `completeModule`.
 - **Profil guru** (`/profile`) — edit nama, gelar, email, asal sekolah (dropdown data sekolah Jawa Barat atau input manual) + alamat, no. HP; upload foto profil (maks. 5MB); ganti password; melihat daftar modul selesai. NIP **read-only**.
+- **Bantuan / Tiket** (`/helpdesk`) — melihat daftar tiket milik guru (nomor, subjek, kategori, status, tanggal dibuat) + membuat tiket baru via modal (subjek, kategori, deskripsi). Bagian dari **Helpdesk V1** (sisi guru). Detail tiket, balasan, dan manajemen admin **belum** tersedia.
 - **Lupa password** (`/forgot-password`) — alur 3 langkah: kirim email → verifikasi OTP → password baru.
 
 ### Fitur Admin
@@ -91,6 +92,7 @@ Semua route berupa App Router. Sebagian besar halaman adalah **client component*
 | `/modules/[id]/video` | Video + mini-quiz |
 | `/modules/[id]/text` | Materi teks |
 | `/modules/[id]/evaluation` | Evaluasi (soal statis, skor lokal) — **rute yang tertaut dari alur** |
+| `/helpdesk` | Bantuan/Tiket guru — daftar tiket + buat tiket (Helpdesk V1) |
 | `/profile` | Profil (view guru/admin sesuai `role`) |
 
 ### Rute Admin
@@ -203,6 +205,7 @@ Konsisten dalam Bahasa Indonesia:
 | | `/api/upload/foto-profil` | POST |
 | **Monitoring admin** | `/api/admin/users/:userId/progress`, `/api/admin/users/:userId/evaluations` | GET |
 | **Checklist (admin)** | `/api/checklist/items`, `/api/checklist/items/:id` | GET, POST / PUT, DELETE |
+| **Helpdesk (guru)** | `/api/helpdesk/tickets`, `/api/helpdesk/tickets/my` | POST / GET |
 
 > Beberapa fungsi service **terdefinisi namun belum dipanggil UI** (lihat Status Proyek): `submitEvaluation` (`/api/modules/:moduleId/evaluations/:evaluationId/submit`), `sendModuleFeedback` (`/api/feedbacks/module/:moduleId`), `startModule` (`/api/progress/:moduleId/start`), serta seluruh checklist harian guru (`/api/checklist/today`, `/api/checklist/history`, `/api/upload/foto-bukti`) dan `/api/checklist/report`.
 
@@ -304,7 +307,7 @@ Ringkasan; detail lengkap ada di `handoff.md`.
 
 **Belum ada UI / dead code:** checklist harian guru (service ada, tanpa halaman), `startModule` (tidak dipanggil), sertifikat ("Belum Tersedia"), `lib/api.ts` (axios tak terpakai).
 
-**Direncanakan:** Helpdesk V1 (belum ada kode di repo).
+**Direncanakan:** Helpdesk V1 — sisi guru (`/helpdesk`: daftar tiket + buat tiket) **sudah** ada; detail tiket, balasan, manajemen admin, dan pembaruan status **belum** dibuat. Bentuk response tiket dari backend belum dikonfirmasi sehingga field dirender secara defensif.
 
 **Validasi terakhir:** `npx tsc --noEmit` lolos; `npx eslint` lolos.
 

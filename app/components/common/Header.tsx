@@ -66,6 +66,14 @@ export default function Header() {
               >
                 Modul
               </Link>
+              {user.role !== "admin" && (
+                <Link
+                  href="/helpdesk"
+                  className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition"
+                >
+                  Bantuan
+                </Link>
+              )}
               <Link href="/profile" className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition">
                 Profil
               </Link>

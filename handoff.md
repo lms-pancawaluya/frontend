@@ -33,11 +33,19 @@ Two roles, carried on the user object as `role` (lowercase in stored data: `"adm
 
 ### Helpdesk V1
 
-**Status: integration target — NOT yet implemented in the frontend.**
+**Status: partially implemented (guru ticket list + create). Detail / replies / admin management NOT built.**
 
-A Helpdesk / Ticketing V1 is the intended next product direction. As of this analysis there is **no Helpdesk/ticket code, route, service, or type anywhere in the repository** (verified by full-tree search for `helpdesk`/`tiket`/`ticket` — zero matches). The nearest existing surface is the module **feedback (Saran & Kritik)** flow, which is not a ticketing system.
+Helpdesk / Ticketing V1 is the current product direction. **Commit 1 (guru side) is done:**
 
-When Helpdesk V1 is built, follow the existing conventions (a `services/helpdesk.service.js`, role-appropriate routes under guru + admin, the `{ sukses, pesan, data }` response contract). Do not retrofit feedback into a helpdesk without confirming the backend contract.
+- `services/helpdesk.service.js` — `getMyTickets()` (GET `/api/helpdesk/tickets/my`) + `createTicket({ subject, category, description })` (POST `/api/helpdesk/tickets`), following the standard service pattern (`{ sukses, pesan, data }`, Bearer token).
+- `app/helpdesk/page.tsx` — guru route: lists the authenticated guru's tickets (ticket number, subject, category, status badge, created date) with loading/error/empty states, plus a **"Buat Tiket"** modal form (subject / category / description; required-field validation; refreshes list via a `refreshKey` counter on success). Category is a **free-text input** (no fixed enum — backend category values are not confirmed).
+- Navigation: `Header.tsx` shows a **"Bantuan"** link for guru only; the dashboard "Pusat Bantuan & Layanan" card now links to `/helpdesk`.
+
+⚠️ **Ticket response shape is NOT confirmed by the backend contract.** The page reads fields **defensively** (fallback names: `ticketNumber`/`nomor`/`number`/`kode`/`id`, `subject`/`subjek`/`judul`, `category`/`kategori`, `status`, `createdAt`/`created_at`/`createdDate`/`tanggal`) — consistent with the repo's existing tolerant-field pattern. Status-badge mapping is tolerant (open/proses/selesai → blue/amber/green, unknown → neutral). Confirm the real shape against the live API and tighten when known.
+
+**Remaining Helpdesk V1 work (NOT built):** ticket detail view, replies/threading, admin ticket management (list/assign/respond), status updates. Backend endpoints for those are unverified. Do not build them without confirming the contract.
+
+The nearest *other* existing surface is module **feedback (Saran & Kritik)** — a separate flow, not part of helpdesk.
 
 ### Other Goals (supported by the repo)
 
@@ -100,6 +108,7 @@ app/
     [id]/evaluations/page.tsx           redirects to first evaluation
     [id]/evaluations/[evaluationId]/page.tsx  API-backed eval (submit NOT wired)
   pembelajaran/[contentId]/page.tsx     alt video page (ContentLockGuard + VideoPlayerWithQuiz), NOT linked
+  helpdesk/page.tsx          guru helpdesk: ticket list + "Buat Tiket" modal (Helpdesk V1, commit 1)
   admin/
     page.tsx                 admin dashboard (4 nav cards)
     modules/page.tsx         module list + delete
@@ -114,7 +123,7 @@ app/
     users/[id]/page.tsx      teacher edit (email/sekolah/status) + reset password
     checklist/page.tsx       checklist item CRUD per aspect
     checklist/report/page.tsx  teacher progress + evaluation-result + feedback monitoring
-services/                    auth, module, content, evaluation, miniQuiz, progress, user, checklist (.js)
+services/                    auth, module, content, evaluation, miniQuiz, progress, user, checklist, helpdesk (.js)
 types/miniQuiz.ts            mini-quiz TS interfaces
 lib/api.ts                   unused axios instance   |   lib/formatNip.ts  NIP formatter
 ```
@@ -149,6 +158,7 @@ Most pages are client components (`"use client"`). Server components: `/`, `/log
 | `/modules/[id]/evaluations` | Redirect to first eval | no guard | `getModuleEvaluations` |
 | `/modules/[id]/evaluations/[evaluationId]` | API-backed eval | no guard | **submit not wired** (console.log + alert) |
 | `/pembelajaran/[contentId]` | Alt video page | no guard | **not linked**; `ContentLockGuard` + `VideoPlayerWithQuiz` |
+| `/helpdesk` | Guru ticket list + create | no guard | `getMyTickets`, `createTicket`; loading/error/empty + "Buat Tiket" modal |
 | `/profile` | Profile (role-branched view) | token required | `GET /api/users/profile/me` |
 
 ### Admin (`/admin/*`)
@@ -242,6 +252,7 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 | Feedback (Saran & Kritik) | ❌ not mounted | — | `sendModuleFeedback` + `ModuleFeedbackForm` | component built but not imported anywhere |
 | Profile mgmt | ✅ | `/profile` | profile GET/PUT, password PUT, photo upload | guru: 3 tabs; hardcoded Jabar school list |
 | Daily checklist (guru side) | ❌ no UI | — | `getTodayChecklist`, `submitTodayChecklist`, `getChecklistHistory`, `uploadFotoBukti` | services exist, **no page consumes them** |
+| Helpdesk — ticket list + create (guru) | 🔌 | `/helpdesk` | `getMyTickets`, `createTicket` | Helpdesk V1 commit 1; ticket response shape **unconfirmed** → defensive rendering; category free-text; **no detail/replies/admin/status-update** |
 
 ---
 
@@ -286,6 +297,7 @@ export async function getX() {
 | Admin monitoring | `/api/admin/users/:uid/progress`, `/:uid/evaluations` | GET | user.service |
 | Feedback | `/api/feedbacks` (GET), `/api/feedbacks/module/:mid` (POST) | | evaluation.service |
 | Checklist | `/api/checklist/items` (GET,POST), `/items/:id` (PUT,DELETE), `/today` (GET,POST), `/history` (GET), `/report` (GET), `/api/upload/foto-bukti` (POST) | | checklist.service |
+| Helpdesk | `/api/helpdesk/tickets` (POST), `/api/helpdesk/tickets/my` (GET) | | helpdesk.service (guru) |
 
 ### Payload / data contracts (do not break)
 
@@ -337,7 +349,7 @@ Follow these; they are consistent across the codebase.
 - 🟡 **Partial**: evaluation-question edit (pilihan_ganda only); API-backed guru evaluation renders but doesn't submit; video mini-quiz silently passes on API error.
 - 🔌 **Backend-dependent** (works only against the live API contract): all monitoring, progress, mini-quiz attempts, profile/photo upload.
 - ❌ **Stub / dead / unmounted**: `/modules/[id]/evaluation` mock questions + dead inline feedback; `ModuleFeedbackForm` (unmounted); guru daily-checklist services (no UI); `getChecklistReport` (uncalled); `startModule` (uncalled); certificate ("Belum Tersedia"); `lib/api.ts` (unused axios).
-- 🔮 **Planned**: Helpdesk V1 (nothing in repo yet).
+- 🔮 **Planned**: Helpdesk V1 — guru ticket **list + create** are done (`/helpdesk`, `helpdesk.service`); ticket detail, replies, admin management, and status updates remain (backend contract for those unverified).
 
 **Validation at handoff**: `npx tsc --noEmit` → **pass (exit 0)**. `npx eslint` → **pass (exit 0)**.
 
