@@ -63,7 +63,7 @@ Panel admin berada di `/admin/*`.
 - **Kelola konten modul** — tambah (`/admin/modules/[id]/contents/new`) & edit/hapus konten (inline pada halaman edit modul); tipe konten `teks` atau `video`.
 - **Kelola evaluasi** (`/admin/modules/[id]/evaluations`, `/admin/modules/[id]/evaluations/[evalId]`) — buat evaluasi (judul), tambah/hapus soal **pilihan ganda & esai**; **edit hanya untuk pilihan ganda** (UI menolak edit soal esai dengan pesan eksplisit). Soal pilihan ganda: 2–6 opsi, tepat 1 jawaban benar.
 - **Kelola mini-quiz** (`/admin/modules/[id]/quiz/[contentId]`) — CRUD mini-quiz per konten video (judul, `timestampSeconds`, `passingScore` default 80, `maxAttempts` default 3) dan soal **pilihan ganda** (2–6 opsi, 1 benar).
-- **Kelola akun guru** (`/admin/users`, `/admin/users/[id]`) — daftar guru, edit (email, sekolah, status: `aktif`/`nonaktif`/`pensiun`/`wafat`), reset password, hapus.
+- **Kelola akun guru** (`/admin/users`, `/admin/users/[id]`) — daftar guru dengan fitur pencarian global (nama, NIP, email) berbasis API query parameter (`GET /api/users?search=...`), edit (email, sekolah, status: `aktif`/`nonaktif`/`pensiun`/`wafat`), reset password, hapus.
 - **Kelola item checklist** (`/admin/checklist`) — CRUD item template daily checklist per 5 aspek Pancawaluya + toggle aktif/nonaktif.
 - **Monitoring guru** (`/admin/checklist/report`) — tabel progres modul tiap guru + skor hasil evaluasi (progress bar berwarna per persentase). Lihat catatan di [Status Proyek](#status-proyek) mengenai label menu.
 

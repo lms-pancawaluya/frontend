@@ -183,7 +183,7 @@ Most pages are client components (`"use client"`). Server components: `/`, `/log
 | `/admin/modules/[id]/evaluations` | Eval list + create | ✅ | `getModuleEvaluations`, `createEvaluation` |
 | `/admin/modules/[id]/evaluations/[evalId]` | Question CRUD | ✅ | `addQuestion`, `updateQuestion`, `deleteQuestion` |
 | `/admin/modules/[id]/quiz/[contentId]` | Mini-quiz CRUD | ❌ none | `miniQuiz.service` (full CRUD) |
-| `/admin/users` | Teacher list + delete | ✅ (user only, no token) | `getUsers`, `deleteUser` |
+| `/admin/users` | Teacher list + delete | ✅ (user only, no token) | `getUsers(search)`, `deleteUser` |
 | `/admin/users/[id]` | Teacher edit + reset password | ✅ | `getUserById`, `updateUser`, `resetUserPassword` |
 | `/admin/checklist` | Checklist item CRUD | ✅ | `checklist.service` items CRUD |
 | `/admin/checklist/report` | Monitoring (progress + eval + feedback) | ✅ (user only, no token) | `getUsers`, `getUserProgress`, `getUserEvaluations`, `getAllFeedbacks` |
@@ -239,7 +239,7 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 | Evaluation list + create | ✅ | `/admin/modules/[id]/evaluations` | `getModuleEvaluations`, `createEvaluation` | create → jumps to question CRUD |
 | Evaluation question CRUD | 🟡 | `/admin/modules/[id]/evaluations/[evalId]` | `addQuestion`, `updateQuestion`, `deleteQuestion` | **edit only for `pilihan_ganda`**; esai edit disabled |
 | Mini-quiz CRUD | ✅ | `/admin/modules/[id]/quiz/[contentId]` | `miniQuiz.service` (7 fns) | per video content; quiz + question CRUD; no role guard |
-| Teacher account mgmt | ✅ | `/admin/users` | `getUsers`, `deleteUser` | lists guru only; admin rows can't be edited/deleted |
+| Teacher account mgmt | ✅ | `/admin/users` | `getUsers(search)`, `deleteUser` | lists guru only; support global search via API query parameter (?search=...); admin rows can't be edited/deleted |
 | Teacher edit + reset password | ✅ | `/admin/users/[id]` | `getUserById`, `updateUser`, `resetUserPassword` | editable: email/sekolah/status; nama+NIP read-only |
 | Teacher progress monitoring | ✅ | `/admin/checklist/report` | `getUserProgress` | eager per-guru progress bars |
 | Evaluation result monitoring | ✅ | `/admin/checklist/report` | `getUserEvaluations` | lazy on expand; skor per evaluation |

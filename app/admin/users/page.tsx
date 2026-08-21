@@ -26,10 +26,20 @@ const statusColor: Record<string, string> = {
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -46,23 +56,36 @@ export default function AdminUsersPage() {
       return;
     }
 
+    let active = true;
+
     async function fetchUsers() {
       try {
-        const data = await getUsers();
+        setLoading(true);
+        setError("");
+        const data = await getUsers(debouncedQuery);
+        if (!active) return;
         setUsers(data);
       } catch (err) {
+        if (!active) return;
         if (err instanceof Error) {
           setError(err.message);
         } else {
           setError("Gagal memuat data pengguna.");
         }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+          setInitialLoading(false);
+        }
       }
     }
 
     fetchUsers();
-  }, [router]);
+
+    return () => {
+      active = false;
+    };
+  }, [debouncedQuery, router]);
 
   async function handleDelete(id: string, nama: string) {
     const confirmed = window.confirm(`Yakin ingin menghapus akun guru "${nama}"?`);
@@ -84,29 +107,21 @@ export default function AdminUsersPage() {
     }
   }
 
-  if (loading) {
-  return <p className="text-center mt-16 text-gray-500">Memuat data pengguna...</p>;
-}
+  if (initialLoading) {
+    return <p className="text-center mt-16 text-gray-500">Memuat data pengguna...</p>;
+  }
 
-if (error) {
-  return (
-    <div className="max-w-md mx-auto mt-16 p-4">
-      <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
-        {error}
+  if (error) {
+    return (
+      <div className="max-w-md mx-auto mt-16 p-4">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+          {error}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-const guruUsers = users.filter((u) => u.role === "guru");
-const normalizedQuery = searchQuery.trim().toLowerCase();
-const filteredUsers = normalizedQuery
-  ? guruUsers.filter(
-      (u) =>
-        u.nama.toLowerCase().includes(normalizedQuery) ||
-        u.email.toLowerCase().includes(normalizedQuery)
-    )
-  : guruUsers;
+  const filteredUsers = users.filter((u) => u.role === "guru");
 
 return (
   <div className="max-w-5xl mx-auto p-6">
@@ -134,7 +149,10 @@ return (
       {searchQuery && (
         <button
           type="button"
-          onClick={() => setSearchQuery("")}
+          onClick={() => {
+            setSearchQuery("");
+            setDebouncedQuery("");
+          }}
           aria-label="Bersihkan pencarian"
           className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors"
         >
@@ -159,7 +177,13 @@ return (
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+                  Memuat data pengguna...
+                </td>
+              </tr>
+            ) : filteredUsers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
                   Guru tidak ditemukan.

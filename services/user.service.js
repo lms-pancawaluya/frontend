@@ -1,9 +1,10 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function getUsers() {
+export async function getUsers(search = "") {
   const token = localStorage.getItem("token");
+  const queryString = search ? `?search=${encodeURIComponent(search)}` : "";
 
-  const response = await fetch(`${API_URL}/api/users`, {
+  const response = await fetch(`${API_URL}/api/users${queryString}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
