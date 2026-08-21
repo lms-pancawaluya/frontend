@@ -50,14 +50,15 @@ Aplikasi mengenal dua peran pengguna (field `role` pada data user):
   2. **Materi teks** (`/modules/[id]/text`) — menampilkan konten bertipe `teks`/`text`.
   3. **Evaluasi** (`/modules/[id]/evaluation`) — soal pilihan ganda, skor dihitung lokal (lulus jika ≥ 80%); jika lulus memanggil `completeModule`.
 - **Profil guru** (`/profile`) — edit nama, gelar, email, asal sekolah (dropdown data sekolah Jawa Barat atau input manual) + alamat, no. HP; upload foto profil (maks. 5MB); ganti password; melihat daftar modul selesai. NIP **read-only**.
-- **Bantuan / Tiket** (`/helpdesk`) — melihat daftar tiket milik guru (nomor, subjek, kategori, status, tanggal dibuat) + membuat tiket baru via modal (subjek, kategori, deskripsi). Setiap tiket dapat diklik untuk membuka **modal detail tiket** (tanpa navigasi ke rute baru): menampilkan informasi tiket read-only (nomor, subjek, kategori, deskripsi, status, tanggal), percakapan (balasan beserta nama & peran pengirim, pesan, waktu), dan **form balasan** (POST balasan lalu memuat ulang percakapan tanpa refresh). **Batas 2 pesan berturut-turut** dari guru — jika guru sudah mengirim 2 pesan tanpa balasan admin/pengajar, form balasan diganti peringatan (enforcement sisi frontend saja). Tiket berstatus `resolved`/`closed` tidak dapat dibalas. Status tiket hanya **ditampilkan** (guru tidak mengubah status; backend yang mengatur). Dilengkapi **Panduan Singkat** (Quick Tutorial): accordion statis berisi 4 topik — tanpa API. Rute lama `/helpdesk/[ticketId]` redirect ke `/helpdesk`. Bagian dari **Helpdesk V1** (sisi guru). Manajemen tiket oleh admin/pengajar dan pengelolaan status **belum** tersedia.
+- **Bantuan / Tiket** (`/helpdesk`) — melihat daftar tiket milik guru (nomor, subjek, kategori, status, tanggal dibuat) + membuat tiket baru via modal (subjek, kategori, deskripsi). Setiap tiket dapat diklik untuk membuka **modal detail tiket** (tanpa navigasi ke rute baru): menampilkan informasi tiket read-only (nomor, subjek, kategori, deskripsi, status, tanggal), percakapan (balasan beserta nama & peran pengirim, pesan, waktu), dan **form balasan** (POST balasan lalu memuat ulang percakapan tanpa refresh). **Batas 2 pesan berturut-turut** dari guru — jika guru sudah mengirim 2 pesan tanpa balasan admin/pengajar, form balasan diganti peringatan (enforcement sisi frontend saja). Tiket berstatus `resolved`/`closed` tidak dapat dibalas. Status tiket hanya **ditampilkan** (guru tidak mengubah status; backend yang mengatur). Dilengkapi **Panduan Singkat** (Quick Tutorial): accordion statis berisi 4 topik — tanpa API. Rute lama `/helpdesk/[ticketId]` redirect ke `/helpdesk`. Bagian dari **Helpdesk V1** (sisi guru).
 - **Lupa password** (`/forgot-password`) — alur 3 langkah: kirim email → verifikasi OTP → password baru.
 
 ### Fitur Admin
 
 Panel admin berada di `/admin/*`.
 
-- **Dashboard admin** (`/admin`) — menu navigasi ke manajemen modul, akun guru, item checklist, dan halaman monitoring.
+- **Dashboard admin** (`/admin`) — menu navigasi ke manajemen modul, akun guru, item checklist, tiket bantuan (helpdesk), dan halaman monitoring.
+- **Kelola tiket bantuan (Helpdesk)** (`/admin/helpdesk`) — melihat seluruh tiket guru, menggunakan server-side filters untuk status (open, in_progress, resolved, closed) & kategori, meninjau detail tiket (informasi tiket, info guru pengirim, percakapan lengkap), membalas tiket (mengubah status otomatis ke `in_progress` jika dibalas), dan mengubah status tiket secara manual via dropdown PATCH status.
 - **Kelola modul** (`/admin/modules`, `/admin/modules/new`, `/admin/modules/[id]`, `/admin/modules/[id]/edit`) — CRUD modul (judul, deskripsi, `aspekPancawaluya`, `urutan`).
 - **Kelola konten modul** — tambah (`/admin/modules/[id]/contents/new`) & edit/hapus konten (inline pada halaman edit modul); tipe konten `teks` atau `video`.
 - **Kelola evaluasi** (`/admin/modules/[id]/evaluations`, `/admin/modules/[id]/evaluations/[evalId]`) — buat evaluasi (judul), tambah/hapus soal **pilihan ganda & esai**; **edit hanya untuk pilihan ganda** (UI menolak edit soal esai dengan pesan eksplisit). Soal pilihan ganda: 2–6 opsi, tepat 1 jawaban benar.
@@ -113,6 +114,7 @@ Semua route berupa App Router. Sebagian besar halaman adalah **client component*
 | `/admin/users/[id]` | Edit akun guru + reset password |
 | `/admin/checklist` | Kelola item checklist |
 | `/admin/checklist/report` | Monitoring progres & evaluasi guru |
+| `/admin/helpdesk` | Kelola tiket bantuan (Helpdesk) |
 
 ### Rute yang ada namun tidak tertaut dari UI
 
@@ -308,7 +310,7 @@ Ringkasan; detail lengkap ada di `handoff.md`.
 
 **Belum ada UI / dead code:** checklist harian guru (service ada, tanpa halaman), `startModule` (tidak dipanggil), sertifikat ("Belum Tersedia"), `lib/api.ts` (axios tak terpakai).
 
-**Direncanakan:** Helpdesk V1 — sisi guru **sudah** ada: daftar tiket + buat tiket (`/helpdesk`), serta detail tiket + balasan (kini menggunakan modal/pop-up langsung pada `/helpdesk` tanpa navigasi, rute lama `/helpdesk/[ticketId]` melakukan redirect). Terpasang batas 2 pesan beruntun dari guru sebagai frontend guard. **Belum** dibuat: manajemen tiket oleh admin/pengajar dan pengelolaan status (status hanya tampil untuk guru; transisi diatur backend). Field tiket dirender secara defensif mengikuti pola repo.
+**Direncanakan:** Helpdesk V1 — sisi guru **sudah** ada: daftar tiket + buat tiket (`/helpdesk`), serta detail tiket + balasan (kini menggunakan modal/pop-up langsung pada `/helpdesk` tanpa navigasi, rute lama `/helpdesk/[ticketId]` melakukan redirect). Terpasang batas 2 pesan beruntun dari guru sebagai frontend guard. Sisi admin/pengajar **sudah** ada: manajemen tiket oleh admin/pengajar (`/admin/helpdesk`) untuk daftar tiket dengan filter status/kategori, kirim balasan, dan pengelolaan status (PATCH). Field tiket dirender secara defensif mengikuti pola repo.
 
 **Validasi terakhir:** `npx tsc --noEmit` lolos; `npx eslint` lolos.
 

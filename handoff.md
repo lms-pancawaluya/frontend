@@ -33,23 +33,24 @@ Two roles, carried on the user object as `role` (lowercase in stored data: `"adm
 
 ### Helpdesk V1
 
-**Status: partially implemented (guru ticket list + create + detail modal). Detail / replies / admin management NOT built.**
+**Status: fully implemented (sisi guru: daftar/buat/modal detail/2-pesan limit; sisi admin: daftar/filter/modal detail/balas/PATCH status).**
 
-Helpdesk / Ticketing V1 is the current product direction. **Guru side is implemented:**
+Helpdesk / Ticketing V1 is completed.
 
-- `services/helpdesk.service.js` — `getMyTickets()` (GET `/api/helpdesk/tickets/my`), `createTicket({ subject, category, description })` (POST `/api/helpdesk/tickets`), `getTicketDetail(ticketId)` (GET `/api/helpdesk/tickets/:ticketId`), `replyToTicket(ticketId, message)` (POST `/api/helpdesk/tickets/:ticketId/replies`). All follow the standard service pattern (`{ sukses, pesan, data }`, Bearer token).
-- `app/helpdesk/page.tsx` — guru route: lists the authenticated guru's tickets (ticket number, subject, category, status badge, created date) with loading/error/empty states, plus a **"Buat Tiket"** modal form. Category is a **free-text input**. Includes the new **Ticket Detail Modal** (no route change/navigation) triggered by clicking any ticket on the list.
-- **Ticket Detail Modal** — shows ticket number, subject, category, description, status badge, creator, and the **conversation** (`replies[]`: sender name + role label, message, timestamp) in a scrollable, read-only layout. Guru messages align right (sky bubble); Admin/Pengajar align left (white bubble).
-- **Reply Flow with Frontend Guard** — A reply textarea POSTs to `replyToTicket`, clearing the input and re-fetching detail to update the conversation immediately.
-  - **Consecutive Message Limit**: Guru is capped at a maximum of 2 consecutive replies before awaiting an Admin/Pengajar response. Enforced on the frontend via history scan (`isGuruReplyBlocked`), returning a block warning if the limit is reached. Note that this is frontend-side enforcement unless the backend team confirms server-side validation.
-  - **Closed Tickets**: Replying is disabled if the status is resolved/closed (`isTicketClosed`).
+- `services/helpdesk.service.js` — `getMyTickets()` (GET `/api/helpdesk/tickets/my`), `createTicket({ subject, category, description })` (POST `/api/helpdesk/tickets`), `getTicketDetail(ticketId)` (GET `/api/helpdesk/tickets/:ticketId`), `replyToTicket(ticketId, message)` (POST `/api/helpdesk/tickets/:ticketId/replies`), `getAllTickets({ status, category })` (GET `/api/helpdesk/tickets`), `updateTicketStatus(ticketId, status)` (PATCH `/api/helpdesk/tickets/:ticketId/status`).
+- `app/helpdesk/page.tsx` — lists guru's tickets, has "Buat Tiket" form, and ticket detail modal.
+  - **Consecutive Message Limit**: Guru capped at 2 consecutive replies before awaiting admin. Enforced via `isGuruReplyBlocked` frontend-side history scan.
+  - **Closed Tickets**: Replying disabled if resolved/closed (`isTicketClosed`).
+- `app/admin/helpdesk/page.tsx` — Admin/Pengajar ticket management page. Follows slate admin design system. Shows all tickets with fields (No. Tiket, Pengirim, Subjek & Kategori, Status, Tanggal Dibuat).
+  - **Server-side Filters**: dropdown for status, text input for category. Fetches list dynamically on filter change.
+  - **Ticket Detail Modal**: Opens read-only ticket info (subject, category, description, created date, requester profile) and full conversation history. Guru messages align left, Admin/Pengajar messages align right.
+  - **Reply Flow**: text area to send message via `replyToTicket`. Validates non-empty. Refreshes conversation immediately without page reload. Automatically shifts status to `in_progress` on reply (handled by backend; UI re-fetches details to sync).
+  - **Status Update**: manual status selector (Open, In Progress, Resolved, Closed) which updates status immediately via `updateTicketStatus` (PATCH) and re-fetches details + list.
 - `app/helpdesk/[ticketId]/page.tsx` — **deprecated**; redirects to `/helpdesk` to handle old/stale bookmarks gracefully.
 - **Quick Tutorial (static, no API):** a "Panduan Singkat" accordion at the bottom of `/helpdesk`, rendered from a module-level `TUTORIAL_ITEMS` array (4 items: *Cara membuat tiket, Cara melihat dan membalas tiket (updated for modal/2-message limit), Arti status tiket, Kapan sebaiknya membuat tiket*). Multiple items can be open at once (state `openTutorials: number[]`); each header is a `<button>` with `aria-expanded` + `aria-controls` pointing at its panel (`role="region"`). Purely presentational — no service/API/network. Visually secondary to the ticket list (muted slate card, smaller text).
-- Navigation: `Header.tsx` shows a **"Bantuan"** link for guru only; the dashboard "Pusat Bantuan & Layanan" card now links to `/helpdesk`.
+- Navigation: `Header.tsx` shows a **"Bantuan"** link for guru, or **"Helpdesk"** link for admin; the dashboard "Pusat Bantuan & Layanan" / "Kelola Tiket Bantuan" card links to the respective pages.
 
 ⚠️ **Ticket response shape is NOT confirmed for the list endpoint.** The list page reads fields **defensively** (fallback names: `ticketNumber`/`nomor`/`number`/`kode`/`id`, `subject`/`subjek`/`judul`, `category`/`kategori`, `status`, `createdAt`/`created_at`/`createdDate`/`tanggal`). The **detail endpoint** (`GET /api/helpdesk/tickets/:ticketId`) has a **confirmed contract** (`id`, `ticketNumber`, `subject`, `status`, `user{nama,email}`, `replies[]{id,message,createdAt,sender{id,nama,role}}`) but the detail page still renders tolerantly (e.g. `message`/`pesan`, `createdAt`/`created_at`) to match the repo's existing pattern. `category` is not in the confirmed detail response and is shown only if present. Status-badge mapping is tolerant (open/proses/selesai → blue/amber/green, unknown → neutral).
-
-**Remaining Helpdesk V1 work (NOT built):** admin/pengajar ticket management (list/assign/respond), any status-management UI (status is display-only for guru; backend owns transitions). Do not build these without confirming the backend contract.
 
 The nearest *other* existing surface is module **feedback (Saran & Kritik)** — a separate flow, not part of helpdesk.
 
@@ -244,6 +245,7 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 | Evaluation result monitoring | ✅ | `/admin/checklist/report` | `getUserEvaluations` | lazy on expand; skor per evaluation |
 | Feedback (Saran & Kritik) view | ✅ | `/admin/checklist/report` | `getAllFeedbacks` | matched by user.id + module.id |
 | Checklist item mgmt | ✅ | `/admin/checklist` | items CRUD + toggle `isActive` | grouped by 5 aspects |
+| Admin Helpdesk / Ticketing | ✅ | `/admin/helpdesk` | `getAllTickets`, `getTicketDetail`, `replyToTicket`, `updateTicketStatus` | server-side filters (status/category), modal detail view, reply system, manual status change (PATCH) |
 | Checklist consistency report | ❌ unused | — | `getChecklistReport` | service fn exists, **never called** |
 
 ### Guru
