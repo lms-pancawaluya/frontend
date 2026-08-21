@@ -14,6 +14,8 @@ interface UserItem {
   modulSelesai: number;
   sekolah?: string;
   status?: string;
+  kota?: string;
+  daerah?: string;
 }
 
 const statusColor: Record<string, string> = {
@@ -32,6 +34,17 @@ export default function AdminUsersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  // Filter States
+  const [filterSekolah, setFilterSekolah] = useState("");
+  const [filterKota, setFilterKota] = useState("");
+  const [filterDaerah, setFilterDaerah] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  // Unique options derived from initial data load
+  const [allSchools, setAllSchools] = useState<string[]>([]);
+  const [allCities, setAllCities] = useState<string[]>([]);
+  const [allRegions, setAllRegions] = useState<string[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -62,9 +75,28 @@ export default function AdminUsersPage() {
       try {
         setLoading(true);
         setError("");
-        const data = await getUsers(debouncedQuery);
+
+        const filterPayload = {
+          search: debouncedQuery,
+          sekolah: filterSekolah,
+          kota: filterKota,
+          daerah: filterDaerah,
+          status: filterStatus,
+        };
+
+        const data = await getUsers(filterPayload);
         if (!active) return;
         setUsers(data);
+
+        // Only extract options on initial load to avoid shrinking options
+        if (initialLoading) {
+          const schools = Array.from(new Set(data.map((u: UserItem) => u.sekolah).filter(Boolean))) as string[];
+          const cities = Array.from(new Set(data.map((u: UserItem) => u.kota).filter(Boolean))) as string[];
+          const regions = Array.from(new Set(data.map((u: UserItem) => u.daerah).filter(Boolean))) as string[];
+          setAllSchools(schools.sort());
+          setAllCities(cities.sort());
+          setAllRegions(regions.sort());
+        }
       } catch (err) {
         if (!active) return;
         if (err instanceof Error) {
@@ -85,7 +117,7 @@ export default function AdminUsersPage() {
     return () => {
       active = false;
     };
-  }, [debouncedQuery, router]);
+  }, [debouncedQuery, filterSekolah, filterKota, filterDaerah, filterStatus, router, initialLoading]);
 
   async function handleDelete(id: string, nama: string) {
     const confirmed = window.confirm(`Yakin ingin menghapus akun guru "${nama}"?`);
@@ -107,6 +139,15 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setDebouncedQuery("");
+    setFilterSekolah("");
+    setFilterKota("");
+    setFilterDaerah("");
+    setFilterStatus("");
+  };
+
   if (initialLoading) {
     return <p className="text-center mt-16 text-gray-500">Memuat data pengguna...</p>;
   }
@@ -123,45 +164,151 @@ export default function AdminUsersPage() {
 
   const filteredUsers = users.filter((u) => u.role === "guru");
 
-return (
-  <div className="max-w-5xl mx-auto p-6">
-    <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-2">
-      Kelola Akun Guru
-    </h1>
-    <p className="text-gray-500 mb-8">
-      Daftar seluruh pengguna terdaftar di sistem
-    </p>
+  return (
+    <div className="max-w-5xl mx-auto p-6">
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-2">
+        Kelola Akun Guru
+      </h1>
+      <p className="text-gray-500 mb-8">
+        Daftar seluruh pengguna terdaftar di sistem
+      </p>
 
-    <div className="relative w-full sm:max-w-sm mb-6">
-      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-        </svg>
-      </span>
-      <input
-        type="text"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Cari nama atau email guru..."
-        aria-label="Cari nama atau email guru"
-        className="w-full rounded-full border border-[var(--color-border-soft)] bg-white py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15"
-      />
-      {searchQuery && (
-        <button
-          type="button"
-          onClick={() => {
-            setSearchQuery("");
-            setDebouncedQuery("");
-          }}
-          aria-label="Bersihkan pencarian"
-          className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
-    </div>
+      {/* FILTER PANEL */}
+      <div className="bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm p-6 mb-6 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search Input */}
+          <div className="flex-1 space-y-1.5">
+            <label className="text-xs font-bold text-slate-600">Cari</label>
+            <div className="relative w-full">
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari nama, NIP, atau email..."
+                aria-label="Cari nama, NIP, atau email"
+                className="w-full rounded-xl border border-[var(--color-border-soft)] bg-slate-50 py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:bg-white focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setDebouncedQuery("");
+                  }}
+                  aria-label="Bersihkan pencarian"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Status Filter */}
+          <div className="w-full md:w-48 space-y-1.5">
+            <label htmlFor="filter-status" className="text-xs font-bold text-slate-600">
+              Filter Status
+            </label>
+            <select
+              id="filter-status"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+            >
+              <option value="">Semua Status</option>
+              <option value="aktif">Aktif</option>
+              <option value="nonaktif">Nonaktif</option>
+              <option value="pensiun">Pensiun</option>
+              <option value="wafat">Wafat</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Kota Filter */}
+          <div className="space-y-1.5">
+            <label htmlFor="filter-kota" className="text-xs font-bold text-slate-600">
+              Filter Kota/Kabupaten
+            </label>
+            <select
+              id="filter-kota"
+              value={filterKota}
+              onChange={(e) => setFilterKota(e.target.value)}
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+            >
+              <option value="">Semua Kota/Kabupaten</option>
+              {allCities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Daerah Filter */}
+          <div className="space-y-1.5">
+            <label htmlFor="filter-daerah" className="text-xs font-bold text-slate-600">
+              Filter Daerah/Kecamatan
+            </label>
+            <select
+              id="filter-daerah"
+              value={filterDaerah}
+              onChange={(e) => setFilterDaerah(e.target.value)}
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+            >
+              <option value="">Semua Daerah/Kecamatan</option>
+              {allRegions.map((region) => (
+                <option key={region} value={region}>
+                  {region}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sekolah Filter */}
+          <div className="space-y-1.5">
+            <label htmlFor="filter-sekolah" className="text-xs font-bold text-slate-600">
+              Filter Sekolah
+            </label>
+            <select
+              id="filter-sekolah"
+              value={filterSekolah}
+              onChange={(e) => setFilterSekolah(e.target.value)}
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+            >
+              <option value="">Semua Sekolah</option>
+              {allSchools.map((school) => (
+                <option key={school} value={school}>
+                  {school}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Reset Filter Button */}
+        {(searchQuery || filterStatus || filterKota || filterDaerah || filterSekolah) && (
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors px-4 py-2 border border-[var(--color-border-soft)] rounded-xl hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Bersihkan Filter & Pencarian
+            </button>
+          </div>
+        )}
+      </div>
 
     <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
