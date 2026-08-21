@@ -57,7 +57,7 @@ Aplikasi mengenal dua peran pengguna (field `role` pada data user):
 
 Panel admin berada di `/admin/*`.
 
-- **Dashboard admin** (`/admin`) — menu navigasi ke manajemen modul, akun guru, item checklist, tiket bantuan (helpdesk), dan halaman monitoring.
+- **Dashboard admin** (`/admin`) — menu navigasi ke manajemen modul, akun guru, item checklist, tiket bantuan (helpdesk), dan halaman monitoring. Hero banner menggunakan gradien Disdik biru→hijau (`#0047A5` → `#109B51`) dengan badge pill translusen, tombol CTA kuning, dan dekorasi geometris — konsisten visual dengan hero banner Guru dashboard sebagai identitas visual LMS Panca Waluya.
 - **Kelola tiket bantuan (Helpdesk)** (`/admin/helpdesk`) — melihat seluruh tiket guru, menggunakan server-side filters untuk status (open, in_progress, resolved, closed) & kategori, meninjau detail tiket (informasi tiket, info guru pengirim, percakapan lengkap), membalas tiket (mengubah status otomatis ke `in_progress` jika dibalas), dan mengubah status tiket secara manual via dropdown PATCH status.
 - **Kelola modul** (`/admin/modules`, `/admin/modules/new`, `/admin/modules/[id]`, `/admin/modules/[id]/edit`) — CRUD modul (judul, deskripsi, `aspekPancawaluya`, `urutan`).
 - **Kelola konten modul** — tambah (`/admin/modules/[id]/contents/new`) & edit/hapus konten (inline pada halaman edit modul); tipe konten `teks` atau `video`.

@@ -230,7 +230,7 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 
 | Feature | Status | Route(s) | Service/API | Notes |
 |---|---|---|---|---|
-| Admin dashboard | ✅ | `/admin` | `getProfile` | 4 nav cards; no stats |
+| Admin dashboard | ✅ | `/admin` | `getProfile` | 5 nav cards; hero banner uses unified Disdik gradient (matches Guru dashboard) |
 | Module list + delete | ✅ | `/admin/modules` | `getModules`, `deleteModule` | search by judul/deskripsi; `window.confirm` delete |
 | Module create | ✅ | `/admin/modules/new` | `createModule` | `{ judul, deskripsi, aspekPancawaluya, urutan }`; no role guard |
 | Module detail | ✅ | `/admin/modules/[id]` | `getModuleById`, `getModuleContents` | read-only preview + mgmt action links |
@@ -342,7 +342,7 @@ Follow these; they are consistent across the codebase.
 - **Utility classes** in globals.css: `.btn-primary` (navy pill), `.btn-secondary` (accent pill), `.alert-error` (rose error box), `.animate-fade-in[-delay-1|-2]`.
 - **Two visual dialects, intentionally distinct:**
   - **Auth / landing / guru learning**: pale-blue background (`--color-pale`), decorative amber "L" corners, sky pixel-grid dots, blur rings, rounded-2xl white cards with backdrop-blur. Video/learning pages layer the Disdik 4-color ambient glows.
-  - **Admin panel**: slate palette (`bg-slate-50/60`, `slate-900` hero banners, emerald accents), `rounded-3xl` cards, `border-slate-200/80`, search inputs, tables. Keep new admin UI in this slate/emerald language.
+  - **Admin panel**: slate palette (`bg-slate-50/60`, emerald accents), `rounded-3xl` cards, `border-slate-200/80`, search inputs, tables. **Hero banner** uses the same Disdik blue→teal/green gradient (`from-[#0047A5] via-[#0052C2] to-[#109B51]`), translucent badge pill, yellow CTA button (`bg-[#F3BF10]`), and geometric decorations as the Guru dashboard — unified LMS Panca Waluya visual identity across both roles. Keep new admin UI in this slate/emerald language for cards/tables.
 - **Aspect badge colors** — `Record<string,string>` (`aspekColor`) repeated across landing/modules/admin: cageur=green, bageur=blue, bener=yellow, pinter=purple, singer=red.
 - **Status badges** (users): aktif=green, nonaktif=gray, pensiun=amber, wafat=red. Role badges: admin=purple, guru=blue.
 - **Progress bars**: red `<50%`, amber `<80%`, green `≥80%` (monitoring report).
@@ -361,7 +361,7 @@ Follow these; they are consistent across the codebase.
 - 🟡 **Partial**: evaluation-question edit (pilihan_ganda only); API-backed guru evaluation renders but doesn't submit; video mini-quiz silently passes on API error.
 - 🔌 **Backend-dependent** (works only against the live API contract): all monitoring, progress, mini-quiz attempts, profile/photo upload.
 - ❌ **Stub / dead / unmounted**: `/modules/[id]/evaluation` mock questions + dead inline feedback; `ModuleFeedbackForm` (unmounted); guru daily-checklist services (no UI); `getChecklistReport` (uncalled); `startModule` (uncalled); certificate ("Belum Tersedia"); `lib/api.ts` (unused axios).
-- 🔮 **Planned**: Helpdesk V1 — guru **list + create + detail modal** are done (`/helpdesk`, `helpdesk.service`); admin/pengajar ticket management and status-management UI remain (guru sees status read-only; backend owns transitions).
+- ✅ **Helpdesk V1 complete**: Guru side — list + create + detail modal + 2-consecutive-message limit (`/helpdesk`). Admin side — list with server-side filters + detail modal + reply + PATCH status (`/admin/helpdesk`). Both dashboards share unified Disdik branded hero banner.
 
 **Validation at handoff**: `npx tsc --noEmit` → **pass (exit 0)**. `npx eslint` → **pass (exit 0)**.
 
