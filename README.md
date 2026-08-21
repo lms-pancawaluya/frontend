@@ -10,14 +10,15 @@ Frontend web untuk platform pembelajaran **LMS Pancawaluya**, ditujukan bagi Gur
 | **Pinter** | Tertib dan taat pada norma |
 | **Singer** | Responsif dan memiliki jiwa kepemimpinan |
 
-Aplikasi mengenal dua peran pengguna (field `role` pada data user):
+Aplikasi mengenal tiga peran pengguna (field `role` pada data user, disimpan lowercase):
 
 - **`guru`** — mengakses modul pembelajaran (video + mini-quiz, materi teks, evaluasi), mengelola profil, dan melihat progres belajar.
-- **`admin`** — mengelola modul, konten, evaluasi, mini-quiz, akun guru, item checklist, serta memantau progres & hasil evaluasi guru.
+- **`pengajar`** — akun staf pengajar yang ikut dikelola di area admin; diperlakukan sebagai staf pengajar pada daftar akun guru.
+- **`admin`** — mengelola modul, konten, evaluasi, mini-quiz, akun guru/pengajar, item checklist, serta memantau progres & hasil evaluasi guru.
 
 > Ini adalah **frontend saja**. Seluruh data berasal dari backend API eksternal; frontend tidak berisi logika server/basis data.
 
-> **Arah pengembangan berikutnya — Helpdesk V1:** Helpdesk/Ticketing V1 adalah target produk saat ini. **Sudah diimplementasikan (sisi guru, commit 1):** halaman `/helpdesk` untuk melihat daftar tiket milik guru dan membuat tiket baru (`services/helpdesk.service.js`). **Belum** ada: detail tiket, balasan, manajemen tiket oleh admin, dan pembaruan status. Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
+> **Helpdesk V1:** Sudah diimplementasikan penuh. Sisi guru: daftar tiket + buat tiket + detail modal + balas + batas 2 pesan berturut-turut + rute lama redirect. Sisi admin/pengajar: daftar/filter tiket + detail modal + balas + PATCH status. Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
 
 ---
 
@@ -110,11 +111,13 @@ Semua route berupa App Router. Sebagian besar halaman adalah **client component*
 | `/admin/modules/[id]/evaluations` | Daftar & buat evaluasi |
 | `/admin/modules/[id]/evaluations/[evalId]` | Kelola soal evaluasi |
 | `/admin/modules/[id]/quiz/[contentId]` | Kelola mini-quiz konten video |
-| `/admin/users` | Daftar akun guru |
-| `/admin/users/[id]` | Edit akun guru + reset password |
+| `/admin/users` | Daftar akun guru/pengajar |
+| `/admin/users/[id]` | Edit akun guru/pengajar + reset password |
+| `/helpdesk` | Bantuan/tiket guru (modal detail) |
+| `/helpdesk/[ticketId]` | Redirect ke `/helpdesk` |
+| `/admin/helpdesk` | Kelola tiket bantuan (Helpdesk) |
 | `/admin/checklist` | Kelola item checklist |
 | `/admin/checklist/report` | Monitoring progres & evaluasi guru |
-| `/admin/helpdesk` | Kelola tiket bantuan (Helpdesk) |
 
 ### Rute yang ada namun tidak tertaut dari UI
 
@@ -132,7 +135,7 @@ Autentikasi berbasis **JWT** yang divalidasi backend. Frontend hanya melakukan p
 
 ### Sesi
 
-- **Login** (`app/components/auth/LoginForm.tsx`) — POST `/api/auth/login` (fetch langsung). Token disimpan ke `localStorage` (`token`) dan objek user ke `localStorage` (`user`). Token juga ditulis ke cookie `token` (`path=/; max-age=86400; SameSite=Lax`). Redirect berdasarkan `role` (case-insensitive): `ADMIN` → `/admin`, selain itu → `/dashboard`.
+- **Login** (`app/components/auth/LoginForm.tsx`) — POST `/api/auth/login` (fetch langsung). Token disimpan ke `localStorage` (`token`) dan objek user ke `localStorage` (`user`). Token juga ditulis ke cookie `token` (`path=/; max-age=86400; SameSite=Lax`). Redirect berdasarkan `role` (case-insensitive): `ADMIN` → `/admin`, `GURU`/`PENGAJAR` → `/dashboard`, lain-lain → `/dashboard`.
 - **Registrasi** (`RegisterForm.tsx`) — POST `/api/auth/register` (nama, nip, email, password), lalu redirect ke `/otp?email=`.
 - **Logout** (`logoutUser` di `auth.service.js`) — menghapus `token` & `user` dari `localStorage` dan `dispatch` event `"authChange"`.
 - **Sinkronisasi Header** — `Header.tsx` membaca `localStorage` dan mendengarkan event `"authChange"` untuk memperbarui navigasi tanpa reload.
@@ -142,6 +145,9 @@ Autentikasi berbasis **JWT** yang divalidasi backend. Frontend hanya melakukan p
 ### Proteksi halaman (client-side)
 
 - **Halaman admin yang memeriksa role**: memeriksa `localStorage` `user` (sebagian juga `token`) di `useEffect`; jika `role !== "admin"` → redirect `/dashboard`; jika data tidak ada → `/login`. Diterapkan pada: `/admin`, `/admin/modules`, `/admin/modules/[id]/evaluations`, `/admin/modules/[id]/evaluations/[evalId]`, `/admin/users`, `/admin/users/[id]`, `/admin/checklist`, `/admin/checklist/report`.
+  - `/admin/users` menampilkan hanya staf pengajar: role `guru` dan `pengajar`. Filter role di halaman itu: `Semua`, `Guru`, `Pengajar`.
+  - Role `admin` tidak ditampilkan di tabel manajemen akun.
+- **Halaman guru / pengajar**: `/dashboard` & `/guru` mengarahkan admin ke `/admin`; login `PENGAJAR` diperlakukan sama dengan guru saat redirect.
 - **Halaman admin tanpa guard eksplisit**: `/admin/modules/new`, `/admin/modules/[id]`, `/admin/modules/[id]/edit`, `/admin/modules/[id]/contents/new`, `/admin/modules/[id]/quiz/[contentId]` tidak melakukan cek role di file halaman.
 - **Halaman guru** (`/modules*`, dsb.) tidak melakukan redirect guard; request API akan gagal bila token tidak ada. `/dashboard` & `/guru` mengarahkan user `admin` ke `/admin`.
 

@@ -22,9 +22,10 @@ Next.js (App Router) frontend for **LMS Pancawaluya** — a Learning Management 
 
 ### Users & Roles
 
-Two roles, carried on the user object as `role` (lowercase in stored data: `"admin"` / `"guru"`).
+Three roles, carried on the user object as `role` (lowercase in stored data: `"admin"` / `"guru"` / `"pengajar"`).
 
 - **`guru`** (teacher) — learns modules (video + mini-quiz, text, evaluation), manages profile, tracks progress.
+- **`pengajar`** — teaching-staff account; shown in admin user management alongside guru.
 - **`admin`** — manages modules, content, evaluations, mini-quizzes, teacher accounts, checklist items; monitors teacher progress/evaluation results and reads feedback.
 
 ---
@@ -42,6 +43,8 @@ Helpdesk / Ticketing V1 is completed.
   - **Consecutive Message Limit**: Guru capped at 2 consecutive replies before awaiting admin. Enforced via `isGuruReplyBlocked` frontend-side history scan.
   - **Closed Tickets**: Replying disabled if resolved/closed (`isTicketClosed`).
 - `app/admin/helpdesk/page.tsx` — Admin/Pengajar ticket management page. Follows slate admin design system. Shows all tickets with fields (No. Tiket, Pengirim, Subjek & Kategori, Status, Tanggal Dibuat).
+- `app/admin/users/page.tsx` — user management for teaching staff only: searches server-side, filters by sekolah/kota/daerah/status, role filter `Semua/Guru/Pengajar`, shows `guru` + `pengajar`, hides `admin`.
+- `app/components/auth/LoginForm.tsx` — login redirect treats `PENGAJAR` same as `GURU` for now.
   - **Server-side Filters**: dropdown for status, text input for category. Fetches list dynamically on filter change.
   - **Ticket Detail Modal**: Opens read-only ticket info (subject, category, description, created date, requester profile) and full conversation history. Guru messages align left, Admin/Pengajar messages align right.
   - **Reply Flow**: text area to send message via `replyToTicket`. Validates non-empty. Refreshes conversation immediately without page reload. Automatically shifts status to `in_progress` on reply (handled by backend; UI re-fetches details to sync).
@@ -200,7 +203,7 @@ JWT-based, validated by backend. Frontend protection is **client-side only** (UX
 
 ### Session
 
-- **Login** — `LoginForm.tsx` calls `POST /api/auth/login` via **inline fetch** (not the `loginUser` service). Stores `token` + `user` (JSON) in `localStorage`, also writes a `token` **cookie** (`path=/; max-age=86400; SameSite=Lax`), dispatches `"authChange"`, redirects by role.
+- **Login** — `LoginForm.tsx` calls `POST /api/auth/login` via **inline fetch** (not the `loginUser` service). Stores `token` + `user` (JSON) in `localStorage`, also writes a `token` **cookie** (`path=/; max-age=86400; SameSite=Lax`), dispatches `"authChange"`, redirects by role (`ADMIN` → `/admin`, `GURU`/`PENGAJAR` → `/dashboard`).
 - **Register** — `RegisterForm.tsx` → `POST /api/auth/register` `{ nama, nip, email, password }` → redirects `/otp?email=`.
 - **Logout** — `logoutUser()` (`auth.service.js`) removes `token` + `user`, dispatches `"authChange"`.
 - **Header sync** — `Header.tsx` reads `localStorage` and listens for `"authChange"` to re-render nav without reload. `HeroCta.tsx` uses the same pattern.
@@ -239,7 +242,7 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 | Evaluation list + create | ✅ | `/admin/modules/[id]/evaluations` | `getModuleEvaluations`, `createEvaluation` | create → jumps to question CRUD |
 | Evaluation question CRUD | 🟡 | `/admin/modules/[id]/evaluations/[evalId]` | `addQuestion`, `updateQuestion`, `deleteQuestion` | **edit only for `pilihan_ganda`**; esai edit disabled |
 | Mini-quiz CRUD | ✅ | `/admin/modules/[id]/quiz/[contentId]` | `miniQuiz.service` (7 fns) | per video content; quiz + question CRUD; no role guard |
-| Teacher account mgmt | ✅ | `/admin/users` | `getUsers(filters)`, `deleteUser` | lists guru only; supports global search (?search=...) and server-side filters (?sekolah=..., ?kota=..., ?daerah=..., ?status=...); admin rows can't be edited/deleted |
+| Teacher account mgmt | ✅ | `/admin/users` | `getUsers(filters)`, `deleteUser` | lists guru + pengajar only; supports global search (?search=...) and server-side filters (?sekolah=..., ?kota=..., ?daerah=..., ?status=...); role filter `Semua/Guru/Pengajar`; admin rows hidden |
 | Teacher edit + reset password | ✅ | `/admin/users/[id]` | `getUserById`, `updateUser`, `resetUserPassword` | editable: email/sekolah/status; nama+NIP read-only |
 | Teacher progress monitoring | ✅ | `/admin/checklist/report` | `getUserProgress` | eager per-guru progress bars |
 | Evaluation result monitoring | ✅ | `/admin/checklist/report` | `getUserEvaluations` | lazy on expand; skor per evaluation |
@@ -344,7 +347,7 @@ Follow these; they are consistent across the codebase.
   - **Auth / landing / guru learning**: pale-blue background (`--color-pale`), decorative amber "L" corners, sky pixel-grid dots, blur rings, rounded-2xl white cards with backdrop-blur. Video/learning pages layer the Disdik 4-color ambient glows.
   - **Admin panel**: slate palette (`bg-slate-50/60`, emerald accents), `rounded-3xl` cards, `border-slate-200/80`, search inputs, tables. **Hero banner** uses the same Disdik blue→teal/green gradient (`from-[#0047A5] via-[#0052C2] to-[#109B51]`), translucent badge pill, yellow CTA button (`bg-[#F3BF10]`), and geometric decorations as the Guru dashboard — unified LMS Panca Waluya visual identity across both roles. Keep new admin UI in this slate/emerald language for cards/tables.
 - **Aspect badge colors** — `Record<string,string>` (`aspekColor`) repeated across landing/modules/admin: cageur=green, bageur=blue, bener=yellow, pinter=purple, singer=red.
-- **Status badges** (users): aktif=green, nonaktif=gray, pensiun=amber, wafat=red. Role badges: admin=purple, guru=blue.
+- **Status badges** (users): aktif=green, nonaktif=gray, pensiun=amber, wafat=red. Role badges: admin=purple, guru=blue, pengajar=amber.
 - **Progress bars**: red `<50%`, amber `<80%`, green `≥80%` (monitoring report).
 - **Loading**: inline spinner SVG + "Memuat…" text. **Empty**: muted "Belum ada…" / "Tidak ada…" text. **Error**: `.alert-error` / rose box; forms show inline error banners.
 - **Confirm/delete**: `window.confirm(...)` before every destructive call; button shows a disabled "Menghapus…" state during the request.

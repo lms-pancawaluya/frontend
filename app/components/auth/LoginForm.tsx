@@ -50,7 +50,7 @@ export default function LoginForm() {
       let redirectPath: string;
       if (userRole === "ADMIN") {
         redirectPath = "/admin";
-      } else if (userRole === "GURU") {
+      } else if (userRole === "GURU" || userRole === "PENGAJAR") {
         redirectPath = "/dashboard";
       } else {
         redirectPath = "/dashboard";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUsers, deleteUser } from "@/services/user.service";
@@ -25,6 +25,22 @@ const statusColor: Record<string, string> = {
   wafat: "bg-red-100 text-red-700",
 };
 
+function normalizeRole(role?: string): string {
+  return String(role || "").toLowerCase();
+}
+
+function isManagedStaff(role?: string): boolean {
+  const r = normalizeRole(role);
+  return r === "guru" || r === "pengajar";
+}
+
+function getRoleBadge(role?: string): { label: string; className: string } {
+  const r = normalizeRole(role);
+  if (r === "pengajar") return { label: "Pengajar", className: "bg-amber-100 text-amber-800" };
+  if (r === "guru") return { label: "Guru", className: "bg-blue-100 text-blue-700" };
+  return { label: role || "—", className: "bg-gray-100 text-gray-600" };
+}
+
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -34,17 +50,15 @@ export default function AdminUsersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-
-  // Filter States
   const [filterSekolah, setFilterSekolah] = useState("");
   const [filterKota, setFilterKota] = useState("");
   const [filterDaerah, setFilterDaerah] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-
-  // Unique options derived from initial data load
+  const [filterRole, setFilterRole] = useState("");
   const [allSchools, setAllSchools] = useState<string[]>([]);
   const [allCities, setAllCities] = useState<string[]>([]);
   const [allRegions, setAllRegions] = useState<string[]>([]);
+  const hydratedFilters = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -88,14 +102,15 @@ export default function AdminUsersPage() {
         if (!active) return;
         setUsers(data);
 
-        // Only extract options on initial load to avoid shrinking options
-        if (initialLoading) {
-          const schools = Array.from(new Set(data.map((u: UserItem) => u.sekolah).filter(Boolean))) as string[];
-          const cities = Array.from(new Set(data.map((u: UserItem) => u.kota).filter(Boolean))) as string[];
-          const regions = Array.from(new Set(data.map((u: UserItem) => u.daerah).filter(Boolean))) as string[];
+        if (!hydratedFilters.current) {
+          const managedStaff = data.filter((u: UserItem) => isManagedStaff(u.role));
+          const schools = Array.from(new Set(managedStaff.map((u: UserItem) => u.sekolah).filter(Boolean))) as string[];
+          const cities = Array.from(new Set(managedStaff.map((u: UserItem) => u.kota).filter(Boolean))) as string[];
+          const regions = Array.from(new Set(managedStaff.map((u: UserItem) => u.daerah).filter(Boolean))) as string[];
           setAllSchools(schools.sort());
           setAllCities(cities.sort());
           setAllRegions(regions.sort());
+          hydratedFilters.current = true;
         }
       } catch (err) {
         if (!active) return;
@@ -117,7 +132,7 @@ export default function AdminUsersPage() {
     return () => {
       active = false;
     };
-  }, [debouncedQuery, filterSekolah, filterKota, filterDaerah, filterStatus, router, initialLoading]);
+  }, [debouncedQuery, filterSekolah, filterKota, filterDaerah, filterStatus, router]);
 
   async function handleDelete(id: string, nama: string) {
     const confirmed = window.confirm(`Yakin ingin menghapus akun guru "${nama}"?`);
@@ -146,6 +161,7 @@ export default function AdminUsersPage() {
     setFilterKota("");
     setFilterDaerah("");
     setFilterStatus("");
+    setFilterRole("");
   };
 
   if (initialLoading) {
@@ -162,21 +178,26 @@ export default function AdminUsersPage() {
     );
   }
 
-  const filteredUsers = users.filter((u) => u.role === "guru");
+  const filteredUsers = users.filter((u) => {
+    const role = normalizeRole(u.role);
+    if (!isManagedStaff(role)) return false;
+    if (filterRole === "guru") return role === "guru";
+    if (filterRole === "pengajar") return role === "pengajar";
+    return true;
+  });
+
+  const roleLabel = filterRole === "guru" ? "Guru" : filterRole === "pengajar" ? "Pengajar" : "Guru/Pengajar";
+  const emptyLabel = filterRole ? `${roleLabel} tidak ditemukan.` : "Guru/Pengajar tidak ditemukan.";
 
   return (
     <div className="max-w-5xl mx-auto p-6">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-2">
         Kelola Akun Guru
       </h1>
-      <p className="text-gray-500 mb-8">
-        Daftar seluruh pengguna terdaftar di sistem
-      </p>
+      <p className="text-gray-500 mb-8">Daftar guru dan pengajar terdaftar di sistem</p>
 
-      {/* FILTER PANEL */}
       <div className="bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm p-6 mb-6 space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search Input */}
           <div className="flex-1 space-y-1.5">
             <label className="text-xs font-bold text-slate-600">Cari</label>
             <div className="relative w-full">
@@ -211,7 +232,6 @@ export default function AdminUsersPage() {
             </div>
           </div>
 
-          {/* Status Filter */}
           <div className="w-full md:w-48 space-y-1.5">
             <label htmlFor="filter-status" className="text-xs font-bold text-slate-600">
               Filter Status
@@ -229,10 +249,25 @@ export default function AdminUsersPage() {
               <option value="wafat">Wafat</option>
             </select>
           </div>
+
+          <div className="w-full md:w-48 space-y-1.5">
+            <label htmlFor="filter-role" className="text-xs font-bold text-slate-600">
+              Filter Role
+            </label>
+            <select
+              id="filter-role"
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+            >
+              <option value="">Semua</option>
+              <option value="guru">Guru</option>
+              <option value="pengajar">Pengajar</option>
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Kota Filter */}
           <div className="space-y-1.5">
             <label htmlFor="filter-kota" className="text-xs font-bold text-slate-600">
               Filter Kota/Kabupaten
@@ -252,7 +287,6 @@ export default function AdminUsersPage() {
             </select>
           </div>
 
-          {/* Daerah Filter */}
           <div className="space-y-1.5">
             <label htmlFor="filter-daerah" className="text-xs font-bold text-slate-600">
               Filter Daerah/Kecamatan
@@ -272,7 +306,6 @@ export default function AdminUsersPage() {
             </select>
           </div>
 
-          {/* Sekolah Filter */}
           <div className="space-y-1.5">
             <label htmlFor="filter-sekolah" className="text-xs font-bold text-slate-600">
               Filter Sekolah
@@ -293,8 +326,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Reset Filter Button */}
-        {(searchQuery || filterStatus || filterKota || filterDaerah || filterSekolah) && (
+        {(searchQuery || filterStatus || filterKota || filterDaerah || filterSekolah || filterRole) && (
           <div className="flex justify-end pt-2">
             <button
               type="button"
@@ -310,92 +342,86 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-    <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Nama</th>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Sekolah</th>
-              <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Email</th>
-              <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Role</th>
-              <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Status</th>
-              <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
-                  Memuat data pengguna...
-                </td>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Nama</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Sekolah</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Email</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Role</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Status</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Aksi</th>
               </tr>
-            ) : filteredUsers.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
-                  Guru tidak ditemukan.
-                </td>
-              </tr>
-            ) : (
-              filteredUsers.map((u) => (
-              <tr key={u.id} className="border-b border-[var(--color-border-soft)] last:border-0">
-                <td className="px-4 py-3 text-gray-800">{u.nama}</td>
-                <td className="px-4 py-3 text-gray-600">
-                  {u.sekolah ? u.sekolah : <span className="text-gray-400">—</span>}
-                </td>
-                <td className="px-4 py-3 text-gray-600">{u.email}</td>
-                <td className="px-4 py-3 text-center">
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
-                      u.role === "admin"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}
-                  >
-                    {u.role}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-center">
-                  {u.status ? (
-                    <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
-                        statusColor[u.status] || "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {u.status}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-400">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {u.role === "admin" ? (
-                    <span className="text-xs text-gray-400 block text-center">—</span>
-                  ) : (
-                    <div className="flex gap-2 justify-center">
-                      <Link
-                        href={`/admin/users/${u.id}`}
-                        className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(u.id, u.nama)}
-                        disabled={deletingId === u.id}
-                        className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
-                      >
-                        {deletingId === u.id ? "Menghapus..." : "Hapus"}
-                      </button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+                    Memuat data pengguna...
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+                    {emptyLabel}
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((u) => {
+                  const roleBadge = getRoleBadge(u.role);
+
+                  return (
+                    <tr key={u.id} className="border-b border-[var(--color-border-soft)] last:border-0">
+                      <td className="px-4 py-3 text-gray-800">{u.nama}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {u.sekolah ? u.sekolah : <span className="text-gray-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{u.email}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${roleBadge.className}`}>
+                          {roleBadge.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {u.status ? (
+                          <span
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
+                              statusColor[u.status] || "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {u.status}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2 justify-center">
+                          <Link
+                            href={`/admin/users/${u.id}`}
+                            className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(u.id, u.nama)}
+                            disabled={deletingId === u.id}
+                            className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
+                          >
+                            {deletingId === u.id ? "Menghapus..." : "Hapus"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
