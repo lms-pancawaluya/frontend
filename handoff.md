@@ -33,14 +33,18 @@ Two roles, carried on the user object as `role` (lowercase in stored data: `"adm
 
 ### Helpdesk V1
 
-**Status: partially implemented (guru ticket list + create). Detail / replies / admin management NOT built.**
+**Status: partially implemented (guru ticket list + create + detail modal). Detail / replies / admin management NOT built.**
 
 Helpdesk / Ticketing V1 is the current product direction. **Guru side is implemented:**
 
 - `services/helpdesk.service.js` — `getMyTickets()` (GET `/api/helpdesk/tickets/my`), `createTicket({ subject, category, description })` (POST `/api/helpdesk/tickets`), `getTicketDetail(ticketId)` (GET `/api/helpdesk/tickets/:ticketId`), `replyToTicket(ticketId, message)` (POST `/api/helpdesk/tickets/:ticketId/replies`). All follow the standard service pattern (`{ sukses, pesan, data }`, Bearer token).
-- `app/helpdesk/page.tsx` — guru route: lists the authenticated guru's tickets (ticket number, subject, category, status badge, created date) with loading/error/empty states, plus a **"Buat Tiket"** modal form (subject / category / description; required-field validation; refreshes list via a `refreshKey` counter on success). Category is a **free-text input** (no fixed enum — backend category values are not confirmed). Each ticket row with an `id` is a **`Link` to `/helpdesk/[ticketId]`**. Also includes a **static "Panduan Singkat" (Quick Tutorial) accordion** — see below.
-- `app/helpdesk/[ticketId]/page.tsx` — guru **ticket detail + reply**: shows ticket number, subject, category (if present), status badge, creator, and the **conversation** (`replies[]`: sender name + role label, message, timestamp). Guru messages align right (sky bubble); Admin/Pengajar align left (white bubble). A reply textarea validates non-empty, POSTs via `replyToTicket`, then **re-fetches the detail** so the conversation and status update without a browser refresh. Loading / error / not-found / empty-conversation states handled. Fields rendered **defensively** (fallback names), same as the list. **Guru cannot change status** — status is display-only; backend controls transitions.
-- **Quick Tutorial (static, no API):** a "Panduan Singkat" accordion at the bottom of `/helpdesk`, rendered from a module-level `TUTORIAL_ITEMS` array (4 items: *Cara membuat tiket, Cara melihat dan membalas tiket, Arti status tiket, Kapan sebaiknya membuat tiket*). Multiple items can be open at once (state `openTutorials: number[]`); each header is a `<button>` with `aria-expanded` + `aria-controls` pointing at its panel (`role="region"`). Purely presentational — no service/API/network. Visually secondary to the ticket list (muted slate card, smaller text).
+- `app/helpdesk/page.tsx` — guru route: lists the authenticated guru's tickets (ticket number, subject, category, status badge, created date) with loading/error/empty states, plus a **"Buat Tiket"** modal form. Category is a **free-text input**. Includes the new **Ticket Detail Modal** (no route change/navigation) triggered by clicking any ticket on the list.
+- **Ticket Detail Modal** — shows ticket number, subject, category, description, status badge, creator, and the **conversation** (`replies[]`: sender name + role label, message, timestamp) in a scrollable, read-only layout. Guru messages align right (sky bubble); Admin/Pengajar align left (white bubble).
+- **Reply Flow with Frontend Guard** — A reply textarea POSTs to `replyToTicket`, clearing the input and re-fetching detail to update the conversation immediately.
+  - **Consecutive Message Limit**: Guru is capped at a maximum of 2 consecutive replies before awaiting an Admin/Pengajar response. Enforced on the frontend via history scan (`isGuruReplyBlocked`), returning a block warning if the limit is reached. Note that this is frontend-side enforcement unless the backend team confirms server-side validation.
+  - **Closed Tickets**: Replying is disabled if the status is resolved/closed (`isTicketClosed`).
+- `app/helpdesk/[ticketId]/page.tsx` — **deprecated**; redirects to `/helpdesk` to handle old/stale bookmarks gracefully.
+- **Quick Tutorial (static, no API):** a "Panduan Singkat" accordion at the bottom of `/helpdesk`, rendered from a module-level `TUTORIAL_ITEMS` array (4 items: *Cara membuat tiket, Cara melihat dan membalas tiket (updated for modal/2-message limit), Arti status tiket, Kapan sebaiknya membuat tiket*). Multiple items can be open at once (state `openTutorials: number[]`); each header is a `<button>` with `aria-expanded` + `aria-controls` pointing at its panel (`role="region"`). Purely presentational — no service/API/network. Visually secondary to the ticket list (muted slate card, smaller text).
 - Navigation: `Header.tsx` shows a **"Bantuan"** link for guru only; the dashboard "Pusat Bantuan & Layanan" card now links to `/helpdesk`.
 
 ⚠️ **Ticket response shape is NOT confirmed for the list endpoint.** The list page reads fields **defensively** (fallback names: `ticketNumber`/`nomor`/`number`/`kode`/`id`, `subject`/`subjek`/`judul`, `category`/`kategori`, `status`, `createdAt`/`created_at`/`createdDate`/`tanggal`). The **detail endpoint** (`GET /api/helpdesk/tickets/:ticketId`) has a **confirmed contract** (`id`, `ticketNumber`, `subject`, `status`, `user{nama,email}`, `replies[]{id,message,createdAt,sender{id,nama,role}}`) but the detail page still renders tolerantly (e.g. `message`/`pesan`, `createdAt`/`created_at`) to match the repo's existing pattern. `category` is not in the confirmed detail response and is shown only if present. Status-badge mapping is tolerant (open/proses/selesai → blue/amber/green, unknown → neutral).
@@ -110,8 +114,8 @@ app/
     [id]/evaluations/page.tsx           redirects to first evaluation
     [id]/evaluations/[evaluationId]/page.tsx  API-backed eval (submit NOT wired)
   pembelajaran/[contentId]/page.tsx     alt video page (ContentLockGuard + VideoPlayerWithQuiz), NOT linked
-  helpdesk/page.tsx          guru helpdesk: ticket list (rows link to detail) + "Buat Tiket" modal + static Quick Tutorial accordion (Helpdesk V1)
-  helpdesk/[ticketId]/page.tsx  guru ticket detail: conversation (replies) + reply form (Helpdesk V1)
+  helpdesk/page.tsx          guru helpdesk: ticket list + "Buat Tiket" modal + detail modal + static Quick Tutorial accordion (Helpdesk V1)
+  helpdesk/[ticketId]/page.tsx  deprecated detail route page (redirects to /helpdesk)
   admin/
     page.tsx                 admin dashboard (4 nav cards)
     modules/page.tsx         module list + delete
@@ -161,8 +165,8 @@ Most pages are client components (`"use client"`). Server components: `/`, `/log
 | `/modules/[id]/evaluations` | Redirect to first eval | no guard | `getModuleEvaluations` |
 | `/modules/[id]/evaluations/[evaluationId]` | API-backed eval | no guard | **submit not wired** (console.log + alert) |
 | `/pembelajaran/[contentId]` | Alt video page | no guard | **not linked**; `ContentLockGuard` + `VideoPlayerWithQuiz` |
-| `/helpdesk` | Guru ticket list + create | no guard | `getMyTickets`, `createTicket`; loading/error/empty + "Buat Tiket" modal; rows link to detail; static Quick Tutorial accordion |
-| `/helpdesk/[ticketId]` | Guru ticket detail + reply | no guard | `getTicketDetail`, `replyToTicket`; conversation + reply form; re-fetch on send; status display-only |
+| `/helpdesk` | Guru ticket list + create + detail modal | no guard | `getMyTickets`, `createTicket`, `getTicketDetail`, `replyToTicket`; loading/error/empty + "Buat Tiket" modal + detail modal; static Quick Tutorial accordion |
+| `/helpdesk/[ticketId]` | Deprecated detail route | no guard | Redirects to `/helpdesk` |
 | `/profile` | Profile (role-branched view) | token required | `GET /api/users/profile/me` |
 
 ### Admin (`/admin/*`)
@@ -256,8 +260,8 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 | Feedback (Saran & Kritik) | ❌ not mounted | — | `sendModuleFeedback` + `ModuleFeedbackForm` | component built but not imported anywhere |
 | Profile mgmt | ✅ | `/profile` | profile GET/PUT, password PUT, photo upload | guru: 3 tabs; hardcoded Jabar school list |
 | Daily checklist (guru side) | ❌ no UI | — | `getTodayChecklist`, `submitTodayChecklist`, `getChecklistHistory`, `uploadFotoBukti` | services exist, **no page consumes them** |
-| Helpdesk — ticket list + create (guru) | 🔌 | `/helpdesk` | `getMyTickets`, `createTicket` | Helpdesk V1; list shape **unconfirmed** → defensive; category free-text; rows link to detail |
-| Helpdesk — ticket detail + reply (guru) | 🔌 | `/helpdesk/[ticketId]` | `getTicketDetail`, `replyToTicket` | conversation w/ sender role; reply re-fetches; **status display-only**; **no admin/status-mgmt** |
+| Helpdesk — ticket list + create (guru) | 🔌 | `/helpdesk` | `getMyTickets`, `createTicket` | Helpdesk V1; list shape **unconfirmed** → defensive; category free-text; rows open detail modal |
+| Helpdesk — ticket detail + reply (guru) | 🔌 | `/helpdesk` (modal) | `getTicketDetail`, `replyToTicket` | conversation w/ sender role; reply re-fetches; **status display-only**; 2 consecutive message limit |
 | Helpdesk — Quick Tutorial (guru) | ✅ | `/helpdesk` | — (static) | "Panduan Singkat" accordion, 4 items from `TUTORIAL_ITEMS`; multi-open, `aria-expanded`/`aria-controls`; no API |
 
 ---
@@ -355,7 +359,7 @@ Follow these; they are consistent across the codebase.
 - 🟡 **Partial**: evaluation-question edit (pilihan_ganda only); API-backed guru evaluation renders but doesn't submit; video mini-quiz silently passes on API error.
 - 🔌 **Backend-dependent** (works only against the live API contract): all monitoring, progress, mini-quiz attempts, profile/photo upload.
 - ❌ **Stub / dead / unmounted**: `/modules/[id]/evaluation` mock questions + dead inline feedback; `ModuleFeedbackForm` (unmounted); guru daily-checklist services (no UI); `getChecklistReport` (uncalled); `startModule` (uncalled); certificate ("Belum Tersedia"); `lib/api.ts` (unused axios).
-- 🔮 **Planned**: Helpdesk V1 — guru **list + create + detail + reply** are done (`/helpdesk`, `/helpdesk/[ticketId]`, `helpdesk.service`); admin/pengajar ticket management and status-management UI remain (guru sees status read-only; backend owns transitions).
+- 🔮 **Planned**: Helpdesk V1 — guru **list + create + detail modal** are done (`/helpdesk`, `helpdesk.service`); admin/pengajar ticket management and status-management UI remain (guru sees status read-only; backend owns transitions).
 
 **Validation at handoff**: `npx tsc --noEmit` → **pass (exit 0)**. `npx eslint` → **pass (exit 0)**.
 

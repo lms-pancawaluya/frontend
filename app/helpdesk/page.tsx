@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { getMyTickets, createTicket } from "@/services/helpdesk.service";
+import { useEffect, useState, useRef } from "react";
+import {
+  getMyTickets,
+  createTicket,
+  getTicketDetail,
+  replyToTicket,
+} from "@/services/helpdesk.service";
 
 // Bentuk tiket dari backend belum dikonfirmasi sepenuhnya, jadi seluruh
 // field bersifat opsional dan dirender secara defensif (pola fallback nama
@@ -27,6 +31,28 @@ interface Ticket {
   tanggal?: string;
 }
 
+// Bentuk balasan sesuai kontrak backend; sebagian field dirender defensif.
+interface Reply {
+  id?: string;
+  message?: string;
+  pesan?: string;
+  createdAt?: string;
+  created_at?: string;
+  sender?: {
+    id?: string;
+    nama?: string;
+    role?: string;
+  };
+}
+
+interface TicketDetail extends Ticket {
+  user?: {
+    nama?: string;
+    email?: string;
+  };
+  replies?: Reply[];
+}
+
 // --- Helper render defensif ---
 
 function getTicketNumber(t: Ticket): string {
@@ -45,6 +71,10 @@ function getCategory(t: Ticket): string {
   return t.category || t.kategori || "-";
 }
 
+function getDescription(t: Ticket): string {
+  return t.description || t.deskripsi || "";
+}
+
 function getCreatedDate(t: Ticket): string {
   const raw = t.createdAt || t.created_at || t.createdDate || t.tanggal;
   if (!raw) return "-";
@@ -54,6 +84,19 @@ function getCreatedDate(t: Ticket): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+  });
+}
+
+function formatDateTime(raw?: string): string {
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return String(raw);
+  return d.toLocaleString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -80,6 +123,44 @@ function getStatusBadge(status?: string): { label: string; className: string } {
   };
 }
 
+function getSenderRoleLabel(role?: string): string {
+  const r = String(role || "").toLowerCase();
+  if (r === "guru") return "Guru";
+  if (r === "admin") return "Admin";
+  if (r === "pengajar") return "Pengajar";
+  return role || "Peserta";
+}
+
+/**
+ * Cek apakah tiket berstatus resolved/closed (guru tidak boleh membalas).
+ */
+function isTicketClosed(status?: string): boolean {
+  const s = String(status || "").toLowerCase();
+  return ["resolved", "selesai", "closed", "tutup", "done"].some((k) => s.includes(k));
+}
+
+/**
+ * Batas 2 pesan berturut-turut dari guru sebelum admin/pengajar membalas.
+ * ponytail: frontend-only enforcement — upgrade ketika BE mengonfirmasi server-side.
+ */
+const GURU_CONSECUTIVE_LIMIT = 2;
+
+function isGuruReplyBlocked(replies: Reply[]): boolean {
+  if (replies.length === 0) return false;
+  let consecutive = 0;
+  // Hitung dari pesan terakhir ke belakang.
+  for (let i = replies.length - 1; i >= 0; i--) {
+    const role = String(replies[i].sender?.role || "").toLowerCase();
+    if (role === "guru") {
+      consecutive++;
+      if (consecutive >= GURU_CONSECUTIVE_LIMIT) return true;
+    } else {
+      break; // pesan non-guru ditemukan, hentikan hitungan
+    }
+  }
+  return false;
+}
+
 // Konten Quick Tutorial (statis, tanpa API). Penjelasan singkat untuk guru.
 const TUTORIAL_ITEMS: { title: string; body: string }[] = [
   {
@@ -88,11 +169,11 @@ const TUTORIAL_ITEMS: { title: string; body: string }[] = [
   },
   {
     title: "Cara melihat dan membalas tiket",
-    body: "Seluruh tiket yang Anda buat tampil pada daftar di halaman ini beserta status terkininya. Halaman detail tiket dan fitur membalas percakapan masih dalam pengembangan dan belum tersedia — untuk saat ini Anda dapat memantau status tiket melalui daftar tersebut.",
+    body: "Klik salah satu tiket pada daftar untuk membuka detail tiket. Di dalam pop-up, Anda dapat melihat informasi tiket, membaca percakapan, dan mengirim balasan. Anda dapat mengirim maksimal 2 pesan berturut-turut — setelah itu, tunggu balasan dari admin/pengajar sebelum mengirim pesan berikutnya.",
   },
   {
     title: "Arti status tiket",
-    body: "Terbuka (biru): tiket baru diterima dan belum diproses. Diproses (kuning): tiket sedang ditangani oleh tim/fasilitator. Selesai (hijau): kendala sudah ditangani dan tiket ditutup. Status di luar itu ditampilkan netral (abu-abu).",
+    body: "Open (biru): tiket baru diterima dan belum diproses. In Progress (kuning): tiket sedang ditangani oleh tim/fasilitator. Resolved (hijau): kendala sudah ditangani. Closed (hijau): tiket ditutup. Status di luar itu ditampilkan netral (abu-abu). Guru tidak dapat mengubah status tiket.",
   },
   {
     title: "Kapan sebaiknya membuat tiket",
@@ -107,13 +188,23 @@ export default function HelpdeskPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   // State modal buat tiket
-  const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  // State modal detail tiket
+  const [detailTicketId, setDetailTicketId] = useState<string | null>(null);
+  const [detailTicket, setDetailTicket] = useState<TicketDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+  const [replyMessage, setReplyMessage] = useState("");
+  const [replySending, setReplySending] = useState(false);
+  const [replyError, setReplyError] = useState("");
+  const conversationEndRef = useRef<HTMLDivElement>(null);
 
   // Quick Tutorial: indeks item yang sedang terbuka (bisa lebih dari satu).
   const [openTutorials, setOpenTutorials] = useState<number[]>([]);
@@ -123,6 +214,8 @@ export default function HelpdeskPage() {
       prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
     );
   }
+
+  // ---------- Fetch daftar tiket ----------
 
   useEffect(() => {
     let active = true;
@@ -148,17 +241,19 @@ export default function HelpdeskPage() {
     };
   }, [refreshKey]);
 
-  function handleOpenModal() {
+  // ---------- Modal Buat Tiket ----------
+
+  function handleOpenCreateModal() {
     setSubject("");
     setCategory("");
     setDescription("");
     setFormError("");
-    setShowModal(true);
+    setShowCreateModal(true);
   }
 
-  function handleCloseModal() {
+  function handleCloseCreateModal() {
     if (submitting) return;
-    setShowModal(false);
+    setShowCreateModal(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -177,9 +272,8 @@ export default function HelpdeskPage() {
         category: category.trim(),
         description: description.trim(),
       });
-      setShowModal(false);
+      setShowCreateModal(false);
       setSuccessMsg("Tiket berhasil dibuat.");
-      // Refresh daftar tanpa reload halaman.
       setRefreshKey((k) => k + 1);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Gagal membuat tiket.");
@@ -187,6 +281,73 @@ export default function HelpdeskPage() {
       setSubmitting(false);
     }
   }
+
+  // ---------- Modal Detail Tiket ----------
+
+  async function fetchTicketDetail(ticketId: string) {
+    try {
+      setDetailLoading(true);
+      setDetailError("");
+      const data = await getTicketDetail(ticketId);
+      setDetailTicket((data || null) as TicketDetail | null);
+    } catch (err) {
+      setDetailError(err instanceof Error ? err.message : "Gagal memuat detail tiket.");
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  function handleOpenDetailModal(ticketId: string) {
+    setDetailTicketId(ticketId);
+    setDetailTicket(null);
+    setDetailError("");
+    setReplyMessage("");
+    setReplyError("");
+    fetchTicketDetail(ticketId);
+  }
+
+  function handleCloseDetailModal() {
+    if (replySending) return;
+    setDetailTicketId(null);
+    setDetailTicket(null);
+  }
+
+  // Scroll ke bawah percakapan saat replies berubah.
+  useEffect(() => {
+    if (detailTicket?.replies && conversationEndRef.current) {
+      conversationEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [detailTicket?.replies]);
+
+  async function handleReply(e: React.FormEvent) {
+    e.preventDefault();
+    if (!replyMessage.trim()) {
+      setReplyError("Pesan balasan tidak boleh kosong.");
+      return;
+    }
+    if (!detailTicketId) return;
+
+    try {
+      setReplySending(true);
+      setReplyError("");
+      await replyToTicket(detailTicketId, replyMessage.trim());
+      setReplyMessage("");
+      // Perbarui percakapan tanpa reload halaman.
+      await fetchTicketDetail(detailTicketId);
+    } catch (err) {
+      setReplyError(err instanceof Error ? err.message : "Gagal mengirim balasan.");
+    } finally {
+      setReplySending(false);
+    }
+  }
+
+  // Derived state detail modal
+  const detailReplies = detailTicket?.replies || [];
+  const detailCategory = detailTicket ? getCategory(detailTicket) : "";
+  const detailBadge = detailTicket ? getStatusBadge(detailTicket.status) : null;
+  const detailDescription = detailTicket ? getDescription(detailTicket) : "";
+  const ticketIsClosed = detailTicket ? isTicketClosed(detailTicket.status) : false;
+  const guruBlocked = isGuruReplyBlocked(detailReplies);
 
   return (
     <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden">
@@ -216,7 +377,7 @@ export default function HelpdeskPage() {
             </div>
 
             <button
-              onClick={handleOpenModal}
+              onClick={handleOpenCreateModal}
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#F3BF10] hover:bg-amber-400 text-[#0047A5] text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-amber-400/20 transition-all duration-200 self-start shrink-0"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,13 +488,14 @@ export default function HelpdeskPage() {
                 "bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200";
 
               return t.id ? (
-                <Link
+                <button
                   key={t.id}
-                  href={`/helpdesk/${t.id}`}
-                  className={`${rowClass} hover:border-[#419AD6]/60 hover:shadow-md`}
+                  type="button"
+                  onClick={() => handleOpenDetailModal(t.id!)}
+                  className={`${rowClass} hover:border-[#419AD6]/60 hover:shadow-md w-full text-left cursor-pointer`}
                 >
                   {rowInner}
-                </Link>
+                </button>
               ) : (
                 <div key={idx} className={`${rowClass} hover:border-slate-300`}>
                   {rowInner}
@@ -415,20 +577,20 @@ export default function HelpdeskPage() {
         </section>
 
         <div className="text-center">
-          <Link
+          <a
             href="/dashboard"
             className="text-xs font-semibold text-slate-500 hover:text-[#0047A5] transition-colors"
           >
             ← Kembali ke Dashboard
-          </Link>
+          </a>
         </div>
       </div>
 
       {/* ================= MODAL BUAT TIKET ================= */}
-      {showModal && (
+      {showCreateModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
-          onClick={handleCloseModal}
+          onClick={handleCloseCreateModal}
         >
           <div
             className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
@@ -437,7 +599,7 @@ export default function HelpdeskPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-base font-bold text-slate-900">Buat Tiket Baru</h2>
               <button
-                onClick={handleCloseModal}
+                onClick={handleCloseCreateModal}
                 disabled={submitting}
                 className="text-slate-400 hover:text-slate-600 disabled:opacity-50"
                 aria-label="Tutup"
@@ -452,11 +614,11 @@ export default function HelpdeskPage() {
               {formError && <p className="alert-error">{formError}</p>}
 
               <div className="space-y-1.5">
-                <label htmlFor="subject" className="text-xs font-semibold text-slate-600">
+                <label htmlFor="create-subject" className="text-xs font-semibold text-slate-600">
                   Subjek <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="subject"
+                  id="create-subject"
                   type="text"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
@@ -467,11 +629,11 @@ export default function HelpdeskPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="category" className="text-xs font-semibold text-slate-600">
+                <label htmlFor="create-category" className="text-xs font-semibold text-slate-600">
                   Kategori <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="category"
+                  id="create-category"
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
@@ -482,11 +644,11 @@ export default function HelpdeskPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="description" className="text-xs font-semibold text-slate-600">
+                <label htmlFor="create-description" className="text-xs font-semibold text-slate-600">
                   Deskripsi <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  id="description"
+                  id="create-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
@@ -499,7 +661,7 @@ export default function HelpdeskPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={handleCloseModal}
+                  onClick={handleCloseCreateModal}
                   disabled={submitting}
                   className="text-sm text-slate-600 hover:text-slate-800 font-medium px-4 py-2.5 rounded-xl disabled:opacity-50"
                 >
@@ -514,6 +676,199 @@ export default function HelpdeskPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL DETAIL TIKET ================= */}
+      {detailTicketId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
+          onClick={handleCloseDetailModal}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+              <h2 className="text-base font-bold text-slate-900">Detail Tiket</h2>
+              <button
+                onClick={handleCloseDetailModal}
+                disabled={replySending}
+                className="text-slate-400 hover:text-slate-600 disabled:opacity-50"
+                aria-label="Tutup"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body (scrollable) */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {detailLoading ? (
+                <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-12">
+                  <svg className="w-5 h-5 animate-spin text-[#109B51]" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Memuat detail tiket...
+                </div>
+              ) : detailError ? (
+                <div className="text-center space-y-3 py-8">
+                  <p className="alert-error inline-block">{detailError}</p>
+                  <div>
+                    <button
+                      onClick={() => fetchTicketDetail(detailTicketId)}
+                      className="text-xs font-semibold text-[#0047A5] hover:text-[#109B51] transition-colors"
+                    >
+                      Coba lagi
+                    </button>
+                  </div>
+                </div>
+              ) : !detailTicket ? (
+                <div className="text-center py-8">
+                  <p className="text-slate-600 text-sm font-semibold">Tiket tidak ditemukan.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Informasi Tiket (read-only) */}
+                  <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5 space-y-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                          {getTicketNumber(detailTicket)}
+                        </span>
+                        {detailCategory && detailCategory !== "-" && (
+                          <span className="text-[11px] font-semibold text-[#0047A5] bg-[#419AD6]/10 border border-[#419AD6]/20 px-2 py-0.5 rounded-md">
+                            {detailCategory}
+                          </span>
+                        )}
+                      </div>
+                      {detailBadge && (
+                        <span
+                          className={`shrink-0 text-[11px] font-bold uppercase tracking-wide px-3 py-1 rounded-full border ${detailBadge.className}`}
+                        >
+                          {detailBadge.label}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-base font-extrabold text-slate-900 leading-snug">
+                      {getSubject(detailTicket)}
+                    </h3>
+
+                    {detailDescription && (
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap break-words">
+                        {detailDescription}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                      {detailTicket.user?.nama && (
+                        <span>Dibuat oleh {detailTicket.user.nama}</span>
+                      )}
+                      {(detailTicket.createdAt || detailTicket.created_at) && (
+                        <span>• {formatDateTime(detailTicket.createdAt || detailTicket.created_at)}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Percakapan */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-bold text-slate-700">Percakapan</h3>
+
+                    {detailReplies.length === 0 ? (
+                      <div className="text-center py-8 bg-slate-50/60 rounded-2xl border border-slate-100">
+                        <p className="text-slate-500 text-sm font-medium">Belum ada balasan pada tiket ini.</p>
+                        <p className="text-slate-400 text-xs mt-1">
+                          Tulis pesan di bawah untuk memulai percakapan.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                        {detailReplies.map((r, idx) => {
+                          const isGuru = String(r.sender?.role || "").toLowerCase() === "guru";
+                          return (
+                            <div
+                              key={r.id || idx}
+                              className={`flex ${isGuru ? "justify-end" : "justify-start"}`}
+                            >
+                              <div
+                                className={`max-w-[85%] rounded-2xl border px-4 py-3 shadow-sm ${
+                                  isGuru
+                                    ? "bg-[#419AD6]/10 border-[#419AD6]/30"
+                                    : "bg-white border-slate-200/80"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span className="text-xs font-bold text-slate-800">
+                                    {r.sender?.nama || "Pengguna"}
+                                  </span>
+                                  <span
+                                    className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                                      isGuru
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-purple-100 text-purple-700"
+                                    }`}
+                                  >
+                                    {getSenderRoleLabel(r.sender?.role)}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+                                  {r.message || r.pesan || ""}
+                                </p>
+                                <p className="text-[10px] text-slate-400 mt-1.5">
+                                  {formatDateTime(r.createdAt || r.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div ref={conversationEndRef} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Form Balasan */}
+                  {ticketIsClosed ? (
+                    <div className="text-center py-3 text-sm text-slate-400 font-medium bg-slate-50/60 rounded-2xl border border-slate-100">
+                      Tiket sudah ditutup. Tidak dapat mengirim balasan.
+                    </div>
+                  ) : guruBlocked ? (
+                    <div className="text-center py-3 text-sm text-amber-700 font-medium bg-amber-50 rounded-2xl border border-amber-200">
+                      Anda sudah mengirim 2 pesan. Silakan tunggu balasan admin.
+                    </div>
+                  ) : (
+                    <form onSubmit={handleReply} className="space-y-3">
+                      <label htmlFor="detail-reply" className="text-xs font-semibold text-slate-600">
+                        Tulis Balasan
+                      </label>
+                      {replyError && <p className="alert-error">{replyError}</p>}
+                      <textarea
+                        id="detail-reply"
+                        value={replyMessage}
+                        onChange={(e) => setReplyMessage(e.target.value)}
+                        rows={3}
+                        placeholder="Ketik pesan balasan Anda..."
+                        className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all resize-y"
+                        required
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={replySending}
+                          className="inline-flex items-center gap-2 text-sm bg-[#109B51] hover:bg-[#0e8847] text-white font-semibold px-5 py-2.5 rounded-xl shadow-md transition-colors duration-200 disabled:opacity-60"
+                        >
+                          {replySending ? "Mengirim..." : "Kirim Balasan"}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
