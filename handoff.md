@@ -22,9 +22,10 @@ Next.js (App Router) frontend for **LMS Pancawaluya** — a Learning Management 
 
 ### Users & Roles
 
-Two roles, carried on the user object as `role` (lowercase in stored data: `"admin"` / `"guru"`).
+Three roles, carried on the user object as `role` (lowercase in stored data: `"admin"` / `"guru"` / `"pengajar"`).
 
 - **`guru`** (teacher) — learns modules (video + mini-quiz, text, evaluation), manages profile, tracks progress.
+- **`pengajar`** — teaching-staff account; shown in admin user management alongside guru.
 - **`admin`** — manages modules, content, evaluations, mini-quizzes, teacher accounts, checklist items; monitors teacher progress/evaluation results and reads feedback.
 
 ---
@@ -33,19 +34,26 @@ Two roles, carried on the user object as `role` (lowercase in stored data: `"adm
 
 ### Helpdesk V1
 
-**Status: partially implemented (guru ticket list + create). Detail / replies / admin management NOT built.**
+**Status: fully implemented (sisi guru: daftar/buat/modal detail/2-pesan limit; sisi admin: daftar/filter/modal detail/balas/PATCH status).**
 
-Helpdesk / Ticketing V1 is the current product direction. **Guru side is implemented:**
+Helpdesk / Ticketing V1 is completed.
 
-- `services/helpdesk.service.js` — `getMyTickets()` (GET `/api/helpdesk/tickets/my`), `createTicket({ subject, category, description })` (POST `/api/helpdesk/tickets`), `getTicketDetail(ticketId)` (GET `/api/helpdesk/tickets/:ticketId`), `replyToTicket(ticketId, message)` (POST `/api/helpdesk/tickets/:ticketId/replies`). All follow the standard service pattern (`{ sukses, pesan, data }`, Bearer token).
-- `app/helpdesk/page.tsx` — guru route: lists the authenticated guru's tickets (ticket number, subject, category, status badge, created date) with loading/error/empty states, plus a **"Buat Tiket"** modal form (subject / category / description; required-field validation; refreshes list via a `refreshKey` counter on success). Category is a **free-text input** (no fixed enum — backend category values are not confirmed). Each ticket row with an `id` is a **`Link` to `/helpdesk/[ticketId]`**. Also includes a **static "Panduan Singkat" (Quick Tutorial) accordion** — see below.
-- `app/helpdesk/[ticketId]/page.tsx` — guru **ticket detail + reply**: shows ticket number, subject, category (if present), status badge, creator, and the **conversation** (`replies[]`: sender name + role label, message, timestamp). Guru messages align right (sky bubble); Admin/Pengajar align left (white bubble). A reply textarea validates non-empty, POSTs via `replyToTicket`, then **re-fetches the detail** so the conversation and status update without a browser refresh. Loading / error / not-found / empty-conversation states handled. Fields rendered **defensively** (fallback names), same as the list. **Guru cannot change status** — status is display-only; backend controls transitions.
-- **Quick Tutorial (static, no API):** a "Panduan Singkat" accordion at the bottom of `/helpdesk`, rendered from a module-level `TUTORIAL_ITEMS` array (4 items: *Cara membuat tiket, Cara melihat dan membalas tiket, Arti status tiket, Kapan sebaiknya membuat tiket*). Multiple items can be open at once (state `openTutorials: number[]`); each header is a `<button>` with `aria-expanded` + `aria-controls` pointing at its panel (`role="region"`). Purely presentational — no service/API/network. Visually secondary to the ticket list (muted slate card, smaller text).
-- Navigation: `Header.tsx` shows a **"Bantuan"** link for guru only; the dashboard "Pusat Bantuan & Layanan" card now links to `/helpdesk`.
+- `services/helpdesk.service.js` — `getMyTickets()` (GET `/api/helpdesk/tickets/my`), `createTicket({ subject, category, description })` (POST `/api/helpdesk/tickets`), `getTicketDetail(ticketId)` (GET `/api/helpdesk/tickets/:ticketId`), `replyToTicket(ticketId, message)` (POST `/api/helpdesk/tickets/:ticketId/replies`), `getAllTickets({ status, category })` (GET `/api/helpdesk/tickets`), `updateTicketStatus(ticketId, status)` (PATCH `/api/helpdesk/tickets/:ticketId/status`).
+- `app/helpdesk/page.tsx` — lists guru's tickets, has "Buat Tiket" form, and ticket detail modal.
+  - **Consecutive Message Limit**: Guru capped at 2 consecutive replies before awaiting admin. Enforced via `isGuruReplyBlocked` frontend-side history scan.
+  - **Closed Tickets**: Replying disabled if resolved/closed (`isTicketClosed`).
+- `app/admin/helpdesk/page.tsx` — Admin/Pengajar ticket management page. Follows slate admin design system. Shows all tickets with fields (No. Tiket, Pengirim, Subjek & Kategori, Status, Tanggal Dibuat).
+- `app/admin/users/page.tsx` — user management for teaching staff only: searches server-side, filters by sekolah/kota/daerah/status, role filter `Semua/Guru/Pengajar`, shows `guru` + `pengajar`, hides `admin`.
+- `app/components/auth/LoginForm.tsx` — login redirect treats `PENGAJAR` same as `GURU` for now.
+  - **Server-side Filters**: dropdown for status, text input for category. Fetches list dynamically on filter change.
+  - **Ticket Detail Modal**: Opens read-only ticket info (subject, category, description, created date, requester profile) and full conversation history. Guru messages align left, Admin/Pengajar messages align right.
+  - **Reply Flow**: text area to send message via `replyToTicket`. Validates non-empty. Refreshes conversation immediately without page reload. Automatically shifts status to `in_progress` on reply (handled by backend; UI re-fetches details to sync).
+  - **Status Update**: manual status selector (Open, In Progress, Resolved, Closed) which updates status immediately via `updateTicketStatus` (PATCH) and re-fetches details + list.
+- `app/helpdesk/[ticketId]/page.tsx` — **deprecated**; redirects to `/helpdesk` to handle old/stale bookmarks gracefully.
+- **Quick Tutorial (static, no API):** a "Panduan Singkat" accordion at the bottom of `/helpdesk`, rendered from a module-level `TUTORIAL_ITEMS` array (4 items: *Cara membuat tiket, Cara melihat dan membalas tiket (updated for modal/2-message limit), Arti status tiket, Kapan sebaiknya membuat tiket*). Multiple items can be open at once (state `openTutorials: number[]`); each header is a `<button>` with `aria-expanded` + `aria-controls` pointing at its panel (`role="region"`). Purely presentational — no service/API/network. Visually secondary to the ticket list (muted slate card, smaller text).
+- Navigation: `Header.tsx` shows a **"Bantuan"** link for guru, or **"Helpdesk"** link for admin; the dashboard "Pusat Bantuan & Layanan" / "Kelola Tiket Bantuan" card links to the respective pages.
 
 ⚠️ **Ticket response shape is NOT confirmed for the list endpoint.** The list page reads fields **defensively** (fallback names: `ticketNumber`/`nomor`/`number`/`kode`/`id`, `subject`/`subjek`/`judul`, `category`/`kategori`, `status`, `createdAt`/`created_at`/`createdDate`/`tanggal`). The **detail endpoint** (`GET /api/helpdesk/tickets/:ticketId`) has a **confirmed contract** (`id`, `ticketNumber`, `subject`, `status`, `user{nama,email}`, `replies[]{id,message,createdAt,sender{id,nama,role}}`) but the detail page still renders tolerantly (e.g. `message`/`pesan`, `createdAt`/`created_at`) to match the repo's existing pattern. `category` is not in the confirmed detail response and is shown only if present. Status-badge mapping is tolerant (open/proses/selesai → blue/amber/green, unknown → neutral).
-
-**Remaining Helpdesk V1 work (NOT built):** admin/pengajar ticket management (list/assign/respond), any status-management UI (status is display-only for guru; backend owns transitions). Do not build these without confirming the backend contract.
 
 The nearest *other* existing surface is module **feedback (Saran & Kritik)** — a separate flow, not part of helpdesk.
 
@@ -110,8 +118,8 @@ app/
     [id]/evaluations/page.tsx           redirects to first evaluation
     [id]/evaluations/[evaluationId]/page.tsx  API-backed eval (submit NOT wired)
   pembelajaran/[contentId]/page.tsx     alt video page (ContentLockGuard + VideoPlayerWithQuiz), NOT linked
-  helpdesk/page.tsx          guru helpdesk: ticket list (rows link to detail) + "Buat Tiket" modal + static Quick Tutorial accordion (Helpdesk V1)
-  helpdesk/[ticketId]/page.tsx  guru ticket detail: conversation (replies) + reply form (Helpdesk V1)
+  helpdesk/page.tsx          guru helpdesk: ticket list + "Buat Tiket" modal + detail modal + static Quick Tutorial accordion (Helpdesk V1)
+  helpdesk/[ticketId]/page.tsx  deprecated detail route page (redirects to /helpdesk)
   admin/
     page.tsx                 admin dashboard (4 nav cards)
     modules/page.tsx         module list + delete
@@ -161,8 +169,8 @@ Most pages are client components (`"use client"`). Server components: `/`, `/log
 | `/modules/[id]/evaluations` | Redirect to first eval | no guard | `getModuleEvaluations` |
 | `/modules/[id]/evaluations/[evaluationId]` | API-backed eval | no guard | **submit not wired** (console.log + alert) |
 | `/pembelajaran/[contentId]` | Alt video page | no guard | **not linked**; `ContentLockGuard` + `VideoPlayerWithQuiz` |
-| `/helpdesk` | Guru ticket list + create | no guard | `getMyTickets`, `createTicket`; loading/error/empty + "Buat Tiket" modal; rows link to detail; static Quick Tutorial accordion |
-| `/helpdesk/[ticketId]` | Guru ticket detail + reply | no guard | `getTicketDetail`, `replyToTicket`; conversation + reply form; re-fetch on send; status display-only |
+| `/helpdesk` | Guru ticket list + create + detail modal | no guard | `getMyTickets`, `createTicket`, `getTicketDetail`, `replyToTicket`; loading/error/empty + "Buat Tiket" modal + detail modal; static Quick Tutorial accordion |
+| `/helpdesk/[ticketId]` | Deprecated detail route | no guard | Redirects to `/helpdesk` |
 | `/profile` | Profile (role-branched view) | token required | `GET /api/users/profile/me` |
 
 ### Admin (`/admin/*`)
@@ -178,7 +186,7 @@ Most pages are client components (`"use client"`). Server components: `/`, `/log
 | `/admin/modules/[id]/evaluations` | Eval list + create | ✅ | `getModuleEvaluations`, `createEvaluation` |
 | `/admin/modules/[id]/evaluations/[evalId]` | Question CRUD | ✅ | `addQuestion`, `updateQuestion`, `deleteQuestion` |
 | `/admin/modules/[id]/quiz/[contentId]` | Mini-quiz CRUD | ❌ none | `miniQuiz.service` (full CRUD) |
-| `/admin/users` | Teacher list + delete | ✅ (user only, no token) | `getUsers`, `deleteUser` |
+| `/admin/users` | Teacher list + delete | ✅ (user only, no token) | `getUsers(filters)`, `deleteUser` |
 | `/admin/users/[id]` | Teacher edit + reset password | ✅ | `getUserById`, `updateUser`, `resetUserPassword` |
 | `/admin/checklist` | Checklist item CRUD | ✅ | `checklist.service` items CRUD |
 | `/admin/checklist/report` | Monitoring (progress + eval + feedback) | ✅ (user only, no token) | `getUsers`, `getUserProgress`, `getUserEvaluations`, `getAllFeedbacks` |
@@ -195,7 +203,7 @@ JWT-based, validated by backend. Frontend protection is **client-side only** (UX
 
 ### Session
 
-- **Login** — `LoginForm.tsx` calls `POST /api/auth/login` via **inline fetch** (not the `loginUser` service). Stores `token` + `user` (JSON) in `localStorage`, also writes a `token` **cookie** (`path=/; max-age=86400; SameSite=Lax`), dispatches `"authChange"`, redirects by role.
+- **Login** — `LoginForm.tsx` calls `POST /api/auth/login` via **inline fetch** (not the `loginUser` service). Stores `token` + `user` (JSON) in `localStorage`, also writes a `token` **cookie** (`path=/; max-age=86400; SameSite=Lax`), dispatches `"authChange"`, redirects by role (`ADMIN` → `/admin`, `GURU`/`PENGAJAR` → `/dashboard`).
 - **Register** — `RegisterForm.tsx` → `POST /api/auth/register` `{ nama, nip, email, password }` → redirects `/otp?email=`.
 - **Logout** — `logoutUser()` (`auth.service.js`) removes `token` + `user`, dispatches `"authChange"`.
 - **Header sync** — `Header.tsx` reads `localStorage` and listens for `"authChange"` to re-render nav without reload. `HeroCta.tsx` uses the same pattern.
@@ -225,7 +233,7 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 
 | Feature | Status | Route(s) | Service/API | Notes |
 |---|---|---|---|---|
-| Admin dashboard | ✅ | `/admin` | `getProfile` | 4 nav cards; no stats |
+| Admin dashboard | ✅ | `/admin` | `getProfile` | 5 nav cards; hero banner uses unified Disdik gradient (matches Guru dashboard) |
 | Module list + delete | ✅ | `/admin/modules` | `getModules`, `deleteModule` | search by judul/deskripsi; `window.confirm` delete |
 | Module create | ✅ | `/admin/modules/new` | `createModule` | `{ judul, deskripsi, aspekPancawaluya, urutan }`; no role guard |
 | Module detail | ✅ | `/admin/modules/[id]` | `getModuleById`, `getModuleContents` | read-only preview + mgmt action links |
@@ -234,12 +242,13 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 | Evaluation list + create | ✅ | `/admin/modules/[id]/evaluations` | `getModuleEvaluations`, `createEvaluation` | create → jumps to question CRUD |
 | Evaluation question CRUD | 🟡 | `/admin/modules/[id]/evaluations/[evalId]` | `addQuestion`, `updateQuestion`, `deleteQuestion` | **edit only for `pilihan_ganda`**; esai edit disabled |
 | Mini-quiz CRUD | ✅ | `/admin/modules/[id]/quiz/[contentId]` | `miniQuiz.service` (7 fns) | per video content; quiz + question CRUD; no role guard |
-| Teacher account mgmt | ✅ | `/admin/users` | `getUsers`, `deleteUser` | lists guru only; admin rows can't be edited/deleted |
+| Teacher account mgmt | ✅ | `/admin/users` | `getUsers(filters)`, `deleteUser` | lists guru + pengajar only; supports global search (?search=...) and server-side filters (?sekolah=..., ?kota=..., ?daerah=..., ?status=...); role filter `Semua/Guru/Pengajar`; admin rows hidden |
 | Teacher edit + reset password | ✅ | `/admin/users/[id]` | `getUserById`, `updateUser`, `resetUserPassword` | editable: email/sekolah/status; nama+NIP read-only |
 | Teacher progress monitoring | ✅ | `/admin/checklist/report` | `getUserProgress` | eager per-guru progress bars |
 | Evaluation result monitoring | ✅ | `/admin/checklist/report` | `getUserEvaluations` | lazy on expand; skor per evaluation |
 | Feedback (Saran & Kritik) view | ✅ | `/admin/checklist/report` | `getAllFeedbacks` | matched by user.id + module.id |
 | Checklist item mgmt | ✅ | `/admin/checklist` | items CRUD + toggle `isActive` | grouped by 5 aspects |
+| Admin Helpdesk / Ticketing | ✅ | `/admin/helpdesk` | `getAllTickets`, `getTicketDetail`, `replyToTicket`, `updateTicketStatus` | server-side filters (status/category), modal detail view, reply system, manual status change (PATCH) |
 | Checklist consistency report | ❌ unused | — | `getChecklistReport` | service fn exists, **never called** |
 
 ### Guru
@@ -256,8 +265,8 @@ Status legend: ✅ implemented · 🟡 partial · 🔌 backend-dependent · ❌ 
 | Feedback (Saran & Kritik) | ❌ not mounted | — | `sendModuleFeedback` + `ModuleFeedbackForm` | component built but not imported anywhere |
 | Profile mgmt | ✅ | `/profile` | profile GET/PUT, password PUT, photo upload | guru: 3 tabs; hardcoded Jabar school list |
 | Daily checklist (guru side) | ❌ no UI | — | `getTodayChecklist`, `submitTodayChecklist`, `getChecklistHistory`, `uploadFotoBukti` | services exist, **no page consumes them** |
-| Helpdesk — ticket list + create (guru) | 🔌 | `/helpdesk` | `getMyTickets`, `createTicket` | Helpdesk V1; list shape **unconfirmed** → defensive; category free-text; rows link to detail |
-| Helpdesk — ticket detail + reply (guru) | 🔌 | `/helpdesk/[ticketId]` | `getTicketDetail`, `replyToTicket` | conversation w/ sender role; reply re-fetches; **status display-only**; **no admin/status-mgmt** |
+| Helpdesk — ticket list + create (guru) | 🔌 | `/helpdesk` | `getMyTickets`, `createTicket` | Helpdesk V1; list shape **unconfirmed** → defensive; category free-text; rows open detail modal |
+| Helpdesk — ticket detail + reply (guru) | 🔌 | `/helpdesk` (modal) | `getTicketDetail`, `replyToTicket` | conversation w/ sender role; reply re-fetches; **status display-only**; 2 consecutive message limit |
 | Helpdesk — Quick Tutorial (guru) | ✅ | `/helpdesk` | — (static) | "Panduan Singkat" accordion, 4 items from `TUTORIAL_ITEMS`; multi-open, `aria-expanded`/`aria-controls`; no API |
 
 ---
@@ -336,9 +345,9 @@ Follow these; they are consistent across the codebase.
 - **Utility classes** in globals.css: `.btn-primary` (navy pill), `.btn-secondary` (accent pill), `.alert-error` (rose error box), `.animate-fade-in[-delay-1|-2]`.
 - **Two visual dialects, intentionally distinct:**
   - **Auth / landing / guru learning**: pale-blue background (`--color-pale`), decorative amber "L" corners, sky pixel-grid dots, blur rings, rounded-2xl white cards with backdrop-blur. Video/learning pages layer the Disdik 4-color ambient glows.
-  - **Admin panel**: slate palette (`bg-slate-50/60`, `slate-900` hero banners, emerald accents), `rounded-3xl` cards, `border-slate-200/80`, search inputs, tables. Keep new admin UI in this slate/emerald language.
+  - **Admin panel**: slate palette (`bg-slate-50/60`, emerald accents), `rounded-3xl` cards, `border-slate-200/80`, search inputs, tables. **Hero banner** uses the same Disdik blue→teal/green gradient (`from-[#0047A5] via-[#0052C2] to-[#109B51]`), translucent badge pill, yellow CTA button (`bg-[#F3BF10]`), and geometric decorations as the Guru dashboard — unified LMS Panca Waluya visual identity across both roles. Keep new admin UI in this slate/emerald language for cards/tables.
 - **Aspect badge colors** — `Record<string,string>` (`aspekColor`) repeated across landing/modules/admin: cageur=green, bageur=blue, bener=yellow, pinter=purple, singer=red.
-- **Status badges** (users): aktif=green, nonaktif=gray, pensiun=amber, wafat=red. Role badges: admin=purple, guru=blue.
+- **Status badges** (users): aktif=green, nonaktif=gray, pensiun=amber, wafat=red. Role badges: admin=purple, guru=blue, pengajar=amber.
 - **Progress bars**: red `<50%`, amber `<80%`, green `≥80%` (monitoring report).
 - **Loading**: inline spinner SVG + "Memuat…" text. **Empty**: muted "Belum ada…" / "Tidak ada…" text. **Error**: `.alert-error` / rose box; forms show inline error banners.
 - **Confirm/delete**: `window.confirm(...)` before every destructive call; button shows a disabled "Menghapus…" state during the request.
@@ -355,7 +364,7 @@ Follow these; they are consistent across the codebase.
 - 🟡 **Partial**: evaluation-question edit (pilihan_ganda only); API-backed guru evaluation renders but doesn't submit; video mini-quiz silently passes on API error.
 - 🔌 **Backend-dependent** (works only against the live API contract): all monitoring, progress, mini-quiz attempts, profile/photo upload.
 - ❌ **Stub / dead / unmounted**: `/modules/[id]/evaluation` mock questions + dead inline feedback; `ModuleFeedbackForm` (unmounted); guru daily-checklist services (no UI); `getChecklistReport` (uncalled); `startModule` (uncalled); certificate ("Belum Tersedia"); `lib/api.ts` (unused axios).
-- 🔮 **Planned**: Helpdesk V1 — guru **list + create + detail + reply** are done (`/helpdesk`, `/helpdesk/[ticketId]`, `helpdesk.service`); admin/pengajar ticket management and status-management UI remain (guru sees status read-only; backend owns transitions).
+- ✅ **Helpdesk V1 complete**: Guru side — list + create + detail modal + 2-consecutive-message limit (`/helpdesk`). Admin side — list with server-side filters + detail modal + reply + PATCH status (`/admin/helpdesk`). Both dashboards share unified Disdik branded hero banner.
 
 **Validation at handoff**: `npx tsc --noEmit` → **pass (exit 0)**. `npx eslint` → **pass (exit 0)**.
 

@@ -1,9 +1,22 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function getUsers() {
+export async function getUsers(filters = {}) {
   const token = localStorage.getItem("token");
+  const params = new URLSearchParams();
 
-  const response = await fetch(`${API_URL}/api/users`, {
+  if (typeof filters === "string") {
+    if (filters) params.append("search", filters);
+  } else {
+    if (filters.search) params.append("search", filters.search);
+    if (filters.sekolah) params.append("sekolah", filters.sekolah);
+    if (filters.kota) params.append("kota", filters.kota);
+    if (filters.daerah) params.append("daerah", filters.daerah);
+    if (filters.status) params.append("status", filters.status);
+  }
+
+  const queryString = params.toString() ? `?${params.toString()}` : "";
+
+  const response = await fetch(`${API_URL}/api/users${queryString}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

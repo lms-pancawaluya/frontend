@@ -103,6 +103,18 @@ export default function AdminDashboardPage() {
       color: "bg-purple-50 border-purple-100",
     },
     {
+      title: "Kelola Tiket Bantuan (Helpdesk)",
+      desc: "Tinjau kendala teknis dari Guru, kirim tanggapan balasan, dan kelola status tiket bantuan.",
+      href: "/admin/helpdesk",
+      icon: (
+        <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+      badge: "Baru V1",
+      color: "bg-red-50 border-red-100",
+    },
+    {
       title: "Monitoring Pengerjaan Modul Guru",
       desc: "Pantau progres pengerjaan modul dan hasil evaluasi tiap guru.",
       href: "/admin/checklist/report",
@@ -118,18 +130,37 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <div className="bg-gradient-to-r from-[var(--color-navy)] to-[var(--color-accent)] text-white rounded-2xl p-6 mb-8 shadow-sm">
-        <div className="flex justify-between items-center">
-          <div>
-            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full border border-white/30 uppercase tracking-wider">
-              Panel Administrator
-            </span>
-            <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold mt-2">
-              Selamat Datang, {user?.nama}!
+      <div className="bg-gradient-to-r from-[#0047A5] via-[#0052C2] to-[#109B51] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        {/* Akses Lipatan / Geometric Ornament khas logo */}
+        <div className="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute right-32 bottom-0 w-36 h-36 bg-[#F3BF10]/15 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/15 backdrop-blur-md border border-white/20 rounded-full text-[11px] font-bold text-amber-300">
+              <span className="w-2 h-2 rounded-full bg-[#F3BF10] animate-pulse" />
+              Portal Administrasi LMS
+            </div>
+
+            <h1 className="font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+              Selamat datang, Admin.
             </h1>
-            <p className="text-sm text-blue-100 mt-1">
-              Kelola sistem LMS Pancawaluya, modul pembelajaran, akun guru, dan daily checklist.
+
+            <p className="text-xs sm:text-sm text-slate-100/90 leading-relaxed">
+              Kelola modul pembelajaran, akun guru, monitoring, dan layanan bantuan LMS Panca Waluya.
             </p>
+          </div>
+
+          <div className="flex items-center gap-3 self-start md:self-auto shrink-0">
+            <Link
+              href="/admin/modules"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#F3BF10] hover:bg-amber-400 text-[#0047A5] text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-amber-400/20 transition-all duration-200"
+            >
+              <span>Kelola Sistem</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
           </div>
         </div>
       </div>

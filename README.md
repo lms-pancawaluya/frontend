@@ -10,14 +10,15 @@ Frontend web untuk platform pembelajaran **LMS Pancawaluya**, ditujukan bagi Gur
 | **Pinter** | Tertib dan taat pada norma |
 | **Singer** | Responsif dan memiliki jiwa kepemimpinan |
 
-Aplikasi mengenal dua peran pengguna (field `role` pada data user):
+Aplikasi mengenal tiga peran pengguna (field `role` pada data user, disimpan lowercase):
 
 - **`guru`** — mengakses modul pembelajaran (video + mini-quiz, materi teks, evaluasi), mengelola profil, dan melihat progres belajar.
-- **`admin`** — mengelola modul, konten, evaluasi, mini-quiz, akun guru, item checklist, serta memantau progres & hasil evaluasi guru.
+- **`pengajar`** — akun staf pengajar yang ikut dikelola di area admin; diperlakukan sebagai staf pengajar pada daftar akun guru.
+- **`admin`** — mengelola modul, konten, evaluasi, mini-quiz, akun guru/pengajar, item checklist, serta memantau progres & hasil evaluasi guru.
 
 > Ini adalah **frontend saja**. Seluruh data berasal dari backend API eksternal; frontend tidak berisi logika server/basis data.
 
-> **Arah pengembangan berikutnya — Helpdesk V1:** Helpdesk/Ticketing V1 adalah target produk saat ini. **Sudah diimplementasikan (sisi guru, commit 1):** halaman `/helpdesk` untuk melihat daftar tiket milik guru dan membuat tiket baru (`services/helpdesk.service.js`). **Belum** ada: detail tiket, balasan, manajemen tiket oleh admin, dan pembaruan status. Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
+> **Helpdesk V1:** Sudah diimplementasikan penuh. Sisi guru: daftar tiket + buat tiket + detail modal + balas + batas 2 pesan berturut-turut + rute lama redirect. Sisi admin/pengajar: daftar/filter tiket + detail modal + balas + PATCH status. Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
 
 ---
 
@@ -50,19 +51,20 @@ Aplikasi mengenal dua peran pengguna (field `role` pada data user):
   2. **Materi teks** (`/modules/[id]/text`) — menampilkan konten bertipe `teks`/`text`.
   3. **Evaluasi** (`/modules/[id]/evaluation`) — soal pilihan ganda, skor dihitung lokal (lulus jika ≥ 80%); jika lulus memanggil `completeModule`.
 - **Profil guru** (`/profile`) — edit nama, gelar, email, asal sekolah (dropdown data sekolah Jawa Barat atau input manual) + alamat, no. HP; upload foto profil (maks. 5MB); ganti password; melihat daftar modul selesai. NIP **read-only**.
-- **Bantuan / Tiket** (`/helpdesk`) — melihat daftar tiket milik guru (nomor, subjek, kategori, status, tanggal dibuat) + membuat tiket baru via modal (subjek, kategori, deskripsi). Setiap tiket dapat diklik untuk membuka **detail tiket** (`/helpdesk/[ticketId]`): menampilkan percakapan (balasan beserta nama & peran pengirim, pesan, waktu) dan **form balasan** (POST balasan lalu memuat ulang percakapan tanpa refresh). Status tiket hanya **ditampilkan** (guru tidak mengubah status; backend yang mengatur). Dilengkapi **Panduan Singkat** (Quick Tutorial): accordion statis berisi 4 topik — tanpa API. Bagian dari **Helpdesk V1** (sisi guru). Manajemen tiket oleh admin/pengajar dan pengelolaan status **belum** tersedia.
+- **Bantuan / Tiket** (`/helpdesk`) — melihat daftar tiket milik guru (nomor, subjek, kategori, status, tanggal dibuat) + membuat tiket baru via modal (subjek, kategori, deskripsi). Setiap tiket dapat diklik untuk membuka **modal detail tiket** (tanpa navigasi ke rute baru): menampilkan informasi tiket read-only (nomor, subjek, kategori, deskripsi, status, tanggal), percakapan (balasan beserta nama & peran pengirim, pesan, waktu), dan **form balasan** (POST balasan lalu memuat ulang percakapan tanpa refresh). **Batas 2 pesan berturut-turut** dari guru — jika guru sudah mengirim 2 pesan tanpa balasan admin/pengajar, form balasan diganti peringatan (enforcement sisi frontend saja). Tiket berstatus `resolved`/`closed` tidak dapat dibalas. Status tiket hanya **ditampilkan** (guru tidak mengubah status; backend yang mengatur). Dilengkapi **Panduan Singkat** (Quick Tutorial): accordion statis berisi 4 topik — tanpa API. Rute lama `/helpdesk/[ticketId]` redirect ke `/helpdesk`. Bagian dari **Helpdesk V1** (sisi guru).
 - **Lupa password** (`/forgot-password`) — alur 3 langkah: kirim email → verifikasi OTP → password baru.
 
 ### Fitur Admin
 
 Panel admin berada di `/admin/*`.
 
-- **Dashboard admin** (`/admin`) — menu navigasi ke manajemen modul, akun guru, item checklist, dan halaman monitoring.
+- **Dashboard admin** (`/admin`) — menu navigasi ke manajemen modul, akun guru, item checklist, tiket bantuan (helpdesk), dan halaman monitoring. Hero banner menggunakan gradien Disdik biru→hijau (`#0047A5` → `#109B51`) dengan badge pill translusen, tombol CTA kuning, dan dekorasi geometris — konsisten visual dengan hero banner Guru dashboard sebagai identitas visual LMS Panca Waluya.
+- **Kelola tiket bantuan (Helpdesk)** (`/admin/helpdesk`) — melihat seluruh tiket guru, menggunakan server-side filters untuk status (open, in_progress, resolved, closed) & kategori, meninjau detail tiket (informasi tiket, info guru pengirim, percakapan lengkap), membalas tiket (mengubah status otomatis ke `in_progress` jika dibalas), dan mengubah status tiket secara manual via dropdown PATCH status.
 - **Kelola modul** (`/admin/modules`, `/admin/modules/new`, `/admin/modules/[id]`, `/admin/modules/[id]/edit`) — CRUD modul (judul, deskripsi, `aspekPancawaluya`, `urutan`).
 - **Kelola konten modul** — tambah (`/admin/modules/[id]/contents/new`) & edit/hapus konten (inline pada halaman edit modul); tipe konten `teks` atau `video`.
 - **Kelola evaluasi** (`/admin/modules/[id]/evaluations`, `/admin/modules/[id]/evaluations/[evalId]`) — buat evaluasi (judul), tambah/hapus soal **pilihan ganda & esai**; **edit hanya untuk pilihan ganda** (UI menolak edit soal esai dengan pesan eksplisit). Soal pilihan ganda: 2–6 opsi, tepat 1 jawaban benar.
 - **Kelola mini-quiz** (`/admin/modules/[id]/quiz/[contentId]`) — CRUD mini-quiz per konten video (judul, `timestampSeconds`, `passingScore` default 80, `maxAttempts` default 3) dan soal **pilihan ganda** (2–6 opsi, 1 benar).
-- **Kelola akun guru** (`/admin/users`, `/admin/users/[id]`) — daftar guru, edit (email, sekolah, status: `aktif`/`nonaktif`/`pensiun`/`wafat`), reset password, hapus.
+- **Kelola akun guru** (`/admin/users`, `/admin/users/[id]`) — daftar guru dengan pencarian global (`?search=...`) dan filter server-side untuk sekolah (`?sekolah=...`), kota (`?kota=...`), daerah (`?daerah=...`), serta status (`?status=...`). Mendukung kombinasi pencarian + filter dan aksi reset total. Edit (email, sekolah, status: `aktif`/`nonaktif`/`pensiun`/`wafat`), reset password, hapus.
 - **Kelola item checklist** (`/admin/checklist`) — CRUD item template daily checklist per 5 aspek Pancawaluya + toggle aktif/nonaktif.
 - **Monitoring guru** (`/admin/checklist/report`) — tabel progres modul tiap guru + skor hasil evaluasi (progress bar berwarna per persentase). Lihat catatan di [Status Proyek](#status-proyek) mengenai label menu.
 
@@ -92,8 +94,8 @@ Semua route berupa App Router. Sebagian besar halaman adalah **client component*
 | `/modules/[id]/video` | Video + mini-quiz |
 | `/modules/[id]/text` | Materi teks |
 | `/modules/[id]/evaluation` | Evaluasi (soal statis, skor lokal) — **rute yang tertaut dari alur** |
-| `/helpdesk` | Bantuan/Tiket guru — daftar tiket + buat tiket + Panduan Singkat (Helpdesk V1) |
-| `/helpdesk/[ticketId]` | Detail tiket guru — percakapan + balasan (Helpdesk V1) |
+| `/helpdesk` | Bantuan/Tiket guru — daftar tiket + buat tiket + detail modal + Panduan Singkat (Helpdesk V1) |
+| `/helpdesk/[ticketId]` | Deprecated — redirect ke `/helpdesk` (Helpdesk V1) |
 | `/profile` | Profil (view guru/admin sesuai `role`) |
 
 ### Rute Admin
@@ -109,8 +111,11 @@ Semua route berupa App Router. Sebagian besar halaman adalah **client component*
 | `/admin/modules/[id]/evaluations` | Daftar & buat evaluasi |
 | `/admin/modules/[id]/evaluations/[evalId]` | Kelola soal evaluasi |
 | `/admin/modules/[id]/quiz/[contentId]` | Kelola mini-quiz konten video |
-| `/admin/users` | Daftar akun guru |
-| `/admin/users/[id]` | Edit akun guru + reset password |
+| `/admin/users` | Daftar akun guru/pengajar |
+| `/admin/users/[id]` | Edit akun guru/pengajar + reset password |
+| `/helpdesk` | Bantuan/tiket guru (modal detail) |
+| `/helpdesk/[ticketId]` | Redirect ke `/helpdesk` |
+| `/admin/helpdesk` | Kelola tiket bantuan (Helpdesk) |
 | `/admin/checklist` | Kelola item checklist |
 | `/admin/checklist/report` | Monitoring progres & evaluasi guru |
 
@@ -130,7 +135,7 @@ Autentikasi berbasis **JWT** yang divalidasi backend. Frontend hanya melakukan p
 
 ### Sesi
 
-- **Login** (`app/components/auth/LoginForm.tsx`) — POST `/api/auth/login` (fetch langsung). Token disimpan ke `localStorage` (`token`) dan objek user ke `localStorage` (`user`). Token juga ditulis ke cookie `token` (`path=/; max-age=86400; SameSite=Lax`). Redirect berdasarkan `role` (case-insensitive): `ADMIN` → `/admin`, selain itu → `/dashboard`.
+- **Login** (`app/components/auth/LoginForm.tsx`) — POST `/api/auth/login` (fetch langsung). Token disimpan ke `localStorage` (`token`) dan objek user ke `localStorage` (`user`). Token juga ditulis ke cookie `token` (`path=/; max-age=86400; SameSite=Lax`). Redirect berdasarkan `role` (case-insensitive): `ADMIN` → `/admin`, `GURU`/`PENGAJAR` → `/dashboard`, lain-lain → `/dashboard`.
 - **Registrasi** (`RegisterForm.tsx`) — POST `/api/auth/register` (nama, nip, email, password), lalu redirect ke `/otp?email=`.
 - **Logout** (`logoutUser` di `auth.service.js`) — menghapus `token` & `user` dari `localStorage` dan `dispatch` event `"authChange"`.
 - **Sinkronisasi Header** — `Header.tsx` membaca `localStorage` dan mendengarkan event `"authChange"` untuk memperbarui navigasi tanpa reload.
@@ -140,6 +145,9 @@ Autentikasi berbasis **JWT** yang divalidasi backend. Frontend hanya melakukan p
 ### Proteksi halaman (client-side)
 
 - **Halaman admin yang memeriksa role**: memeriksa `localStorage` `user` (sebagian juga `token`) di `useEffect`; jika `role !== "admin"` → redirect `/dashboard`; jika data tidak ada → `/login`. Diterapkan pada: `/admin`, `/admin/modules`, `/admin/modules/[id]/evaluations`, `/admin/modules/[id]/evaluations/[evalId]`, `/admin/users`, `/admin/users/[id]`, `/admin/checklist`, `/admin/checklist/report`.
+  - `/admin/users` menampilkan hanya staf pengajar: role `guru` dan `pengajar`. Filter role di halaman itu: `Semua`, `Guru`, `Pengajar`.
+  - Role `admin` tidak ditampilkan di tabel manajemen akun.
+- **Halaman guru / pengajar**: `/dashboard` & `/guru` mengarahkan admin ke `/admin`; login `PENGAJAR` diperlakukan sama dengan guru saat redirect.
 - **Halaman admin tanpa guard eksplisit**: `/admin/modules/new`, `/admin/modules/[id]`, `/admin/modules/[id]/edit`, `/admin/modules/[id]/contents/new`, `/admin/modules/[id]/quiz/[contentId]` tidak melakukan cek role di file halaman.
 - **Halaman guru** (`/modules*`, dsb.) tidak melakukan redirect guard; request API akan gagal bila token tidak ada. `/dashboard` & `/guru` mengarahkan user `admin` ke `/admin`.
 
@@ -308,7 +316,7 @@ Ringkasan; detail lengkap ada di `handoff.md`.
 
 **Belum ada UI / dead code:** checklist harian guru (service ada, tanpa halaman), `startModule` (tidak dipanggil), sertifikat ("Belum Tersedia"), `lib/api.ts` (axios tak terpakai).
 
-**Direncanakan:** Helpdesk V1 — sisi guru **sudah** ada: daftar tiket + buat tiket (`/helpdesk`), serta detail tiket + balasan (`/helpdesk/[ticketId]`). **Belum** dibuat: manajemen tiket oleh admin/pengajar dan pengelolaan status (status hanya tampil untuk guru; transisi diatur backend). Field tiket dirender secara defensif mengikuti pola repo.
+**Direncanakan:** Helpdesk V1 — sisi guru **sudah** ada: daftar tiket + buat tiket (`/helpdesk`), serta detail tiket + balasan (kini menggunakan modal/pop-up langsung pada `/helpdesk` tanpa navigasi, rute lama `/helpdesk/[ticketId]` melakukan redirect). Terpasang batas 2 pesan beruntun dari guru sebagai frontend guard. Sisi admin/pengajar **sudah** ada: manajemen tiket oleh admin/pengajar (`/admin/helpdesk`) untuk daftar tiket dengan filter status/kategori, kirim balasan, dan pengelolaan status (PATCH). Field tiket dirender secara defensif mengikuti pola repo.
 
 **Validasi terakhir:** `npx tsc --noEmit` lolos; `npx eslint` lolos.
 
