@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { logoutUser } from "@/services/auth.service";
 
 interface User {
@@ -10,9 +10,16 @@ interface User {
   role: string;
 }
 
+type NavLink = {
+  label: string;
+  href: string;
+  variant?: "primary";
+};
+
 export default function Header() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     function checkLoginStatus() {
@@ -20,10 +27,16 @@ export default function Header() {
       const userData = localStorage.getItem("user");
 
       if (token && userData) {
-        setUser(JSON.parse(userData));
+        try {
+          setUser(JSON.parse(userData));
+        } catch {
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
+
+      setMenuOpen(false);
     }
 
     checkLoginStatus();
@@ -38,73 +51,135 @@ export default function Header() {
   function handleLogout() {
     logoutUser();
     setUser(null);
+    setMenuOpen(false);
     router.push("/");
   }
 
+  const isAdmin = user?.role === "admin";
+  const navLinks: NavLink[] = user
+    ? [
+        {
+          label: "Dashboard",
+          href: isAdmin ? "/admin" : "/dashboard",
+        },
+        {
+          label: "Modul",
+          href: isAdmin ? "/admin/modules" : "/modules",
+        },
+        {
+          label: isAdmin ? "Helpdesk" : "Bantuan",
+          href: isAdmin ? "/admin/helpdesk" : "/helpdesk",
+        },
+        {
+          label: "Profil",
+          href: "/profile",
+        },
+      ]
+    : [
+        {
+          label: "Login",
+          href: "/login",
+        },
+        {
+          label: "Daftar",
+          href: "/register",
+          variant: "primary",
+        },
+      ];
+
   return (
-    <header className="bg-white/30 backdrop-blur-md border-b border-[var(--color-border-soft)] sticky top-0 z-30">
-      <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
+    <header className="sticky top-0 z-30 overflow-x-hidden border-b border-[var(--color-border-soft)] bg-white/30 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 min-[801px]:px-6 min-[801px]:py-4">
+        <button
+          type="button"
+          aria-label={menuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-navigation"
+          onClick={() => setMenuOpen((value) => !value)}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border-soft)] text-[var(--color-navy)] transition hover:bg-[var(--color-pale)] min-[801px]:hidden"
+        >
+          <span className="relative block h-4 w-5">
+            <span
+              className={`absolute left-0 top-0 block h-0.5 w-5 rounded-full bg-current transition-transform duration-200 ${
+                menuOpen ? "translate-y-2 rotate-45" : ""
+              }`}
+            />
+            <span
+              className={`absolute left-0 top-2 block h-0.5 w-5 rounded-full bg-current transition-opacity duration-200 ${
+                menuOpen ? "opacity-0" : ""
+              }`}
+            />
+            <span
+              className={`absolute left-0 top-4 block h-0.5 w-5 rounded-full bg-current transition-transform duration-200 ${
+                menuOpen ? "-translate-y-2 -rotate-45" : ""
+              }`}
+            />
+          </span>
+        </button>
+
         <Link
           href="/"
-          className="font-[family-name:var(--font-display)] text-xl font-medium text-[var(--color-navy)]"
+          className="font-[family-name:var(--font-display)] text-xl font-medium text-[var(--color-navy)] max-[800px]:ml-auto max-[800px]:text-right"
         >
           LMS Pancawaluya
         </Link>
 
-        <nav className="flex items-center gap-6">
+        <nav className="hidden items-center gap-6 min-[801px]:flex">
+          {navLinks.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={
+                item.variant === "primary"
+                  ? "rounded-full bg-[var(--color-navy)] px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
+                  : "text-sm font-medium text-gray-600 transition hover:text-[var(--color-navy)]"
+              }
+            >
+              {item.label}
+            </Link>
+          ))}
           {user ? (
-            <>
+            <button
+              onClick={handleLogout}
+              className="rounded-full bg-[var(--color-navy)] px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
+            >
+              Logout
+            </button>
+          ) : null}
+        </nav>
+      </div>
+
+      <div
+        id="mobile-navigation"
+        className={`${menuOpen ? "block" : "hidden"} min-[801px]:hidden`}
+      >
+        <div className="border-t border-[var(--color-border-soft)] bg-white/95 px-4 py-3 shadow-lg backdrop-blur-md">
+          <nav className="flex flex-col gap-2">
+            {navLinks.map((item) => (
               <Link
-                href={user.role === "admin" ? "/admin" : "/dashboard"}
-                className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition"
+                key={item.label}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className={
+                  item.variant === "primary"
+                    ? "inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-navy)] px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
+                    : "inline-flex min-h-11 items-center rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-[var(--color-pale)] hover:text-[var(--color-navy)]"
+                }
               >
-                Dashboard
+                {item.label}
               </Link>
-              <Link
-                href={user.role === "admin" ? "/admin/modules" : "/modules"}
-                className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition"
-              >
-                Modul
-              </Link>
-              {user.role === "admin" ? (
-                <Link
-                  href="/admin/helpdesk"
-                  className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition"
-                >
-                  Helpdesk
-                </Link>
-              ) : (
-                <Link
-                  href="/helpdesk"
-                  className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition"
-                >
-                  Bantuan
-                </Link>
-              )}
-              <Link href="/profile" className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition">
-                Profil
-              </Link>
+            ))}
+            {user ? (
               <button
+                type="button"
                 onClick={handleLogout}
-                className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-navy)] px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
               >
                 Logout
               </button>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className="text-sm text-gray-600 font-medium hover:text-[var(--color-navy)] transition">
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="bg-[var(--color-navy)] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition"
-              >
-                Daftar
-              </Link>
-            </>
-          )}
-        </nav>
+            ) : null}
+          </nav>
+        </div>
       </div>
     </header>
   );

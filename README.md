@@ -20,6 +20,8 @@ Aplikasi mengenal tiga peran pengguna (field `role` pada data user, disimpan low
 
 > **Helpdesk V1:** Sudah diimplementasikan penuh. Sisi guru: daftar tiket + buat tiket + detail modal + balas + batas 2 pesan berturut-turut + rute lama redirect. Sisi admin/pengajar: daftar/filter tiket + detail modal + balas + PATCH status. Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
 
+> **Header responsif:** header bersama sekarang memakai hamburger menu pada lebar `<=800px`, tetapi tetap mempertahankan navigasi auth/role yang sama (guest, guru, pengajar, admin) dan tampilan desktop di atas `800px` tetap tidak berubah.
+
 ---
 
 ## Tech Stack
