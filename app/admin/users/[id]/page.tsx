@@ -15,6 +15,8 @@ interface UserDetail {
   role: string;
   nip?: string;
   sekolah?: string;
+  kotaKab?: string;
+  kecamatan?: string;
   status?: string;
 }
 
@@ -27,6 +29,8 @@ export default function EditUserPage() {
   const [formData, setFormData] = useState({
     email: "",
     sekolah: "",
+    kotaKab: "",
+    kecamatan: "",
     status: "aktif",
   });
 
@@ -61,6 +65,8 @@ export default function EditUserPage() {
         setFormData({
           email: data.email || "",
           sekolah: data.sekolah || "",
+          kotaKab: data.kotaKab || "",
+          kecamatan: data.kecamatan || "",
           status: data.status || "aktif",
         });
       } catch (err) {
@@ -86,6 +92,8 @@ export default function EditUserPage() {
       await updateUser(id, {
         email: formData.email,
         sekolah: formData.sekolah,
+        kotaKab: formData.kotaKab,
+        kecamatan: formData.kecamatan,
         status: formData.status,
       });
       setMessage({ type: "success", text: "Data guru berhasil diperbarui." });
@@ -211,6 +219,30 @@ export default function EditUserPage() {
               placeholder="Contoh: SMA Negeri 1 Bandung"
               className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
             />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Kota/Kabupaten</label>
+              <input
+                type="text"
+                value={formData.kotaKab}
+                onChange={(e) => setFormData({ ...formData, kotaKab: e.target.value })}
+                placeholder="Contoh: Kota Bandung"
+                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Kecamatan</label>
+              <input
+                type="text"
+                value={formData.kecamatan}
+                onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
+                placeholder="Contoh: Coblong"
+                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+              />
+            </div>
           </div>
 
           <div>

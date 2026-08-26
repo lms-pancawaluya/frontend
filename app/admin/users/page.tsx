@@ -14,8 +14,8 @@ interface UserItem {
   modulSelesai: number;
   sekolah?: string;
   status?: string;
-  kota?: string;
-  daerah?: string;
+  kotaKab?: string;
+  kecamatan?: string;
 }
 
 const statusColor: Record<string, string> = {
@@ -69,17 +69,23 @@ export default function AdminUsersPage() {
   }, [searchQuery]);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
-    if (!userData) {
+    if (!token || !userData) {
       router.push("/login");
       return;
     }
 
-    const currentUser = JSON.parse(userData);
+    try {
+      const currentUser = JSON.parse(userData);
 
-    if (currentUser.role !== "admin") {
-      router.push("/dashboard");
+      if (currentUser.role !== "admin") {
+        router.push("/dashboard");
+        return;
+      }
+    } catch {
+      router.push("/login");
       return;
     }
 
@@ -93,9 +99,10 @@ export default function AdminUsersPage() {
         const filterPayload = {
           search: debouncedQuery,
           sekolah: filterSekolah,
-          kota: filterKota,
-          daerah: filterDaerah,
+          kotaKab: filterKota,
+          kecamatan: filterDaerah,
           status: filterStatus,
+          role: filterRole,
         };
 
         const data = await getUsers(filterPayload);
@@ -105,8 +112,8 @@ export default function AdminUsersPage() {
         if (!hydratedFilters.current) {
           const managedStaff = data.filter((u: UserItem) => isManagedStaff(u.role));
           const schools = Array.from(new Set(managedStaff.map((u: UserItem) => u.sekolah).filter(Boolean))) as string[];
-          const cities = Array.from(new Set(managedStaff.map((u: UserItem) => u.kota).filter(Boolean))) as string[];
-          const regions = Array.from(new Set(managedStaff.map((u: UserItem) => u.daerah).filter(Boolean))) as string[];
+          const cities = Array.from(new Set(managedStaff.map((u: UserItem) => u.kotaKab).filter(Boolean))) as string[];
+          const regions = Array.from(new Set(managedStaff.map((u: UserItem) => u.kecamatan).filter(Boolean))) as string[];
           setAllSchools(schools.sort());
           setAllCities(cities.sort());
           setAllRegions(regions.sort());
@@ -132,7 +139,7 @@ export default function AdminUsersPage() {
     return () => {
       active = false;
     };
-  }, [debouncedQuery, filterSekolah, filterKota, filterDaerah, filterStatus, router]);
+  }, [debouncedQuery, filterSekolah, filterKota, filterDaerah, filterStatus, filterRole, router]);
 
   async function handleDelete(id: string, nama: string) {
     const confirmed = window.confirm(`Yakin ingin menghapus akun guru "${nama}"?`);
