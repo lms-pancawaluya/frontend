@@ -69,17 +69,23 @@ export default function AdminUsersPage() {
   }, [searchQuery]);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
-    if (!userData) {
+    if (!token || !userData) {
       router.push("/login");
       return;
     }
 
-    const currentUser = JSON.parse(userData);
+    try {
+      const currentUser = JSON.parse(userData);
 
-    if (currentUser.role !== "admin") {
-      router.push("/dashboard");
+      if (currentUser.role !== "admin") {
+        router.push("/dashboard");
+        return;
+      }
+    } catch {
+      router.push("/login");
       return;
     }
 
