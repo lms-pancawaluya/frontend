@@ -41,9 +41,10 @@ export async function getUsers(filters = {}) {
   } else {
     if (filters.search) params.append("search", filters.search);
     if (filters.sekolah) params.append("sekolah", filters.sekolah);
-    if (filters.kota) params.append("kota", filters.kota);
-    if (filters.daerah) params.append("daerah", filters.daerah);
+    if (filters.kotaKab || filters.kota) params.append("kotaKab", filters.kotaKab || filters.kota);
+    if (filters.kecamatan || filters.daerah) params.append("kecamatan", filters.kecamatan || filters.daerah);
     if (filters.status) params.append("status", filters.status);
+    if (filters.role) params.append("role", filters.role);
   }
 
   const queryString = params.toString() ? `?${params.toString()}` : "";
