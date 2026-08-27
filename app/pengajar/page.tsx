@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getProfile } from "@/services/auth.service";
-import { getUsers, getMonitoringUserProgress } from "@/services/user.service";
+import { getUsers, getUsersProgressAll } from "@/services/user.service";
 import { getRtlSubmissions } from "@/services/rtl.service";
 
 interface User {
@@ -119,21 +119,15 @@ export default function PengajarDashboardPage() {
     async function loadStats() {
       setStatsLoading(true);
       try {
-        const [users, rtl] = await Promise.all([
+        const [users, rtl, progressAll] = await Promise.all([
           getUsers().catch(() => []),
           getRtlSubmissions().catch(() => [] as RtlItem[]),
+          getUsersProgressAll().catch(() => [] as ProgressData[]),
         ]);
 
         const guru: GuruUser[] = (users as GuruUser[]).filter((u) => u.role === "guru");
-        const progresses = await Promise.all(
-          guru.map((g) =>
-            getMonitoringUserProgress(g.id)
-              .then((p) => p as ProgressData)
-              .catch(() => null)
-          )
-        );
 
-        const withProg = progresses.filter((p): p is ProgressData => p !== null);
+        const withProg = (progressAll as ProgressData[]) ?? [];
         let selesai = 0;
         let belum = 0;
         let sum = 0;

@@ -139,6 +139,20 @@ export async function getMonitoringUserProgress(userId) {
   return result.data;
 }
 
+// Bulk progress untuk seluruh guru dalam scope backend (admin = semua, pengajar
+// = guru sesekolah). Satu request menggantikan N+1 pemanggilan per-guru pada
+// dashboard. Setiap item: { userId, namaGuru, emailGuru, totalModul,
+// modulSelesai, persentase, moduls }.
+export async function getUsersProgressAll() {
+  const response = await fetch(`${API_URL}/api/admin-monitoring/users/progress/all`, {
+    method: "GET",
+    headers: getJsonHeaders(),
+  });
+
+  const result = await readResult(response, "Gagal mengambil progres pengguna");
+  return result.data;
+}
+
 export async function getMonitoringUserEvaluations(userId) {
   const response = await fetch(`${API_URL}/api/admin-monitoring/users/${userId}/evaluations`, {
     method: "GET",

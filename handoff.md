@@ -41,7 +41,7 @@ Helpdesk / Ticketing V1 is completed.
 - `services/helpdesk.service.js` — `getMyTickets()` (GET `/api/helpdesk/tickets/my`), `createTicket({ subject, category, description })` (POST `/api/helpdesk/tickets`), `getTicketDetail(ticketId)` (GET `/api/helpdesk/tickets/:ticketId`), `replyToTicket(ticketId, message)` (POST `/api/helpdesk/tickets/:ticketId/replies`), `getAllTickets({ status, category })` (GET `/api/helpdesk/tickets`), `updateTicketStatus(ticketId, status)` (PATCH `/api/helpdesk/tickets/:ticketId/status`).
 - `services/rtl.service.js` — RTL review (Admin & Pengajar): `getRtlSubmissions({ status, moduleId })` (GET `/api/rtl/submissions`), `getRtlDetail(rtlId)` (GET `/api/rtl/:rtlId`), `reviewRtl(rtlId, { status, catatanTrainer })` (PATCH `/api/rtl/:rtlId/review`, status `disetujui|ditolak`). Delete (`DELETE /api/rtl/:rtlId`) is Admin-only and intentionally not wired here.
 - `services/comment.service.js` — module discussion: `getModuleComments(moduleId)` (GET `/api/comments/module/:moduleId`), `postComment({ moduleId, isi, parentId? })` (POST `/api/comments`). Delete (`DELETE /api/comments/:id`) is Admin-only and intentionally NOT included.
-- `services/user.service.js` (monitoring, scoped by backend) — `getMonitoringUserProgress(userId)` (GET `/api/admin-monitoring/users/:id/progress`), `getMonitoringUserEvaluations(userId)` (GET `/api/admin-monitoring/users/:id/evaluations`). Used by the Pengajar panel; backend scopes results to the pengajar's school.
+- `services/user.service.js` (monitoring, scoped by backend) — `getMonitoringUserProgress(userId)` (GET `/api/admin-monitoring/users/:id/progress`), `getMonitoringUserEvaluations(userId)` (GET `/api/admin-monitoring/users/:id/evaluations`), `getUsersProgressAll()` (GET `/api/admin-monitoring/users/progress/all` — bulk progress for all in-scope guru: `{ userId, namaGuru, emailGuru, totalModul, modulSelesai, persentase, moduls }[]`). Used by the Pengajar panel; backend scopes results to the pengajar's school. Admin & Pengajar **dashboards** use the bulk call (one request) for the monitoring summary/donut; the per-user `/progress` endpoints remain for the detail monitoring/report pages.
 - `app/helpdesk/page.tsx` — lists guru's tickets, has "Buat Tiket" form, and ticket detail modal.
   - **Consecutive Message Limit**: Guru capped at 2 consecutive replies before awaiting admin. Enforced via `isGuruReplyBlocked` frontend-side history scan.
   - **Closed Tickets**: Replying disabled if resolved/closed (`isTicketClosed`).
@@ -127,7 +127,7 @@ app/
   helpdesk/page.tsx          guru helpdesk: ticket list + "Buat Tiket" modal + detail modal + static Quick Tutorial accordion (Helpdesk V1)
   helpdesk/[ticketId]/page.tsx  deprecated detail route page (redirects to /helpdesk)
   admin/
-    page.tsx                 admin dashboard — hero (retained) + KPI cards + monitoring donut + activity feed + Menu Cepat; real data via getModules/getUsers/getUserProgress/getChecklistItems/getAllTickets, empty states for missing data
+    page.tsx                 admin dashboard — hero (retained) + KPI cards + monitoring donut + activity feed + Menu Cepat; real data via getModules/getUsers/getUsersProgressAll (bulk, one request)/getChecklistItems/getAllTickets, empty states for missing data
     modules/page.tsx         module list + delete
     modules/new/page.tsx     create module
     modules/[id]/page.tsx    admin module detail (read-only preview + management actions)
