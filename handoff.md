@@ -101,9 +101,10 @@ app/
   components/
     auth/LoginForm.tsx        login (inline fetch, sets localStorage + cookie, role redirect)
     auth/RegisterForm.tsx     register (nama, nip, email, password) → /otp
-    common/Header.tsx         auth-aware nav, listens to "authChange" event; hidden at <=800px on /admin/* (sidebar drawer is the sole mobile nav)
-    common/Footer.tsx, Layout.tsx, Logo.tsx
-    admin/AdminSidebar.tsx    admin sidebar nav (Dashboard + Manajemen Sistem sections, active-link, user card)
+    common/Header.tsx         auth-aware nav, LANDING PAGE ONLY (rendered by Layout shell); listens to "authChange" event
+    common/Footer.tsx, Logo.tsx
+    common/Layout.tsx         app shell — picks chrome per route: landing (/) = Header+Footer, auth pages = standalone, all other (authenticated) routes = shared Sidebar + mobile drawer
+    common/Sidebar.tsx        shared role-based app nav (Guru/Pengajar/Admin) — active-link (nested-aware), user card, Logout; used by Layout on desktop + mobile drawer
     mini-quiz/                ContentLockGuard, QuizScoreScreen, VideoInteractiveQuiz,
                               VideoPlayerWithQuiz  (reusable quiz/video building blocks)
   login/  register/  otp/  forgot-password/     auth pages
@@ -123,7 +124,6 @@ app/
   helpdesk/page.tsx          guru helpdesk: ticket list + "Buat Tiket" modal + detail modal + static Quick Tutorial accordion (Helpdesk V1)
   helpdesk/[ticketId]/page.tsx  deprecated detail route page (redirects to /helpdesk)
   admin/
-    layout.tsx               admin sidebar shell — persistent sidebar (desktop) + off-canvas drawer (<=800px); wraps all /admin/* pages
     page.tsx                 admin dashboard — hero (retained) + KPI cards + monitoring donut + activity feed + Menu Cepat; real data via getModules/getUsers/getUserProgress/getChecklistItems/getAllTickets, empty states for missing data
     modules/page.tsx         module list + delete
     modules/new/page.tsx     create module
@@ -357,7 +357,7 @@ Follow these; they are consistent across the codebase.
 - **CRUD forms** are written **separately for add vs edit** (deliberate duplication for clarity, not a reusable component). Dynamic routes read via `useParams()` cast `as string`.
 - **Data-fetch pattern**: `useState` (data + `loading` + `error`) with an `async` function defined *inside* `useEffect`. A `refreshKey`/`onRefresh` counter triggers re-fetch after mutations.
 - **YouTube**: embedded via IFrame; ID extracted with a regex helper (`getYoutubeId` / `getYoutubeEmbedUrl`, duplicated in several files).
-- **Admin sidebar shell (shared design direction).** `/admin/*` is wrapped by `app/admin/layout.tsx`, which renders a persistent left sidebar (`app/components/admin/AdminSidebar.tsx`) on desktop (`min-[801px]`, ~`w-64`, sticky under the ~65px header) and an off-canvas drawer (toggled by a "Menu Admin" button, with backdrop + Escape + body scroll-lock) at `<=800px`. The sidebar links **only existing** Admin destinations (Dashboard, Kelola Modul, Kelola Akun Guru, Kelola Item Checklist, Kelola Tiket Bantuan, Monitoring) — no new routes; the mockup's "Pengaturan Sistem" items were omitted (no backing pages). It reads the stored user for its footer card using the hydration-safe `useEffect` + `authChange` pattern. The shared global Header/Footer, all auth/role guards, routes, API contracts, and the Admin **hero banner** are unchanged. Content lives in a `min-w-0 flex-1` column so wide tables keep their own `overflow-x-auto` and the sidebar never causes page-level horizontal overflow. This is the agreed shared design system for the future Pengajar/Guru experience (not yet implemented).
+- **Global navigation shell (Sidebar for all authenticated pages).** `app/components/common/Layout.tsx` (client) is the app shell and selects chrome by pathname: Landing (`/`) → shared `Header` + `Footer`; auth pages (`/login`, `/register`, `/otp`, `/forgot-password`) → standalone (children only); every other route (authenticated Guru/Pengajar/Admin) → shared `Sidebar` + content, with **no application Header**. `app/components/common/Sidebar.tsx` renders role-based nav from the stored user (`admin` → management set incl. Monitoring + Profil; `guru`/`pengajar` → Dashboard/Modul/Bantuan/Profil), links **only existing** routes, highlights the active route via longest-prefix match (nested-aware; `/admin/checklist/report` beats `/admin/checklist`), shows a user card, and includes **Logout** (`logoutUser()` → `/`). Desktop (`min-[801px]`): persistent `w-64` sidebar, sticky full-height, no header. Mobile (`<=800px`): sidebar hidden, opened by **one** "Menu" trigger as an off-canvas drawer (backdrop + Escape + body scroll-lock, closes on navigation); no old Header, no duplicate hamburgers. Content sits in a `min-w-0 flex-1` column so wide tables keep their own `overflow-x-auto` without page-level horizontal overflow. The previous Admin-only shell (`app/admin/layout.tsx` + `app/components/admin/AdminSidebar.tsx`) was **removed** and refactored into this shared implementation; `Header.tsx` is now landing-only. Auth/role guards, routes, API contracts, page content, the Admin **hero banner**, and Guru visual identity are unchanged.
 - **Consistency rules to uphold**: admin module detail must keep management actions separate from (and not become) the guru learning page; search/filter UI must follow the slate admin-panel language; never expose `isCorrect` to guru.
 
 ---

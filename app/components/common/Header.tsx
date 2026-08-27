@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { logoutUser } from "@/services/auth.service";
 
 interface User {
@@ -18,14 +18,8 @@ type NavLink = {
 
 export default function Header() {
   const router = useRouter();
-  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // The Admin area (/admin/*) ships its own sidebar + single mobile drawer, so
-  // the global Header is hidden there on mobile (<=800px) to avoid a duplicate
-  // menu control. On desktop the Header stays visible as usual.
-  const isAdminArea = pathname === "/admin" || (pathname?.startsWith("/admin/") ?? false);
 
   useEffect(() => {
     function checkLoginStatus() {
@@ -94,11 +88,7 @@ export default function Header() {
       ];
 
   return (
-    <header
-      className={`sticky top-0 z-30 overflow-x-hidden border-b border-[var(--color-border-soft)] bg-white/30 backdrop-blur-md ${
-        isAdminArea ? "max-[800px]:hidden" : ""
-      }`}
-    >
+    <header className="sticky top-0 z-30 overflow-x-hidden border-b border-[var(--color-border-soft)] bg-white/30 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 min-[801px]:px-6 min-[801px]:py-4">
         <button
           type="button"
