@@ -101,8 +101,9 @@ app/
   components/
     auth/LoginForm.tsx        login (inline fetch, sets localStorage + cookie, role redirect)
     auth/RegisterForm.tsx     register (nama, nip, email, password) → /otp
-    common/Header.tsx         auth-aware nav, listens to "authChange" event
+    common/Header.tsx         auth-aware nav, listens to "authChange" event; hidden at <=800px on /admin/* (sidebar drawer is the sole mobile nav)
     common/Footer.tsx, Layout.tsx, Logo.tsx
+    admin/AdminSidebar.tsx    admin sidebar nav (Dashboard + Manajemen Sistem sections, active-link, user card)
     mini-quiz/                ContentLockGuard, QuizScoreScreen, VideoInteractiveQuiz,
                               VideoPlayerWithQuiz  (reusable quiz/video building blocks)
   login/  register/  otp/  forgot-password/     auth pages
@@ -122,7 +123,8 @@ app/
   helpdesk/page.tsx          guru helpdesk: ticket list + "Buat Tiket" modal + detail modal + static Quick Tutorial accordion (Helpdesk V1)
   helpdesk/[ticketId]/page.tsx  deprecated detail route page (redirects to /helpdesk)
   admin/
-    page.tsx                 admin dashboard (4 nav cards)
+    layout.tsx               admin sidebar shell — persistent sidebar (desktop) + off-canvas drawer (<=800px); wraps all /admin/* pages
+    page.tsx                 admin dashboard — hero (retained) + KPI cards + monitoring donut + activity feed + Menu Cepat; real data via getModules/getUsers/getUserProgress/getChecklistItems/getAllTickets, empty states for missing data
     modules/page.tsx         module list + delete
     modules/new/page.tsx     create module
     modules/[id]/page.tsx    admin module detail (read-only preview + management actions)
@@ -355,6 +357,7 @@ Follow these; they are consistent across the codebase.
 - **CRUD forms** are written **separately for add vs edit** (deliberate duplication for clarity, not a reusable component). Dynamic routes read via `useParams()` cast `as string`.
 - **Data-fetch pattern**: `useState` (data + `loading` + `error`) with an `async` function defined *inside* `useEffect`. A `refreshKey`/`onRefresh` counter triggers re-fetch after mutations.
 - **YouTube**: embedded via IFrame; ID extracted with a regex helper (`getYoutubeId` / `getYoutubeEmbedUrl`, duplicated in several files).
+- **Admin sidebar shell (shared design direction).** `/admin/*` is wrapped by `app/admin/layout.tsx`, which renders a persistent left sidebar (`app/components/admin/AdminSidebar.tsx`) on desktop (`min-[801px]`, ~`w-64`, sticky under the ~65px header) and an off-canvas drawer (toggled by a "Menu Admin" button, with backdrop + Escape + body scroll-lock) at `<=800px`. The sidebar links **only existing** Admin destinations (Dashboard, Kelola Modul, Kelola Akun Guru, Kelola Item Checklist, Kelola Tiket Bantuan, Monitoring) — no new routes; the mockup's "Pengaturan Sistem" items were omitted (no backing pages). It reads the stored user for its footer card using the hydration-safe `useEffect` + `authChange` pattern. The shared global Header/Footer, all auth/role guards, routes, API contracts, and the Admin **hero banner** are unchanged. Content lives in a `min-w-0 flex-1` column so wide tables keep their own `overflow-x-auto` and the sidebar never causes page-level horizontal overflow. This is the agreed shared design system for the future Pengajar/Guru experience (not yet implemented).
 - **Consistency rules to uphold**: admin module detail must keep management actions separate from (and not become) the guru learning page; search/filter UI must follow the slate admin-panel language; never expose `isCorrect` to guru.
 
 ---

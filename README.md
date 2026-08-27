@@ -22,6 +22,10 @@ Aplikasi mengenal tiga peran pengguna (field `role` pada data user, disimpan low
 
 > **Header responsif:** header bersama sekarang memakai hamburger menu pada lebar `<=800px`, tetapi tetap mempertahankan navigasi auth/role yang sama (guest, guru, pengajar, admin) dan tampilan desktop di atas `800px` tetap tidak berubah.
 
+> **Sidebar Admin (arah desain bersama):** area `/admin/*` kini dibungkus shell sidebar persisten (`app/admin/layout.tsx` + `app/components/admin/AdminSidebar.tsx`) — arah desain yang disepakati untuk dipakai juga oleh pengalaman Pengajar/Guru ke depan (belum diimplementasikan). Sidebar tampil menetap di desktop (`>800px`) dan menjadi drawer/off-canvas yang dibuka lewat tombol **"Menu Admin"** pada `<=800px` (tanpa overflow horizontal). Sidebar hanya menautkan rute Admin yang sudah ada. Header bersama, logika navigasi/auth/role, seluruh rute & kontrak API, fitur Admin, serta **hero banner Admin** tetap dipertahankan apa adanya.
+
+> **Dashboard Admin (`/admin`):** halaman ringkasan mengikuti mockup — hero banner lama (gradien biru → hijau) dipertahankan, lalu kartu KPI (Total Modul, Total Guru, Checklist Template, Tiket Bantuan, Rata-rata Progress), seksi Monitoring Pengerjaan Modul Guru (donut CSS conic-gradient), Aktivitas Terbaru, dan kartu Menu Cepat. Semua angka berasal dari service yang ada (`getModules`, `getUsers`, `getUserProgress`, `getChecklistItems`, `getAllTickets`); tidak ada data fiktif — nilai/aktivitas yang tak tersedia tampil sebagai `—`/empty state. Pada `<=800px` header global disembunyikan di area Admin sehingga drawer sidebar menjadi satu-satunya navigasi (tanpa dua kontrol menu).
+
 ---
 
 ## Tech Stack
