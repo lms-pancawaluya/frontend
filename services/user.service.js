@@ -52,6 +52,11 @@ export async function getUsers(filters = {}) {
   const response = await fetch(`${API_URL}/api/users${queryString}`, {
     method: "GET",
     headers: getJsonHeaders(),
+    // `GET /api/users` is backend-scoped per role (admin = global, pengajar =
+    // guru in own school). The URL is identical across roles, so a cached global
+    // response could otherwise leak to a scoped pengajar request. Force a fresh
+    // request so each role always receives its own server-scoped list.
+    cache: "no-store",
   });
 
   const result = await readResult(response, "Gagal mengambil data pengguna");

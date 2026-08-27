@@ -142,7 +142,7 @@ app/
     checklist/report/page.tsx  teacher progress + evaluation-result + feedback monitoring
   pengajar/                  Pengajar panel (role: pengajar) — shared Sidebar shell, Admin design language, school-scoped
     page.tsx                 dashboard — hero + KPIs (guru dikelola, rata-rata progress, modul tuntas, RTL perlu ditinjau) + monitoring donut + quick access; real data only
-    guru/page.tsx            Kelola Guru — scoped guru list (getUsers, backend-scoped; NO ?sekolah), client search
+    guru/page.tsx            Kelola Guru — scoped guru list (getUsers, backend-scoped; NO ?sekolah, no client-side school filter), client search. getUsers uses cache:"no-store" so a cached global admin list can't leak into the scoped pengajar request
     guru/[id]/page.tsx       guru detail/edit (email/sekolah/kotaKab/kecamatan/status via updateUser; backend 403 if out-of-scope); no password reset (admin-only)
     monitoring/page.tsx      progress table + expandable Hasil Evaluasi via getMonitoringUserProgress/Evaluations
     rtl/page.tsx             RTL submissions table + status filter + PDF preview + detail modal + review (approve/reject + catatan); NO delete
