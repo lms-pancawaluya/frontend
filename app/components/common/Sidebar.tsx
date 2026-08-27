@@ -63,6 +63,16 @@ const ICONS = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
     </svg>
   ),
+  document: (
+    <svg {...iconProps}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
+  chat: (
+    <svg {...iconProps}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4z" />
+    </svg>
+  ),
 };
 
 // Navigation is derived from the authenticated user's role and links ONLY to
@@ -80,6 +90,22 @@ function getNavSections(role: string): NavSection[] {
           { label: "Kelola Item Checklist", href: "/admin/checklist", icon: ICONS.checklist },
           { label: "Kelola Tiket Bantuan", href: "/admin/helpdesk", icon: ICONS.helpdesk, badge: "Baru V1" },
           { label: "Monitoring Pengerjaan Modul", href: "/admin/checklist/report", icon: ICONS.monitoring },
+        ],
+      },
+      { title: "Akun", items: [{ label: "Profil", href: "/profile", icon: ICONS.profile }] },
+    ];
+  }
+
+  if (role === "pengajar") {
+    return [
+      { items: [{ label: "Dashboard", href: "/pengajar", icon: ICONS.dashboard }] },
+      {
+        title: "Pembinaan Guru",
+        items: [
+          { label: "Kelola Guru", href: "/pengajar/guru", icon: ICONS.users },
+          { label: "Monitoring Pengerjaan Modul", href: "/pengajar/monitoring", icon: ICONS.monitoring },
+          { label: "RTL", href: "/pengajar/rtl", icon: ICONS.document },
+          { label: "Diskusi/Komentar Modul", href: "/pengajar/diskusi", icon: ICONS.chat },
         ],
       },
       { title: "Akun", items: [{ label: "Profil", href: "/profile", icon: ICONS.profile }] },

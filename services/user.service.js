@@ -119,3 +119,27 @@ export async function getUserEvaluations(userId) {
   const result = await readResult(response, "Gagal mengambil hasil evaluasi pengguna");
   return result.data;
 }
+
+// --- Monitoring untuk Pengajar/Admin (scoped di backend) ---
+// Endpoint /api/admin-monitoring/* mengembalikan hanya guru dalam scope sekolah
+// pengajar yang login (untuk admin: seluruh guru). Otorisasi ditegakkan backend.
+
+export async function getMonitoringUserProgress(userId) {
+  const response = await fetch(`${API_URL}/api/admin-monitoring/users/${userId}/progress`, {
+    method: "GET",
+    headers: getJsonHeaders(),
+  });
+
+  const result = await readResult(response, "Gagal mengambil progres pengguna");
+  return result.data;
+}
+
+export async function getMonitoringUserEvaluations(userId) {
+  const response = await fetch(`${API_URL}/api/admin-monitoring/users/${userId}/evaluations`, {
+    method: "GET",
+    headers: getJsonHeaders(),
+  });
+
+  const result = await readResult(response, "Gagal mengambil hasil evaluasi pengguna");
+  return result.data;
+}

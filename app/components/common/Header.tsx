@@ -56,11 +56,18 @@ export default function Header() {
   }
 
   const isAdmin = user?.role === "admin";
+  const isPengajar = user?.role === "pengajar";
+  const dashboardHref = isAdmin ? "/admin" : isPengajar ? "/pengajar" : "/dashboard";
   const navLinks: NavLink[] = user
-    ? [
+    ? isPengajar
+      ? [
+          { label: "Dashboard", href: dashboardHref },
+          { label: "Profil", href: "/profile" },
+        ]
+      : [
         {
           label: "Dashboard",
-          href: isAdmin ? "/admin" : "/dashboard",
+          href: dashboardHref,
         },
         {
           label: "Modul",

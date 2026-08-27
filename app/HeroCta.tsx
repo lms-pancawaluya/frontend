@@ -39,8 +39,9 @@ export default function HeroCta() {
     return () => window.removeEventListener("authChange", checkAuth);
   }, []);
 
-  // Routing role mengikuti Header.tsx: admin → /admin, selain itu → /dashboard.
-  const dashboardHref = role === "admin" ? "/admin" : "/dashboard";
+  // Routing role mengikuti Header.tsx: admin → /admin, pengajar → /pengajar,
+  // selain itu → /dashboard.
+  const dashboardHref = role === "admin" ? "/admin" : role === "pengajar" ? "/pengajar" : "/dashboard";
 
   // Saat status auth masih dimuat, tampilkan placeholder bergaya tombol primer
   // agar tidak terjadi hydration mismatch maupun flash CTA yang salah.
