@@ -45,6 +45,11 @@ export default function DashboardPage() {
       return;
     }
 
+    if (user.role === "pengajar") {
+      router.push("/pengajar");
+      return;
+    }
+
     async function fetchDashboardData() {
       try {
         const [modulesData, progressData] = await Promise.all([

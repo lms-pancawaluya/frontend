@@ -52,6 +52,11 @@ export async function getUsers(filters = {}) {
   const response = await fetch(`${API_URL}/api/users${queryString}`, {
     method: "GET",
     headers: getJsonHeaders(),
+    // `GET /api/users` is backend-scoped per role (admin = global, pengajar =
+    // guru in own school). The URL is identical across roles, so a cached global
+    // response could otherwise leak to a scoped pengajar request. Force a fresh
+    // request so each role always receives its own server-scoped list.
+    cache: "no-store",
   });
 
   const result = await readResult(response, "Gagal mengambil data pengguna");
@@ -112,6 +117,44 @@ export async function getUserProgress(userId) {
 
 export async function getUserEvaluations(userId) {
   const response = await fetch(`${API_URL}/api/admin/users/${userId}/evaluations`, {
+    method: "GET",
+    headers: getJsonHeaders(),
+  });
+
+  const result = await readResult(response, "Gagal mengambil hasil evaluasi pengguna");
+  return result.data;
+}
+
+// --- Monitoring untuk Pengajar/Admin (scoped di backend) ---
+// Endpoint /api/admin-monitoring/* mengembalikan hanya guru dalam scope sekolah
+// pengajar yang login (untuk admin: seluruh guru). Otorisasi ditegakkan backend.
+
+export async function getMonitoringUserProgress(userId) {
+  const response = await fetch(`${API_URL}/api/admin-monitoring/users/${userId}/progress`, {
+    method: "GET",
+    headers: getJsonHeaders(),
+  });
+
+  const result = await readResult(response, "Gagal mengambil progres pengguna");
+  return result.data;
+}
+
+// Bulk progress untuk seluruh guru dalam scope backend (admin = semua, pengajar
+// = guru sesekolah). Satu request menggantikan N+1 pemanggilan per-guru pada
+// dashboard. Setiap item: { userId, namaGuru, emailGuru, totalModul,
+// modulSelesai, persentase, moduls }.
+export async function getUsersProgressAll() {
+  const response = await fetch(`${API_URL}/api/admin-monitoring/users/progress/all`, {
+    method: "GET",
+    headers: getJsonHeaders(),
+  });
+
+  const result = await readResult(response, "Gagal mengambil progres pengguna");
+  return result.data;
+}
+
+export async function getMonitoringUserEvaluations(userId) {
+  const response = await fetch(`${API_URL}/api/admin-monitoring/users/${userId}/evaluations`, {
     method: "GET",
     headers: getJsonHeaders(),
   });

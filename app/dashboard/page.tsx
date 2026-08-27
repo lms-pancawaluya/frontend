@@ -154,6 +154,11 @@ export default function DashboardPage() {
       return;
     }
 
+    if (user?.role === "pengajar") {
+      router.push("/pengajar");
+      return;
+    }
+
     if (user) {
       void (async () => {
         await fetchDashboardData();

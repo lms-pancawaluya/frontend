@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getProfile } from "@/services/auth.service";
 import { getModules } from "@/services/module.service";
-import { getUsers, getUserProgress } from "@/services/user.service";
+import { getUsers, getUsersProgressAll } from "@/services/user.service";
 import { getChecklistItems } from "@/services/checklist.service";
 import { getAllTickets } from "@/services/helpdesk.service";
 
@@ -155,20 +155,17 @@ export default function AdminDashboardPage() {
     async function loadStats() {
       setStatsLoading(true);
       try {
-        const [modules, users, checklistItems, tickets] = await Promise.all([
+        const [modules, users, checklistItems, tickets, progressAll] = await Promise.all([
           getModules(),
           getUsers().catch(() => []),
           getChecklistItems().catch(() => []),
           getAllTickets().catch(() => []),
+          getUsersProgressAll().catch(() => [] as ProgressData[]),
         ]);
 
         const guru: GuruUser[] = (users as GuruUser[]).filter((u) => u.role === "guru");
 
-        const progresses = await Promise.all(
-          guru.map((g) => getUserProgress(g.id).then((p) => p as ProgressData).catch(() => null))
-        );
-
-        const withProg = progresses.filter((p): p is ProgressData => p !== null);
+        const withProg = (progressAll as ProgressData[]) ?? [];
         let selesai = 0;
         let belum = 0;
         let sum = 0;
