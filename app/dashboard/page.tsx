@@ -68,6 +68,7 @@ export default function DashboardPage() {
   const [loadingProgress, setLoadingProgress] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const loadUserData = () => {
     if (typeof window === "undefined") return;
@@ -208,7 +209,7 @@ export default function DashboardPage() {
         <div className="absolute -bottom-20 right-1/4 w-96 h-96 bg-[#109B51]/10 rounded-full blur-3xl" />
 
         {/* Pattern Dots Akses Warna Logo */}
-        <div className="absolute top-12 left-8 hidden lg:grid grid-cols-4 gap-2.5 opacity-25">
+        <div className="absolute top-16 left-8 hidden lg:grid grid-cols-4 gap-2.5 opacity-25">
           <div className="w-2.5 h-2.5 bg-[#0047A5] rounded-full" />
           <div className="w-2.5 h-2.5 bg-[#419AD6] rounded-full" />
           <div className="w-2.5 h-2.5 bg-[#109B51] rounded-full" />
@@ -216,12 +217,112 @@ export default function DashboardPage() {
         </div>
 
         {/* Siku Frame Accent Khas Logo */}
-        <div className="absolute top-6 left-6 w-10 h-10 border-t-4 border-l-4 border-[#F3BF10] opacity-50 rounded-tl-md" />
+        <div className="absolute top-20 left-6 w-10 h-10 border-t-4 border-l-4 border-[#F3BF10] opacity-50 rounded-tl-md" />
         <div className="absolute bottom-6 right-6 w-10 h-10 border-b-4 border-r-4 border-[#0047A5] opacity-50 rounded-br-md" />
       </div>
 
+      {/* ================= FLOATING NAVBAR WITH CURVED CORNERS ================= */}
+      <header className="sticky top-4 z-30 max-w-6xl mx-auto w-[calc(100%-2rem)] sm:w-full px-4 sm:px-6 my-2">
+        <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-200/50 rounded-2xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+          
+          {/* SEARCH BAR (Sebelah Kiri) */}
+          <div className="relative flex-1 max-w-md">
+            <div className="relative flex items-center">
+              <svg className="w-4 h-4 text-slate-400 absolute left-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search students, classes, assignments, resources..."
+                className="w-full bg-slate-50/80 border border-slate-200/80 rounded-xl py-2 pl-10 pr-12 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] transition-all"
+              />
+              <span className="absolute right-3 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
+                ⌘ K
+              </span>
+            </div>
+          </div>
+
+          {/* ACTION ICONS & USER PROFILE (Sebelah Kanan) */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            
+            {/* NOTIFIKASI */}
+            <button className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
+                4
+              </span>
+            </button>
+
+            {/* PESAN / CHAT */}
+            <button className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </button>
+
+            {/* DROPDOWN USER PROFILE */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-slate-100 transition-all text-left"
+              >
+                {fotoUrl && !imgError ? (
+                  <Image
+                    src={fotoUrl}
+                    alt={user.nama}
+                    width={36}
+                    height={36}
+                    onError={() => setImgError(true)}
+                    className="w-9 h-9 rounded-xl object-cover ring-2 ring-slate-100"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-xl bg-[#0047A5] text-white font-bold flex items-center justify-center text-xs shadow-xs">
+                    {user.nama ? user.nama.charAt(0).toUpperCase() : "G"}
+                  </div>
+                )}
+
+                <div className="hidden sm:block">
+                  <p className="text-xs font-bold text-slate-800 leading-tight">{namaBerGelar}</p>
+                  <p className="text-[11px] text-slate-400 capitalize font-medium">{user.role || "Teacher"}</p>
+                </div>
+
+                <svg className="w-3.5 h-3.5 text-slate-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* DROPDOWN MENU */}
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-3 w-48 bg-white border border-slate-200/80 rounded-2xl shadow-xl py-1.5 z-50 text-xs">
+                  <Link href="/profile" className="block px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                    Lihat Profil
+                  </Link>
+                  <Link href="/settings" className="block px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                    Pengaturan
+                  </Link>
+                  <div className="border-t border-slate-100 my-1"></div>
+                  <button 
+                    onClick={() => {
+                      localStorage.clear();
+                      router.push("/login");
+                    }}
+                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 font-semibold"
+                  >
+                    Keluar
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+        </div>
+      </header>
+
       {/* ================= KONTEN DASHBOARD UTAMA ================= */}
-      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
+      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
 
         {/* Hero Welcome Banner - Kombinasi Gradient Biru Utama, Biru Muda & Hijau Disdik Jabar */}
         <div
@@ -245,7 +346,7 @@ export default function DashboardPage() {
                   {sapaan}, {namaBerGelar}
                 </h1>
                 {jamSekarang < 19 ? (
-                  <span className="text-xl"></span>
+                  <span className="text-xl">☀️</span>
                 ) : (
                   <span className="text-xl">🌙</span>
                 )}

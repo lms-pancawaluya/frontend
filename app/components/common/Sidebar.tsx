@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import PancawaluyaLogo from "@/app/components/common/Logo";
 import { logoutUser } from "@/services/auth.service";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
 type NavItem = {
   label: string;
@@ -75,9 +78,6 @@ const ICONS = {
   ),
 };
 
-// Navigation is derived from the authenticated user's role and links ONLY to
-// existing routes. Admin gets the management set (refactored from the previous
-// AdminSidebar); guru/pengajar get the learner set (mirrors the old Header nav).
 function getNavSections(role: string): NavSection[] {
   if (role === "admin") {
     return [
@@ -124,8 +124,6 @@ function getNavSections(role: string): NavSection[] {
   ];
 }
 
-// Longest-prefix match so nested routes highlight their parent, and
-// /admin/checklist/report wins over /admin/checklist.
 function resolveActiveHref(pathname: string, hrefs: string[]): string {
   let best = "";
   for (const href of hrefs) {
@@ -138,6 +136,9 @@ function resolveActiveHref(pathname: string, hrefs: string[]): string {
 interface StoredUser {
   nama?: string;
   role?: string;
+  fotoProfil?: string;
+  foto?: string;
+  avatar?: string;
 }
 
 function roleTitle(role?: string): string {
@@ -158,30 +159,51 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const [user, setUser] = useState<StoredUser | null>(null);
 
-  // Hydration-safe read of the stored user (same pattern as Header/HeroCta):
-  // never touch localStorage during render.
   useEffect(() => {
-    function readUser() {
+    async function syncAndReadUser() {
       const raw = localStorage.getItem("user");
-      if (!raw) {
-        setUser(null);
-        return;
+      const token = localStorage.getItem("token");
+
+      if (raw) {
+        try {
+          setUser(JSON.parse(raw));
+        } catch {
+          setUser(null);
+        }
       }
-      try {
-        setUser(JSON.parse(raw));
-      } catch {
-        setUser(null);
+
+      // Live Fetch Profil ke Backend untuk memastikan fotoProfil terbaru selalu dapat
+      if (token) {
+        try {
+          const res = await fetch(`${API_URL}/api/users/profile/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const result = await res.json().catch(() => ({}));
+
+          if (res.ok && result) {
+            const userData = result.data || result;
+            setUser((prev) => ({ ...prev, ...userData }));
+            // Update localStorage agar tersinkronisasi
+            const existingUser = raw ? JSON.parse(raw) : {};
+            localStorage.setItem("user", JSON.stringify({ ...existingUser, ...userData }));
+          }
+        } catch (err) {
+          console.error("Gagal sinkronisasi foto profil sidebar:", err);
+        }
       }
     }
 
-    readUser();
-    window.addEventListener("authChange", readUser);
-    return () => window.removeEventListener("authChange", readUser);
+    syncAndReadUser();
+    window.addEventListener("authChange", syncAndReadUser);
+    return () => window.removeEventListener("authChange", syncAndReadUser);
   }, []);
 
   const sections = getNavSections(user?.role ?? "");
   const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href));
   const activeHref = resolveActiveHref(pathname ?? "", allHrefs);
+
+  // Fallback pengecekan url foto
+  const avatarUrl = user?.fotoProfil || user?.foto || user?.avatar;
 
   function handleLogout() {
     logoutUser();
@@ -248,9 +270,19 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="space-y-2 border-t border-[var(--color-border-soft)] p-3">
         <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-pale)]/50 px-3 py-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-navy)] text-sm font-bold uppercase text-white">
-            {user?.nama ? user.nama.charAt(0) : "U"}
-          </span>
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt={user?.nama || "Profile"}
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 rounded-full object-cover border border-slate-200"
+            />
+          ) : (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-navy)] text-sm font-bold uppercase text-white">
+              {user?.nama ? user.nama.charAt(0) : "U"}
+            </span>
+          )}
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[var(--color-navy)]">{user?.nama ?? "Pengguna"}</p>
             <p className="truncate text-[11px] text-gray-500">{roleLabel(user?.role)}</p>
