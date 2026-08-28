@@ -224,7 +224,7 @@ export default function ModulesPage() {
               <p className="text-xl font-extrabold mt-0.5">{modules.length} Modul</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Progres Pembelajaran</p>
+              <p className="text-white/70 font-medium">Progres Pembelajaran</p>``
               <p className="text-xl font-extrabold mt-0.5">
                 {modules.filter((m) => m.progress === 100).length} / {modules.length} Diselesaikan
               </p>
