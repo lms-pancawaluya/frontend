@@ -165,14 +165,23 @@ export default function AdminDashboardPage() {
 
         const guru: GuruUser[] = (users as GuruUser[]).filter((u) => u.role === "guru");
 
-        const withProg = (progressAll as ProgressData[]) ?? [];
+        const rawProg = progressAll as unknown;
+        const rawObj = rawProg as Record<string, unknown>;
+        const withProg = (Array.isArray(rawProg) ? rawProg : (rawObj?.data || rawObj?.users || rawObj?.items || [])) as ProgressData[];
+        
         let selesai = 0;
         let belum = 0;
         let sum = 0;
         withProg.forEach((p) => {
-          sum += p.persentase;
-          if (p.totalModul > 0 && p.modulSelesai >= p.totalModul) selesai += 1;
-          else if (p.modulSelesai <= 0 || p.persentase <= 0) belum += 1;
+          // Fallbacks in case the API uses snake_case instead of camelCase
+          const anyP = p as unknown as Record<string, unknown>;
+          const totalModul = (p.totalModul ?? anyP.total_modul ?? 0) as number;
+          const modulSelesai = (p.modulSelesai ?? anyP.modul_selesai ?? 0) as number;
+          const persentase = (p.persentase ?? 0) as number;
+          
+          sum += persentase;
+          if (totalModul > 0 && modulSelesai >= totalModul) selesai += 1;
+          else if (modulSelesai <= 0 || persentase <= 0) belum += 1;
         });
         const progres = withProg.length - selesai - belum;
         const avgProgress = withProg.length ? Math.round(sum / withProg.length) : null;

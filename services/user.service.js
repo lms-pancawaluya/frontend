@@ -149,8 +149,28 @@ export async function getUsersProgressAll() {
     headers: getJsonHeaders(),
   });
 
-  const result = await readResult(response, "Gagal mengambil progres pengguna");
-  return result.data;
+  let result = null;
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(result?.pesan || result?.message || "Gagal mengambil progres pengguna");
+  }
+
+  // Tolerate both { sukses: true, data: [...] } and direct array [...]
+  if (Array.isArray(result)) return result;
+  if (result && result.sukses !== false && Array.isArray(result.data)) return result.data;
+  if (result && Array.isArray(result.users)) return result.users;
+  if (result && Array.isArray(result.items)) return result.items;
+  
+  if (result && !result.sukses) {
+    throw new Error(result.pesan || "Gagal mengambil progres pengguna");
+  }
+
+  return result?.data || [];
 }
 
 export async function getMonitoringUserEvaluations(userId) {

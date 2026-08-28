@@ -50,3 +50,17 @@ export async function postComment({ moduleId, isi, parentId = null }) {
   }
   return result.data;
 }
+
+// DELETE /api/comments/:id
+export async function deleteComment(id) {
+  const response = await fetch(`${API_URL}/api/comments/${id}`, {
+    method: "DELETE",
+    headers: getHeaders(),
+  });
+
+  const result = await response.json();
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal menghapus komentar");
+  }
+  return result.data;
+}
