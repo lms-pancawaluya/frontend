@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import PancawaluyaLogo from "@/app/components/common/Logo";
@@ -270,9 +271,11 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="space-y-2 border-t border-[var(--color-border-soft)] p-3">
         <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-pale)]/50 px-3 py-2.5">
           {avatarUrl ? (
-            <img
+            <Image
               src={avatarUrl}
               alt={user?.nama || "Profile"}
+              width={36}
+              height={36}
               className="h-9 w-9 shrink-0 rounded-full object-cover border border-slate-200"
             />
           ) : (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { cekNipGuru, cariSekolah, SekolahItem } from "@/services/registration.service";
 
 interface FormValues {
@@ -14,7 +14,7 @@ interface FormValues {
 }
 
 export default function RegisterGuruForm() {
-  const { register, setValue, watch, handleSubmit } = useForm<FormValues>({
+  const { register, setValue, control, handleSubmit } = useForm<FormValues>({
     defaultValues: {
       nip: "",
       namaGuru: "",
@@ -36,7 +36,7 @@ export default function RegisterGuruForm() {
   const [isSearchingSchool, setIsSearchingSchool] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const watchNip = watch("nip");
+  const watchNip = useWatch({ control, name: "nip" });
 
   // Handler 1: Cek Nip saat Event onBlur / Klik Tombol
   const handleCekNip = async () => {
@@ -57,8 +57,12 @@ export default function RegisterGuruForm() {
 
         setIsNipFound(true);
       }
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      const status = err && typeof err === "object" && "response" in err
+        ? (err.response as { status?: number }).status
+        : undefined;
+
+      if (status === 404) {
         setIsNipFound(false);
         setToastMessage(
           "Data NIP tidak ditemukan di master data. Silakan isi data nama & sekolah secara manual."
