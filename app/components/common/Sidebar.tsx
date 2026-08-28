@@ -91,6 +91,7 @@ function getNavSections(role: string): NavSection[] {
           { label: "Kelola Tiket Bantuan", href: "/admin/helpdesk", icon: ICONS.helpdesk, badge: "Baru V1" },
           { label: "Monitoring Pengerjaan Modul", href: "/admin/checklist/report", icon: ICONS.monitoring },
           { label: "RTL", href: "/admin/rtl", icon: ICONS.document },
+          { label: "Diskusi/Komentar Modul", href: "/admin/diskusi", icon: ICONS.chat },
         ],
       },
       { title: "Akun", items: [{ label: "Profil", href: "/profile", icon: ICONS.profile }] },
