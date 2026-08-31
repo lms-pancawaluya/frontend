@@ -121,6 +121,12 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
           { label: t("Diskusi/Komentar Modul", "Module Discussions"), href: "/pengajar/diskusi", icon: ICONS.chat },
         ],
       },
+      {
+        title: t("Layanan", "Services"),
+        items: [
+          { label: t("Bantuan", "Help Center"), href: "/helpdesk", icon: ICONS.helpdesk },
+        ],
+      },
       { title: t("Akun", "Account"), items: [{ label: t("Profil", "Profile"), href: "/profile", icon: ICONS.profile }] },
     ];
   }
