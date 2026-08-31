@@ -217,7 +217,7 @@ export default function DashboardPage() {
       </div>
 
       {/* FLOATING HEADER INTEGRASI */}
-      <Header user={user} fotoUrl={fotoUrl} namaBerGelar={namaBerGelar} />
+      <Header />
       
       {/* KONTEN DASHBOARD UTAMA */}
       <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
