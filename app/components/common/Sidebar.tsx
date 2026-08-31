@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import PancawaluyaLogo from "@/app/components/common/Logo";
 import { logoutUser } from "@/services/auth.service";
+import { useApp } from "@/app/context/AppContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
@@ -78,49 +79,47 @@ const ICONS = {
   ),
 };
 
-function getNavSections(role: string): NavSection[] {
+function getNavSections(role: string, t: (id: string, en: string) => string): NavSection[] {
   if (role === "admin") {
     return [
-      { items: [{ label: "Dashboard", href: "/admin", icon: ICONS.dashboard }] },
+      { items: [{ label: t("Dashboard", "Dashboard"), href: "/admin", icon: ICONS.dashboard }] },
       {
-        title: "Manajemen Sistem",
+        title: t("Manajemen Sistem", "System Management"),
         items: [
-          { label: "Kelola Modul Pembelajaran", href: "/admin/modules", icon: ICONS.modules },
-          { label: "Kelola Akun Guru", href: "/admin/users", icon: ICONS.users },
-          { label: "Kelola Item Checklist", href: "/admin/checklist", icon: ICONS.checklist },
-          { label: "Kelola Tiket Bantuan", href: "/admin/helpdesk", icon: ICONS.helpdesk, badge: "Baru V1" },
-          { label: "Monitoring Pengerjaan Modul", href: "/admin/checklist/report", icon: ICONS.monitoring },
-          { label: "RTL", href: "/admin/rtl", icon: ICONS.document },
-          { label: "Diskusi/Komentar Modul", href: "/admin/diskusi", icon: ICONS.chat },
+          { label: t("Kelola Modul Pembelajaran", "Manage Learning Modules"), href: "/admin/modules", icon: ICONS.modules },
+          { label: t("Kelola Akun Guru", "Manage Teacher Accounts"), href: "/admin/users", icon: ICONS.users },
+          { label: t("Kelola Item Checklist", "Manage Checklist Items"), href: "/admin/checklist", icon: ICONS.checklist },
+          { label: t("Kelola Tiket Bantuan", "Manage Support Tickets"), href: "/admin/helpdesk", icon: ICONS.helpdesk, badge: t("Baru V1", "New V1") },
+          { label: t("Monitoring Pengerjaan Modul", "Module Progress Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring },
         ],
       },
-      { title: "Akun", items: [{ label: "Profil", href: "/profile", icon: ICONS.profile }] },
+      { title: t("Akun", "Account"), items: [{ label: t("Profil", "Profile"), href: "/profile", icon: ICONS.profile }] },
     ];
   }
 
   if (role === "pengajar") {
     return [
-      { items: [{ label: "Dashboard", href: "/pengajar", icon: ICONS.dashboard }] },
+      { items: [{ label: t("Dashboard", "Dashboard"), href: "/pengajar", icon: ICONS.dashboard }] },
       {
-        title: "Pembinaan Guru",
+        title: t("Pembinaan Guru", "Teacher Mentoring"),
         items: [
-          { label: "Kelola Guru", href: "/pengajar/guru", icon: ICONS.users },
-          { label: "Monitoring Pengerjaan Modul", href: "/pengajar/monitoring", icon: ICONS.monitoring },
-          { label: "RTL", href: "/pengajar/rtl", icon: ICONS.document },
-          { label: "Diskusi/Komentar Modul", href: "/pengajar/diskusi", icon: ICONS.chat },
+          { label: t("Kelola Guru", "Manage Teachers"), href: "/pengajar/guru", icon: ICONS.users },
+          { label: t("Monitoring Pengerjaan Modul", "Module Progress Monitoring"), href: "/pengajar/monitoring", icon: ICONS.monitoring },
+          { label: t("RTL", "Action Plan (RTL)"), href: "/pengajar/rtl", icon: ICONS.document },
+          { label: t("Diskusi/Komentar Modul", "Module Discussions"), href: "/pengajar/diskusi", icon: ICONS.chat },
         ],
       },
-      { title: "Akun", items: [{ label: "Profil", href: "/profile", icon: ICONS.profile }] },
+      { title: t("Akun", "Account"), items: [{ label: t("Profil", "Profile"), href: "/profile", icon: ICONS.profile }] },
     ];
   }
 
   return [
     {
       items: [
-        { label: "Dashboard", href: "/dashboard", icon: ICONS.dashboard },
-        { label: "Modul Pembelajaran", href: "/modules", icon: ICONS.modules },
-        { label: "Bantuan", href: "/helpdesk", icon: ICONS.helpdesk },
-        { label: "Profil", href: "/profile", icon: ICONS.profile },
+        { label: t("Dashboard", "Dashboard"), href: "/dashboard", icon: ICONS.dashboard },
+        { label: t("Modul Pembelajaran", "Learning Modules"), href: "/modules", icon: ICONS.modules },
+        { label: t("Bantuan", "Help Center"), href: "/helpdesk", icon: ICONS.helpdesk },
+        { label: t("Profil", "Profile"), href: "/profile", icon: ICONS.profile },
       ],
     },
   ];
@@ -143,22 +142,10 @@ interface StoredUser {
   avatar?: string;
 }
 
-function roleTitle(role?: string): string {
-  if (role === "admin") return "Panel Admin";
-  if (role === "pengajar") return "Portal Pengajar";
-  if (role === "guru") return "Portal Guru";
-  return "Portal LMS";
-}
-
-function roleLabel(role?: string): string {
-  if (!role) return "Pengguna";
-  if (role === "admin") return "Administrator";
-  return role.charAt(0).toUpperCase() + role.slice(1);
-}
-
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useApp();
   const [user, setUser] = useState<StoredUser | null>(null);
 
   useEffect(() => {
@@ -174,7 +161,6 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         }
       }
 
-      // Live Fetch Profil ke Backend untuk memastikan fotoProfil terbaru selalu dapat
       if (token) {
         try {
           const res = await fetch(`${API_URL}/api/users/profile/me`, {
@@ -185,7 +171,6 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           if (res.ok && result) {
             const userData = result.data || result;
             setUser((prev) => ({ ...prev, ...userData }));
-            // Update localStorage agar tersinkronisasi
             const existingUser = raw ? JSON.parse(raw) : {};
             localStorage.setItem("user", JSON.stringify({ ...existingUser, ...userData }));
           }
@@ -200,12 +185,26 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     return () => window.removeEventListener("authChange", syncAndReadUser);
   }, []);
 
-  const sections = getNavSections(user?.role ?? "");
+  const sections = getNavSections(user?.role ?? "", t);
   const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href));
   const activeHref = resolveActiveHref(pathname ?? "", allHrefs);
 
-  // Fallback pengecekan url foto
   const avatarUrl = user?.fotoProfil || user?.foto || user?.avatar;
+
+  function roleTitle(role?: string): string {
+    if (role === "admin") return t("Panel Admin", "Admin Panel");
+    if (role === "pengajar") return t("Portal Pengajar", "Instructor Portal");
+    if (role === "guru") return t("Portal Guru", "Teacher Portal");
+    return t("Portal LMS", "LMS Portal");
+  }
+
+  function roleLabel(role?: string): string {
+    if (!role) return t("Pengguna", "User");
+    if (role === "admin") return "Administrator";
+    if (role === "pengajar") return t("Pengajar", "Instructor");
+    if (role === "guru") return t("Guru", "Teacher");
+    return role.charAt(0).toUpperCase() + role.slice(1);
+  }
 
   function handleLogout() {
     logoutUser();
@@ -221,22 +220,22 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           href={item.href}
           onClick={onNavigate}
           aria-current={isActive ? "page" : undefined}
-          className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+          className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
             isActive
-              ? "bg-[var(--color-pale)] font-semibold text-[var(--color-navy)]"
-              : "font-medium text-gray-600 hover:bg-gray-50 hover:text-[var(--color-navy)]"
+              ? "bg-[#0047A5]/10 text-[#0047A5] dark:bg-blue-500/20 dark:text-blue-400 font-semibold"
+              : "font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           <span
             className={`shrink-0 ${
-              isActive ? "text-[var(--color-accent)]" : "text-gray-400 group-hover:text-[var(--color-accent)]"
+              isActive ? "text-[#0047A5] dark:text-blue-400" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"
             }`}
           >
             {item.icon}
           </span>
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
           {item.badge ? (
-            <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600">
+            <span className="shrink-0 rounded-full bg-red-100 dark:bg-red-900/40 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400">
               {item.badge}
             </span>
           ) : null}
@@ -246,14 +245,14 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-white">
-      <div className="flex items-center gap-3 border-b border-[var(--color-border-soft)] px-5 py-4">
+    <aside className="flex h-full flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 px-5 py-4">
         <PancawaluyaLogo className="h-9 w-9 shrink-0" />
         <div className="min-w-0">
-          <p className="font-[family-name:var(--font-display)] text-base font-semibold leading-tight text-[var(--color-navy)]">
+          <p className="font-[family-name:var(--font-display)] text-base font-semibold leading-tight text-slate-900 dark:text-white">
             LMS Pancawaluya
           </p>
-          <p className="truncate text-[11px] text-gray-500">{roleTitle(user?.role)}</p>
+          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{roleTitle(user?.role)}</p>
         </div>
       </div>
 
@@ -261,7 +260,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {sections.map((section, idx) => (
           <div key={section.title ?? `section-${idx}`} className="space-y-1">
             {section.title ? (
-              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 {section.title}
               </p>
             ) : null}
@@ -270,37 +269,37 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      <div className="space-y-2 border-t border-[var(--color-border-soft)] p-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-pale)]/50 px-3 py-2.5">
+      <div className="space-y-2 border-t border-slate-200 dark:border-slate-800 p-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5">
           {avatarUrl ? (
             <Image
               src={avatarUrl}
               alt={user?.nama || "Profile"}
               width={36}
               height={36}
-              className="h-9 w-9 shrink-0 rounded-full object-cover border border-slate-200"
+              className="h-9 w-9 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700"
             />
           ) : (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-navy)] text-sm font-bold uppercase text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0047A5] text-sm font-bold uppercase text-white">
               {user?.nama ? user.nama.charAt(0) : "U"}
             </span>
           )}
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-[var(--color-navy)]">{user?.nama ?? "Pengguna"}</p>
-            <p className="truncate text-[11px] text-gray-500">{roleLabel(user?.role)}</p>
+            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{user?.nama ?? t("Pengguna", "User")}</p>
+            <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{roleLabel(user?.role)}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-soft)] px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-red-50 hover:text-red-600"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 transition hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Logout
+          {t("Keluar", "Logout")}
         </button>
       </div>
-    </div>
+    </aside>
   );
 }

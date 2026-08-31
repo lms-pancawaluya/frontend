@@ -200,15 +200,13 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-800 flex flex-col justify-between leading-normal relative overflow-hidden">
       
-      {/* ================= BACKGROUND DEKORATIF HASIL ORNAMEN DISDIK JABAR ================= */}
+      {/* Background Dekoratif Ornamen Disdik Jabar */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Ambient Glows berdasarkan 4 Warna Logo Disdik Jabar */}
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#0047A5]/10 rounded-full blur-3xl" />
         <div className="absolute top-1/4 -right-20 w-80 h-80 bg-[#419AD6]/15 rounded-full blur-3xl" />
         <div className="absolute top-2/3 -left-16 w-80 h-80 bg-[#F3BF10]/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-20 right-1/4 w-96 h-96 bg-[#109B51]/10 rounded-full blur-3xl" />
 
-        {/* Pattern Dots Akses Warna Logo */}
         <div className="absolute top-16 left-8 hidden lg:grid grid-cols-4 gap-2.5 opacity-25">
           <div className="w-2.5 h-2.5 bg-[#0047A5] rounded-full" />
           <div className="w-2.5 h-2.5 bg-[#419AD6] rounded-full" />
@@ -216,16 +214,15 @@ export default function DashboardPage() {
           <div className="w-2.5 h-2.5 bg-[#F3BF10] rounded-full" />
         </div>
 
-        {/* Siku Frame Accent Khas Logo */}
         <div className="absolute top-20 left-6 w-10 h-10 border-t-4 border-l-4 border-[#F3BF10] opacity-50 rounded-tl-md" />
         <div className="absolute bottom-6 right-6 w-10 h-10 border-b-4 border-r-4 border-[#0047A5] opacity-50 rounded-br-md" />
       </div>
 
-      {/* ================= FLOATING NAVBAR WITH CURVED CORNERS ================= */}
+      {/* FLOATING NAVBAR */}
       <header className="sticky top-4 z-30 max-w-6xl mx-auto w-[calc(100%-2rem)] sm:w-full px-4 sm:px-6 my-2">
         <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-200/50 rounded-2xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           
-          {/* SEARCH BAR (Sebelah Kiri) */}
+          {/* SEARCH BAR */}
           <div className="relative flex-1 max-w-md">
             <div className="relative flex items-center">
               <svg className="w-4 h-4 text-slate-400 absolute left-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,8 +239,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* ACTION ICONS & USER PROFILE (Sebelah Kanan) */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          {/* ACTION ICONS & USER PROFILE */}
+          <div className="flex items-center gap-2 sm:gap-3">
             
             {/* NOTIFIKASI */}
             <button className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all">
@@ -255,12 +252,17 @@ export default function DashboardPage() {
               </span>
             </button>
 
-            {/* PESAN / CHAT */}
-            <button className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all">
+            {/* TOMBOL PENGATURAN CEPAT */}
+            <Link
+              href="/settings"
+              title="Pengaturan"
+              className="p-2 text-slate-500 hover:text-[#0047A5] hover:bg-slate-100 rounded-xl transition-all"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-            </button>
+            </Link>
 
             {/* DROPDOWN USER PROFILE */}
             <div className="relative">
@@ -296,11 +298,20 @@ export default function DashboardPage() {
               {/* DROPDOWN MENU */}
               {isProfileOpen && (
                 <div className="absolute right-0 mt-3 w-48 bg-white border border-slate-200/80 rounded-2xl shadow-xl py-1.5 z-50 text-xs">
-                  <Link href="/profile" className="block px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                  <Link 
+                    href="/profile" 
+                    onClick={() => setIsProfileOpen(false)}
+                    className="block px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium"
+                  >
                     Lihat Profil
                   </Link>
-                  <Link href="/settings" className="block px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
-                    Pengaturan
+                  <Link 
+                    href="/settings" 
+                    onClick={() => setIsProfileOpen(false)}
+                    className="block px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center justify-between"
+                  >
+                    <span>Pengaturan</span>
+                    <span className="w-2 h-2 rounded-full bg-[#0047A5]"></span>
                   </Link>
                   <div className="border-t border-slate-100 my-1"></div>
                   <button 
@@ -321,16 +332,15 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* ================= KONTEN DASHBOARD UTAMA ================= */}
+      {/* KONTEN DASHBOARD UTAMA */}
       <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
 
-        {/* Hero Welcome Banner - Kombinasi Gradient Biru Utama, Biru Muda & Hijau Disdik Jabar */}
+        {/* Hero Welcome Banner */}
         <div
           className={`bg-gradient-to-r from-[#0047A5] via-[#0052C2] to-[#109B51] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden transition-all duration-700 ease-out ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
           }`}
         >
-          {/* Akses Lipatan / Geometric Ornament khas logo */}
           <div className="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute right-32 bottom-0 w-36 h-36 bg-[#F3BF10]/15 rounded-full blur-2xl pointer-events-none" />
 
@@ -373,7 +383,6 @@ export default function DashboardPage() {
 
         {/* Quick Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Card Modul Selesai */}
           <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300">
             <div className="space-y-1">
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Modul Selesai</p>
@@ -390,7 +399,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card Total Modul Tersedia */}
           <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300">
             <div className="space-y-1">
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Modul Tersedia</p>
@@ -406,7 +414,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card Status Pembelajaran */}
           <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300">
             <div className="space-y-1">
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status Pembelajaran</p>
@@ -431,10 +438,8 @@ export default function DashboardPage() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Kolom Kiri */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Progres Pembelajaran Keseluruhan */}
             <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
               <div className="flex justify-between items-center pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
@@ -476,7 +481,6 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Modul Pembelajaran Utama */}
             <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
               <div className="flex justify-between items-center pb-3 border-b border-slate-100">
                 <div>
@@ -533,7 +537,6 @@ export default function DashboardPage() {
           {/* Kolom Kanan */}
           <div className="space-y-6">
             
-            {/* Profile Card */}
             <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
               <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100">
                 {fotoUrl && !imgError ? (
@@ -583,7 +586,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Pusat Bantuan & Layanan Card - Kombinasi Biru Gelap Disdik Jabar & Hijau Akses */}
             <div className="p-6 bg-[#002B66] text-white rounded-3xl shadow-xl relative overflow-hidden space-y-4 border border-[#0047A5]">
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-[#419AD6]/20 rounded-full blur-2xl pointer-events-none" />
 

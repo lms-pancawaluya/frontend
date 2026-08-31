@@ -1,36 +1,62 @@
 @import "tailwindcss";
 
+/* Mengaktifkan strategi Dark Mode berbasis kelas .dark di Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  /* Warna Default Mode Terang (Light Mode) */
+  --bg-primary: #F8FAFC;       /* slate-50 */
+  --bg-surface: #FFFFFF;       /* white */
+  --text-main: #0F172A;        /* slate-900 */
+  --text-muted: #64748B;       /* slate-500 */
+  --border-color: #E2E8F0;     /* slate-200 */
+
+  /* Warna Brand/Custom */
   --color-navy: #0F2A4A;
   --color-accent: #1D6F8C;
   --color-pale: #EAF3FB;
   --color-border-soft: #CFE3F0;
   --color-biru-muda: #459ed6;
 
-  /* ============================================
-     Warna Resmi Disdik Jabar
-     ============================================ */
-  --disdik-blue: #0047BA;   /* Biru Utama / Teks 'disdik' */
-  --disdik-sky: #409ED8;    /* Biru Cerah / Teks 'jabar' */
-  --disdik-yellow: #F2B200; /* Kuning Aksesori & Lipatan */
-  --disdik-green: #0F9848;  /* Hijau Aksesori & Lipatan */
+  /* Warna Resmi Disdik Jabar */
+  --disdik-blue: #0047BA;   
+  --disdik-sky: #409ED8;    
+  --disdik-yellow: #F2B200; 
+  --disdik-green: #0F9848;  
+}
+
+/* Override Variabel saat Mode Gelap (Dark Mode) Aktif */
+.dark {
+  --bg-primary: #0F172A;       /* slate-900 */
+  --bg-surface: #1E293B;       /* slate-800 */
+  --text-main: #F8FAFC;        /* slate-50 */
+  --text-muted: #94A3B8;       /* slate-400 */
+  --border-color: #334155;     /* slate-700 */
+
+  /* Penyesuaian variabel aksen untuk dark mode */
+  --color-pale: #1E293B;
+  --color-border-soft: #334155;
 }
 
 @theme inline {
   --font-display: var(--font-display);
   --font-body: var(--font-body);
 
-  /* Pendaftaran ke Utility Class Tailwind (e.g. bg-disdik-blue, text-disdik-yellow) */
   --color-disdik-blue: var(--disdik-blue);
   --color-disdik-sky: var(--disdik-sky);
   --color-disdik-yellow: var(--disdik-yellow);
   --color-disdik-green: var(--disdik-green);
 }
 
+/* Base Body Styles */
 body {
   font-family: var(--font-body), Arial, Helvetica, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -54,27 +80,28 @@ body {
   animation: fadeInUp 0.5s ease-out 0.2s both;
 }
 
-/* ============================================
-   Kotak pesan error — dipakai di semua form/halaman.
-   ============================================ */
+/* Component Utilities */
 .alert-error {
   padding: 0.75rem 1rem;
-  border-radius: 0.75rem; /* rounded-xl */
-  background-color: #FFF1F2; /* rose-50 */
-  border: 1px solid #FECDD3; /* rose-200 */
-  color: #BE123C; /* rose-700 */
+  border-radius: 0.75rem; 
+  background-color: #FFF1F2; 
+  border: 1px solid #FECDD3; 
+  color: #BE123C; 
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-/* ============================================
-   Tombol pill (rounded-full)
-   ============================================ */
+.dark .alert-error {
+  background-color: rgba(159, 18, 57, 0.2);
+  border-color: #881337;
+  color: #FDA4AF;
+}
+
 .btn-primary {
   background-color: var(--color-navy);
   color: white;
   font-weight: 600;
-  border-radius: 9999px; /* rounded-full / pill */
+  border-radius: 9999px; 
   padding: 0.625rem 1.25rem;
   transition: opacity 0.2s;
 }
