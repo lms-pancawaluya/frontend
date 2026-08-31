@@ -35,8 +35,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const savedTheme = (localStorage.getItem("theme") as ThemeMode) || "light";
     const savedLang = (localStorage.getItem("lang") as LanguageMode) || "id";
 
-    setThemeState(savedTheme);
-    setLanguageState(savedLang);
+    queueMicrotask(() => {
+      setThemeState(savedTheme);
+      setLanguageState(savedLang);
+    });
     applyTheme(savedTheme);
   }, []);
 
