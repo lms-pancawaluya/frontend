@@ -144,7 +144,15 @@ interface StoredUser {
   avatar?: string;
 }
 
-export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+export default function Sidebar({
+  onNavigate,
+  collapsed = false,
+  onToggleCollapse,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useApp();
@@ -221,8 +229,11 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Link
           href={item.href}
           onClick={onNavigate}
+          title={collapsed ? item.label : undefined}
           aria-current={isActive ? "page" : undefined}
-          className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
+          className={`group flex items-center rounded-xl text-sm transition-all ${
+            collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+          } ${
             isActive
               ? "bg-[#0047A5]/10 text-[#0047A5] dark:bg-blue-500/20 dark:text-blue-400 font-semibold"
               : "font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
@@ -235,8 +246,8 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           >
             {item.icon}
           </span>
-          <span className="min-w-0 flex-1 truncate">{item.label}</span>
-          {item.badge ? (
+          {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+          {!collapsed && item.badge ? (
             <span className="shrink-0 rounded-full bg-red-100 dark:bg-red-900/40 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400">
               {item.badge}
             </span>
@@ -248,20 +259,39 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <aside className="flex h-full flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors duration-300">
-      <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 px-5 py-4">
-        <PancawaluyaLogo className="h-9 w-9 shrink-0" />
-        <div className="min-w-0">
-          <p className="font-[family-name:var(--font-display)] text-base font-semibold leading-tight text-slate-900 dark:text-white">
-            LMS Pancawaluya
-          </p>
-          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{roleTitle(user?.role)}</p>
-        </div>
+      <div className={`flex items-center border-b border-slate-200 dark:border-slate-800 py-4 ${collapsed ? "flex-col gap-3 px-3" : "gap-3 px-5"}`}>
+        {onToggleCollapse ? (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? t("Perluas menu", "Expand menu") : t("Ciutkan menu", "Collapse menu")}
+            aria-expanded={!collapsed}
+            className="shrink-0 rounded-lg p-1.5 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        ) : (
+          <PancawaluyaLogo className="h-9 w-9 shrink-0" />
+        )}
+        {!collapsed && (
+          <div className="flex min-w-0 items-center gap-3">
+            {onToggleCollapse && <PancawaluyaLogo className="h-9 w-9 shrink-0" />}
+            <div className="min-w-0">
+              <p className="font-[family-name:var(--font-display)] text-base font-semibold leading-tight text-slate-900 dark:text-white">
+                LMS Pancawaluya
+              </p>
+              <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{roleTitle(user?.role)}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
         {sections.map((section, idx) => (
           <div key={section.title ?? `section-${idx}`} className="space-y-1">
-            {section.title ? (
+            {section.title && !collapsed ? (
               <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 {section.title}
               </p>
@@ -272,34 +302,38 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="space-y-2 border-t border-slate-200 dark:border-slate-800 p-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5">
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={user?.nama || "Profile"}
-              width={36}
-              height={36}
-              className="h-9 w-9 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-            />
-          ) : (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0047A5] text-sm font-bold uppercase text-white">
-              {user?.nama ? user.nama.charAt(0) : "U"}
-            </span>
-          )}
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{user?.nama ?? t("Pengguna", "User")}</p>
-            <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{roleLabel(user?.role)}</p>
+        {!collapsed && (
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={user?.nama || "Profile"}
+                width={36}
+                height={36}
+                className="h-9 w-9 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+              />
+            ) : (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0047A5] text-sm font-bold uppercase text-white">
+                {user?.nama ? user.nama.charAt(0) : "U"}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{user?.nama ?? t("Pengguna", "User")}</p>
+              <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{roleLabel(user?.role)}</p>
+            </div>
           </div>
-        </div>
+        )}
         <button
           type="button"
           onClick={handleLogout}
+          title={collapsed ? t("Keluar", "Logout") : undefined}
+          aria-label={collapsed ? t("Keluar", "Logout") : undefined}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 transition hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400"
         >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          {t("Keluar", "Logout")}
+          {!collapsed && t("Keluar", "Logout")}
         </button>
       </div>
     </aside>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -14,6 +14,27 @@ function isAuthRoute(pathname: string): boolean {
   return AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
+// Desktop sidebar collapse state lives in localStorage so it persists across
+// navigation and reloads. Read via useSyncExternalStore (SSR snapshot = expanded)
+// to stay hydration-safe and lint-clean; cross-tab sync comes free via "storage".
+const COLLAPSE_KEY = "sidebarCollapsed";
+const collapseSubscribers = new Set<() => void>();
+
+function subscribeCollapsed(callback: () => void): () => void {
+  collapseSubscribers.add(callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    collapseSubscribers.delete(callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function toggleCollapsedStore(): void {
+  const next = localStorage.getItem(COLLAPSE_KEY) === "1" ? "0" : "1";
+  localStorage.setItem(COLLAPSE_KEY, next);
+  collapseSubscribers.forEach((cb) => cb());
+}
+
 // The application shell decides the chrome per route:
 //   - Landing ("/")            → shared Header + Footer (public marketing page)
 //   - Auth pages               → standalone (children only)
@@ -22,6 +43,12 @@ function isAuthRoute(pathname: string): boolean {
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Desktop icon-only collapse — persisted; SSR/first-paint snapshot is expanded.
+  const collapsed = useSyncExternalStore(
+    subscribeCollapsed,
+    () => localStorage.getItem(COLLAPSE_KEY) === "1",
+    () => false,
+  );
 
   const isLanding = pathname === "/";
   const isAuth = isAuthRoute(pathname);
@@ -69,9 +96,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Authenticated application shell: Sidebar + page content.
   return (
     <div className="flex min-h-[100dvh] w-full">
-      {/* Desktop: persistent sidebar */}
-      <aside className="sticky top-0 hidden h-[100dvh] w-64 shrink-0 self-start overflow-y-auto border-r border-[var(--color-border-soft)] min-[801px]:block">
-        <Sidebar />
+      {/* Desktop: persistent sidebar (expanded or icon-only) */}
+      <aside
+        className={`sticky top-0 hidden h-[100dvh] shrink-0 self-start overflow-y-auto border-r border-[var(--color-border-soft)] transition-[width] duration-300 min-[801px]:block ${
+          collapsed ? "w-20" : "w-64"
+        }`}
+      >
+        <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapsedStore} />
       </aside>
 
       {/* Mobile/tablet: off-canvas drawer */}
