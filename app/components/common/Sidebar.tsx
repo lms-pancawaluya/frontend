@@ -91,6 +91,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
           { label: t("Kelola Item Checklist", "Manage Checklist Items"), href: "/admin/checklist", icon: ICONS.checklist },
           { label: t("Kelola Tiket Bantuan", "Manage Support Tickets"), href: "/admin/helpdesk", icon: ICONS.helpdesk, badge: t("Baru V1", "New V1") },
           { label: t("Monitoring Pengerjaan Modul", "Module Progress Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring },
+          { label: t("RTL", "Action Plan (RTL)"), href: "/admin/rtl", icon: ICONS.document },
         ],
       },
       { title: t("Akun", "Account"), items: [{ label: t("Profil", "Profile"), href: "/profile", icon: ICONS.profile }] },
