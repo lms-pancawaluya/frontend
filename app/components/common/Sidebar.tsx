@@ -89,10 +89,20 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
           { label: t("Kelola Modul Pembelajaran", "Manage Learning Modules"), href: "/admin/modules", icon: ICONS.modules },
           { label: t("Kelola Akun Guru", "Manage Teacher Accounts"), href: "/admin/users", icon: ICONS.users },
           { label: t("Kelola Item Checklist", "Manage Checklist Items"), href: "/admin/checklist", icon: ICONS.checklist },
-          { label: t("Kelola Tiket Bantuan", "Manage Support Tickets"), href: "/admin/helpdesk", icon: ICONS.helpdesk, badge: t("Baru V1", "New V1") },
-          { label: t("Monitoring Pengerjaan Modul", "Module Progress Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring },
+        ],
+      },
+      {
+        title: t("Pemantauan & Pembinaan", "Monitoring & Mentoring"),
+        items: [
+          { label: t("Monitoring Pengerjaan", "Progress Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring },
           { label: t("RTL", "Action Plan (RTL)"), href: "/admin/rtl", icon: ICONS.document },
           { label: t("Diskusi/Komentar Modul", "Module Discussions"), href: "/admin/diskusi", icon: ICONS.chat },
+        ],
+      },
+      {
+        title: t("Layanan", "Services"),
+        items: [
+          { label: t("Helpdesk", "Helpdesk"), href: "/admin/helpdesk", icon: ICONS.helpdesk, badge: t("Baru V1", "New V1") },
         ],
       },
       { title: t("Akun", "Account"), items: [{ label: t("Profil", "Profile"), href: "/profile", icon: ICONS.profile }] },
