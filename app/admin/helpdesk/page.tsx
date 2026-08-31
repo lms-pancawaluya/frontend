@@ -32,6 +32,7 @@ interface Ticket {
     nama?: string;
     email?: string;
     sekolah?: string;
+    role?: string;
   };
 }
 
@@ -67,6 +68,13 @@ function getSubject(t: Ticket): string {
 
 function getCategory(t: Ticket): string {
   return t.category || t.kategori || "-";
+}
+
+// Tiket yang dibuat oleh Pengajar dikenali dari requester role pada respons API
+// (untuk dirinya sendiri atau atas nama guru sekolahnya). Defensif: jika BE belum
+// mengirim role, fungsi mengembalikan false dan tiket dirender seperti biasa.
+function isPengajarTicket(t: Ticket): boolean {
+  return String(t.user?.role || "").toLowerCase() === "pengajar";
 }
 
 function getDescription(t: Ticket): string {
@@ -429,15 +437,25 @@ export default function AdminHelpdeskPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 text-sm">
-                {tickets.map((t) => {
+                {[...tickets]
+                  .sort((a, b) => Number(isPengajarTicket(b)) - Number(isPengajarTicket(a)))
+                  .map((t) => {
                   const badge = getStatusBadge(t.status);
+                  const fromPengajar = isPengajarTicket(t);
                   return (
-                    <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={t.id} className={`transition-colors ${fromPengajar ? "bg-amber-50/60 hover:bg-amber-50" : "hover:bg-slate-50/50"}`}>
                       <td className="py-4 px-6 font-mono text-xs font-bold text-slate-500">
                         {getTicketNumber(t)}
                       </td>
                       <td className="py-4 px-6">
-                        <div className="font-semibold text-slate-800">{t.user?.nama || "-"}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-800">{t.user?.nama || "-"}</span>
+                          {fromPengajar && (
+                            <span className="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                              Pengajar
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-slate-400">{t.user?.email || ""}</div>
                       </td>
                       <td className="py-4 px-6">
@@ -447,7 +465,7 @@ export default function AdminHelpdeskPage() {
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${badge.className}`}>
+                        <span className={`inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${badge.className}`}>
                           {badge.label}
                         </span>
                       </td>
@@ -540,7 +558,7 @@ export default function AdminHelpdeskPage() {
                           KATEGORI: {detailCategory}
                         </span>
                         {detailBadge && (
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${detailBadge.className}`}>
+                          <span className={`inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${detailBadge.className}`}>
                             {detailBadge.label}
                           </span>
                         )}
@@ -563,7 +581,14 @@ export default function AdminHelpdeskPage() {
                       {/* Requester Info */}
                       <div>
                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Pengirim</h4>
-                        <p className="text-sm font-bold text-slate-900 mt-1">{detailTicket.user?.nama || "-"}</p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{detailTicket.user?.nama || "-"}</p>
+                          {isPengajarTicket(detailTicket) && (
+                            <span className="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                              Pengajar
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-400">{detailTicket.user?.email || ""}</p>
                         {detailTicket.user?.sekolah && (
                           <p className="text-xs text-slate-500 mt-0.5 italic">Asal: {detailTicket.user.sekolah}</p>
