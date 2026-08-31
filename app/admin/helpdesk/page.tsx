@@ -465,7 +465,7 @@ export default function AdminHelpdeskPage() {
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${badge.className}`}>
+                        <span className={`inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${badge.className}`}>
                           {badge.label}
                         </span>
                       </td>
@@ -558,7 +558,7 @@ export default function AdminHelpdeskPage() {
                           KATEGORI: {detailCategory}
                         </span>
                         {detailBadge && (
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${detailBadge.className}`}>
+                          <span className={`inline-block whitespace-nowrap text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${detailBadge.className}`}>
                             {detailBadge.label}
                           </span>
                         )}
