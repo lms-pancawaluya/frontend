@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getModuleContents } from "@/services/module.service";
+import { getModuleById, getModuleContents } from "@/services/module.service";
 
 const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
 
@@ -101,6 +101,7 @@ export default function ModuleVideoPage() {
   const moduleId = params.id as string;
 
   const [videoContent, setVideoContent] = useState<ModuleContent | null>(null);
+  const [moduleDescription, setModuleDescription] = useState<string>("");
   const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<MiniQuiz | null>(null);
@@ -141,64 +142,41 @@ export default function ModuleVideoPage() {
     miniQuizzesRef.current = miniQuizzes;
   }, [miniQuizzes]);
 
-  // Memuat konten modul dan mini quiz
+  // Memuat konten dan metadata modul
   useEffect(() => {
     async function init() {
       setIsLoadingContent(true);
       setErrorMessage(null);
       try {
-        const contents = (await getModuleContents(moduleId)) as ModuleContent[];
+        const [contentsRes, moduleRes] = await Promise.all([
+          getModuleContents(moduleId),
+          getModuleById(moduleId).catch(() => null),
+        ]);
+
+        if (moduleRes?.deskripsi) {
+          setModuleDescription(moduleRes.deskripsi);
+        }
+
+        const contents = contentsRes as ModuleContent[];
         if (Array.isArray(contents) && contents.length > 0) {
           const vid = contents.find((c) => c.tipe === "video");
           if (vid) {
             setVideoContent(vid);
 
             try {
-              const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
+              const quizRes = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
                 headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
               });
-              const json = await res.json();
+              const quizJson = await quizRes.json();
 
-              if (json.sukses && Array.isArray(json.data) && json.data.length > 0) {
-                setMiniQuizzes(json.data);
-              } else {
-                // Fallback kuis default
-                setMiniQuizzes([
-                  {
-                    id: "quiz-60s",
-                    judul: "Evaluasi Pemahaman Awal (Detik ke-60)",
-                    timestampSeconds: 60,
-                    passingScore: 80,
-                    maxAttempts: 3,
-                    questions: [
-                      {
-                        id: "q1",
-                        pertanyaan:
-                          "Berdasarkan pemaparan materi, apa tujuan utama dari penerapan nilai Panca Waluya dalam proses pembelajaran?",
-                        options: [
-                          {
-                            id: "opt1",
-                            teksOpsi:
-                              "Mengintegrasikan lima karakter luhur Sunda ke dalam proses pembentukan kecerdasan peserta didik",
-                          },
-                          {
-                            id: "opt2",
-                            teksOpsi:
-                              "Memenuhi dokumentasi administratif kurikulum tanpa implementasi praktis",
-                          },
-                          {
-                            id: "opt3",
-                            teksOpsi:
-                              "Menggantikan seluruh struktur kurikulum nasional secara menyeluruh",
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ]);
+              if (quizJson.sukses && Array.isArray(quizJson.data)) {
+                setMiniQuizzes(
+                  quizJson.data.map((quiz: MiniQuiz) => ({ ...quiz, questions: undefined }))
+                );
               }
-            } catch {
-              console.warn("Gagal memuat mini quiz dari API, menggunakan fallback.");
+            } catch (err) {
+              console.error("Gagal memuat mini quiz:", err);
+              setMiniQuizzes([]);
             }
           } else {
             setErrorMessage("Modul ini tidak memiliki konten video pembelajaran.");
@@ -501,6 +479,14 @@ export default function ModuleVideoPage() {
             </span>
           </div>
         </div>
+
+        {moduleDescription && (
+          <div className="prose prose-slate prose-sm max-w-none">
+            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+              {moduleDescription}
+            </p>
+          </div>
+        )}
 
         {/* Informasi Utama Modul */}
         <div className="space-y-1.5">

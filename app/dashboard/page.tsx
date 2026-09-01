@@ -216,11 +216,11 @@ export default function DashboardPage() {
         <div className="absolute bottom-6 right-6 w-10 h-10 border-b-4 border-r-4 border-[#0047A5] opacity-50 rounded-br-md" />
       </div>
 
-      {/* FLOATING HEADER INTEGRASI */}
+      {/* FLOATING HEADER */}
       <Header />
-      
+
       {/* KONTEN DASHBOARD UTAMA */}
-      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
+      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full space-y-6">
 
         {/* Hero Welcome Banner */}
         <div

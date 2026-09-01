@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getModuleContents } from "@/services/module.service";
+import { getModuleById, getModuleContents } from "@/services/module.service";
 
 const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
 
@@ -18,7 +18,7 @@ interface MiniQuiz {
   timestampSeconds: number;
   passingScore: number;
   maxAttempts: number;
-  questions: Question[];
+  questions?: Question[];
   isEndQuiz?: boolean;
 }
 
@@ -80,6 +80,7 @@ export default function ModuleVideoPage() {
   const moduleId = params.id as string;
 
   const [videoContent, setVideoContent] = useState<ModuleContent | null>(null);
+  const [moduleDescription, setModuleDescription] = useState<string>("");
   const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<MiniQuiz | null>(null);
@@ -121,40 +122,34 @@ export default function ModuleVideoPage() {
   useEffect(() => {
     async function init() {
       try {
-        const contents = (await getModuleContents(moduleId)) as ModuleContent[];
+        const [contentsRes, moduleRes] = await Promise.all([
+          getModuleContents(moduleId),
+          getModuleById(moduleId).catch(() => null),
+        ]);
+
+        if (moduleRes?.deskripsi) {
+          setModuleDescription(moduleRes.deskripsi);
+        }
+
+        const contents = contentsRes as ModuleContent[];
         const vid = contents.find((c) => c.tipe === "video");
         if (vid) {
           setVideoContent(vid);
 
-          const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
-            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-          });
-          const json = await res.json();
-          
-          if (json.sukses && Array.isArray(json.data) && json.data.length > 0) {
-            setMiniQuizzes(json.data);
-          } else {
-            // Fallback data kuis jika API backend belum tersedia
-            setMiniQuizzes([
-              {
-                id: "quiz-60s",
-                judul: "Evaluasi Pemahaman Awal (Detik ke-60)",
-                timestampSeconds: 60,
-                passingScore: 80,
-                maxAttempts: 3,
-                questions: [
-                  {
-                    id: "q1",
-                    pertanyaan: "Berdasarkan pemaparan materi, apa tujuan utama dari penerapan nilai Panca Waluya dalam proses pembelajaran?",
-                    options: [
-                      { id: "opt1", teksOpsi: "Mengintegrasikan lima karakter luhur Sunda ke dalam proses pembentukan kecerdasan peserta didik" },
-                      { id: "opt2", teksOpsi: "Memenuhi dokumentasi administratif kurikulum tanpa implementasi praktis" },
-                      { id: "opt3", teksOpsi: "Menggantikan seluruh struktur kurikulum nasional secara menyeluruh" },
-                    ],
-                  },
-                ],
-              },
-            ]);
+          try {
+            const quizRes = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
+              headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+            });
+            const quizJson = await quizRes.json();
+
+            if (quizJson.sukses && Array.isArray(quizJson.data)) {
+              setMiniQuizzes(
+                quizJson.data.map((quiz: MiniQuiz) => ({ ...quiz, questions: undefined }))
+              );
+            }
+          } catch (err) {
+            console.error("Gagal memuat mini quiz:", err);
+            setMiniQuizzes([]);
           }
         }
       } catch (err) {
@@ -216,6 +211,28 @@ export default function ModuleVideoPage() {
       }
     }
   }, []);
+
+  // Fetch detail kuis aktif jika array questions belum termuat (misal hanya summary)
+  useEffect(() => {
+    if (activeQuiz && (!activeQuiz.questions || activeQuiz.questions.length === 0)) {
+      const fetchQuizDetail = async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}`, {
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          });
+          const json = await res.json();
+          if (json.sukses && json.data) {
+            setActiveQuiz((prev) =>
+              prev ? { ...prev, questions: json.data.questions || [] } : null
+            );
+          }
+        } catch (err) {
+          console.error("Gagal mengambil detail kuis:", err);
+        }
+      };
+      fetchQuizDetail();
+    }
+  }, [activeQuiz, authToken]);
 
   // Inisialisasi Pemutar YouTube Iframe API
   useEffect(() => {
@@ -392,6 +409,15 @@ export default function ModuleVideoPage() {
           </div>
         </div>
 
+        {/* Pengantar Deskripsi Modul */}
+        {moduleDescription && (
+          <div className="prose prose-slate prose-sm max-w-none">
+            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+              {moduleDescription}
+            </p>
+          </div>
+        )}
+
         {/* Informasi Utama Modul */}
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/60 backdrop-blur-sm">
@@ -432,49 +458,56 @@ export default function ModuleVideoPage() {
                     </div>
 
                     <div className="space-y-5 max-h-[55vh] overflow-y-auto pr-1">
-                      {activeQuiz.questions.map((q, idx) => (
-                        <div key={q.id} className="space-y-3">
-                          <p className="font-semibold text-slate-800 text-sm leading-relaxed">
-                            <span className="text-emerald-700 font-bold">{idx + 1}.</span> {q.pertanyaan}
-                          </p>
-                          <div className="space-y-2">
-                            {q.options.map((opt, optIdx) => {
-                              const optionLabels = ["A", "B", "C", "D"];
-                              const isSelected = userAnswers[q.id] === opt.id;
-                              return (
-                                <label
-                                  key={opt.id}
-                                  className={`flex items-start gap-3 p-3.5 rounded-2xl border text-xs sm:text-sm cursor-pointer transition-all duration-200 ${
-                                    isSelected
-                                      ? "bg-emerald-50/80 border-emerald-500 text-emerald-950 font-medium shadow-sm ring-1 ring-emerald-400"
-                                      : "bg-slate-50/80 border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
-                                  }`}
-                                >
-                                  <div className={`flex-shrink-0 w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
-                                    isSelected ? "bg-emerald-700 text-white" : "bg-slate-200 text-slate-600"
-                                  }`}>
-                                    {optionLabels[optIdx] || optIdx + 1}
-                                  </div>
-                                  <input
-                                    type="radio"
-                                    name={`q-${q.id}`}
-                                    checked={isSelected}
-                                    onChange={() => setUserAnswers((p) => ({ ...p, [q.id]: opt.id }))}
-                                    className="sr-only"
-                                  />
-                                  <span className="pt-0.5 leading-snug">{opt.teksOpsi}</span>
-                                </label>
-                              );
-                            })}
+                      {activeQuiz.questions?.length ? (
+                        activeQuiz.questions.map((q, idx) => (
+                          <div key={q.id} className="space-y-3">
+                            <p className="font-semibold text-slate-800 text-sm leading-relaxed">
+                              <span className="text-emerald-700 font-bold">{idx + 1}.</span> {q.pertanyaan}
+                            </p>
+                            <div className="space-y-2">
+                              {q.options.map((opt, optIdx) => {
+                                const optionLabels = ["A", "B", "C", "D"];
+                                const isSelected = userAnswers[q.id] === opt.id;
+                                return (
+                                  <label
+                                    key={opt.id}
+                                    className={`flex items-start gap-3 p-3.5 rounded-2xl border text-xs sm:text-sm cursor-pointer transition-all duration-200 ${
+                                      isSelected
+                                        ? "bg-emerald-50/80 border-emerald-500 text-emerald-950 font-medium shadow-sm ring-1 ring-emerald-400"
+                                        : "bg-slate-50/80 border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                                    }`}
+                                  >
+                                    <div className={`flex-shrink-0 w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
+                                      isSelected ? "bg-emerald-700 text-white" : "bg-slate-200 text-slate-600"
+                                    }`}>
+                                      {optionLabels[optIdx] || optIdx + 1}
+                                    </div>
+                                    <input
+                                      type="radio"
+                                      name={`q-${q.id}`}
+                                      checked={isSelected}
+                                      onChange={() => setUserAnswers((p) => ({ ...p, [q.id]: opt.id }))}
+                                      className="sr-only"
+                                    />
+                                    <span className="pt-0.5 leading-snug">{opt.teksOpsi}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400 text-center py-4">
+                          Memuat pertanyaan evaluasi...
+                        </p>
+                      )}
                     </div>
 
                     <button
                       type="submit"
                       disabled={
                         isSubmitting ||
+                        !activeQuiz.questions ||
                         Object.keys(userAnswers).length < activeQuiz.questions.length
                       }
                       className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"

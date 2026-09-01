@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getModuleContents } from "@/services/module.service";
+import { getModuleById, getModuleContents } from "@/services/module.service";
 
 interface ModuleContent {
   id?: string;
@@ -17,14 +17,22 @@ export default function ModuleTextPage() {
   const moduleId = params.id as string;
 
   const [textContent, setTextContent] = useState<ModuleContent | null>(null);
+  const [moduleDescription, setModuleDescription] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadText() {
       try {
-        const contents = (await getModuleContents(moduleId)) as ModuleContent[];
-        const txt = contents.find((c) => c.tipe === "teks" || c.tipe === "text");
-        setTextContent(txt || contents[0]);
+        const [contents, moduleData] = await Promise.all([
+          getModuleContents(moduleId),
+          getModuleById(moduleId).catch(() => null),
+        ]);
+        const typedContents = contents as ModuleContent[];
+        const txt = typedContents.find((c) => c.tipe === "teks" || c.tipe === "text");
+        setTextContent(txt || typedContents[0]);
+        if (moduleData && moduleData.deskripsi) {
+          setModuleDescription(moduleData.deskripsi);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -44,6 +52,14 @@ export default function ModuleTextPage() {
       >
         ← Kembali ke Video Pembelajaran
       </button>
+
+      {moduleDescription && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+          <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+            {moduleDescription}
+          </p>
+        </div>
+      )}
 
       <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm space-y-6">
         <h1 className="text-2xl font-bold text-slate-900">{textContent?.judul || "Materi Bacaan"}</h1>
