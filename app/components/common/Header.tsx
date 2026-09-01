@@ -93,6 +93,7 @@ export default function Header() {
     (pathname.startsWith("/admin") ||
       pathname.startsWith("/pengajar") ||
       pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/guru") ||
       pathname.startsWith("/modules") ||
       pathname.startsWith("/profile") ||
       pathname.startsWith("/settings"));
@@ -101,9 +102,15 @@ export default function Header() {
   // TAMPILAN 1: FLOATING HEADER (KHUSUS DASHBOARD USER YANG SUDAH LOGIN)
   // =========================================================================
   if (user && isDashboardRoute) {
+    // Guru baseline — used as the reference for all roles (TASK 4.3):
+    // centered, max-w-6xl, px-4 (mobile) → px-6 sm:px-8 (desktop),
+    // vertical spacing my-6 (mobile) → my-8 (desktop), rounded-2xl.
+    const headerClass =
+      "sticky top-4 z-30 mx-auto w-[calc(100%-2rem)] sm:w-full max-w-6xl rounded-2xl bg-white/85 px-4 py-3 shadow-lg shadow-slate-200/50 backdrop-blur-md border border-slate-200/80 my-6 sm:px-6 sm:my-8";
+
     return (
-      <header className="sticky top-4 z-30 max-w-6xl mx-auto w-[calc(100%-2rem)] sm:w-full px-3 sm:px-6 my-4 sm:my-5">
-        <div className="bg-white/85 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-200/50 rounded-2xl px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
+      <header className={headerClass}>
+        <div className="flex items-center justify-between gap-2 sm:gap-4 px-1 sm:px-2">
           
           {/* SEARCH BAR */}
           <div className="relative flex-1 max-w-md">
@@ -168,7 +175,7 @@ export default function Header() {
                   </div>
                 )}
 
-                <div className="hidden sm:block">
+                <div className="hidden min-[801px]:block">
                   <p className="text-xs font-bold text-slate-800 leading-tight">{namaBerGelar}</p>
                   <p className="text-[11px] text-slate-400 capitalize font-medium">{user.role || "Pengajar"}</p>
                 </div>
