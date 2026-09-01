@@ -39,7 +39,7 @@ function toggleCollapsedStore(): void {
 //   - Landing ("/")            → shared Header + Footer (public marketing page)
 //   - Auth pages               → standalone (children only)
 //   - Everything else (app)    → shared role-based Sidebar (Guru/Pengajar/Admin)
-// The global Header never renders on authenticated application pages.
+//   The shared floating Header renders inside each dashboard page (Admin/Pengajar/Guru).
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
   const [drawerOpen, setDrawerOpen] = useState(false);

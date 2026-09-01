@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getProfile } from "@/services/auth.service";
+import Header from "@/app/components/common/Header";
 import { getModules } from "@/services/module.service";
 import { getUsers, getUsersProgressAll } from "@/services/user.service";
 import { getChecklistItems } from "@/services/checklist.service";
@@ -366,6 +367,9 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
+      {/* FLOATING HEADER */}
+      <Header />
+
       {/* Hero banner — retained existing blue → teal/green identity */}
       <div className="bg-gradient-to-r from-[#0047A5] via-[#0052C2] to-[#109B51] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />

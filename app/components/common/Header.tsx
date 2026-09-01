@@ -102,7 +102,7 @@ export default function Header() {
   // =========================================================================
   if (user && isDashboardRoute) {
     return (
-      <header className="sticky top-4 z-30 max-w-6xl mx-auto w-[calc(100%-2rem)] sm:w-full px-4 sm:px-6 my-2">
+      <header className="sticky top-4 z-30 max-w-6xl mx-auto w-[calc(100%-2rem)] sm:w-full px-4 sm:px-6 my-2 hidden min-[801px]:block">
         <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-200/50 rounded-2xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           
           {/* SEARCH BAR */}
