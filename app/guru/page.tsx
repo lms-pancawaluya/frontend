@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Header from "@/app/components/common/Header";
 import { getModules } from "@/services/module.service";
 import { getProgress } from "@/services/progress.service";
 
@@ -85,6 +86,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-pale)] text-slate-800 flex flex-col justify-between leading-normal">
+      {/* FLOATING HEADER */}
+      <Header />
+
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
         {/* Welcome Hero Banner */}

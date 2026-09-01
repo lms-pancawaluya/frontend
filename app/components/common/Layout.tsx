@@ -14,13 +14,6 @@ function isAuthRoute(pathname: string): boolean {
   return AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
-// Dashboard/content routes that get the shared global floating Header.
-const HEADER_ROUTES = ["/admin", "/pengajar", "/dashboard", "/guru", "/modules", "/profile", "/settings"];
-
-function isHeaderRoute(pathname: string): boolean {
-  return HEADER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
-}
-
 // Desktop sidebar collapse state lives in localStorage so it persists across
 // navigation and reloads. Read via useSyncExternalStore (SSR snapshot = expanded)
 // to stay hydration-safe and lint-clean; cross-tab sync comes free via "storage".
@@ -153,9 +146,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             LMS Pancawaluya
           </span>
         </div>
-
-        {/* Global floating header for dashboard routes — rendered once here instead of per-page */}
-        {isHeaderRoute(pathname) ? <Header /> : null}
 
         <div className="min-w-0 flex-1">{children}</div>
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getProfile } from "@/services/auth.service";
+import Header from "@/app/components/common/Header";
 import { getUsers, getUsersProgressAll } from "@/services/user.service";
 import { getRtlSubmissions } from "@/services/rtl.service";
 
@@ -285,6 +286,9 @@ export default function PengajarDashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
+      {/* FLOATING HEADER */}
+      <Header />
+
       {/* Hero banner — shares LMS gradient identity, pengajar-specific content */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0047A5] via-[#0052C2] to-[#109B51] p-6 text-white shadow-xl sm:p-8">
         <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
