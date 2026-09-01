@@ -199,7 +199,7 @@ export default function AdminModuleDetailPage() {
 
     setBusyCommentId(replyTo.id);
     try {
-      await postComment({ moduleId: id, isi: replyText.trim(), parentId: replyTo.id });
+      await postComment({ moduleId: id, komentar: replyText.trim(), parentId: replyTo.id });
       setReplyText("");
       setReplyTo(null);
       const refreshed = await getModuleComments(id);

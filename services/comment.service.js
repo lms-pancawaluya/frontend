@@ -20,6 +20,14 @@ function getHeaders() {
   };
 }
 
+/**
+ * @typedef {Object} PostCommentInput
+ * @property {string} moduleId
+ * @property {string} [komentar]
+ * @property {string} [isi]
+ * @property {string | null | undefined} [parentId]
+ */
+
 // GET /api/comments/module/:moduleId
 export async function getModuleComments(moduleId) {
   if (!moduleId) return [];
@@ -36,12 +44,19 @@ export async function getModuleComments(moduleId) {
   return result.data ?? [];
 }
 
-// POST /api/comments  body: { moduleId, isi, parentId? }
-export async function postComment({ moduleId, isi, parentId = null }) {
+// POST /api/comments  body: { moduleId, parentId?, komentar }
+/**
+ * @param {PostCommentInput} input
+ */
+export async function postComment({ moduleId, komentar, isi, parentId = null }) {
   const response = await fetch(`${API_URL}/api/comments`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ moduleId, isi, ...(parentId ? { parentId } : {}) }),
+    body: JSON.stringify({
+      moduleId,
+      komentar: komentar ?? isi ?? "",
+      ...(parentId ? { parentId } : {}),
+    }),
   });
 
   const result = await response.json();
