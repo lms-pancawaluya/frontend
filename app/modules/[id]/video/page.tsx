@@ -121,18 +121,20 @@ export default function ModuleVideoPage() {
   useEffect(() => {
     async function init() {
       try {
-        const contents = (await getModuleContents(moduleId)) as ModuleContent[];
+        const [contentsRes, quizzesRes] = await Promise.all([
+          getModuleContents(moduleId),
+          fetch(`${API_BASE_URL}/mini-quizzes/module/${moduleId}`, {
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          }).then(res => res.json()).catch(() => ({ sukses: false }))
+        ]);
+
+        const contents = contentsRes as ModuleContent[];
         const vid = contents.find((c) => c.tipe === "video");
         if (vid) {
           setVideoContent(vid);
 
-          const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
-            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-          });
-          const json = await res.json();
-          
-          if (json.sukses && Array.isArray(json.data) && json.data.length > 0) {
-            setMiniQuizzes(json.data);
+          if (quizzesRes && quizzesRes.sukses && Array.isArray(quizzesRes.data) && quizzesRes.data.length > 0) {
+            setMiniQuizzes(quizzesRes.data);
           } else {
             // Fallback data kuis jika API backend belum tersedia
             setMiniQuizzes([
@@ -216,6 +218,28 @@ export default function ModuleVideoPage() {
       }
     }
   }, []);
+
+  // Fetch detail kuis aktif jika array questions belum termuat (misal hanya summary)
+  useEffect(() => {
+    if (activeQuiz && (!activeQuiz.questions || activeQuiz.questions.length === 0)) {
+      const fetchQuizDetail = async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}`, {
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          });
+          const json = await res.json();
+          if (json.sukses && json.data) {
+            setActiveQuiz((prev) =>
+              prev ? { ...prev, questions: json.data.questions || [] } : null
+            );
+          }
+        } catch (err) {
+          console.error("Gagal mengambil detail kuis:", err);
+        }
+      };
+      fetchQuizDetail();
+    }
+  }, [activeQuiz, authToken]);
 
   // Inisialisasi Pemutar YouTube Iframe API
   useEffect(() => {

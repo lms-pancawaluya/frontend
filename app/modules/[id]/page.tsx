@@ -147,23 +147,24 @@ export default function ModuleVideoPage() {
       setIsLoadingContent(true);
       setErrorMessage(null);
       try {
-        const contents = (await getModuleContents(moduleId)) as ModuleContent[];
+        const [contentsRes, quizzesRes] = await Promise.all([
+          getModuleContents(moduleId),
+          fetch(`${API_BASE_URL}/mini-quizzes/module/${moduleId}`, {
+            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          }).then(res => res.json()).catch(() => ({ sukses: false }))
+        ]);
+
+        const contents = contentsRes as ModuleContent[];
         if (Array.isArray(contents) && contents.length > 0) {
           const vid = contents.find((c) => c.tipe === "video");
           if (vid) {
             setVideoContent(vid);
 
-            try {
-              const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
-                headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-              });
-              const json = await res.json();
-
-              if (json.sukses && Array.isArray(json.data) && json.data.length > 0) {
-                setMiniQuizzes(json.data);
-              } else {
-                // Fallback kuis default
-                setMiniQuizzes([
+            if (quizzesRes && quizzesRes.sukses && Array.isArray(quizzesRes.data) && quizzesRes.data.length > 0) {
+              setMiniQuizzes(quizzesRes.data);
+            } else {
+              // Fallback kuis default
+              setMiniQuizzes([
                   {
                     id: "quiz-60s",
                     judul: "Evaluasi Pemahaman Awal (Detik ke-60)",
