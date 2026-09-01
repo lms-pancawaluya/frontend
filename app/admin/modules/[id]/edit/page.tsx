@@ -56,7 +56,7 @@ export default function EditModulePage() {
 
         setFormData({
           judul: moduleData.judul,
-          deskripsi: moduleData.deskripsi,
+          deskripsi: moduleData.deskripsi || "",
           aspekPancawaluya: moduleData.aspekPancawaluya,
           urutan: moduleData.urutan,
         });
