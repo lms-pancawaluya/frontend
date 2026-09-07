@@ -2,7 +2,7 @@
 // RTL (Rencana Tindak Lanjut) review workflow — shared by Admin & Pengajar.
 // Backend enforces role/school scope; the FE does not re-implement authorization.
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 const getAuthToken = () => {
   if (typeof window !== "undefined") {
@@ -26,7 +26,7 @@ export async function getRtlSubmissions(filters = {}) {
   if (filters.moduleId) params.append("moduleId", filters.moduleId);
   const queryString = params.toString() ? `?${params.toString()}` : "";
 
-  const response = await fetch(`${API_URL}/api/rtl/submissions${queryString}`, {
+  const response = await fetchApi(`${API_URL}/api/rtl/submissions${queryString}`, {
     method: "GET",
     headers: getHeaders(),
   });
@@ -40,7 +40,7 @@ export async function getRtlSubmissions(filters = {}) {
 
 // GET /api/rtl/:rtlId
 export async function getRtlDetail(rtlId) {
-  const response = await fetch(`${API_URL}/api/rtl/${rtlId}`, {
+  const response = await fetchApi(`${API_URL}/api/rtl/${rtlId}`, {
     method: "GET",
     headers: getHeaders(),
   });
@@ -54,7 +54,7 @@ export async function getRtlDetail(rtlId) {
 
 // PATCH /api/rtl/:rtlId/review  body: { status: "disetujui" | "ditolak", catatanTrainer }
 export async function reviewRtl(rtlId, { status, catatanTrainer }) {
-  const response = await fetch(`${API_URL}/api/rtl/${rtlId}/review`, {
+  const response = await fetchApi(`${API_URL}/api/rtl/${rtlId}/review`, {
     method: "PATCH",
     headers: getHeaders(),
     body: JSON.stringify({ status, catatanTrainer }),

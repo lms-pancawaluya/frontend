@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -57,7 +56,7 @@ export default function RegisterForm() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
+      const res = await fetchApi(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

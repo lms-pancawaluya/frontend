@@ -5,8 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-// Konfigurasi URL Backend Railway
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 function OtpContent() {
   const router = useRouter();
@@ -82,7 +81,7 @@ function OtpContent() {
 
     try {
       // Menembak langsung ke Backend Railway
-      const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
+      const res = await fetchApi(`${API_URL}/api/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otpCode: code }),
@@ -110,7 +109,7 @@ function OtpContent() {
 
     try {
       // Menembak langsung ke Backend Railway
-      await fetch(`${API_URL}/api/auth/resend-otp`, {
+      await fetchApi(`${API_URL}/api/auth/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

@@ -1,9 +1,9 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL, fetchApi } from "@/lib/api";
 
 export async function createContent(moduleId, contentData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/modules/${moduleId}/contents`, {
+  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/contents`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -24,7 +24,7 @@ export async function createContent(moduleId, contentData) {
 export async function updateContent(contentId, contentData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/contents/${contentId}`, {
+  const response = await fetchApi(`${API_URL}/api/contents/${contentId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -45,7 +45,7 @@ export async function updateContent(contentId, contentData) {
 export async function deleteContent(contentId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/contents/${contentId}`, {
+  const response = await fetchApi(`${API_URL}/api/contents/${contentId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,

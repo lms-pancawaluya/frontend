@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 // Helper internal untuk menyusun header request & Authorization token
 function getHeaders() {
@@ -17,7 +17,7 @@ function getHeaders() {
  * Get daftar evaluasi berdasarkan ID Modul
  */
 export async function getModuleEvaluations(moduleId) {
-  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations`, {
+  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations`, {
     method: "GET",
     headers: getHeaders(),
   });
@@ -36,7 +36,7 @@ export async function getModuleEvaluations(moduleId) {
  * URL: GET /api/modules/:moduleId/evaluations/:evaluationId
  */
 export async function getEvaluationDetail(moduleId, evaluationId) {
-  const response = await fetch(
+  const response = await fetchApi(
     `${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}`,
     {
       method: "GET",
@@ -58,7 +58,7 @@ export async function getEvaluationDetail(moduleId, evaluationId) {
  * URL: POST /api/modules/:moduleId/evaluations/:evaluationId/submit
  */
 export async function submitEvaluation(moduleId, evaluationId, jawaban) {
-  const response = await fetch(
+  const response = await fetchApi(
     `${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/submit`,
     {
       method: "POST",
@@ -81,7 +81,7 @@ export async function submitEvaluation(moduleId, evaluationId, jawaban) {
  * URL: POST /api/feedbacks/module/:moduleId
  */
 export async function sendModuleFeedback(moduleId, payload) {
-  const response = await fetch(`${API_URL}/api/feedbacks/module/${moduleId}`, {
+  const response = await fetchApi(`${API_URL}/api/feedbacks/module/${moduleId}`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify(payload),
@@ -102,7 +102,7 @@ export async function sendModuleFeedback(moduleId, payload) {
  * Backend menjamin satu feedback per guru per modul.
  */
 export async function getAllFeedbacks() {
-  const response = await fetch(`${API_URL}/api/feedbacks`, {
+  const response = await fetchApi(`${API_URL}/api/feedbacks`, {
     method: "GET",
     headers: getHeaders(),
   });
@@ -124,7 +124,7 @@ export async function getAllFeedbacks() {
  * Buat evaluasi baru di dalam modul
  */
 export async function createEvaluation(moduleId, judul) {
-  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations`, {
+  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({ judul }),
@@ -140,7 +140,7 @@ export async function createEvaluation(moduleId, judul) {
 }
 
 export async function addQuestion(moduleId, evaluationId, questionData) {
-  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/questions`, {
+  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/questions`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify(questionData),
@@ -158,7 +158,7 @@ export async function addQuestion(moduleId, evaluationId, questionData) {
 export async function updateQuestion(moduleId, questionId, questionData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
+  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -179,7 +179,7 @@ export async function updateQuestion(moduleId, questionId, questionData) {
 export async function deleteQuestion(moduleId, questionId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
+  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
     method: "DELETE",
     headers: {
       "Authorization": `Bearer ${token}`,

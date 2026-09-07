@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
+import { API_URL, fetchApi } from "@/lib/api";
 
 interface AdminProfileProps {
   profile: {
@@ -15,7 +16,6 @@ interface AdminProfileProps {
 }
 
 export default function AdminProfileView({ profile, onRefresh }: AdminProfileProps) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
   const getToken = () => localStorage.getItem("token") || "";
 
   const [formData, setFormData] = useState({
@@ -39,7 +39,7 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/users/profile/me`, {
+      const res = await fetchApi(`${API_URL}/api/users/profile/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -71,7 +71,7 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/users/profile/me/password`, {
+      const res = await fetchApi(`${API_URL}/api/users/profile/me/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +111,7 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/upload/foto-profil`, {
+      const res = await fetchApi(`${API_URL}/api/upload/foto-profil`, {
         method: "POST",
         headers: { Authorization: `Bearer ${getToken()}` },
         body: formDataUpload,

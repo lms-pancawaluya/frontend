@@ -5,7 +5,9 @@ import { useParams } from "next/navigation";
 import { VideoPlayerWithQuiz } from "@/app/components/mini-quiz/VideoPlayerWithQuiz";
 import { ContentLockGuard } from "@/app/components/mini-quiz/ContentLockGuard";
 
-const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
+import { API_URL, fetchApi } from "@/lib/api";
+
+const API_BASE_URL = `${API_URL}/api`;
 
 export default function PembelajaranPage() {
   const params = useParams();
@@ -25,7 +27,7 @@ export default function PembelajaranPage() {
 
     const fetchContent = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+        const res = await fetchApi(`${API_BASE_URL}/contents/${contentId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const json = await res.json();

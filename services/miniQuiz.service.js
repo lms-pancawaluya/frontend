@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 function getHeaders() {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
@@ -21,7 +21,7 @@ function getHeaders() {
  * ditelusuri ID mana yang salah.
  */
 async function apiRequest(url, options, fallbackErrorMessage) {
-  const response = await fetch(url, options);
+  const response = await fetchApi(url, options);
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {

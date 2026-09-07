@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import AdminProfileView from "./AdminProfileView";
 import GuruProfileView from "./GuruProfileView";
+import { API_URL, fetchApi } from "@/lib/api";
 
 interface ProfileData {
   id: string;
@@ -17,7 +18,6 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/users/profile/me`, {
+      const res = await fetchApi(`${API_URL}/api/users/profile/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -48,7 +48,7 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
     const loadProfile = async () => {

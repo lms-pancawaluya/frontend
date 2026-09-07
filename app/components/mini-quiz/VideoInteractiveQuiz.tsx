@@ -10,7 +10,9 @@ interface VideoInteractiveQuizProps {
   onQuizCompleted?: () => void;
 }
 
-const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
+import { API_URL, fetchApi } from "@/lib/api";
+
+const API_BASE_URL = `${API_URL}/api`;
 
 export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
   contentId,
@@ -34,7 +36,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
     try {
       const headers = { Authorization: `Bearer ${authToken}` };
 
-      const quizRes = await fetch(`${API_BASE_URL}/mini-quizzes/content/${contentId}`, { headers });
+      const quizRes = await fetchApi(`${API_BASE_URL}/mini-quizzes/content/${contentId}`, { headers });
       const quizData = await quizRes.json();
 
       if (quizData.sukses && Array.isArray(quizData.data)) {
@@ -43,7 +45,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
 
         const passedIds = new Set<string>();
         for (const quiz of fetchedQuizzes) {
-          const historyRes = await fetch(`${API_BASE_URL}/mini-quizzes/${quiz.id}/my-attempts`, { headers });
+          const historyRes = await fetchApi(`${API_BASE_URL}/mini-quizzes/${quiz.id}/my-attempts`, { headers });
           const historyData: QuizHistoryResponse = await historyRes.json();
           if (historyData.sukses && historyData.data.isLolos) {
             passedIds.add(quiz.id);
@@ -108,7 +110,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}/attempt`, {
+      const res = await fetchApi(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}/attempt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

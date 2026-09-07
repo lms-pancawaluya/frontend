@@ -7,8 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import PancawaluyaLogo from "@/app/components/common/Logo";
 import { logoutUser } from "@/services/auth.service";
 import { useApp } from "@/app/context/AppContext";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 type SubNavItem = {
   label: string;
@@ -370,7 +369,7 @@ export default function Sidebar({
 
       if (token) {
         try {
-          const res = await fetch(`${API_URL}/api/users/profile/me`, {
+          const res = await fetchApi(`${API_URL}/api/users/profile/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -396,9 +395,13 @@ export default function Sidebar({
 
   useEffect(() => {
     if (!pathname) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pathname.startsWith("/settings")) setOpenDropdowns((p) => ({ ...p, settings: true }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pathname.startsWith("/profile")) setOpenDropdowns((p) => ({ ...p, profile: true }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pathname.startsWith("/modules")) setOpenDropdowns((p) => ({ ...p, modules: true }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pathname.startsWith("/helpdesk")) setOpenDropdowns((p) => ({ ...p, helpdesk: true }));
   }, [pathname]);
 

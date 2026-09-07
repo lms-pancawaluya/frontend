@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 
-const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
+import { API_URL, fetchApi } from "@/lib/api";
+
+const API_BASE_URL = `${API_URL}/api`;
 
 interface ContentLockGuardProps {
   contentId: string;
@@ -24,7 +26,7 @@ export const ContentLockGuard: React.FC<ContentLockGuardProps> = ({
 
     const checkLock = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${contentId}/check-lock`, {
+        const res = await fetchApi(`${API_BASE_URL}/mini-quizzes/content/${contentId}/check-lock`, {
           headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
         });
         const json = await res.json();

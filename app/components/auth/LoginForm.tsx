@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -20,7 +19,7 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      const res = await fetchApi(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

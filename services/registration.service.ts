@@ -1,10 +1,10 @@
 import axios from "axios";
 
-// BaseURL sudah diarahkan ke server Backend Railway
 const api = axios.create({
-  baseURL: "https://backend-production-72a3.up.railway.app/api",
+  baseURL: `${process.env.NEXT_PUBLIC_API_URL || ""}/api`,
   headers: {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
   },
 });
 
