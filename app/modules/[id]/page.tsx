@@ -169,10 +169,12 @@ export default function ModuleVideoPage() {
               });
               const quizJson = await quizRes.json();
 
+              // ✅ Simpan data quiz apa adanya, termasuk questions-nya.
+              // Endpoint content/:contentId ini SUDAH mengembalikan soal
+              // secara lengkap, jadi tidak perlu (dan tidak boleh) dibuang
+              // di sini.
               if (quizJson.sukses && Array.isArray(quizJson.data)) {
-                setMiniQuizzes(
-                  quizJson.data.map((quiz: MiniQuiz) => ({ ...quiz, questions: undefined }))
-                );
+                setMiniQuizzes(quizJson.data);
               }
             } catch (err) {
               console.error("Gagal memuat mini quiz:", err);
@@ -194,27 +196,11 @@ export default function ModuleVideoPage() {
     init();
   }, [moduleId, authToken]);
 
-  // Fetch detail kuis aktif jika array questions belum termuat (misal hanya summary)
-  useEffect(() => {
-    if (activeQuiz && (!activeQuiz.questions || activeQuiz.questions.length === 0)) {
-      const fetchQuizDetail = async () => {
-        try {
-          const res = await fetch(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}`, {
-            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-          });
-          const json = await res.json();
-          if (json.sukses && json.data) {
-            setActiveQuiz((prev) =>
-              prev ? { ...prev, questions: json.data.questions || [] } : null
-            );
-          }
-        } catch (err) {
-          console.error("Gagal mengambil detail kuis:", err);
-        }
-      };
-      fetchQuizDetail();
-    }
-  }, [activeQuiz, authToken]);
+  // ❌ useEffect fetch detail kuis ke endpoint GET /mini-quizzes/:id sudah
+  // DIHAPUS. Endpoint itu tidak tersedia di backend dan menyebabkan error
+  // "Unexpected token '<', "<!DOCTYPE "... is not valid JSON". Data
+  // questions sekarang sudah lengkap sejak fetch pertama di atas, jadi
+  // effect ini tidak diperlukan lagi.
 
   // Evaluasi waktu pemutaran video
   const checkTimeAndTriggers = useCallback((cTime: number, dur: number) => {
@@ -600,7 +586,7 @@ export default function ModuleVideoPage() {
                         ))
                       ) : (
                         <p className="text-xs text-slate-400 text-center py-4">
-                          Memuat pertanyaan evaluasi...
+                          Kuis ini belum memiliki soal.
                         </p>
                       )}
                     </div>
@@ -610,6 +596,7 @@ export default function ModuleVideoPage() {
                       disabled={
                         isSubmitting ||
                         !activeQuiz.questions ||
+                        activeQuiz.questions.length === 0 ||
                         Object.keys(userAnswers).length < activeQuiz.questions.length
                       }
                       className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"

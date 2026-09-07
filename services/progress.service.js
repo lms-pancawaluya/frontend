@@ -1,59 +1,88 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
 
 export async function getProgress() {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/progress`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch(`${API_URL}/api/progress`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
 
-  const result = await response.json();
+    if (!response.ok) {
+      console.warn("Server merespon error saat getProgress:", response.status);
+      return [];
+    }
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal mengambil data progress");
+    const result = await response.json().catch(() => ({}));
+
+    if (!result.sukses) {
+      console.warn(result.pesan || "Gagal mengambil data progress");
+      return result.data || [];
+    }
+
+    return result.data || [];
+  } catch (error) {
+    console.warn("Gagal terhubung ke server (getProgress):", error);
+    return [];
   }
-
-  return result.data;
 }
 
 export async function startModule(moduleId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/progress/${moduleId}/start`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch(`${API_URL}/api/progress/${moduleId}/start`, {
+      method: "POST",
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
 
-  const result = await response.json();
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal memulai modul");
+    const result = await response.json().catch(() => ({}));
+
+    if (!result.sukses) {
+      throw new Error(result.pesan || "Gagal memulai modul");
+    }
+
+    return result.data;
+  } catch (error) {
+    console.warn("Gagal terhubung ke server (startModule):", error);
+    throw error;
   }
-
-  return result.data;
 }
 
 export async function completeModule(moduleId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/progress/${moduleId}/complete`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch(`${API_URL}/api/progress/${moduleId}/complete`, {
+      method: "POST",
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
 
-  const result = await response.json();
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal menyelesaikan modul");
+    const result = await response.json().catch(() => ({}));
+
+    if (!result.sukses) {
+      throw new Error(result.pesan || "Gagal menyelesaikan modul");
+    }
+
+    return result.data;
+  } catch (error) {
+    console.warn("Gagal terhubung ke server (completeModule):", error);
+    throw error;
   }
-
-  return result.data;
 }
