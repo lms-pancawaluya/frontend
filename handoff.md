@@ -32,6 +32,13 @@ Three roles, carried on the user object as `role` (lowercase in stored data: `"a
 
 ## 2. Current Goals
 
+### Notifications V1
+
+**Status: fully implemented (global notification dropdown).**
+
+- `services/notification.service.js` — `getNotifications()` (GET `/api/notifications`), `getUnreadNotificationCount()` (GET `/api/notifications/unread-count`), `markNotificationAsRead(id)` (PATCH `/api/notifications/:id/read`), `markAllNotificationsAsRead()` (PATCH `/api/notifications/read-all`).
+- `app/components/common/NotificationDropdown.tsx` — Functional global notification UI embedded in `Header.tsx`. Features read/unread state, unread count badge, empty/loading/error states, and navigation to `linkUrl`.
+
 ### Helpdesk V1
 
 **Status: fully implemented (sisi guru: daftar/buat/modal detail/2-pesan limit; sisi admin: daftar/filter/modal detail/balas/PATCH status).**

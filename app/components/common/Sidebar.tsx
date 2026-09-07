@@ -397,11 +397,8 @@ export default function Sidebar({
     if (!pathname) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pathname.startsWith("/settings")) setOpenDropdowns((p) => ({ ...p, settings: true }));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pathname.startsWith("/profile")) setOpenDropdowns((p) => ({ ...p, profile: true }));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pathname.startsWith("/modules")) setOpenDropdowns((p) => ({ ...p, modules: true }));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pathname.startsWith("/helpdesk")) setOpenDropdowns((p) => ({ ...p, helpdesk: true }));
   }, [pathname]);
 

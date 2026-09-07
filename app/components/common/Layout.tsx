@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore, Suspense } from "react";
 import { usePathname } from "next/navigation";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -102,7 +102,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           collapsed ? "w-20" : "w-64"
         }`}
       >
-        <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapsedStore} />
+        <Suspense fallback={<div className="h-full w-full" />}>
+          <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapsedStore} />
+        </Suspense>
       </aside>
 
       {/* Mobile/tablet: off-canvas drawer */}
@@ -120,7 +122,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             aria-label="Navigasi Aplikasi"
             className="absolute inset-y-0 left-0 w-72 max-w-[82%] overflow-y-auto border-r border-[var(--color-border-soft)] bg-white shadow-2xl"
           >
-            <Sidebar onNavigate={() => setDrawerOpen(false)} />
+            <Suspense fallback={<div className="h-full w-full bg-white" />}>
+              <Sidebar onNavigate={() => setDrawerOpen(false)} />
+            </Suspense>
           </div>
         </div>
       ) : null}
