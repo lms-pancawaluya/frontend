@@ -1,8 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import { API_URL, fetchApi } from "@/lib/api";
 
 // --- Registrasi & Login ---
 export async function registerUser(nama, email, password) {
-  const response = await fetch(`${API_URL}/api/auth/register`, {
+  const response = await fetchApi(`${API_URL}/api/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -20,7 +20,7 @@ export async function registerUser(nama, email, password) {
 }
 
 export async function loginUser(email, password) {
-  const response = await fetch(`${API_URL}/api/auth/login`, {
+  const response = await fetchApi(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -52,7 +52,7 @@ export function logoutUser() {
 export async function getProfile() {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}/api/auth/me`, {
+  const response = await fetchApi(`${API_URL}/api/auth/me`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -71,7 +71,7 @@ export async function getProfile() {
 
 // --- Lupa Password & Reset OTP ---
 export async function forgotPassword(email) {
-  const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+  const response = await fetchApi(`${API_URL}/api/auth/forgot-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -89,7 +89,7 @@ export async function forgotPassword(email) {
 }
 
 export async function verifyResetOtp(email, otpCode) {
-  const response = await fetch(`${API_URL}/api/auth/verify-reset-otp`, {
+  const response = await fetchApi(`${API_URL}/api/auth/verify-reset-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -107,7 +107,7 @@ export async function verifyResetOtp(email, otpCode) {
 }
 
 export async function resetPassword(email, passwordBaru) {
-  const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+  const response = await fetchApi(`${API_URL}/api/auth/reset-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

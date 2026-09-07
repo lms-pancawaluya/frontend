@@ -3,7 +3,7 @@
 // Admin-only (DELETE /api/comments/:id) and intentionally not included here so
 // the Pengajar panel cannot call it.
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 const getAuthToken = () => {
   if (typeof window !== "undefined") {
@@ -32,7 +32,7 @@ function getHeaders() {
 export async function getModuleComments(moduleId) {
   if (!moduleId) return [];
 
-  const response = await fetch(`${API_URL}/api/comments/module/${moduleId}`, {
+  const response = await fetchApi(`${API_URL}/api/comments/module/${moduleId}`, {
     method: "GET",
     headers: getHeaders(),
   });
@@ -49,7 +49,7 @@ export async function getModuleComments(moduleId) {
  * @param {PostCommentInput} input
  */
 export async function postComment({ moduleId, komentar, isi, parentId = null }) {
-  const response = await fetch(`${API_URL}/api/comments`, {
+  const response = await fetchApi(`${API_URL}/api/comments`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({
@@ -68,7 +68,7 @@ export async function postComment({ moduleId, komentar, isi, parentId = null }) 
 
 // DELETE /api/comments/:id
 export async function deleteComment(id) {
-  const response = await fetch(`${API_URL}/api/comments/${id}`, {
+  const response = await fetchApi(`${API_URL}/api/comments/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
   });

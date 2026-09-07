@@ -1,10 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 export async function getProgress() {
   const token = localStorage.getItem("token");
 
   try {
-    const response = await fetch(`${API_URL}/api/progress`, {
+    const response = await fetchApi(`${API_URL}/api/progress`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -35,7 +35,7 @@ export async function startModule(moduleId) {
   const token = localStorage.getItem("token");
 
   try {
-    const response = await fetch(`${API_URL}/api/progress/${moduleId}/start`, {
+    const response = await fetchApi(`${API_URL}/api/progress/${moduleId}/start`, {
       method: "POST",
       headers: {
         Authorization: token ? `Bearer ${token}` : "",
@@ -63,7 +63,7 @@ export async function completeModule(moduleId) {
   const token = localStorage.getItem("token");
 
   try {
-    const response = await fetch(`${API_URL}/api/progress/${moduleId}/complete`, {
+    const response = await fetchApi(`${API_URL}/api/progress/${moduleId}/complete`, {
       method: "POST",
       headers: {
         Authorization: token ? `Bearer ${token}` : "",

@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useApp } from "@/app/context/AppContext";
 import { Sun, Moon, Monitor, Globe } from "lucide-react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 type TabType = "general" | "preferences" | "security" | "notifications";
 
@@ -60,7 +59,7 @@ export default function SettingsPage() {
       }
 
       try {
-        const res = await fetch(`${API_URL}/api/users/profile/me`, {
+        const res = await fetchApi(`${API_URL}/api/users/profile/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const result = await res.json();
@@ -93,7 +92,7 @@ export default function SettingsPage() {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`${API_URL}/api/users/profile/me`, {
+      const res = await fetchApi(`${API_URL}/api/users/profile/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -132,7 +131,7 @@ export default function SettingsPage() {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`${API_URL}/api/users/change-password`, {
+      const res = await fetchApi(`${API_URL}/api/users/change-password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

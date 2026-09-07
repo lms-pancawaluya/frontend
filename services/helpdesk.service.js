@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import { API_URL, fetchApi } from "@/lib/api";
 
 // Helper untuk mengambil Token Authorization
 const getAuthToken = () => {
@@ -18,7 +18,7 @@ const getAuthToken = () => {
 export async function getMyTickets() {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/helpdesk/tickets/my`, {
+  const response = await fetchApi(`${API_URL}/api/helpdesk/tickets/my`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -39,7 +39,7 @@ export async function getMyTickets() {
 export async function createTicket({ subject, category, description }) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/helpdesk/tickets`, {
+  const response = await fetchApi(`${API_URL}/api/helpdesk/tickets`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -61,7 +61,7 @@ export async function createTicket({ subject, category, description }) {
 export async function getTicketDetail(ticketId) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/helpdesk/tickets/${ticketId}`, {
+  const response = await fetchApi(`${API_URL}/api/helpdesk/tickets/${ticketId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -82,7 +82,7 @@ export async function getTicketDetail(ticketId) {
 export async function replyToTicket(ticketId, message) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/helpdesk/tickets/${ticketId}/replies`, {
+  const response = await fetchApi(`${API_URL}/api/helpdesk/tickets/${ticketId}/replies`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -108,7 +108,7 @@ export async function getAllTickets(filters = {}) {
   if (filters.category) params.append("category", filters.category);
 
   const queryString = params.toString() ? `?${params.toString()}` : "";
-  const response = await fetch(`${API_URL}/api/helpdesk/tickets${queryString}`, {
+  const response = await fetchApi(`${API_URL}/api/helpdesk/tickets${queryString}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -129,7 +129,7 @@ export async function getAllTickets(filters = {}) {
 export async function updateTicketStatus(ticketId, status) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/helpdesk/tickets/${ticketId}/status`, {
+  const response = await fetchApi(`${API_URL}/api/helpdesk/tickets/${ticketId}/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

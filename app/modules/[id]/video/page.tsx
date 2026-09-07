@@ -4,7 +4,9 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
 
-const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
+import { API_URL, fetchApi } from "@/lib/api";
+
+const API_BASE_URL = `${API_URL}/api`;
 
 interface Question {
   id: string;
@@ -137,7 +139,7 @@ export default function ModuleVideoPage() {
           setVideoContent(vid);
 
           try {
-            const quizRes = await fetch(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
+            const quizRes = await fetchApi(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
               headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
             });
             const quizJson = await quizRes.json();
@@ -217,7 +219,7 @@ export default function ModuleVideoPage() {
     if (activeQuiz && (!activeQuiz.questions || activeQuiz.questions.length === 0)) {
       const fetchQuizDetail = async () => {
         try {
-          const res = await fetch(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}`, {
+          const res = await fetchApi(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}`, {
             headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
           });
           const json = await res.json();
@@ -314,7 +316,7 @@ export default function ModuleVideoPage() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}/attempt`, {
+      const res = await fetchApi(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}/attempt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

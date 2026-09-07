@@ -1,6 +1,6 @@
 // services/module.service.js
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 // Helper aman SSR untuk mengambil token dari localStorage
 const getStoredAuthToken = () => {
@@ -14,7 +14,7 @@ export async function getModules() {
   try {
     const token = getStoredAuthToken();
 
-    const response = await fetch(`${API_URL}/api/modules`, {
+    const response = await fetchApi(`${API_URL}/api/modules`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -50,7 +50,7 @@ export async function getModuleById(id) {
   try {
     const token = getStoredAuthToken();
 
-    const response = await fetch(`${API_URL}/api/modules/${id}`, {
+    const response = await fetchApi(`${API_URL}/api/modules/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -89,7 +89,7 @@ export async function getModuleContents(moduleId) {
   try {
     const token = getStoredAuthToken();
 
-    const response = await fetch(`${API_URL}/api/modules/${moduleId}/contents`, {
+    const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/contents`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -130,7 +130,7 @@ export async function createModule(moduleData) {
   try {
     const token = getStoredAuthToken();
 
-    const response = await fetch(`${API_URL}/api/modules`, {
+    const response = await fetchApi(`${API_URL}/api/modules`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -156,7 +156,7 @@ export async function updateModule(id, moduleData) {
   try {
     const token = getStoredAuthToken();
 
-    const response = await fetch(`${API_URL}/api/modules/${id}`, {
+    const response = await fetchApi(`${API_URL}/api/modules/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -182,7 +182,7 @@ export async function deleteModule(id) {
   try {
     const token = getStoredAuthToken();
 
-    const response = await fetch(`${API_URL}/api/modules/${id}`, {
+    const response = await fetchApi(`${API_URL}/api/modules/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

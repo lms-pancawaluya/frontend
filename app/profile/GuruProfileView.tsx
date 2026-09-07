@@ -3,6 +3,7 @@
 import { useState, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
 import { formatNipDisplay } from "@/lib/formatNip";
+import { API_URL, fetchApi } from "@/lib/api";
 
 interface ProgressItem {
   status: string;
@@ -248,7 +249,6 @@ export default function GuruProfileView(props: GuruProfileProps) {
 }
 
 function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
   const getToken = () => localStorage.getItem("token") || "";
 
   const [initialProfileState] = useState(() => getInitialProfileState(profile));
@@ -344,7 +344,7 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/users/profile/me`, {
+      const res = await fetchApi(`${API_URL}/api/users/profile/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -388,7 +388,7 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/users/profile/me/password`, {
+      const res = await fetchApi(`${API_URL}/api/users/profile/me/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -427,7 +427,7 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/upload/foto-profil`, {
+      const res = await fetchApi(`${API_URL}/api/upload/foto-profil`, {
         method: "POST",
         headers: { Authorization: `Bearer ${getToken()}` },
         body: formDataUpload,

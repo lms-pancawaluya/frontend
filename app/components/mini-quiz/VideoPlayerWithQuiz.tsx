@@ -2,7 +2,9 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 
-const API_BASE_URL = "https://backend-production-72a3.up.railway.app/api";
+import { API_URL, fetchApi } from "@/lib/api";
+
+const API_BASE_URL = `${API_URL}/api`;
 
 interface Option {
   id: string;
@@ -100,7 +102,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
 
     const fetchQuizzesAndAttempts = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/mini-quizzes/content/${contentId}`, {
+        const res = await fetchApi(`${API_BASE_URL}/mini-quizzes/content/${contentId}`, {
           headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
         });
         const json = await res.json();
@@ -115,7 +117,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
           const passedIds: string[] = [];
           for (const q of quizzes) {
             try {
-              const attRes = await fetch(`${API_BASE_URL}/mini-quizzes/${q.id}/my-attempts`, {
+              const attRes = await fetchApi(`${API_BASE_URL}/mini-quizzes/${q.id}/my-attempts`, {
                 headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
               });
               const attJson = await attRes.json();
@@ -225,7 +227,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}/attempt`, {
+      const res = await fetchApi(`${API_BASE_URL}/mini-quizzes/${activeQuiz.id}/attempt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

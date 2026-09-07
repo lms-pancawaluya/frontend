@@ -1,10 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 export async function searchGlobal(keyword) {
   const token = localStorage.getItem("token");
 
   try {
-    const response = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(keyword)}`, {
+    const response = await fetchApi(`${API_URL}/api/search?q=${encodeURIComponent(keyword)}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

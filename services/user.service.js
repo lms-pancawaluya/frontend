@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-production-72a3.up.railway.app";
+import { API_URL, fetchApi } from "@/lib/api";
 
 function getToken() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : "";
@@ -49,7 +49,7 @@ export async function getUsers(filters = {}) {
 
   const queryString = params.toString() ? `?${params.toString()}` : "";
 
-  const response = await fetch(`${API_URL}/api/users${queryString}`, {
+  const response = await fetchApi(`${API_URL}/api/users${queryString}`, {
     method: "GET",
     headers: getJsonHeaders(),
     // `GET /api/users` is backend-scoped per role (admin = global, pengajar =
@@ -64,7 +64,7 @@ export async function getUsers(filters = {}) {
 }
 
 export async function getUserById(id) {
-  const response = await fetch(`${API_URL}/api/users/${id}`, {
+  const response = await fetchApi(`${API_URL}/api/users/${id}`, {
     method: "GET",
     headers: getJsonHeaders(),
   });
@@ -74,7 +74,7 @@ export async function getUserById(id) {
 }
 
 export async function updateUser(id, userData) {
-  const response = await fetch(`${API_URL}/api/users/${id}`, {
+  const response = await fetchApi(`${API_URL}/api/users/${id}`, {
     method: "PUT",
     headers: getJsonHeaders(),
     body: JSON.stringify(userData),
@@ -85,7 +85,7 @@ export async function updateUser(id, userData) {
 }
 
 export async function resetUserPassword(id, passwordBaru) {
-  const response = await fetch(`${API_URL}/api/users/${id}/reset-password`, {
+  const response = await fetchApi(`${API_URL}/api/users/${id}/reset-password`, {
     method: "PUT",
     headers: getJsonHeaders(),
     body: JSON.stringify({ passwordBaru }),
@@ -96,7 +96,7 @@ export async function resetUserPassword(id, passwordBaru) {
 }
 
 export async function deleteUser(id) {
-  const response = await fetch(`${API_URL}/api/users/${id}`, {
+  const response = await fetchApi(`${API_URL}/api/users/${id}`, {
     method: "DELETE",
     headers: getJsonHeaders(),
   });
@@ -106,7 +106,7 @@ export async function deleteUser(id) {
 }
 
 export async function getUserProgress(userId) {
-  const response = await fetch(`${API_URL}/api/admin/users/${userId}/progress`, {
+  const response = await fetchApi(`${API_URL}/api/admin/users/${userId}/progress`, {
     method: "GET",
     headers: getJsonHeaders(),
   });
@@ -116,7 +116,7 @@ export async function getUserProgress(userId) {
 }
 
 export async function getUserEvaluations(userId) {
-  const response = await fetch(`${API_URL}/api/admin/users/${userId}/evaluations`, {
+  const response = await fetchApi(`${API_URL}/api/admin/users/${userId}/evaluations`, {
     method: "GET",
     headers: getJsonHeaders(),
   });
@@ -130,7 +130,7 @@ export async function getUserEvaluations(userId) {
 // pengajar yang login (untuk admin: seluruh guru). Otorisasi ditegakkan backend.
 
 export async function getMonitoringUserProgress(userId) {
-  const response = await fetch(`${API_URL}/api/admin-monitoring/users/${userId}/progress`, {
+  const response = await fetchApi(`${API_URL}/api/admin-monitoring/users/${userId}/progress`, {
     method: "GET",
     headers: getJsonHeaders(),
   });
@@ -144,7 +144,7 @@ export async function getMonitoringUserProgress(userId) {
 // dashboard. Setiap item: { userId, namaGuru, emailGuru, totalModul,
 // modulSelesai, persentase, moduls }.
 export async function getUsersProgressAll() {
-  const response = await fetch(`${API_URL}/api/admin-monitoring/users/progress/all`, {
+  const response = await fetchApi(`${API_URL}/api/admin-monitoring/users/progress/all`, {
     method: "GET",
     headers: getJsonHeaders(),
   });
@@ -174,7 +174,7 @@ export async function getUsersProgressAll() {
 }
 
 export async function getMonitoringUserEvaluations(userId) {
-  const response = await fetch(`${API_URL}/api/admin-monitoring/users/${userId}/evaluations`, {
+  const response = await fetchApi(`${API_URL}/api/admin-monitoring/users/${userId}/evaluations`, {
     method: "GET",
     headers: getJsonHeaders(),
   });

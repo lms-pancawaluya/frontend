@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import { API_URL, fetchApi } from "@/lib/api";
 
 // Helper untuk mengambil Token Authorization
 const getAuthToken = () => {
@@ -13,7 +13,7 @@ const getAuthToken = () => {
 export async function getChecklistItems() {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/checklist/items`, {
+  const response = await fetchApi(`${API_URL}/api/checklist/items`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -29,7 +29,7 @@ export async function getChecklistItems() {
 export async function createChecklistItem({ aspek, deskripsi, urutan }) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/checklist/items`, {
+  const response = await fetchApi(`${API_URL}/api/checklist/items`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -46,7 +46,7 @@ export async function createChecklistItem({ aspek, deskripsi, urutan }) {
 export async function updateChecklistItem(id, { aspek, deskripsi, urutan, isActive }) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/checklist/items/${id}`, {
+  const response = await fetchApi(`${API_URL}/api/checklist/items/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -63,7 +63,7 @@ export async function updateChecklistItem(id, { aspek, deskripsi, urutan, isActi
 export async function deleteChecklistItem(id) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/checklist/items/${id}`, {
+  const response = await fetchApi(`${API_URL}/api/checklist/items/${id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export async function deleteChecklistItem(id) {
 export async function getChecklistReport(days = 7) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/checklist/report?days=${days}`, {
+  const response = await fetchApi(`${API_URL}/api/checklist/report?days=${days}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -99,7 +99,7 @@ export async function uploadFotoBukti(file) {
   const formData = new FormData();
   formData.append("foto", file);
 
-  const response = await fetch(`${API_URL}/api/upload/foto-bukti`, {
+  const response = await fetchApi(`${API_URL}/api/upload/foto-bukti`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -117,7 +117,7 @@ export async function uploadFotoBukti(file) {
 export async function getTodayChecklist() {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/checklist/today`, {
+  const response = await fetchApi(`${API_URL}/api/checklist/today`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -133,7 +133,7 @@ export async function getTodayChecklist() {
 export async function submitTodayChecklist(items) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/checklist/today`, {
+  const response = await fetchApi(`${API_URL}/api/checklist/today`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -150,7 +150,7 @@ export async function submitTodayChecklist(items) {
 export async function getChecklistHistory(days = 7) {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_URL}/api/checklist/history?days=${days}`, {
+  const response = await fetchApi(`${API_URL}/api/checklist/history?days=${days}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
