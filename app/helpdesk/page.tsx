@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   getMyTickets,
   createTicket,
@@ -182,6 +183,16 @@ const TUTORIAL_ITEMS: { title: string; body: string }[] = [
 ];
 
 export default function HelpdeskPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HelpdeskContent />
+    </Suspense>
+  );
+}
+
+function HelpdeskContent() {
+  const searchParams = useSearchParams();
+
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -297,14 +308,23 @@ export default function HelpdeskPage() {
     }
   }
 
-  function handleOpenDetailModal(ticketId: string) {
+  const handleOpenDetailModal = useCallback((ticketId: string) => {
     setDetailTicketId(ticketId);
     setDetailTicket(null);
     setDetailError("");
     setReplyMessage("");
     setReplyError("");
     fetchTicketDetail(ticketId);
-  }
+  }, []);
+
+  // Buka detail tiket dari URL parameter
+  useEffect(() => {
+    const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
+    if (!ticketId) return;
+
+    const timeoutId = window.setTimeout(() => handleOpenDetailModal(ticketId), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [handleOpenDetailModal, searchParams]);
 
   function handleCloseDetailModal() {
     if (replySending) return;

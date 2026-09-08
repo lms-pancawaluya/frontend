@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getModules } from "@/services/module.service";
 import { getModuleComments, postComment } from "@/services/comment.service";
 
@@ -53,9 +53,19 @@ function formatDateTime(raw?: string): string {
 }
 
 export default function PengajarDiskusiPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PengajarDiskusiContent />
+    </Suspense>
+  );
+}
+
+function PengajarDiskusiContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const moduleIdFromUrl = searchParams.get("moduleId") || searchParams.get("module");
   const [modules, setModules] = useState<ModuleItem[]>([]);
-  const [selectedModuleId, setSelectedModuleId] = useState("");
+  const [selectedModuleId, setSelectedModuleId] = useState(moduleIdFromUrl || "");
   const [modulesLoading, setModulesLoading] = useState(true);
 
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -83,13 +93,13 @@ export default function PengajarDiskusiPage() {
         const data = await getModules();
         const list = (data as ModuleItem[]) ?? [];
         setModules(list);
-        if (list.length > 0) setSelectedModuleId(list[0].id);
+        if (list.length > 0 && !moduleIdFromUrl) setSelectedModuleId(list[0].id);
       } finally {
         setModulesLoading(false);
       }
     }
     fetchModules();
-  }, [router]);
+  }, [moduleIdFromUrl, router]);
 
   useEffect(() => {
     if (!selectedModuleId) return;

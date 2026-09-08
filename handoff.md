@@ -37,7 +37,8 @@ Three roles, carried on the user object as `role` (lowercase in stored data: `"a
 **Status: fully implemented (global notification dropdown).**
 
 - `services/notification.service.js` — `getNotifications()` (GET `/api/notifications`), `getUnreadNotificationCount()` (GET `/api/notifications/unread-count`), `markNotificationAsRead(id)` (PATCH `/api/notifications/:id/read`), `markAllNotificationsAsRead()` (PATCH `/api/notifications/read-all`).
-- `app/components/common/NotificationDropdown.tsx` — Functional global notification UI embedded in `Header.tsx`. Features read/unread state, unread count badge, empty/loading/error states, and navigation to `linkUrl`.
+- `app/components/common/NotificationDropdown.tsx` — Functional global notification UI embedded in `Header.tsx`. Features read/unread state, unread count badge, empty/loading/error states, and navigation through `lib/notification-navigation.ts`.
+- `lib/notification-navigation.ts` — Central resolver for verified notification navigation: `NEW_MODULE` keeps `/modules/:moduleId`; `NEW_HELPDESK_TICKET` and `HELPDESK_REPLY` resolve `/helpdesk/:ticketId` to the existing `/helpdesk?ticketId=...` flow for Guru/Pengajar or `/admin/helpdesk?ticketId=...` for Admin. Invalid/unsupported destinations are ignored after mark-as-read. `NEW_COMMENT` and `COMMENT_REPLY` remain pending BE clarification because their `contentId` cannot safely select the existing module-scoped discussion flow.
 
 ### Helpdesk V1
 

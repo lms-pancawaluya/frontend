@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   getAllTickets,
@@ -144,7 +144,16 @@ const statusOptions = [
 ];
 
 export default function AdminHelpdeskPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminHelpdeskContent />
+    </Suspense>
+  );
+}
+
+function AdminHelpdeskContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // State utama list tiket
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -236,7 +245,7 @@ export default function AdminHelpdeskPage() {
     }
   }, [detailTicket?.replies]);
 
-  function handleOpenDetailModal(ticketId: string) {
+  const handleOpenDetailModal = useCallback((ticketId: string) => {
     setDetailTicketId(ticketId);
     setDetailTicket(null);
     setDetailError("");
@@ -244,7 +253,16 @@ export default function AdminHelpdeskPage() {
     setReplyError("");
     setStatusUpdateError("");
     fetchTicketDetail(ticketId);
-  }
+  }, []);
+
+  // Buka detail tiket dari URL parameter
+  useEffect(() => {
+    const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
+    if (!ticketId) return;
+
+    const timeoutId = window.setTimeout(() => handleOpenDetailModal(ticketId), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [handleOpenDetailModal, searchParams]);
 
   function handleCloseDetailModal() {
     if (replySending || statusUpdating) return;
