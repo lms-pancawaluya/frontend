@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   getAllTickets,
@@ -144,7 +144,16 @@ const statusOptions = [
 ];
 
 export default function AdminHelpdeskPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminHelpdeskContent />
+    </Suspense>
+  );
+}
+
+function AdminHelpdeskContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // State utama list tiket
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -169,6 +178,14 @@ export default function AdminHelpdeskPage() {
   const [successMsg, setSuccessMsg] = useState("");
 
   const conversationEndRef = useRef<HTMLDivElement>(null);
+
+  // Buka detail tiket dari URL parameter
+  useEffect(() => {
+    const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
+    if (ticketId) {
+      setDetailTicketId(ticketId);
+    }
+  }, [searchParams]);
 
   // Role guard
   useEffect(() => {

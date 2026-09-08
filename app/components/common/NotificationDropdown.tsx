@@ -86,9 +86,12 @@ export default function NotificationDropdown() {
 
       await markNotificationAsRead(id);
 
-      if (linkUrl) {
+      if (linkUrl && linkUrl.trim() !== '') {
         setIsOpen(false);
-        router.push(linkUrl);
+        const targetUrl = linkUrl.startsWith('http') || linkUrl.startsWith('/')
+          ? linkUrl
+          : `/${linkUrl}`;
+        router.push(targetUrl);
       }
     } catch (err) {
       console.warn("Failed to mark as read:", err);

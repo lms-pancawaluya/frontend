@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   getMyTickets,
   createTicket,
@@ -182,6 +183,16 @@ const TUTORIAL_ITEMS: { title: string; body: string }[] = [
 ];
 
 export default function HelpdeskPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HelpdeskContent />
+    </Suspense>
+  );
+}
+
+function HelpdeskContent() {
+  const searchParams = useSearchParams();
+
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -208,6 +219,14 @@ export default function HelpdeskPage() {
 
   // Quick Tutorial: indeks item yang sedang terbuka (bisa lebih dari satu).
   const [openTutorials, setOpenTutorials] = useState<number[]>([]);
+
+  // Buka detail tiket dari URL parameter
+  useEffect(() => {
+    const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
+    if (ticketId) {
+      setDetailTicketId(ticketId);
+    }
+  }, [searchParams]);
 
   function toggleTutorial(index: number) {
     setOpenTutorials((prev) =>

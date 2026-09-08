@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getModules } from "@/services/module.service";
 import { getModuleComments, postComment } from "@/services/comment.service";
 
@@ -53,7 +53,16 @@ function formatDateTime(raw?: string): string {
 }
 
 export default function PengajarDiskusiPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PengajarDiskusiContent />
+    </Suspense>
+  );
+}
+
+function PengajarDiskusiContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [modules, setModules] = useState<ModuleItem[]>([]);
   const [selectedModuleId, setSelectedModuleId] = useState("");
   const [modulesLoading, setModulesLoading] = useState(true);
@@ -65,6 +74,14 @@ export default function PengajarDiskusiPage() {
   const [newComment, setNewComment] = useState("");
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState("");
+
+  // Set selectedModuleId dari URL parameter jika ada
+  useEffect(() => {
+    const moduleId = searchParams.get("moduleId") || searchParams.get("module");
+    if (moduleId) {
+      setSelectedModuleId(moduleId);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
