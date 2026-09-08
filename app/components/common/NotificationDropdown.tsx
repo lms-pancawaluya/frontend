@@ -9,6 +9,7 @@ import {
   markAllNotificationsAsRead,
 } from "@/services/notification.service";
 import { Bell, CheckCircle2, MessageSquare, Info, FileText, Loader2, AlertCircle } from "lucide-react";
+import { resolveNotificationDestination } from "@/lib/notification-navigation";
 
 interface NotificationItem {
   id: string;
@@ -76,7 +77,7 @@ export default function NotificationDropdown() {
     }
   };
 
-  async function handleMarkAsRead(id: string, linkUrl?: string) {
+  async function handleMarkAsRead(id: string, type: string, linkUrl?: string) {
     try {
       // Optimistic update
       setNotifications((prev) =>
@@ -86,11 +87,23 @@ export default function NotificationDropdown() {
 
       await markNotificationAsRead(id);
 
-      if (linkUrl && linkUrl.trim() !== '') {
+      const user = localStorage.getItem("user");
+      let role: string | null = null;
+      if (user) {
+        try {
+          role = JSON.parse(user).role ?? null;
+        } catch {
+          role = null;
+        }
+      }
+
+      const targetUrl = resolveNotificationDestination({
+        type,
+        linkUrl,
+        role,
+      });
+      if (targetUrl) {
         setIsOpen(false);
-        const targetUrl = linkUrl.startsWith('http') || linkUrl.startsWith('/')
-          ? linkUrl
-          : `/${linkUrl}`;
         router.push(targetUrl);
       }
     } catch (err) {
@@ -200,7 +213,7 @@ export default function NotificationDropdown() {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    onClick={() => handleMarkAsRead(notification.id, notification.linkUrl)}
+                    onClick={() => handleMarkAsRead(notification.id, notification.type, notification.linkUrl)}
                     className={`flex items-start gap-3 p-4 hover:bg-slate-50 transition cursor-pointer ${
                       !notification.isRead ? "bg-blue-50/30" : ""
                     }`}

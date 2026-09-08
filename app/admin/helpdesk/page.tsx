@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -179,14 +179,6 @@ function AdminHelpdeskContent() {
 
   const conversationEndRef = useRef<HTMLDivElement>(null);
 
-  // Buka detail tiket dari URL parameter
-  useEffect(() => {
-    const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
-    if (ticketId) {
-      setDetailTicketId(ticketId);
-    }
-  }, [searchParams]);
-
   // Role guard
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -253,7 +245,7 @@ function AdminHelpdeskContent() {
     }
   }, [detailTicket?.replies]);
 
-  function handleOpenDetailModal(ticketId: string) {
+  const handleOpenDetailModal = useCallback((ticketId: string) => {
     setDetailTicketId(ticketId);
     setDetailTicket(null);
     setDetailError("");
@@ -261,7 +253,13 @@ function AdminHelpdeskContent() {
     setReplyError("");
     setStatusUpdateError("");
     fetchTicketDetail(ticketId);
-  }
+  }, []);
+
+  // Buka detail tiket dari URL parameter
+  useEffect(() => {
+    const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
+    if (ticketId) handleOpenDetailModal(ticketId);
+  }, [handleOpenDetailModal, searchParams]);
 
   function handleCloseDetailModal() {
     if (replySending || statusUpdating) return;

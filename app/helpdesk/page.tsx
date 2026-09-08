@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   getMyTickets,
@@ -220,14 +220,6 @@ function HelpdeskContent() {
   // Quick Tutorial: indeks item yang sedang terbuka (bisa lebih dari satu).
   const [openTutorials, setOpenTutorials] = useState<number[]>([]);
 
-  // Buka detail tiket dari URL parameter
-  useEffect(() => {
-    const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
-    if (ticketId) {
-      setDetailTicketId(ticketId);
-    }
-  }, [searchParams]);
-
   function toggleTutorial(index: number) {
     setOpenTutorials((prev) =>
       prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
@@ -316,14 +308,20 @@ function HelpdeskContent() {
     }
   }
 
-  function handleOpenDetailModal(ticketId: string) {
+  const handleOpenDetailModal = useCallback((ticketId: string) => {
     setDetailTicketId(ticketId);
     setDetailTicket(null);
     setDetailError("");
     setReplyMessage("");
     setReplyError("");
     fetchTicketDetail(ticketId);
-  }
+  }, []);
+
+  // Buka detail tiket dari URL parameter
+  useEffect(() => {
+    const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
+    if (ticketId) handleOpenDetailModal(ticketId);
+  }, [handleOpenDetailModal, searchParams]);
 
   function handleCloseDetailModal() {
     if (replySending) return;
