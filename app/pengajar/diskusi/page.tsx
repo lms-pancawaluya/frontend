@@ -63,8 +63,9 @@ export default function PengajarDiskusiPage() {
 function PengajarDiskusiContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const moduleIdFromUrl = searchParams.get("moduleId") || searchParams.get("module");
   const [modules, setModules] = useState<ModuleItem[]>([]);
-  const [selectedModuleId, setSelectedModuleId] = useState("");
+  const [selectedModuleId, setSelectedModuleId] = useState(moduleIdFromUrl || "");
   const [modulesLoading, setModulesLoading] = useState(true);
 
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -74,14 +75,6 @@ function PengajarDiskusiContent() {
   const [newComment, setNewComment] = useState("");
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState("");
-
-  // Set selectedModuleId dari URL parameter jika ada
-  useEffect(() => {
-    const moduleId = searchParams.get("moduleId") || searchParams.get("module");
-    if (moduleId) {
-      setSelectedModuleId(moduleId);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -100,13 +93,13 @@ function PengajarDiskusiContent() {
         const data = await getModules();
         const list = (data as ModuleItem[]) ?? [];
         setModules(list);
-        if (list.length > 0) setSelectedModuleId(list[0].id);
+        if (list.length > 0 && !moduleIdFromUrl) setSelectedModuleId(list[0].id);
       } finally {
         setModulesLoading(false);
       }
     }
     fetchModules();
-  }, [router]);
+  }, [moduleIdFromUrl, router]);
 
   useEffect(() => {
     if (!selectedModuleId) return;

@@ -258,7 +258,10 @@ function AdminHelpdeskContent() {
   // Buka detail tiket dari URL parameter
   useEffect(() => {
     const ticketId = searchParams.get("ticketId") || searchParams.get("ticket");
-    if (ticketId) handleOpenDetailModal(ticketId);
+    if (!ticketId) return;
+
+    const timeoutId = window.setTimeout(() => handleOpenDetailModal(ticketId), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [handleOpenDetailModal, searchParams]);
 
   function handleCloseDetailModal() {
