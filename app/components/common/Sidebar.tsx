@@ -232,6 +232,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
         title: t("Manajemen Sistem", "System Management"),
         items: [
           { label: t("Kelola Modul Pembelajaran", "Manage Learning Modules"), href: "/admin/modules", icon: ICONS.modules, id: "admin-modules" },
+          { label: t("Kelola Course", "Manage Courses"), href: "/admin/courses", icon: ICONS.document, id: "admin-courses" },
           { label: t("Kelola Akun Guru", "Manage Teacher Accounts"), href: "/admin/users", icon: ICONS.users, id: "admin-users" },
           { label: t("Kelola Item Checklist", "Manage Checklist Items"), href: "/admin/checklist", icon: ICONS.checklist, id: "admin-checklist" },
         ],
