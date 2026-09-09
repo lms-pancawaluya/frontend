@@ -5,8 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, updateModule, getModuleContents } from "@/services/module.service";
 import { deleteContent, updateContent } from "@/services/content.service";
+import { getCourseModulePermissions } from "@/lib/rbac";
 
-const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer"];
+const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
 
 interface ContentItem {
   id: string;
@@ -28,6 +29,7 @@ export default function EditModulePage() {
     urutan: 1,
   });
 
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
@@ -47,6 +49,34 @@ export default function EditModulePage() {
   });
 
   useEffect(() => {
+    async function checkAccess() {
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+
+    if (!token || !userData) {
+      router.push("/login");
+      return;
+    }
+
+    const currentUser = JSON.parse(userData);
+    const perms = getCourseModulePermissions(currentUser?.role);
+
+    // Guru read-only tidak boleh mengakses halaman edit modul.
+    if (!perms.canEdit) {
+      router.push(`/admin/modules/${id}`);
+      return;
+    }
+
+    await Promise.resolve();
+    setCheckingAccess(false);
+    }
+
+    checkAccess();
+  }, [router, id]);
+
+  useEffect(() => {
+    if (checkingAccess) return;
+
     async function loadData() {
       try {
         const [moduleData, contentsData] = await Promise.all([
@@ -74,7 +104,7 @@ export default function EditModulePage() {
     }
 
     loadData();
-  }, [id]);
+  }, [id, checkingAccess]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -177,7 +207,7 @@ export default function EditModulePage() {
     }
   }
 
-  if (loadingData) {
+  if (checkingAccess || loadingData) {
     return (
       <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6">
         <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">

@@ -3,40 +3,22 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getEvaluationDetail } from "@/services/evaluation.service";
+import {
+  getModuleEvaluations,
+  getEvaluationDetail,
+  submitEvaluation,
+} from "@/services/evaluation.service";
+import {
+  isPreTest,
+  isPostTest,
+  type EvaluationSummary,
+  type EvaluationDetailData,
+  type SubmitAnswerItem,
+  type SubmitEvaluationResult,
+} from "@/types/evaluation";
 
-interface EvaluationOption {
-  id?: string;
-  value?: string;
-  key?: string;
-  teksOpsi?: string;
-  text?: string;
-  label?: string;
-  optionText?: string;
-  jawaban?: string;
-}
-
-type EvaluationOptionItem = string | EvaluationOption;
-
-interface EvaluationQuestion {
-  id?: string;
-  question?: string;
-  pertanyaan?: string;
-  teks?: string;
-  content?: string;
-  prompt?: string;
-  options?: EvaluationOptionItem[];
-  pilihan?: EvaluationOptionItem[];
-  optionsList?: EvaluationOptionItem[];
-  opsi?: EvaluationOptionItem[];
-}
-
-interface EvaluationDetail {
-  title?: string;
-  judul?: string;
-  questions?: EvaluationQuestion[];
-  soal?: EvaluationQuestion[];
-  items?: EvaluationQuestion[];
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export default function EvaluationDetailPage() {
@@ -46,19 +28,36 @@ export default function EvaluationDetailPage() {
   const moduleId = params.id as string;
   const evaluationId = params.evaluationId as string;
 
-  const [evaluation, setEvaluation] = useState<EvaluationDetail | null>(null);
+  const [summary, setSummary] = useState<EvaluationSummary | null>(null);
+  const [evaluation, setEvaluation] = useState<EvaluationDetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<SubmitEvaluationResult | null>(null);
 
   useEffect(() => {
     async function fetchEvaluation() {
+      setLoading(true);
+      setLoadError(null);
       try {
-        setLoading(true);
-        const data = await getEvaluationDetail(moduleId, evaluationId);
-        setEvaluation((data?.data || data) as EvaluationDetail);
+        // Ambil daftar evaluasi (untuk tahu `tipe`, passingScore, maxAttempts milik
+        // evaluationId ini) sekaligus detail soal-nya secara paralel.
+        const [list, detail] = await Promise.all([
+          getModuleEvaluations(moduleId) as Promise<EvaluationSummary[]>,
+          getEvaluationDetail(moduleId, evaluationId) as Promise<EvaluationDetailData>,
+        ]);
+
+        const currentSummary = Array.isArray(list)
+          ? list.find((e) => e.id === evaluationId) || null
+          : null;
+
+        setSummary(currentSummary);
+        setEvaluation(detail);
       } catch (err) {
-        console.error("Gagal mengambil data evaluasi:", err);
+        setLoadError(getErrorMessage(err, "Gagal mengambil data evaluasi."));
       } finally {
         setLoading(false);
       }
@@ -69,7 +68,17 @@ export default function EvaluationDetailPage() {
     }
   }, [moduleId, evaluationId]);
 
-  // Toggle/unselect jawaban jika opsi yang sama diklik kembali
+  const questionsList = evaluation?.questions || [];
+  const tipe = summary?.tipe ?? evaluation?.tipe;
+  const passingScore = summary?.passingScore ?? evaluation?.passingScore ?? 0;
+  const preTest = isPreTest(tipe);
+  const postTest = isPostTest(tipe);
+
+  const answeredCount = Object.keys(answers).length;
+  const totalQuestions = questionsList.length;
+  const progressPercentage =
+    totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+
   const handleOptionSelect = (questionId: string, optionId: string) => {
     setAnswers((prev) => {
       const updated = { ...prev };
@@ -82,14 +91,6 @@ export default function EvaluationDetailPage() {
     });
   };
 
-  const questionsList =
-    evaluation?.questions || evaluation?.soal || evaluation?.items || [];
-
-  const answeredCount = Object.keys(answers).length;
-  const totalQuestions = questionsList.length;
-  const progressPercentage =
-    totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-
   const handleSubmit = async () => {
     if (answeredCount < totalQuestions) {
       const confirmSubmit = confirm(
@@ -98,19 +99,31 @@ export default function EvaluationDetailPage() {
       if (!confirmSubmit) return;
     }
 
-    try {
-      setIsSubmitting(true);
-      console.log("Jawaban terkirim:", answers);
+    const payload: SubmitAnswerItem[] = Object.entries(answers).map(
+      ([questionId, jawaban]) => ({ questionId, jawaban })
+    );
 
-      alert("Jawaban evaluasi berhasil dikirim!");
-      // Navigasi bersih tanpa spasi ekstra di URL
-      router.push(`/modules/${moduleId}`);
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      const submitResult = (await submitEvaluation(
+        moduleId,
+        evaluationId,
+        payload
+      )) as SubmitEvaluationResult;
+
+      setResult(submitResult);
     } catch (err) {
-      console.error("Gagal mengirim jawaban:", err);
-      alert("Terjadi kesalahan saat mengirim jawaban.");
+      setSubmitError(getErrorMessage(err, "Gagal mengirim jawaban evaluasi."));
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleRetry = () => {
+    setResult(null);
+    setAnswers({});
+    setSubmitError(null);
   };
 
   if (loading) {
@@ -118,6 +131,16 @@ export default function EvaluationDetailPage() {
       <div className="flex flex-col justify-center items-center min-h-[60vh] gap-3">
         <div className="w-10 h-10 border-4 border-[var(--color-biru-muda)] border-t-transparent rounded-full animate-spin"></div>
         <p className="text-[var(--color-navy)] font-medium text-sm">Memuat soal evaluasi...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm inline-block">
+          {loadError}
+        </div>
       </div>
     );
   }
@@ -130,155 +153,206 @@ export default function EvaluationDetailPage() {
           href={`/modules/${moduleId}`}
           className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-accent)] hover:text-[var(--color-navy)] mb-4 transition-colors"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
           Kembali ke Modul
         </Link>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[var(--color-border-soft)] shadow-sm">
           <div>
-            <span className="inline-block px-3 py-1 bg-[var(--color-pale)] text-[var(--color-accent)] text-xs font-semibold rounded-full mb-2">
-              Evaluasi Modul
+            <span
+              className={`inline-block px-3 py-1 text-xs font-semibold rounded-full mb-2 ${
+                preTest
+                  ? "bg-sky-50 text-sky-700"
+                  : postTest
+                  ? "bg-amber-50 text-amber-700"
+                  : "bg-[var(--color-pale)] text-[var(--color-accent)]"
+              }`}
+            >
+              {preTest ? "Pre-Test" : postTest ? "Post-Test" : "Evaluasi Modul"}
             </span>
             <h1 className="text-2xl font-bold text-[var(--color-navy)]">
-              {evaluation?.title || evaluation?.judul || "Evaluasi Pembelajaran"}
+              {evaluation?.judul || summary?.judul || "Evaluasi Pembelajaran"}
             </h1>
+            {postTest && passingScore > 0 && (
+              <p className="text-xs text-slate-500 mt-1">
+                Nilai minimal kelulusan: <span className="font-semibold">{passingScore}%</span>
+                {summary?.maxAttempts ? ` · Maks. ${summary.maxAttempts}x percobaan` : ""}
+              </p>
+            )}
           </div>
 
-          {/* Indikator Progres Pengerjaan */}
-          <div className="bg-[var(--color-pale)]/50 p-4 rounded-xl border border-[var(--color-border-soft)] min-w-[220px]">
-            <div className="flex justify-between text-xs font-semibold text-[var(--color-navy)] mb-1.5">
-              <span>Progres Pengerjaan</span>
-              <span>{progressPercentage}%</span>
+          {!result && (
+            <div className="bg-[var(--color-pale)]/50 p-4 rounded-xl border border-[var(--color-border-soft)] min-w-[220px]">
+              <div className="flex justify-between text-xs font-semibold text-[var(--color-navy)] mb-1.5">
+                <span>Progres Pengerjaan</span>
+                <span>{progressPercentage}%</span>
+              </div>
+              <div className="w-full bg-white h-2 rounded-full overflow-hidden border border-[var(--color-border-soft)]">
+                <div
+                  className="bg-[var(--color-biru-muda)] h-full transition-all duration-300"
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
+              </div>
+              <p className="text-[11px] text-[var(--color-accent)] mt-1.5 text-right font-medium">
+                {answeredCount} dari {totalQuestions} soal terjawab
+              </p>
             </div>
-            <div className="w-full bg-white h-2 rounded-full overflow-hidden border border-[var(--color-border-soft)]">
-              <div
-                className="bg-[var(--color-biru-muda)] h-full transition-all duration-300"
-                style={{ width: `${progressPercentage}%` }}
-              ></div>
-            </div>
-            <p className="text-[11px] text-[var(--color-accent)] mt-1.5 text-right font-medium">
-              {answeredCount} dari {totalQuestions} soal terjawab
-            </p>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Daftar Soal */}
-      {questionsList.length > 0 ? (
+      {/* Hasil Evaluasi (setelah submit) */}
+      {result ? (
+        <div className="p-8 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm text-center space-y-5">
+          <div
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border ${
+              result.isLolos
+                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                : "bg-rose-50 border-rose-200 text-rose-700"
+            }`}
+          >
+            {result.isLolos ? (
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Hasil {preTest ? "Pre-Test" : postTest ? "Post-Test" : "Evaluasi"}
+            </span>
+            <h2 className="text-2xl font-bold text-slate-900">Capaian Skor: {result.skor}%</h2>
+
+            {preTest && (
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
+                Pre-Test tidak memiliki nilai gugur — materi pembelajaran modul ini sekarang
+                sudah terbuka untuk Anda pelajari.
+              </p>
+            )}
+
+            {postTest && result.isLolos && (
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
+                Selamat! Anda telah memenuhi nilai minimal kelulusan ({result.passingScore ?? passingScore}%).
+                Modul ini kini berstatus <span className="font-semibold">selesai</span>.
+              </p>
+            )}
+
+            {postTest && !result.isLolos && !result.mustRepeat && (
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
+                Skor Anda belum mencapai nilai minimal kelulusan ({result.passingScore ?? passingScore}%).
+                Silakan pelajari kembali materi lalu coba lagi.
+              </p>
+            )}
+
+            {postTest && !result.isLolos && result.mustRepeat && (
+              <p className="text-xs sm:text-sm text-rose-600 max-w-md mx-auto leading-relaxed pt-1 font-medium">
+                Anda sudah gagal 3 kali percobaan Post-Test. Status modul ini direset ke
+                &quot;belum dimulai&quot; — Anda perlu mengulang modul ini dari awal (termasuk
+                Pre-Test dan materi pembelajaran).
+              </p>
+            )}
+          </div>
+
+          {result.isLolos ? (
+            <button
+              onClick={() => router.push(`/modules/${moduleId}`)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
+            >
+              <span>{preTest ? "Lanjut ke Materi Pembelajaran" : "Kembali ke Daftar Modul"}</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+          ) : result.mustRepeat ? (
+            <button
+              onClick={() => router.push(`/modules/${moduleId}`)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
+            >
+              Kembali ke Awal Modul
+            </button>
+          ) : (
+            <button
+              onClick={handleRetry}
+              className="w-full sm:w-auto px-8 py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
+            >
+              Coba Lagi Post-Test
+            </button>
+          )}
+        </div>
+      ) : questionsList.length > 0 ? (
         <div className="space-y-6">
-          {questionsList.map((q, index) => {
-            const questionId = q.id || `q-${index}`;
-            const questionText =
-              q.question || q.pertanyaan || q.teks || q.content || q.prompt || "";
-            const optionsList =
-              q.options || q.pilihan || q.optionsList || q.opsi || [];
+          {submitError && (
+            <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm">
+              {submitError}
+            </div>
+          )}
 
-            return (
-              <div
-                key={questionId}
-                className="p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm"
-              >
-                {/* Header Pertanyaan */}
-                <div className="flex items-start gap-3 mb-5">
-                  <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--color-pale)] text-[var(--color-navy)] font-bold text-sm border border-[var(--color-border-soft)]">
-                    {index + 1}
-                  </span>
-                  <p className="text-base font-semibold text-[var(--color-navy)] pt-0.5 leading-relaxed">
-                    {questionText}
-                  </p>
-                </div>
+          {questionsList.map((q, index) => (
+            <div
+              key={q.id}
+              className="p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm"
+            >
+              <div className="flex items-start gap-3 mb-5">
+                <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--color-pale)] text-[var(--color-navy)] font-bold text-sm border border-[var(--color-border-soft)]">
+                  {index + 1}
+                </span>
+                <p className="text-base font-semibold text-[var(--color-navy)] pt-0.5 leading-relaxed">
+                  {q.pertanyaan}
+                </p>
+              </div>
 
-                {/* Pilihan Jawaban */}
-                <div className="space-y-3 pl-0 md:pl-10">
-                  {optionsList.map((opt, optIdx) => {
-                    const isStringOption = typeof opt === "string";
-                    const optionId = isStringOption
-                      ? opt
-                      : opt.id || opt.value || opt.key || `opt-${optIdx}`;
+              <div className="space-y-3 pl-0 md:pl-10">
+                {(q.options || []).map((opt, optIdx) => {
+                  const optionLetter = String.fromCharCode(65 + optIdx);
+                  const isSelected = answers[q.id] === opt.id;
 
-                    const optionLabel = isStringOption
-                      ? opt
-                      : opt.teksOpsi ||
-                        opt.text ||
-                        opt.label ||
-                        opt.optionText ||
-                        opt.jawaban ||
-                        "";
-
-                    const optionLetter = String.fromCharCode(65 + optIdx);
-                    const isSelected = answers[questionId] === optionId;
-
-                    return (
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => handleOptionSelect(q.id, opt.id)}
+                      className={`group flex items-center gap-3.5 p-4 rounded-xl border cursor-pointer select-none transition-all ${
+                        isSelected
+                          ? "bg-[var(--color-pale)] border-[var(--color-accent)] text-[var(--color-navy)] shadow-sm ring-1 ring-[var(--color-accent)]"
+                          : "bg-white border-[var(--color-border-soft)] hover:border-[var(--color-accent)] hover:bg-[var(--color-pale)]/30 text-slate-700"
+                      }`}
+                    >
                       <div
-                        key={optionId}
-                        onClick={() => handleOptionSelect(questionId, optionId)}
-                        className={`group flex items-center gap-3.5 p-4 rounded-xl border cursor-pointer select-none transition-all ${
+                        className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg font-bold text-xs transition-colors ${
                           isSelected
-                            ? "bg-[var(--color-pale)] border-[var(--color-accent)] text-[var(--color-navy)] shadow-sm ring-1 ring-[var(--color-accent)]"
-                            : "bg-white border-[var(--color-border-soft)] hover:border-[var(--color-accent)] hover:bg-[var(--color-pale)]/30 text-slate-700"
+                            ? "bg-[var(--color-accent)] text-white"
+                            : "bg-[var(--color-pale)] text-[var(--color-navy)] group-hover:bg-[var(--color-border-soft)]"
                         }`}
                       >
-                        {/* Badge Abjad (A, B, C, D) */}
-                        <div
-                          className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg font-bold text-xs transition-colors ${
-                            isSelected
-                              ? "bg-[var(--color-accent)] text-white"
-                              : "bg-[var(--color-pale)] text-[var(--color-navy)] group-hover:bg-[var(--color-border-soft)]"
-                          }`}
-                        >
-                          {optionLetter}
-                        </div>
-
-                        {/* Teks Opsi */}
-                        <span className="text-sm font-medium leading-normal flex-1">
-                          {optionLabel}
-                        </span>
-
-                        {/* Status Checkmark */}
-                        <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white"
-                              : "border-[var(--color-border-soft)] bg-white"
-                          }`}
-                        >
-                          {isSelected && (
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="3"
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          )}
-                        </div>
+                        {optionLetter}
                       </div>
-                    );
-                  })}
-                </div>
+                      <span className="text-sm font-medium leading-normal flex-1">{opt.teksOpsi}</span>
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white"
+                            : "border-[var(--color-border-soft)] bg-white"
+                        }`}
+                      >
+                        {isSelected && (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
 
-          {/* Action Bar / Tombol Kirim */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm mt-8">
             <p className="text-xs text-[var(--color-accent)] text-center sm:text-left font-medium">
               Pastikan seluruh soal telah terjawab sebelum mengirim evaluasi.

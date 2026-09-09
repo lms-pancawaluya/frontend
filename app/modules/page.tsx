@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getModules } from "@/services/module.service";
+import { getCourses } from "@/services/course.service";
+import type { Course } from "@/types/course";
 
-interface Module {
+interface ModuleCard {
   id: string;
   code: string;
   title: string;
   description: string;
-  category: "Cageur" | "Bageur" | "Bener" | "Singer" | "Pinter";
+  category: "Cageur" | "Bageur" | "Bener" | "Singer" | "Pinter" | "Umum";
   progress: number; // 0 - 100
   isLocked: boolean;
   totalContents: number;
@@ -25,8 +27,9 @@ interface ModuleApiItem {
   title?: string;
   deskripsi?: string;
   description?: string;
-  kategori?: Module["category"];
-  category?: Module["category"];
+  kategori?: ModuleCard["category"];
+  category?: ModuleCard["category"];
+  aspekPancawaluya?: string;
   progress?: number;
   isLocked?: boolean;
   totalContents?: number;
@@ -38,139 +41,202 @@ interface ModuleApiItem {
   };
 }
 
-// Mock Data Fallback Pancawaluya dengan ID Modul Utama yang benar
-const FALLBACK_MODULE_DATA: Module[] = [
+interface CourseWithModules extends Course {
+  modules: ModuleCard[];
+}
+
+const BADGE_COLORS: Record<string, string> = {
+  cageur: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  bageur: "bg-blue-100 text-blue-800 border-blue-200",
+  bener: "bg-amber-100 text-amber-800 border-amber-200",
+  singer: "bg-rose-100 text-rose-800 border-rose-200",
+  pinter: "bg-purple-100 text-purple-800 border-purple-200",
+  umum: "bg-slate-100 text-slate-700 border-slate-200",
+};
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+/** Mapping fleksibel dari bentuk respons API (module.service) ke bentuk kartu UI. */
+function mapApiModules(apiData: ModuleApiItem[]): ModuleCard[] {
+  return apiData.map((item, idx) => {
+    const rawCategory =
+      item.kategori || item.category || item.aspekPancawaluya || "Cageur";
+    const categoryKey = String(rawCategory).toLowerCase();
+
+    return {
+      id: item.id,
+      code: item.code || `Modul ${idx + 1}`,
+      title: item.judul || item.title || "Modul Pembelajaran",
+      description: item.deskripsi || item.description || "Deskripsi modul pembelajaran.",
+      category: capitalize(categoryKey) as ModuleCard["category"],
+      progress: item.progress ?? 0,
+      isLocked: item.isLocked ?? false,
+      totalContents: item.totalContents || item._count?.contents || 0,
+      totalQuizzes: item.totalQuizzes || 0,
+      durationMinutes: item.durationMinutes || 30,
+      badgeColor: item.badgeColor || BADGE_COLORS[categoryKey] || BADGE_COLORS.umum,
+    };
+  });
+}
+
+// Fallback lokal (dipakai kalau API course/module tidak tersedia)
+const FALLBACK_COURSES: CourseWithModules[] = [
   {
-    id: "33a743f8-8856-47d9-a784-2e513b6663c4", // ✅ Fixed: Menggunakan Module ID
-    code: "Modul 1",
-    title: "Cageur - Sehat Fisik & Mental",
-    description:
-      "Membahas pembentukan kesamaptaan fisik dan kesehatan mental peserta didik agar energi tersalurkan ke aktivitas positif.",
-    category: "Cageur",
-    progress: 45,
-    isLocked: false,
-    totalContents: 2,
-    totalQuizzes: 1,
-    durationMinutes: 30,
-    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  },
-  {
-    id: "2",
-    code: "Modul 2",
-    title: "Bageur - Akhlak Mulia & Empati",
-    description:
-      "Pengembangan karakter berbudi pekerti luhur, saling menghargai, dan menumbuhkan kepedulian sosial di lingkungan sekolah.",
-    category: "Bageur",
-    progress: 0,
-    isLocked: false,
-    totalContents: 3,
-    totalQuizzes: 1,
-    durationMinutes: 45,
-    badgeColor: "bg-blue-100 text-blue-800 border-blue-200",
-  },
-  {
-    id: "3",
-    code: "Modul 3",
-    title: "Bener - Integritas & Kejujuran",
-    description:
-      "Menanamkan nilai-nilai kebenaran, kejujuran akademik, serta kepatuhan terhadap norma hukum dan tata tertib.",
-    category: "Bener",
-    progress: 0,
-    isLocked: true,
-    totalContents: 2,
-    totalQuizzes: 1,
-    durationMinutes: 40,
-    badgeColor: "bg-amber-100 text-amber-800 border-amber-200",
-  },
-  {
-    id: "4",
-    code: "Modul 4",
-    title: "Singer - Tanggap & Proaktif",
-    description:
-      "Melatih kepekaan terhadap perubahan zaman, krisis sosial, dan kemampuan mengambil inisiatif dalam penyelesaian masalah.",
-    category: "Singer",
-    progress: 0,
-    isLocked: true,
-    totalContents: 4,
-    totalQuizzes: 2,
-    durationMinutes: 50,
-    badgeColor: "bg-purple-100 text-purple-800 border-purple-200",
-  },
-  {
-    id: "5",
-    code: "Modul 5",
-    title: "Pinter - Kecerdasan & Inovasi",
-    description:
-      "Penguasaan ilmu pengetahuan, pemikiran kritis, serta kreativitas berbasis teknologi untuk masa depan.",
-    category: "Pinter",
-    progress: 0,
-    isLocked: true,
-    totalContents: 3,
-    totalQuizzes: 1,
-    durationMinutes: 60,
-    badgeColor: "bg-rose-100 text-rose-800 border-rose-200",
+    id: "fallback-course-1",
+    judul: "Pancawaluya Dasar",
+    deskripsi: "Program pembinaan karakter dasar Pancawaluya untuk guru dan pendidik.",
+    mode: "online",
+    hasCertificate: false,
+    progressPercentage: 9,
+    totalModules: 5,
+    modules: [
+      {
+        id: "33a743f8-8856-47d9-a784-2e513b6663c4",
+        code: "Modul 1",
+        title: "Cageur - Sehat Fisik & Mental",
+        description:
+          "Membahas pembentukan kesamaptaan fisik dan kesehatan mental peserta didik agar energi tersalurkan ke aktivitas positif.",
+        category: "Cageur",
+        progress: 45,
+        isLocked: false,
+        totalContents: 2,
+        totalQuizzes: 1,
+        durationMinutes: 30,
+        badgeColor: BADGE_COLORS.cageur,
+      },
+      {
+        id: "2",
+        code: "Modul 2",
+        title: "Bageur - Akhlak Mulia & Empati",
+        description:
+          "Pengembangan karakter berbudi pekerti luhur, saling menghargai, dan menumbuhkan kepedulian sosial di lingkungan sekolah.",
+        category: "Bageur",
+        progress: 0,
+        isLocked: false,
+        totalContents: 3,
+        totalQuizzes: 1,
+        durationMinutes: 45,
+        badgeColor: BADGE_COLORS.bageur,
+      },
+      {
+        id: "3",
+        code: "Modul 3",
+        title: "Bener - Integritas & Kejujuran",
+        description:
+          "Menanamkan nilai-nilai kebenaran, kejujuran akademik, serta kepatuhan terhadap norma hukum dan tata tertib.",
+        category: "Bener",
+        progress: 0,
+        isLocked: true,
+        totalContents: 2,
+        totalQuizzes: 1,
+        durationMinutes: 40,
+        badgeColor: BADGE_COLORS.bener,
+      },
+      {
+        id: "4",
+        code: "Modul 4",
+        title: "Singer - Tanggap & Proaktif",
+        description:
+          "Melatih kepekaan terhadap perubahan zaman, krisis sosial, dan kemampuan mengambil inisiatif dalam penyelesaian masalah.",
+        category: "Singer",
+        progress: 0,
+        isLocked: true,
+        totalContents: 4,
+        totalQuizzes: 2,
+        durationMinutes: 50,
+        badgeColor: BADGE_COLORS.singer,
+      },
+      {
+        id: "5",
+        code: "Modul 5",
+        title: "Pinter - Kecerdasan & Inovasi",
+        description:
+          "Penguasaan ilmu pengetahuan, pemikiran kritis, serta kreativitas berbasis teknologi untuk masa depan.",
+        category: "Pinter",
+        progress: 0,
+        isLocked: true,
+        totalContents: 3,
+        totalQuizzes: 1,
+        durationMinutes: 60,
+        badgeColor: BADGE_COLORS.pinter,
+      },
+    ],
   },
 ];
 
 export default function ModulesPage() {
-  const [modules, setModules] = useState<Module[]>(FALLBACK_MODULE_DATA);
+  const [courses, setCourses] = useState<CourseWithModules[]>(FALLBACK_COURSES);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"semua" | "proses" | "selesai">("semua");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sync data modul dari backend API jika tersedia
+  // Sync data course + modul dari backend API jika tersedia
   useEffect(() => {
-    async function fetchModulesData() {
+    async function fetchData() {
       setIsLoading(true);
       try {
-        const apiData = await getModules();
-        if (Array.isArray(apiData) && apiData.length > 0) {
-          // Map data dari API agar kompatibel dengan interface UI
-          const mappedModules: Module[] = apiData.map((item: ModuleApiItem, idx: number) => ({
-            id: item.id, // Selalu mengambil ID Modul
-            code: item.code || `Modul ${idx + 1}`,
-            title: item.judul || item.title || "Modul Pembelajaran",
-            description: item.deskripsi || item.description || "Deskripsi modul pembelajaran.",
-            category: item.kategori || item.category || "Cageur",
-            progress: item.progress ?? (idx === 0 ? 45 : 0),
-            isLocked: item.isLocked ?? idx > 1,
-            totalContents: item.totalContents || item._count?.contents || 2,
-            totalQuizzes: item.totalQuizzes || 1,
-            durationMinutes: item.durationMinutes || 30,
-            badgeColor:
-              item.badgeColor ||
-              (idx % 5 === 0
-                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                : idx % 5 === 1
-                ? "bg-blue-100 text-blue-800 border-blue-200"
-                : idx % 5 === 2
-                ? "bg-amber-100 text-amber-800 border-amber-200"
-                : idx % 5 === 3
-                ? "bg-purple-100 text-purple-800 border-purple-200"
-                : "bg-rose-100 text-rose-800 border-rose-200"),
-          }));
-          setModules(mappedModules);
+        const courseList = await getCourses();
+
+        if (Array.isArray(courseList) && courseList.length > 0) {
+          const withModules = await Promise.all(
+            courseList.map(async (course) => {
+              const rawModules = await getModules(course.id);
+              const modules = Array.isArray(rawModules) ? mapApiModules(rawModules) : [];
+              return { ...course, modules } as CourseWithModules;
+            })
+          );
+          setCourses(withModules);
         }
       } catch (err) {
-        console.warn("Gagal memuat modul dari API, menggunakan data fallback lokal.", err);
+        console.warn("Gagal memuat course dari API, menggunakan data fallback lokal.", err);
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchModulesData();
+    fetchData();
   }, []);
 
-  // Filter modul berdasarkan pencarian & tab
-  const filteredModules = modules.filter((m) => {
-    const matchesSearch =
-      m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    if (activeTab === "proses") return matchesSearch && m.progress > 0 && m.progress < 100;
-    if (activeTab === "selesai") return matchesSearch && m.progress === 100;
-    return matchesSearch;
-  });
+  function moduleMatchesTab(m: ModuleCard): boolean {
+    if (activeTab === "proses") return m.progress > 0 && m.progress < 100;
+    if (activeTab === "selesai") return m.progress === 100;
+    return true;
+  }
+
+  function moduleMatchesSearch(m: ModuleCard): boolean {
+    if (!normalizedQuery) return true;
+    return (
+      m.title.toLowerCase().includes(normalizedQuery) ||
+      m.description.toLowerCase().includes(normalizedQuery)
+    );
+  }
+
+  function courseMatchesSearch(course: CourseWithModules): boolean {
+    if (!normalizedQuery) return true;
+    return (
+      course.judul.toLowerCase().includes(normalizedQuery) ||
+      (course.deskripsi || "").toLowerCase().includes(normalizedQuery)
+    );
+  }
+
+  // Course tampil kalau course-nya sendiri cocok pencarian, ATAU minimal satu modul di
+  // dalamnya cocok. Modul yang ditampilkan di dalam card difilter oleh tab + pencarian.
+  const visibleCourses = courses
+    .map((course) => {
+      const visibleModules = course.modules.filter(
+        (m) => moduleMatchesTab(m) && (courseMatchesSearch(course) || moduleMatchesSearch(m))
+      );
+      return { course, visibleModules };
+    })
+    .filter(({ course, visibleModules }) => courseMatchesSearch(course) || visibleModules.length > 0);
+
+  const allModules = courses.flatMap((c) => c.modules);
+  const totalModules = allModules.length;
+  const totalCompleted = allModules.filter((m) => m.progress === 100).length;
 
   return (
     <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden">
@@ -220,13 +286,13 @@ export default function ModulesPage() {
           {/* STATS OVERVIEW */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-white/15 text-xs">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Total Modul</p>
-              <p className="text-xl font-extrabold mt-0.5">{modules.length} Modul</p>
+              <p className="text-white/70 font-medium">Total Course</p>
+              <p className="text-xl font-extrabold mt-0.5">{courses.length} Course</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Progres Pembelajaran</p>``
+              <p className="text-white/70 font-medium">Progres Modul</p>
               <p className="text-xl font-extrabold mt-0.5">
-                {modules.filter((m) => m.progress === 100).length} / {modules.length} Diselesaikan
+                {totalCompleted} / {totalModules} Diselesaikan
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
@@ -276,7 +342,7 @@ export default function ModulesPage() {
           <div className="relative flex-1 max-w-xs">
             <input
               type="text"
-              placeholder="Cari materi modul..."
+              placeholder="Cari course atau materi modul..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
@@ -297,171 +363,141 @@ export default function ModulesPage() {
           </div>
         </div>
 
-        {/* GRID DAFTAR MODUL */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredModules.map((item) => (
+        {/* DAFTAR COURSE (setiap card berisi modul-modul di dalamnya) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {visibleCourses.map(({ course, visibleModules }) => (
             <div
-              key={item.id}
-              className={`bg-white rounded-3xl border transition-all duration-300 flex flex-col justify-between overflow-hidden relative ${
-                item.isLocked
-                  ? "border-slate-200 bg-slate-50/50 opacity-80"
-                  : "border-slate-200/80 hover:border-emerald-500/50 hover:shadow-xl hover:-translate-y-1"
-              }`}
+              key={course.id}
+              className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col"
             >
-              {/* Header Card Modul */}
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span
-                    className={`px-3 py-1 rounded-full text-[11px] font-bold border ${item.badgeColor}`}
-                  >
-                    {item.category}
+              {/* Header Card Course */}
+              <div className="p-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-800 border border-sky-200">
+                    {course.mode === "offline" ? "Tatap Muka" : "Online"}
                   </span>
-
-                  {item.isLocked ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                      Terkunci
+                  {course.hasCertificate && (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200">
+                      Bersertifikat
                     </span>
-                  ) : item.progress === 100 ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Selesai
-                    </span>
-                  ) : (
-                    <span className="text-[11px] font-semibold text-slate-400">{item.code}</span>
                   )}
                 </div>
-
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base leading-snug hover:text-emerald-700 transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-slate-500 line-clamp-3 mt-2 leading-relaxed">
-                    {item.description}
+                <h2 className="font-bold text-slate-900 text-lg leading-snug">{course.judul}</h2>
+                {course.deskripsi && (
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed line-clamp-2">
+                    {course.deskripsi}
                   </p>
-                </div>
+                )}
 
-                {/* Metadata Modul */}
-                <div className="flex items-center gap-4 text-xs text-slate-400 pt-2 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5">
-                    <svg
-                      className="w-4 h-4 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <span>{item.totalContents} Materi</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <svg
-                      className="w-4 h-4 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span>{item.totalQuizzes} Evaluasi</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <svg
-                      className="w-4 h-4 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span>{item.durationMinutes} Mnt</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer Card & Progress Bar */}
-              <div className="p-6 pt-0 space-y-4">
-                {/* Progress Bar */}
-                <div className="space-y-1.5">
+                {/* Progress Course */}
+                <div className="mt-4 space-y-1.5">
                   <div className="flex justify-between items-center text-[11px] font-medium">
-                    <span className="text-slate-500">Progres Kelulusan</span>
-                    <span className="text-slate-800 font-bold">{item.progress}%</span>
+                    <span className="text-slate-500">
+                      Progres Course · {course.modules.length} Modul
+                    </span>
+                    <span className="text-slate-800 font-bold">
+                      {course.progressPercentage ?? 0}%
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-emerald-600 rounded-full transition-all duration-500"
-                      style={{ width: `${item.progress}%` }}
+                      style={{ width: `${course.progressPercentage ?? 0}%` }}
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Tombol Aksi - Mengarahkan ke /modules/[ModuleID] */}
-                {item.isLocked ? (
-                  <button
-                    disabled
-                    className="w-full py-3 bg-slate-100 text-slate-400 font-semibold text-xs rounded-xl cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    <span>Selesaikan Modul Sebelumnya</span>
-                  </button>
+              {/* DAFTAR MODUL DI DALAM CARD COURSE */}
+              <div className="p-4 sm:p-5 space-y-2.5 flex-1">
+                {visibleModules.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-6">
+                    {course.modules.length === 0
+                      ? "Belum ada modul pada course ini."
+                      : "Tidak ada modul yang sesuai dengan filter/pencarian."}
+                  </p>
                 ) : (
-                  <Link
-                    href={`/modules/${item.id}`}
-                    className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl transition duration-200 shadow-md shadow-emerald-700/10 flex items-center justify-center gap-2 group"
-                  >
-                    <span>{item.progress > 0 ? "Lanjutkan Belajar" : "Mulai Modul"}</span>
-                    <svg
-                      className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                      />
-                    </svg>
-                  </Link>
+                  visibleModules.map((mod) => {
+                    const rowContent = (
+                      <>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${mod.badgeColor}`}
+                            >
+                              {mod.category}
+                            </span>
+                            <span className="text-[10px] text-slate-400">{mod.code}</span>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-800 truncate">
+                            {mod.title}
+                          </p>
+                          <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-1">
+                            <span>{mod.totalContents} Materi</span>
+                            <span>{mod.totalQuizzes} Evaluasi</span>
+                            <span>{mod.durationMinutes} Mnt</span>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 flex flex-col items-end gap-1.5 pl-3">
+                          {mod.isLocked ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                />
+                              </svg>
+                              Terkunci
+                            </span>
+                          ) : mod.progress === 100 ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                              </svg>
+                              Selesai
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-700">{mod.progress}%</span>
+                          )}
+
+                          {!mod.isLocked && (
+                            <svg
+                              className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </>
+                    );
+
+                    if (mod.isLocked) {
+                      return (
+                        <div
+                          key={mod.id}
+                          className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/60 opacity-80 cursor-not-allowed"
+                        >
+                          {rowContent}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={mod.id}
+                        href={`/modules/${mod.id}`}
+                        className="group flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-100 hover:border-emerald-400 hover:shadow-sm transition-all"
+                      >
+                        {rowContent}
+                      </Link>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -469,10 +505,10 @@ export default function ModulesPage() {
         </div>
 
         {/* State Kosong jika Filter Tidak Menemukan Hasil */}
-        {!isLoading && filteredModules.length === 0 && (
+        {!isLoading && visibleCourses.length === 0 && (
           <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8">
             <p className="text-slate-500 text-sm font-medium">
-              Tidak ada modul yang sesuai dengan pencarian Anda.
+              Tidak ada course atau modul yang sesuai dengan pencarian Anda.
             </p>
           </div>
         )}
