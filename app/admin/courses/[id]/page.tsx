@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getCourseById } from "@/services/course.service";
+import Link from "next/link";
+import { deleteCourse, getCourseById } from "@/services/course.service";
 
 interface Course {
   id: string;
@@ -28,7 +29,24 @@ export default function AdminCourseDetailPage() {
   const id = params.id as string;
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+
+  async function handleDelete() {
+    if (!course || !window.confirm(`Yakin ingin menghapus course "${course.judul || "ini"}"?`)) return;
+
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteCourse(id);
+      router.push("/admin/courses");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Gagal menghapus course.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     async function loadCourse() {
@@ -59,13 +77,30 @@ export default function AdminCourseDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <button
-        type="button"
-        onClick={() => router.push("/admin/courses")}
-        className="mb-6 text-sm text-[var(--color-accent)] hover:underline"
-      >
-        ← Kembali ke daftar course
-      </button>
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => router.push("/admin/courses")}
+          className="text-sm text-[var(--color-accent)] hover:underline"
+        >
+          ← Kembali ke daftar course
+        </button>
+        <Link
+          href={`/admin/courses/${id}/edit`}
+          className="rounded-full border border-[var(--color-border-soft)] px-4 py-2 text-sm text-[var(--color-navy)] transition hover:bg-gray-50"
+        >
+          Edit Course
+        </Link>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="rounded-full border border-red-200 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:border-gray-200 disabled:text-gray-400"
+        >
+          {deleting ? "Menghapus..." : "Hapus Course"}
+        </button>
+      </div>
+      {deleteError && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{deleteError}</div>}
 
       <div className="rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-10">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">

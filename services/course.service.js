@@ -59,3 +59,23 @@ export async function createCourse(data) {
   const result = await readResult(response, "Gagal menambahkan course");
   return result.data;
 }
+
+export async function updateCourse(id, data) {
+  const response = await fetchApi(`${API_URL}/api/courses/${id}`, {
+    method: "PUT",
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  const result = await readResult(response, "Gagal memperbarui course");
+  return result.data;
+}
+
+export async function deleteCourse(id) {
+  const response = await fetchApi(`${API_URL}/api/courses/${id}`, {
+    method: "DELETE",
+    headers: getHeaders(),
+  });
+
+  return readResult(response, "Gagal menghapus course");
+}
