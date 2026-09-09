@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { deleteCourse, getCourseById } from "@/services/course.service";
+import { createModule, deleteModule, updateModule } from "@/services/module.service";
 
 interface CourseModule {
   id: string;
   judul?: string;
+  deskripsi?: string;
+  aspekPancawaluya?: string;
+  urutan?: number;
+  courseId?: string;
   isLocked?: boolean;
   status?: string;
 }
@@ -40,6 +45,16 @@ export default function AdminCourseDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [moduleForm, setModuleForm] = useState({
+    judul: "",
+    deskripsi: "",
+    aspekPancawaluya: "cageur",
+    urutan: 1,
+  });
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+  const [moduleSaving, setModuleSaving] = useState(false);
+  const [moduleDeletingId, setModuleDeletingId] = useState<string | null>(null);
+  const [moduleError, setModuleError] = useState("");
 
   async function handleDelete() {
     if (!course || !window.confirm(`Yakin ingin menghapus course "${course.judul || "ini"}"?`)) return;
@@ -53,6 +68,83 @@ export default function AdminCourseDetailPage() {
       setDeleteError(err instanceof Error ? err.message : "Gagal menghapus course.");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  function resetModuleForm() {
+    setEditingModuleId(null);
+    setModuleForm({ judul: "", deskripsi: "", aspekPancawaluya: "cageur", urutan: 1 });
+  }
+
+  function startEditModule(module: CourseModule) {
+    setEditingModuleId(module.id);
+    setModuleError("");
+    setModuleForm({
+      judul: module.judul || "",
+      deskripsi: module.deskripsi || "",
+      aspekPancawaluya: module.aspekPancawaluya || "cageur",
+      urutan: module.urutan || 1,
+    });
+  }
+
+  function handleModuleChange(
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) {
+    const { name, value } = event.target;
+    setModuleForm((previous) => ({ ...previous, [name]: name === "urutan" ? Number(value) : value }));
+  }
+
+  async function handleModuleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setModuleSaving(true);
+    setModuleError("");
+    const payload = { ...moduleForm, courseId: id };
+
+    try {
+      if (editingModuleId) {
+        const updated = await updateModule(editingModuleId, payload);
+        setCourse((previous) => previous ? {
+          ...previous,
+          modules: (previous.modules || []).map((module) =>
+            module.id === editingModuleId ? { ...module, ...payload, ...(updated || {}) } : module
+          ),
+        } : previous);
+      } else {
+        const created = await createModule(payload);
+        if (!created?.id) {
+          const refreshed = await getCourseById(id);
+          setCourse(refreshed as Course);
+        } else {
+          setCourse((previous) => previous ? {
+            ...previous,
+            modules: [...(previous.modules || []), { ...payload, ...created }],
+          } : previous);
+        }
+      }
+      resetModuleForm();
+    } catch (err) {
+      setModuleError(err instanceof Error ? err.message : "Gagal menyimpan module.");
+    } finally {
+      setModuleSaving(false);
+    }
+  }
+
+  async function handleModuleDelete(module: CourseModule) {
+    if (!window.confirm(`Yakin ingin menghapus module "${module.judul || module.id}"?`)) return;
+
+    setModuleDeletingId(module.id);
+    setModuleError("");
+    try {
+      await deleteModule(module.id);
+      setCourse((previous) => previous ? {
+        ...previous,
+        modules: (previous.modules || []).filter((item) => item.id !== module.id),
+      } : previous);
+      if (editingModuleId === module.id) resetModuleForm();
+    } catch (err) {
+      setModuleError(err instanceof Error ? err.message : "Gagal menghapus module.");
+    } finally {
+      setModuleDeletingId(null);
     }
   }
 
@@ -144,18 +236,50 @@ export default function AdminCourseDetailPage() {
       </section>
 
       <section className="mt-6 rounded-2xl border border-[var(--color-border-soft)] bg-white p-5">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-semibold text-[var(--color-navy)]">Module dalam Course</h2>
-          {course.modules && <span className="text-sm text-slate-500">{course.modules.length} module</span>}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-[var(--color-navy)]">Module dalam Course</h2>
+            {course.modules && <span className="text-sm text-slate-500">{course.modules.length} module</span>}
+          </div>
+          <button
+            type="button"
+            onClick={() => { resetModuleForm(); setModuleError(""); }}
+            className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white transition hover:opacity-90"
+          >
+            + Tambah Module
+          </button>
         </div>
+
+        {moduleError && <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{moduleError}</div>}
+
+        <form onSubmit={handleModuleSubmit} className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
+          <input name="judul" value={moduleForm.judul} onChange={handleModuleChange} placeholder="Judul module" required className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" />
+          <select name="aspekPancawaluya" value={moduleForm.aspekPancawaluya} onChange={handleModuleChange} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm capitalize">
+            {['cageur', 'bageur', 'bener', 'pinter', 'singer'].map((aspek) => <option key={aspek} value={aspek}>{aspek}</option>)}
+          </select>
+          <textarea name="deskripsi" value={moduleForm.deskripsi} onChange={handleModuleChange} placeholder="Deskripsi module" required rows={3} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm sm:col-span-2" />
+          <input name="urutan" type="number" min={1} value={moduleForm.urutan} onChange={handleModuleChange} required className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" />
+          <div className="flex items-center gap-2">
+            <button type="submit" disabled={moduleSaving} className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white disabled:bg-gray-400">{moduleSaving ? "Menyimpan..." : editingModuleId ? "Simpan Perubahan" : "Simpan Module"}</button>
+            {editingModuleId && <button type="button" onClick={resetModuleForm} className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600">Batal</button>}
+          </div>
+        </form>
+
         {!course.modules || course.modules.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">Belum ada module dalam course ini.</p>
+          <p className="mt-4 text-sm text-slate-500">Belum ada module dalam course ini.</p>
         ) : (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-4 space-y-2">
             {course.modules.map((module) => (
-              <li key={module.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                <span>{module.judul || module.id}</span>
-                <span className="text-xs text-slate-500">{module.status || (module.isLocked ? "Terkunci" : "Tersedia")}</span>
+              <li key={module.id} className="flex flex-col gap-3 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-medium">{module.judul || module.id}</p>
+                  {module.deskripsi && <p className="mt-1 line-clamp-1 text-xs text-slate-500">{module.deskripsi}</p>}
+                  <span className="text-xs text-slate-500">{module.status || (module.isLocked ? "Terkunci" : "Tersedia")}</span>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button type="button" onClick={() => startEditModule(module)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-[var(--color-navy)]">Edit</button>
+                  <button type="button" onClick={() => handleModuleDelete(module)} disabled={moduleDeletingId === module.id} className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 disabled:text-gray-400">{moduleDeletingId === module.id ? "Menghapus..." : "Hapus"}</button>
+                </div>
               </li>
             ))}
           </ul>
