@@ -5,6 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { deleteCourse, getCourseById } from "@/services/course.service";
 
+interface CourseModule {
+  id: string;
+  judul?: string;
+  isLocked?: boolean;
+  status?: string;
+}
+
 interface Course {
   id: string;
   judul?: string;
@@ -14,6 +21,7 @@ interface Course {
   lokasi?: string;
   tanggalMulai?: string;
   tanggalSelesai?: string;
+  modules?: CourseModule[];
   [key: string]: unknown;
 }
 
@@ -124,7 +132,23 @@ export default function AdminCourseDetailPage() {
         </div>
       </div>
 
-      <p className="mt-6 text-sm text-slate-500">Pengelolaan module dalam course belum tersedia pada tahap ini.</p>
+      {course.modules ? (
+        <div className="mt-6 rounded-2xl border border-[var(--color-border-soft)] bg-white p-5">
+          <h2 className="font-semibold text-[var(--color-navy)]">Module Course</h2>
+          {course.modules.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-500">Belum ada module dalam course ini.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {course.modules.map((module) => (
+                <li key={module.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                  <span>{module.judul || module.id}</span>
+                  <span className="text-xs text-slate-500">{module.status || (module.isLocked ? "Terkunci" : "Tersedia")}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

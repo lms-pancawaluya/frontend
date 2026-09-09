@@ -61,8 +61,30 @@ export async function getCourseById(id) {
     headers: getHeaders(),
   });
 
-  const result = await readResult(response, "Gagal mengambil detail course");
-  return result.data;
+  let result = null;
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
+
+  if (!response.ok || result?.sukses === false) {
+    throw new Error(result?.pesan || result?.message || "Gagal mengambil detail course");
+  }
+
+  const data = result?.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    if (data.data && typeof data.data === "object" && !Array.isArray(data.data)) {
+      return data.data;
+    }
+    return data;
+  }
+
+  if (result && typeof result === "object" && (result.id || result.judul)) {
+    return result;
+  }
+
+  throw new Error("Format detail course dari API tidak sesuai.");
 }
 
 export async function createCourse(data) {
