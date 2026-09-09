@@ -35,8 +35,24 @@ export async function getCourses(mode) {
     headers: getHeaders(),
   });
 
-  const result = await readResult(response, "Gagal mengambil daftar course");
-  return result.data;
+  let result = null;
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
+
+  if (!response.ok || result?.sukses === false) {
+    throw new Error(result?.pesan || result?.message || "Gagal mengambil daftar course");
+  }
+
+  if (Array.isArray(result)) return result;
+
+  const data = result?.data;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+
+  throw new Error("Format daftar course dari API tidak sesuai.");
 }
 
 export async function getCourseById(id) {
