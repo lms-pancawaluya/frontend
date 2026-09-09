@@ -10,11 +10,12 @@ const getStoredAuthToken = () => {
   return "";
 };
 
-export async function getModules() {
+export async function getModules(courseId) {
   try {
     const token = getStoredAuthToken();
+    const query = courseId ? `?${new URLSearchParams({ courseId }).toString()}` : "";
 
-    const response = await fetchApi(`${API_URL}/api/modules`, {
+    const response = await fetchApi(`${API_URL}/api/modules${query}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
