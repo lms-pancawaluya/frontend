@@ -111,44 +111,56 @@ export default function AdminCourseDetailPage() {
       {deleteError && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{deleteError}</div>}
 
       <div className="rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-10">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-          <div>
-            <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold uppercase text-emerald-300">{course.mode || "Course"}</span>
-            <h1 className="mt-4 text-2xl font-extrabold tracking-tight sm:text-3xl">{course.judul || "Tanpa judul"}</h1>
+        <div>
+          <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold uppercase text-emerald-300">{course.mode || "Course"}</span>
+          <h1 className="mt-4 text-2xl font-extrabold tracking-tight sm:text-3xl">{course.judul || "Tanpa judul"}</h1>
+        </div>
+
+        <div className="mt-6 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-xl bg-white/10 p-3">
+            <p className="text-xs text-slate-400">Mode</p>
+            <p className="mt-1 font-medium capitalize">{course.mode || "—"}</p>
           </div>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs">{course.hasCertificate ? "Dengan sertifikat" : "Tanpa sertifikat"}</span>
-        </div>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-300">{course.deskripsi || "Tidak ada deskripsi."}</p>
-      </div>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Lokasi</p>
-          <p className="mt-2 text-sm text-slate-800">{course.lokasi || "—"}</p>
-        </div>
-        <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Periode</p>
-          <p className="mt-2 text-sm text-slate-800">{formatDate(course.tanggalMulai)} — {formatDate(course.tanggalSelesai)}</p>
-        </div>
-      </div>
-
-      {course.modules ? (
-        <div className="mt-6 rounded-2xl border border-[var(--color-border-soft)] bg-white p-5">
-          <h2 className="font-semibold text-[var(--color-navy)]">Module Course</h2>
-          {course.modules.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-500">Belum ada module dalam course ini.</p>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {course.modules.map((module) => (
-                <li key={module.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                  <span>{module.judul || module.id}</span>
-                  <span className="text-xs text-slate-500">{module.status || (module.isLocked ? "Terkunci" : "Tersedia")}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="rounded-xl bg-white/10 p-3">
+            <p className="text-xs text-slate-400">Sertifikat</p>
+            <p className="mt-1 font-medium">{course.hasCertificate ? "Tersedia" : "Tidak tersedia"}</p>
+          </div>
+          <div className="rounded-xl bg-white/10 p-3">
+            <p className="text-xs text-slate-400">Periode</p>
+            <p className="mt-1 font-medium">{formatDate(course.tanggalMulai)} — {formatDate(course.tanggalSelesai)}</p>
+          </div>
+          {course.mode?.toLowerCase() === "offline" && (
+            <div className="rounded-xl bg-white/10 p-3 sm:col-span-2 lg:col-span-3">
+              <p className="text-xs text-slate-400">Lokasi</p>
+              <p className="mt-1 font-medium">{course.lokasi || "—"}</p>
+            </div>
           )}
         </div>
-      ) : null}
+      </div>
+
+      <section className="mt-6 rounded-2xl border border-[var(--color-border-soft)] bg-white p-5">
+        <h2 className="font-semibold text-[var(--color-navy)]">Tentang Course</h2>
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{course.deskripsi || "Tidak ada deskripsi."}</p>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-[var(--color-border-soft)] bg-white p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-semibold text-[var(--color-navy)]">Module dalam Course</h2>
+          {course.modules && <span className="text-sm text-slate-500">{course.modules.length} module</span>}
+        </div>
+        {!course.modules || course.modules.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-500">Belum ada module dalam course ini.</p>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {course.modules.map((module) => (
+              <li key={module.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <span>{module.judul || module.id}</span>
+                <span className="text-xs text-slate-500">{module.status || (module.isLocked ? "Terkunci" : "Tersedia")}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
