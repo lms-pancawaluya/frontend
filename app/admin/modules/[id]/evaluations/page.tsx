@@ -23,9 +23,9 @@ export default function ModuleEvaluationsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [evaluationType, setEvaluationType] = useState<"pre_test" | "post_test">("pre_test");
-  const [passingScore, setPassingScore] = useState(80);
-  const [maxAttempts, setMaxAttempts] = useState(3);
+  const evaluationType = "pre_test" as const;
+  const passingScore = 80;
+  const maxAttempts = 3;
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {

@@ -395,7 +395,7 @@ export default function AdminModuleDetailPage() {
     catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal menghapus Pertanyaan Interaktif." })); }
   }
 
-  async function handleReplySubmit(e: React.FormEvent) {
+  async function handleReplySubmit() {
     if (!replyTo?.id || !replyText.trim()) return;
 
     setBusyCommentId(replyTo.id);
