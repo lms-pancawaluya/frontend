@@ -481,7 +481,7 @@ export default function AdminModuleDetailPage() {
                           </p>
                         </div>
                        )}
-                       {editingContentId !== content.id && <div className="flex gap-2 mt-4"><button type="button" onClick={() => startContentEdit(content)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg">Edit</button><button type="button" onClick={() => handleContentDelete(content)} disabled={contentBusy} className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60">Hapus</button></div>}
+                        {editingContentId !== content.id && <div className="flex flex-wrap gap-2 mt-4"><button type="button" onClick={() => startContentEdit(content)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg">Edit</button><button type="button" onClick={() => handleContentDelete(content)} disabled={contentBusy} className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60">Hapus</button>{content.tipe === "video" && <Link href={`/admin/modules/${id}/quiz/${content.id}`} className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg">Kelola Pertanyaan Interaktif</Link>}</div>}
                        {contentMessage && editingContentId === null && <p className="text-xs text-red-600 mt-2">{contentMessage}</p>}
                      </div>
                    </div>
@@ -653,11 +653,12 @@ export default function AdminModuleDetailPage() {
             </Link>
             {contents.some((c) => c.tipe === "video") && (
               <Link
-                href={`/admin/modules/${module.id}/quiz/${contents.find((c) => c.tipe === "video")!.id}`}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
-              >
-                Kelola Quiz
-              </Link>
+                 href={`/admin/modules/${module.id}/quiz/${contents.find((c) => c.tipe === "video")!.id}`}
+                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
+               >
+                 Pertanyaan Interaktif
+               </Link>
+
             )}
           </div>
         </div>
