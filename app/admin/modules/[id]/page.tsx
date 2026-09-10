@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
 import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
+import { deleteContent, updateContent } from "@/services/content.service";
 
 interface ModuleDetail {
   id: string;
@@ -140,6 +141,10 @@ export default function AdminModuleDetailPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [contentData, setContentData] = useState({ judul: "", tipe: "teks", konten: "", urutan: 1 });
+  const [contentMessage, setContentMessage] = useState("");
+  const [contentBusy, setContentBusy] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -245,6 +250,42 @@ export default function AdminModuleDetailPage() {
       });
     } finally {
       setSavingModule(false);
+    }
+  }
+
+  function startContentEdit(content: ContentItem) {
+    setEditingContentId(content.id);
+    setContentMessage("");
+    setContentData({ judul: content.judul, tipe: content.tipe, konten: content.konten, urutan: content.urutan });
+  }
+
+  async function handleContentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingContentId) return;
+    setContentBusy(true);
+    setContentMessage("");
+    try {
+      const updated = await updateContent(editingContentId, contentData);
+      setContents((prev) => prev.map((content) => content.id === editingContentId ? { ...content, ...contentData, ...updated } : content));
+      setEditingContentId(null);
+      setContentMessage("Learning Material berhasil diperbarui.");
+    } catch (err) {
+      setContentMessage(err instanceof Error ? err.message : "Gagal memperbarui Learning Material.");
+    } finally {
+      setContentBusy(false);
+    }
+  }
+
+  async function handleContentDelete(content: ContentItem) {
+    if (!window.confirm(`Yakin ingin menghapus konten "${content.judul}"?`)) return;
+    setContentBusy(true);
+    try {
+      await deleteContent(content.id);
+      setContents((prev) => prev.filter((item) => item.id !== content.id));
+    } catch (err) {
+      setContentMessage(err instanceof Error ? err.message : "Gagal menghapus Learning Material.");
+    } finally {
+      setContentBusy(false);
     }
   }
 
@@ -387,8 +428,16 @@ export default function AdminModuleDetailPage() {
                       </span>
                     </div>
 
-                    <div className="p-5 sm:p-6">
-                      {content.tipe === "video" ? (
+                     <div className="p-5 sm:p-6">
+                       {editingContentId === content.id ? (
+                         <form onSubmit={handleContentSubmit} className="space-y-4">
+                           <input value={contentData.judul} onChange={(e) => setContentData({ ...contentData, judul: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required />
+                           <select value={contentData.tipe} onChange={(e) => setContentData({ ...contentData, tipe: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"><option value="teks">Text</option><option value="video">Video</option></select>
+                           <textarea value={contentData.konten} onChange={(e) => setContentData({ ...contentData, konten: e.target.value })} rows={contentData.tipe === "video" ? 2 : 6} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required />
+                           <input type="number" min={1} value={contentData.urutan} onChange={(e) => setContentData({ ...contentData, urutan: Number(e.target.value) })} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required />
+                           <div className="flex gap-2"><button type="submit" disabled={contentBusy} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">Simpan</button><button type="button" onClick={() => setEditingContentId(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl">Batal</button></div>
+                         </form>
+                       ) : content.tipe === "video" ? (
                         <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-lg border border-slate-800 ring-1 ring-slate-900/10">
                           <iframe
                             src={getYoutubeEmbedUrl(content.konten)}
@@ -403,9 +452,12 @@ export default function AdminModuleDetailPage() {
                             {content.konten}
                           </p>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                       )}
+                       {editingContentId !== content.id && <div className="flex gap-2 mt-4"><button type="button" onClick={() => startContentEdit(content)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg">Edit</button><button type="button" onClick={() => handleContentDelete(content)} disabled={contentBusy} className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60">Hapus</button></div>}
+                       {contentMessage && editingContentId === null && <p className="text-xs text-red-600 mt-2">{contentMessage}</p>}
+                     </div>
+                   </div>
+
                 ))}
             </div>
           )}
