@@ -123,11 +123,11 @@ export async function getAllFeedbacks() {
 /**
  * Buat evaluasi baru di dalam modul
  */
-export async function createEvaluation(moduleId, judul) {
+export async function createEvaluation(moduleId, { judul, tipe, passingScore, maxAttempts }) {
   const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ judul }),
+    body: JSON.stringify({ judul, tipe, passingScore, maxAttempts }),
   });
 
   const result = await response.json();

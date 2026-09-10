@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getModuleById, getModuleContents } from "@/services/module.service";
+import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
 import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
+import { deleteContent, updateContent } from "@/services/content.service";
+import { createEvaluation, getModuleEvaluations } from "@/services/evaluation.service";
+import { addQuestion, createMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
 
 interface ModuleDetail {
   id: string;
@@ -21,6 +24,18 @@ interface ContentItem {
   konten: string;
   urutan: number;
 }
+
+interface EvaluationItem {
+  id: string;
+  judul: string;
+  tipe?: "pre_test" | "post_test" | string;
+  passingScore?: number;
+  maxAttempts?: number;
+  _count?: { questions: number };
+}
+
+interface InteractiveQuestion { id: string; pertanyaan: string; options: { id?: string; teksOpsi: string; isCorrect: boolean }[]; }
+interface InteractiveQuiz { id: string; judul: string; timestampSeconds: number; questions?: InteractiveQuestion[]; }
 
 interface CommentUser {
   id?: string;
@@ -46,13 +61,18 @@ interface ModuleComment {
   parentId?: string;
 }
 
-const aspekColor: Record<string, string> = {
-  cageur: "bg-green-100 text-green-700",
-  bageur: "bg-blue-100 text-blue-700",
-  bener: "bg-yellow-100 text-yellow-700",
-  pinter: "bg-purple-100 text-purple-700",
-  singer: "bg-red-100 text-red-700",
-};
+const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer"];
+
+function formatTimestamp(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+  return `${Math.floor(safeSeconds / 60).toString().padStart(2, "0")}:${(safeSeconds % 60).toString().padStart(2, "0")}`;
+}
+
+function parseTimestamp(value: string): number | null {
+  const match = value.match(/^(\d+):([0-5]\d)$/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
 
 function getYoutubeEmbedUrl(url: string): string {
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]+)/);
@@ -127,6 +147,35 @@ export default function AdminModuleDetailPage() {
   const [busyCommentId, setBusyCommentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    judul: "",
+    deskripsi: "",
+    aspekPancawaluya: "cageur",
+    urutan: 1,
+  });
+  const [savingModule, setSavingModule] = useState(false);
+  const [moduleMessage, setModuleMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [contentData, setContentData] = useState({ judul: "", tipe: "teks", konten: "", urutan: 1 });
+  const [contentMessage, setContentMessage] = useState("");
+  const [contentBusy, setContentBusy] = useState(false);
+  const [evaluations, setEvaluations] = useState<EvaluationItem[]>([]);
+  const [showEvaluationForm, setShowEvaluationForm] = useState(false);
+  const [evaluationTitle, setEvaluationTitle] = useState("");
+  const [evaluationType, setEvaluationType] = useState<"pre_test" | "post_test">("pre_test");
+  const [passingScore, setPassingScore] = useState(80);
+  const [maxAttempts, setMaxAttempts] = useState(3);
+  const [evaluationBusy, setEvaluationBusy] = useState(false);
+  const [evaluationMessage, setEvaluationMessage] = useState("");
+  const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null);
+  const [videoQuizzes, setVideoQuizzes] = useState<Record<string, InteractiveQuiz[]>>({});
+  const [interactiveLoading, setInteractiveLoading] = useState<string | null>(null);
+  const [interactiveError, setInteractiveError] = useState<Record<string, string>>({});
+  const [interactiveForm, setInteractiveForm] = useState<{ quizId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
+  const [checkpointForm, setCheckpointForm] = useState<{ contentId: string; judul: string; timestamp: string } | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -136,7 +185,15 @@ export default function AdminModuleDetailPage() {
           getModuleContents(id),
         ]);
         setModule(moduleData);
-        setContents(contentsData);
+        setFormData({
+          judul: moduleData.judul,
+          deskripsi: moduleData.deskripsi || "",
+          aspekPancawaluya: moduleData.aspekPancawaluya,
+          urutan: moduleData.urutan,
+        });
+         setContents(contentsData);
+         setEvaluations((await getModuleEvaluations(id)) as EvaluationItem[]);
+
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -193,8 +250,152 @@ export default function AdminModuleDetailPage() {
     );
   }
 
-  async function handleReplySubmit(e: React.FormEvent) {
+  function handleModuleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "urutan" ? Number(value) : value,
+    }));
+  }
+
+  async function handleModuleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setModuleMessage(null);
+    setSavingModule(true);
+
+    try {
+      const updatedModule = await updateModule(id, formData);
+      const nextModule = { ...module, ...formData, ...(updatedModule || {}) };
+      setModule(nextModule);
+      setFormData({
+        judul: nextModule.judul,
+        deskripsi: nextModule.deskripsi || "",
+        aspekPancawaluya: nextModule.aspekPancawaluya,
+        urutan: nextModule.urutan,
+      });
+      setModuleMessage({ type: "success", text: "Informasi modul berhasil diperbarui." });
+    } catch (err) {
+      setModuleMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Gagal memperbarui modul.",
+      });
+    } finally {
+      setSavingModule(false);
+    }
+  }
+
+  function startContentEdit(content: ContentItem) {
+    setEditingContentId(content.id);
+    setContentMessage("");
+    setContentData({ judul: content.judul, tipe: content.tipe, konten: content.konten, urutan: content.urutan });
+  }
+
+  async function handleContentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingContentId) return;
+    setContentBusy(true);
+    setContentMessage("");
+    try {
+      const updated = await updateContent(editingContentId, contentData);
+      setContents((prev) => prev.map((content) => content.id === editingContentId ? { ...content, ...contentData, ...updated } : content));
+      setEditingContentId(null);
+      setContentMessage("Learning Material berhasil diperbarui.");
+    } catch (err) {
+      setContentMessage(err instanceof Error ? err.message : "Gagal memperbarui Learning Material.");
+    } finally {
+      setContentBusy(false);
+    }
+  }
+
+  async function handleContentDelete(content: ContentItem) {
+    if (!window.confirm(`Yakin ingin menghapus konten "${content.judul}"?`)) return;
+    setContentBusy(true);
+    try {
+      await deleteContent(content.id);
+      setContents((prev) => prev.filter((item) => item.id !== content.id));
+    } catch (err) {
+      setContentMessage(err instanceof Error ? err.message : "Gagal menghapus Learning Material.");
+    } finally {
+      setContentBusy(false);
+    }
+  }
+
+  async function handleEvaluationSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setEvaluationBusy(true);
+    setEvaluationMessage("");
+    try {
+      const created = await createEvaluation(id, { judul: evaluationTitle, tipe: evaluationType, passingScore, maxAttempts });
+      setEvaluations((prev) => [...prev, created as EvaluationItem]);
+      setEvaluationTitle("");
+      setShowEvaluationForm(false);
+    } catch (err) {
+      setEvaluationMessage(err instanceof Error ? err.message : "Gagal membuat evaluasi.");
+    } finally {
+      setEvaluationBusy(false);
+    }
+  }
+
+  async function toggleInteractiveQuestions(contentId: string) {
+    if (expandedVideoId === contentId) { setExpandedVideoId(null); return; }
+    setExpandedVideoId(contentId);
+    if (videoQuizzes[contentId]) return;
+    setInteractiveLoading(contentId);
+    try { const quizzes = await getMiniQuizzesByContent(contentId); setVideoQuizzes((prev) => ({ ...prev, [contentId]: quizzes })); }
+    catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal memuat Pertanyaan Interaktif." })); }
+    finally { setInteractiveLoading(null); }
+  }
+
+  async function saveCheckpoint(e: React.FormEvent) {
+    e.preventDefault();
+    if (!checkpointForm) return;
+    const timestampSeconds = parseTimestamp(checkpointForm.timestamp);
+    if (timestampSeconds === null) {
+      setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: "Gunakan format waktu MM:SS yang valid." }));
+      return;
+    }
+    try {
+      if (!checkpointForm.judul.trim()) {
+        setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: "Nama checkpoint wajib diisi." }));
+        return;
+      }
+      const checkpoint = await createMiniQuiz(checkpointForm.contentId, { judul: checkpointForm.judul.trim(), timestampSeconds, passingScore: 80, maxAttempts: 3 });
+      setVideoQuizzes((prev) => ({ ...prev, [checkpointForm.contentId]: [...(prev[checkpointForm.contentId] || []), checkpoint] }));
+      setCheckpointForm(null);
+    } catch (err) {
+      setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: err instanceof Error ? err.message : "Gagal membuat checkpoint video." }));
+    }
+  }
+
+  async function saveInteractiveQuestion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!interactiveForm) return;
+    if (interactiveForm.options.length < 2 || interactiveForm.options.some((option) => !option.teksOpsi.trim()) || interactiveForm.options.filter((option) => option.isCorrect).length !== 1) {
+      setInteractiveError((prev) => ({ ...prev, [expandedVideoId!]: "Pertanyaan harus memiliki minimal 2 opsi terisi dan tepat 1 jawaban benar." }));
+      return;
+    }
+    const payload = { pertanyaan: interactiveForm.pertanyaan, options: interactiveForm.options };
+    const quizzes = videoQuizzes[expandedVideoId || ""] || [];
+    const quiz = quizzes.find((item) => item.id === interactiveForm.quizId);
+    if (!quiz) return;
+    try {
+      if (interactiveForm.questionId) await updateQuestion(interactiveForm.questionId, payload);
+      else await addQuestion(quiz.id, payload);
+      const refreshed = await getMiniQuizzesByContent(expandedVideoId!);
+      setVideoQuizzes((prev) => ({ ...prev, [expandedVideoId!]: refreshed }));
+      setInteractiveForm(null);
+    } catch (err) { setInteractiveError((prev) => ({ ...prev, [expandedVideoId!]: err instanceof Error ? err.message : "Gagal menyimpan Pertanyaan Interaktif." })); }
+  }
+
+  async function removeInteractiveQuestion(contentId: string, questionId: string) {
+    if (!window.confirm("Hapus Pertanyaan Interaktif ini?")) return;
+    try { await deleteQuestion(questionId); setVideoQuizzes((prev) => ({ ...prev, [contentId]: (prev[contentId] || []).map((quiz) => ({ ...quiz, questions: (quiz.questions || []).filter((question) => question.id !== questionId) })) })); }
+    catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal menghapus Pertanyaan Interaktif." })); }
+  }
+
+  async function handleReplySubmit() {
     if (!replyTo?.id || !replyText.trim()) return;
 
     setBusyCommentId(replyTo.id);
@@ -279,36 +480,76 @@ export default function AdminModuleDetailPage() {
           </div>
         </div>
 
-        {/* Informasi Modul */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-.01M13 12h-.01M13 8h-.01M5 20h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2zm7-14V4a1 1 0 00-1-1h-2a1 1 0 00-1 1v3m3 0h-1.5" />
-            </svg>
-            Informasi Modul
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/70 space-y-1">
-              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Aspek Pancawaluya</p>
-              <span
-                className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${
-                  aspekColor[module.aspekPancawaluya] || "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {module.aspekPancawaluya}
-              </span>
-            </div>
-            <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/70 space-y-1">
-              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Urutan Modul</p>
-              <p className="text-slate-800 font-medium text-sm">#{module.urutan}</p>
-            </div>
-            <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/70 space-y-1">
-              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Konten</p>
-              <p className="text-slate-800 font-medium text-sm">{contents.length} konten</p>
-            </div>
-          </div>
-        </div>
+         {/* Informasi Modul */}
+         <form onSubmit={handleModuleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+           <h2 className="text-base font-bold text-slate-900 tracking-tight">Informasi Modul</h2>
+           {moduleMessage && <div className={`text-sm px-4 py-3 rounded-xl border ${moduleMessage.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>{moduleMessage.text}</div>}
+           <div className="space-y-4">
+              <div>
+                <label htmlFor="judul" className="block text-xs font-semibold text-slate-600 mb-1">
+                  Judul Modul
+                </label>
+                <input
+                  id="judul"
+                  name="judul"
+                  value={formData.judul}
+                  onChange={handleModuleChange}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="deskripsi" className="block text-xs font-semibold text-slate-600 mb-1">
+                  Deskripsi
+                </label>
+                <textarea
+                  id="deskripsi"
+                  name="deskripsi"
+                  value={formData.deskripsi}
+                  onChange={handleModuleChange}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm resize-y"
+                  rows={4}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="aspekPancawaluya" className="block text-xs font-semibold text-slate-600 mb-1">
+                    Aspek Pancawaluya
+                  </label>
+                  <select
+                    id="aspekPancawaluya"
+                    name="aspekPancawaluya"
+                    value={formData.aspekPancawaluya}
+                    onChange={handleModuleChange}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"
+                  >
+                    {aspekOptions.map((aspek) => (
+                      <option key={aspek} value={aspek}>
+                        {aspek}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="urutan" className="block text-xs font-semibold text-slate-600 mb-1">
+                    Urutan Modul
+                  </label>
+                  <input
+                    id="urutan"
+                    type="number"
+                    name="urutan"
+                    value={formData.urutan}
+                    onChange={handleModuleChange}
+                    min={1}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                    required
+                  />
+                </div>
+              </div>
+           </div>
+           <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? "Menyimpan..." : "Simpan Perubahan"}</button></div>
+         </form>
 
         {/* Konten Pembelajaran - Kartu */}
         <div className="space-y-6">
@@ -352,8 +593,48 @@ export default function AdminModuleDetailPage() {
                       </span>
                     </div>
 
-                    <div className="p-5 sm:p-6">
-                      {content.tipe === "video" ? (
+                     <div className="p-5 sm:p-6">
+                       {editingContentId === content.id ? (
+                         <form onSubmit={handleContentSubmit} className="space-y-4">
+                           <input
+                             value={contentData.judul}
+                             onChange={(e) => setContentData({ ...contentData, judul: e.target.value })}
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                             required
+                           />
+                           <select
+                             value={contentData.tipe}
+                             onChange={(e) => setContentData({ ...contentData, tipe: e.target.value })}
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"
+                           >
+                             <option value="teks">Text</option>
+                             <option value="video">Video</option>
+                           </select>
+                           <textarea
+                             value={contentData.konten}
+                             onChange={(e) => setContentData({ ...contentData, konten: e.target.value })}
+                             rows={contentData.tipe === "video" ? 2 : 6}
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                             required
+                           />
+                           <input
+                             type="number"
+                             min={1}
+                             value={contentData.urutan}
+                             onChange={(e) => setContentData({ ...contentData, urutan: Number(e.target.value) })}
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                             required
+                           />
+                           <div className="flex gap-2">
+                             <button type="submit" disabled={contentBusy} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">
+                               Simpan
+                             </button>
+                             <button type="button" onClick={() => setEditingContentId(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl">
+                               Batal
+                             </button>
+                           </div>
+                         </form>
+                       ) : content.tipe === "video" ? (
                         <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-lg border border-slate-800 ring-1 ring-slate-900/10">
                           <iframe
                             src={getYoutubeEmbedUrl(content.konten)}
@@ -368,15 +649,280 @@ export default function AdminModuleDetailPage() {
                             {content.konten}
                           </p>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                       )}
+                        {editingContentId !== content.id && (
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            <button
+                              type="button"
+                              onClick={() => startContentEdit(content)}
+                              className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleContentDelete(content)}
+                              disabled={contentBusy}
+                              className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60"
+                            >
+                              Hapus
+                            </button>
+                            {content.tipe === "video" && (
+                              <button
+                                type="button"
+                                onClick={() => toggleInteractiveQuestions(content.id)}
+                                className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg"
+                              >
+                                {expandedVideoId === content.id ? "Tutup Pertanyaan Interaktif" : "Kelola Pertanyaan Interaktif"}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        {content.tipe === "video" && expandedVideoId === content.id && (
+                          <div className="mt-6 border-t border-slate-100 pt-6 space-y-5">
+                            <div className="space-y-2">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                <div>
+                                  <h4 className="text-base font-bold text-slate-900">Pertanyaan Interaktif</h4>
+                                  <p className="text-sm text-slate-500 mt-1">
+                                    Tambahkan checkpoint pada waktu tertentu di video untuk menampilkan pertanyaan kepada peserta.
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setCheckpointForm({ contentId: content.id, judul: "", timestamp: "" })}
+                                  className="shrink-0 text-sm font-semibold text-emerald-700 border border-emerald-200 rounded-xl px-4 py-2 hover:bg-emerald-50"
+                                >
+                                  + Tambah Checkpoint
+                                </button>
+                              </div>
+                              {checkpointForm?.contentId === content.id && (
+                                <form onSubmit={saveCheckpoint} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+                                  <h5 className="text-sm font-bold text-slate-900">Tambah Checkpoint</h5>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Checkpoint</label>
+                                    <input
+                                      value={checkpointForm.judul}
+                                      onChange={(e) => setCheckpointForm({ ...checkpointForm, judul: e.target.value })}
+                                      placeholder="Nama checkpoint"
+                                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"
+                                      required
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Video</label>
+                                    <input
+                                      value={checkpointForm.timestamp}
+                                      onChange={(e) => setCheckpointForm({ ...checkpointForm, timestamp: e.target.value })}
+                                      placeholder="MM:SS"
+                                      inputMode="numeric"
+                                      pattern="\d+:\d{2}"
+                                      aria-label="Waktu checkpoint MM:SS"
+                                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"
+                                      required
+                                    />
+                                  </div>
+                                  <div className="flex justify-end gap-2">
+                                    <button type="button" onClick={() => setCheckpointForm(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl bg-white">
+                                      Batal
+                                    </button>
+                                    <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">
+                                      Simpan Checkpoint
+                                    </button>
+                                  </div>
+                                </form>
+                              )}
+                            </div>
+                            {interactiveLoading === content.id ? (
+                              <p className="text-xs text-slate-500">Memuat...</p>
+                            ) : interactiveError[content.id] ? (
+                              <p className="text-xs text-red-600">{interactiveError[content.id]}</p>
+                            ) : (videoQuizzes[content.id] || []).length === 0 ? (
+                              <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                                Belum ada checkpoint pada video ini.
+                              </p>
+                            ) : (
+                              <div className="space-y-4">
+                                {(videoQuizzes[content.id] || []).map((quiz) => (
+                                  <div key={quiz.id} className="rounded-2xl border border-slate-200 p-5 space-y-5">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Checkpoint</p>
+                                        <h5 className="text-base font-bold text-slate-900 mt-1">{quiz.judul || "Checkpoint tanpa nama"}</h5>
+                                      </div>
+                                      <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
+                                        {formatTimestamp(quiz.timestampSeconds)}
+                                      </span>
+                                    </div>
+                                    {(quiz.questions || []).length === 0 ? (
+                                      <p className="text-sm text-slate-500">Belum ada pertanyaan pada checkpoint ini.</p>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pertanyaan Interaktif</p>
+                                        {(quiz.questions || []).map((question) => (
+                                          <div key={question.id} className="rounded-xl bg-slate-50 p-4">
+                                            <p className="text-sm font-semibold text-slate-800">{question.pertanyaan}</p>
+                                            <div className="flex gap-3 mt-3">
+                                              <button
+                                                type="button"
+                                                onClick={() => setInteractiveForm({ quizId: quiz.id, questionId: question.id, pertanyaan: question.pertanyaan, options: question.options.map(({ teksOpsi, isCorrect }) => ({ teksOpsi, isCorrect })) })}
+                                                className="text-xs font-semibold text-slate-600"
+                                              >
+                                                Edit
+                                              </button>
+                                              <button type="button" onClick={() => removeInteractiveQuestion(content.id, question.id)} className="text-xs font-semibold text-red-600">
+                                                Hapus
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => setInteractiveForm({ quizId: quiz.id, pertanyaan: "", options: [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }] })}
+                                      className="text-sm font-semibold text-emerald-700 text-right"
+                                    >
+                                      + Tambah Pertanyaan
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {interactiveForm && (
+                              <form onSubmit={saveInteractiveQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+                                <textarea
+                                  value={interactiveForm.pertanyaan}
+                                  onChange={(e) => setInteractiveForm({ ...interactiveForm, pertanyaan: e.target.value })}
+                                  className="w-full border border-slate-200 rounded-xl p-2 text-xs"
+                                  placeholder="Pertanyaan"
+                                  required
+                                />
+                                {interactiveForm.options.map((option, index) => (
+                                  <div key={index} className="flex gap-2">
+                                    <input
+                                      value={option.teksOpsi}
+                                      onChange={(e) => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => itemIndex === index ? { ...item, teksOpsi: e.target.value } : item) })}
+                                      className="flex-1 border border-slate-200 rounded-xl p-2 text-xs"
+                                      placeholder={`Opsi ${index + 1}`}
+                                      required
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === index })) })}
+                                      className={`text-xs px-2 rounded-lg ${option.isCorrect ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 text-slate-500"}`}
+                                    >
+                                      {option.isCorrect ? "Benar" : "Tandai benar"}
+                                    </button>
+                                    {interactiveForm.options.length > 2 && (
+                                      <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.filter((_, itemIndex) => itemIndex !== index) })} className="text-xs text-red-600">
+                                        Hapus
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                                <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: [...interactiveForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">
+                                  + Tambah opsi
+                                </button>
+                                <div className="flex gap-2">
+                                  <button type="submit" className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs">Simpan</button>
+                                  <button type="button" onClick={() => setInteractiveForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs">Batal</button>
+                                </div>
+                              </form>
+                            )}
+                          </div>
+                        )}
+                       {contentMessage && editingContentId === null && <p className="text-xs text-red-600 mt-2">{contentMessage}</p>}
+                     </div>
+                   </div>
+
                 ))}
             </div>
           )}
         </div>
 
-        {/* Moderasi Diskusi */}
+         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
+           <div className="flex items-center justify-between gap-3">
+             <h2 className="text-base font-bold text-slate-900">Evaluasi</h2>
+             <button type="button" onClick={() => setShowEvaluationForm((value) => !value)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">+ Buat Evaluasi</button>
+           </div>
+            {evaluationMessage && (
+              <p className="text-sm text-red-600">{evaluationMessage}</p>
+            )}
+            {showEvaluationForm && (
+              <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-3">
+                <input
+                  value={evaluationTitle}
+                  onChange={(e) => setEvaluationTitle(e.target.value)}
+                  placeholder="Judul Evaluasi"
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  required
+                />
+                <select
+                  value={evaluationType}
+                  onChange={(e) => setEvaluationType(e.target.value as "pre_test" | "post_test")}
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                >
+                  <option value="pre_test">Pre-Test</option>
+                  <option value="post_test">Post-Test</option>
+                </select>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={passingScore}
+                  onChange={(e) => setPassingScore(Number(e.target.value))}
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  aria-label="Passing Score"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  value={maxAttempts}
+                  onChange={(e) => setMaxAttempts(Number(e.target.value))}
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  aria-label="Max Attempts"
+                />
+                <button
+                  type="submit"
+                  disabled={evaluationBusy}
+                  className="px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60"
+                >
+                  {evaluationBusy ? "Membuat..." : "Simpan"}
+                </button>
+              </form>
+            )}
+            {evaluations.length === 0 ? (
+              <p className="text-sm text-slate-500">Belum ada evaluasi untuk modul ini.</p>
+            ) : (
+              <div className="space-y-3">
+                {evaluations.map((evaluation) => (
+                  <div
+                    key={evaluation.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-slate-200 rounded-2xl p-4"
+                  >
+                    <div>
+                      <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
+                        <span className="capitalize">{(evaluation.tipe || "evaluation").replace("_", "-")}</span>
+                        {evaluation._count && <span>{evaluation._count.questions} soal</span>}
+                        {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
+                        {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
+                      </div>
+                    </div>
+                    <Link
+                      href={`/admin/modules/${id}/evaluations/${evaluation.id}`}
+                      className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center"
+                    >
+                      Kelola
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+         </section>
+
+         {/* Moderasi Diskusi */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
@@ -510,35 +1056,35 @@ export default function AdminModuleDetailPage() {
         </div>
 
         {/* Area Aksi Admin */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-6">
-            <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.488c.457-.66 1.245-.904 2.054-.65A17.267 17.267 0 0115 5.5c0 1.005-.2 2.001-.606 2.933A7.5 7.5 0 0017 12.5a7.5 0 01-2 5.36l-2.744 2.744a1 1 0 01-1.415-.001l-.003-.003a1 1 0 01-.001-1.414l1.742-1.742A5.5 5.5 0 0112.5 10.5c0-1.057.094-2.103.286-3.114z" />
-            </svg>
-            Aksi Pengelolaan
-          </h2>
+         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
+           <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-6">
+             <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path
+                 strokeLinecap="round"
+                 strokeLinejoin="round"
+                 strokeWidth="2"
+                 d="M10.325 4.488c.457-.66 1.245-.904 2.054-.65A17.267 17.267 0 0115 5.5c0 1.005-.2 2.001-.606 2.933A7.5 7.5 0 0017 12.5a7.5 7.5 0 01-2 5.36l-2.744 2.744a1 1 0 01-1.415-.001l-.003-.003a1 1 0 01-.001-1.414l1.742-1.742A5.5 5.5 0 0112.5 10.5c0-1.057.094-2.103.286-3.114z"
+               />
+             </svg>
+             Aksi Pengelolaan
+           </h2>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Link
-              href={`/admin/modules/${module.id}/edit`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-2xl shadow-sm transition"
-            >
-              Edit Modul
-            </Link>
+
             <Link
               href={`/admin/modules/${module.id}/evaluations`}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
             >
               Edit Evaluasi
             </Link>
-            {contents.some((c) => c.tipe === "video") && (
-              <Link
-                href={`/admin/modules/${module.id}/quiz/${contents.find((c) => c.tipe === "video")!.id}`}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
-              >
-                Kelola Quiz
-              </Link>
-            )}
+             {contents.some((c) => c.tipe === "video") && (
+               <Link
+                 href={`/admin/modules/${module.id}/quiz/${contents.find((c) => c.tipe === "video")!.id}`}
+                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
+               >
+                 Pertanyaan Interaktif
+               </Link>
+             )}
           </div>
         </div>
       </div>

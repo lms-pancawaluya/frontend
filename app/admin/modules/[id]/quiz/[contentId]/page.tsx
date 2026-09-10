@@ -295,7 +295,7 @@ export default function AdminQuizManagementPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          Memuat Mini Quiz...
+          Memuat Pertanyaan Interaktif...
         </div>
       </div>
     );
@@ -323,7 +323,7 @@ export default function AdminQuizManagementPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900">Kelola Quiz - Konten Video</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Kelola Mini Quiz yang tersedia pada konten video ini (contentId: {contentId}).
+            Kelola Pertanyaan Interaktif yang tersedia pada konten video ini (contentId: {contentId}).
           </p>
         </div>
 
@@ -339,9 +339,9 @@ export default function AdminQuizManagementPage() {
           </div>
         )}
 
-        {/* Tombol Tambah Mini Quiz */}
+        {/* Tombol Tambah Pertanyaan Interaktif */}
         <div className="flex justify-between items-center">
-          <h2 className="text-base font-bold text-slate-900">Daftar Mini Quiz</h2>
+          <h2 className="text-base font-bold text-slate-900">Daftar Pertanyaan Interaktif</h2>
           {!showCreateForm && (
             <button
               onClick={() => {
@@ -356,10 +356,10 @@ export default function AdminQuizManagementPage() {
           )}
         </div>
 
-        {/* Form Buat Mini Quiz */}
+        {/* Form Buat Pertanyaan Interaktif */}
         {showCreateForm && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-            <h3 className="text-base font-bold text-slate-900">Buat Mini Quiz Baru</h3>
+            <h3 className="text-base font-bold text-slate-900">Buat Pertanyaan Interaktif Baru</h3>
             <form onSubmit={handleCreateQuiz} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Judul</label>
@@ -428,10 +428,10 @@ export default function AdminQuizManagementPage() {
           </div>
         )}
 
-        {/* Form Edit Mini Quiz */}
+        {/* Form Edit Pertanyaan Interaktif */}
         {editingQuiz && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-            <h3 className="text-base font-bold text-slate-900">Edit Mini Quiz: {editingQuiz.judul}</h3>
+            <h3 className="text-base font-bold text-slate-900">Edit Pertanyaan Interaktif: {editingQuiz.judul}</h3>
             <form onSubmit={handleUpdateQuiz} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Judul</label>
@@ -499,7 +499,7 @@ export default function AdminQuizManagementPage() {
           </div>
         )}
 
-        {/* Daftar Mini Quiz */}
+        {/* Daftar Pertanyaan Interaktif */}
         {quizzes.length === 0 ? (
           !showCreateForm && (
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
