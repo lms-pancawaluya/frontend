@@ -22,22 +22,17 @@ interface ModuleCard {
 
 interface ModuleApiItem {
   id: string;
-  code?: string;
+  urutan?: number;
   judul?: string;
-  title?: string;
   deskripsi?: string;
-  description?: string;
-  kategori?: ModuleCard["category"];
-  category?: ModuleCard["category"];
   aspekPancawaluya?: string;
-  progress?: number;
+  kategori?: string;
+  status?: string;
   isLocked?: boolean;
-  totalContents?: number;
-  totalQuizzes?: number;
-  durationMinutes?: number;
-  badgeColor?: string;
-  _count?: {
-    contents?: number;
+  flowStatus?: {
+    totalMaterials?: number;
+    preTest?: { available?: boolean };
+    postTest?: { available?: boolean };
   };
 }
 
@@ -49,148 +44,86 @@ const BADGE_COLORS: Record<string, string> = {
   cageur: "bg-emerald-100 text-emerald-800 border-emerald-200",
   bageur: "bg-blue-100 text-blue-800 border-blue-200",
   bener: "bg-amber-100 text-amber-800 border-amber-200",
-  singer: "bg-rose-100 text-rose-800 border-rose-200",
-  pinter: "bg-purple-100 text-purple-800 border-purple-200",
-  umum: "bg-slate-100 text-slate-700 border-slate-200",
+  singer: "bg-purple-100 text-purple-800 border-purple-200",
+  pinter: "bg-rose-100 text-rose-800 border-rose-200",
+  umum: "bg-slate-100 text-slate-800 border-slate-200",
 };
 
 function capitalize(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  if (!value) return "Umum";
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
-/** Mapping fleksibel dari bentuk respons API (module.service) ke bentuk kartu UI. */
+/** Mapping respons API (module.service) ke bentuk kartu UI sesuai instruksi BE */
 function mapApiModules(apiData: ModuleApiItem[]): ModuleCard[] {
+  if (!Array.isArray(apiData)) return [];
   return apiData.map((item, idx) => {
-    const rawCategory =
-      item.kategori || item.category || item.aspekPancawaluya || "Cageur";
+    const rawCategory = item.aspekPancawaluya || item.kategori || "umum";
     const categoryKey = String(rawCategory).toLowerCase();
 
     return {
       id: item.id,
-      code: item.code || `Modul ${idx + 1}`,
-      title: item.judul || item.title || "Modul Pembelajaran",
-      description: item.deskripsi || item.description || "Deskripsi modul pembelajaran.",
+      code: `Modul ${item.urutan ?? idx + 1}`,
+      title: item.judul || "Modul Pembelajaran",
+      description: item.deskripsi || "",
       category: capitalize(categoryKey) as ModuleCard["category"],
-      progress: item.progress ?? 0,
+      progress: item.status === "selesai" ? 100 : 0,
       isLocked: item.isLocked ?? false,
-      totalContents: item.totalContents || item._count?.contents || 0,
-      totalQuizzes: item.totalQuizzes || 0,
-      durationMinutes: item.durationMinutes || 30,
-      badgeColor: item.badgeColor || BADGE_COLORS[categoryKey] || BADGE_COLORS.umum,
+      totalContents: item.flowStatus?.totalMaterials || 0,
+      totalQuizzes:
+        (item.flowStatus?.preTest?.available ? 1 : 0) +
+        (item.flowStatus?.postTest?.available ? 1 : 0),
+      durationMinutes: 30,
+      badgeColor: BADGE_COLORS[categoryKey] || BADGE_COLORS.umum,
     };
   });
 }
 
-// Fallback lokal (dipakai kalau API course/module tidak tersedia)
-const FALLBACK_COURSES: CourseWithModules[] = [
-  {
-    id: "fallback-course-1",
-    judul: "Pancawaluya Dasar",
-    deskripsi: "Program pembinaan karakter dasar Pancawaluya untuk guru dan pendidik.",
-    mode: "online",
-    hasCertificate: false,
-    progressPercentage: 9,
-    totalModules: 5,
-    modules: [
-      {
-        id: "33a743f8-8856-47d9-a784-2e513b6663c4",
-        code: "Modul 1",
-        title: "Cageur - Sehat Fisik & Mental",
-        description:
-          "Membahas pembentukan kesamaptaan fisik dan kesehatan mental peserta didik agar energi tersalurkan ke aktivitas positif.",
-        category: "Cageur",
-        progress: 45,
-        isLocked: false,
-        totalContents: 2,
-        totalQuizzes: 1,
-        durationMinutes: 30,
-        badgeColor: BADGE_COLORS.cageur,
-      },
-      {
-        id: "2",
-        code: "Modul 2",
-        title: "Bageur - Akhlak Mulia & Empati",
-        description:
-          "Pengembangan karakter berbudi pekerti luhur, saling menghargai, dan menumbuhkan kepedulian sosial di lingkungan sekolah.",
-        category: "Bageur",
-        progress: 0,
-        isLocked: false,
-        totalContents: 3,
-        totalQuizzes: 1,
-        durationMinutes: 45,
-        badgeColor: BADGE_COLORS.bageur,
-      },
-      {
-        id: "3",
-        code: "Modul 3",
-        title: "Bener - Integritas & Kejujuran",
-        description:
-          "Menanamkan nilai-nilai kebenaran, kejujuran akademik, serta kepatuhan terhadap norma hukum dan tata tertib.",
-        category: "Bener",
-        progress: 0,
-        isLocked: true,
-        totalContents: 2,
-        totalQuizzes: 1,
-        durationMinutes: 40,
-        badgeColor: BADGE_COLORS.bener,
-      },
-      {
-        id: "4",
-        code: "Modul 4",
-        title: "Singer - Tanggap & Proaktif",
-        description:
-          "Melatih kepekaan terhadap perubahan zaman, krisis sosial, dan kemampuan mengambil inisiatif dalam penyelesaian masalah.",
-        category: "Singer",
-        progress: 0,
-        isLocked: true,
-        totalContents: 4,
-        totalQuizzes: 2,
-        durationMinutes: 50,
-        badgeColor: BADGE_COLORS.singer,
-      },
-      {
-        id: "5",
-        code: "Modul 5",
-        title: "Pinter - Kecerdasan & Inovasi",
-        description:
-          "Penguasaan ilmu pengetahuan, pemikiran kritis, serta kreativitas berbasis teknologi untuk masa depan.",
-        category: "Pinter",
-        progress: 0,
-        isLocked: true,
-        totalContents: 3,
-        totalQuizzes: 1,
-        durationMinutes: 60,
-        badgeColor: BADGE_COLORS.pinter,
-      },
-    ],
-  },
-];
+/** Helper untuk ekstrak array murni meski dibungkus { data: [...] } atau { courses: [...] } */
+function extractArray<T>(res: any): T[] {
+  if (Array.isArray(res)) return res;
+  if (res && Array.isArray(res.data)) return res.data;
+  if (res && Array.isArray(res.courses)) return res.courses;
+  if (res && Array.isArray(res.modules)) return res.modules;
+  if (res && Array.isArray(res.moduls)) return res.moduls;
+  return [];
+}
 
 export default function ModulesPage() {
-  const [courses, setCourses] = useState<CourseWithModules[]>(FALLBACK_COURSES);
+  const [courses, setCourses] = useState<CourseWithModules[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"semua" | "proses" | "selesai">("semua");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sync data course + modul dari backend API jika tersedia
+  // Sync data course + modul dari backend API murni
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const courseList = await getCourses();
+        const rawCourseList = await getCourses();
+        const courseList = extractArray<Course>(rawCourseList);
 
-        if (Array.isArray(courseList) && courseList.length > 0) {
+        if (courseList.length > 0) {
           const withModules = await Promise.all(
-            courseList.map(async (course) => {
-              const rawModules = await getModules(course.id);
-              const modules = Array.isArray(rawModules) ? mapApiModules(rawModules) : [];
+            courseList.map(async (course: any) => {
+              // Cek apakah modul sudah nempel di objek course atau perlu fetch via getModules
+              let rawModules = course.modules || course.moduls;
+              if (!rawModules || !Array.isArray(rawModules) || rawModules.length === 0) {
+                const modulesRes = await getModules(course.id);
+                rawModules = extractArray<ModuleApiItem>(modulesRes);
+              }
+
+              const modules = mapApiModules(rawModules);
               return { ...course, modules } as CourseWithModules;
             })
           );
           setCourses(withModules);
+        } else {
+          setCourses([]);
         }
       } catch (err) {
-        console.warn("Gagal memuat course dari API, menggunakan data fallback lokal.", err);
+        console.error("Gagal memuat data dari API Backend:", err);
+        setCourses([]);
       } finally {
         setIsLoading(false);
       }
@@ -218,13 +151,11 @@ export default function ModulesPage() {
   function courseMatchesSearch(course: CourseWithModules): boolean {
     if (!normalizedQuery) return true;
     return (
-      course.judul.toLowerCase().includes(normalizedQuery) ||
+      (course.judul || "").toLowerCase().includes(normalizedQuery) ||
       (course.deskripsi || "").toLowerCase().includes(normalizedQuery)
     );
   }
 
-  // Course tampil kalau course-nya sendiri cocok pencarian, ATAU minimal satu modul di
-  // dalamnya cocok. Modul yang ditampilkan di dalam card difilter oleh tab + pencarian.
   const visibleCourses = courses
     .map((course) => {
       const visibleModules = course.modules.filter(
@@ -240,35 +171,16 @@ export default function ModulesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden">
-      {/* ================= BACKGROUND DEKORATIF DISDIK JABAR ================= */}
+      {/* BACKGROUND DEKORATIF DISDIK JABAR */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-20 -left-20 w-96 h-96 bg-[#0047A5]/10 rounded-full blur-3xl" />
         <div className="absolute top-1/3 -right-20 w-80 h-80 bg-[#419AD6]/15 rounded-full blur-3xl" />
         <div className="absolute bottom-10 left-1/4 w-96 h-96 bg-[#109B51]/10 rounded-full blur-3xl" />
-
-        {/* Pattern Dots */}
-        <div className="absolute top-12 left-8 hidden lg:grid grid-cols-4 gap-2.5 opacity-20">
-          <div className="w-2 h-2 bg-[#0047A5] rounded-full" />
-          <div className="w-2 h-2 bg-[#419AD6] rounded-full" />
-          <div className="w-2 h-2 bg-[#109B51] rounded-full" />
-          <div className="w-2 h-2 bg-[#F3BF10] rounded-full" />
-        </div>
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* BANNER HEADER LMS */}
         <div className="bg-gradient-to-r from-[#0047A5] via-[#0052C2] to-[#109B51] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-          <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none hidden md:block">
-            <svg
-              className="w-96 h-full"
-              fill="currentColor"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              <polygon points="50,0 100,0 50,100 0,100" />
-            </svg>
-          </div>
-
           <div className="relative z-10 max-w-3xl space-y-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md text-amber-300 border border-white/20">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
@@ -304,7 +216,6 @@ export default function ModulesPage() {
 
         {/* KONTROL PENCARIAN & FILTER */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-          {/* Tab Filter */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
             <button
               onClick={() => setActiveTab("semua")}
@@ -338,7 +249,6 @@ export default function ModulesPage() {
             </button>
           </div>
 
-          {/* Search Bar */}
           <div className="relative flex-1 max-w-xs">
             <input
               type="text"
@@ -363,153 +273,160 @@ export default function ModulesPage() {
           </div>
         </div>
 
-        {/* DAFTAR COURSE (setiap card berisi modul-modul di dalamnya) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {visibleCourses.map(({ course, visibleModules }) => (
-            <div
-              key={course.id}
-              className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col"
-            >
-              {/* Header Card Course */}
-              <div className="p-6 pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-800 border border-sky-200">
-                    {course.mode === "offline" ? "Tatap Muka" : "Online"}
-                  </span>
-                  {course.hasCertificate && (
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200">
-                      Bersertifikat
-                    </span>
-                  )}
-                </div>
-                <h2 className="font-bold text-slate-900 text-lg leading-snug">{course.judul}</h2>
-                {course.deskripsi && (
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed line-clamp-2">
-                    {course.deskripsi}
-                  </p>
-                )}
-
-                {/* Progress Course */}
-                <div className="mt-4 space-y-1.5">
-                  <div className="flex justify-between items-center text-[11px] font-medium">
-                    <span className="text-slate-500">
-                      Progres Course · {course.modules.length} Modul
-                    </span>
-                    <span className="text-slate-800 font-bold">
-                      {course.progressPercentage ?? 0}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-600 rounded-full transition-all duration-500"
-                      style={{ width: `${course.progressPercentage ?? 0}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* DAFTAR MODUL DI DALAM CARD COURSE */}
-              <div className="p-4 sm:p-5 space-y-2.5 flex-1">
-                {visibleModules.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-6">
-                    {course.modules.length === 0
-                      ? "Belum ada modul pada course ini."
-                      : "Tidak ada modul yang sesuai dengan filter/pencarian."}
-                  </p>
-                ) : (
-                  visibleModules.map((mod) => {
-                    const rowContent = (
-                      <>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${mod.badgeColor}`}
-                            >
-                              {mod.category}
-                            </span>
-                            <span className="text-[10px] text-slate-400">{mod.code}</span>
-                          </div>
-                          <p className="text-sm font-semibold text-slate-800 truncate">
-                            {mod.title}
-                          </p>
-                          <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-1">
-                            <span>{mod.totalContents} Materi</span>
-                            <span>{mod.totalQuizzes} Evaluasi</span>
-                            <span>{mod.durationMinutes} Mnt</span>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 flex flex-col items-end gap-1.5 pl-3">
-                          {mod.isLocked ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                />
-                              </svg>
-                              Terkunci
-                            </span>
-                          ) : mod.progress === 100 ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                              </svg>
-                              Selesai
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-slate-700">{mod.progress}%</span>
-                          )}
-
-                          {!mod.isLocked && (
-                            <svg
-                              className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                          )}
-                        </div>
-                      </>
-                    );
-
-                    if (mod.isLocked) {
-                      return (
-                        <div
-                          key={mod.id}
-                          className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/60 opacity-80 cursor-not-allowed"
-                        >
-                          {rowContent}
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <Link
-                        key={mod.id}
-                        href={`/modules/${mod.id}`}
-                        className="group flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-100 hover:border-emerald-400 hover:shadow-sm transition-all"
-                      >
-                        {rowContent}
-                      </Link>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* State Kosong jika Filter Tidak Menemukan Hasil */}
-        {!isLoading && visibleCourses.length === 0 && (
+        {/* DAFTAR COURSE */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-white rounded-3xl h-64 animate-pulse p-6 border border-slate-200" />
+            ))}
+          </div>
+        ) : visibleCourses.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8">
             <p className="text-slate-500 text-sm font-medium">
-              Tidak ada course atau modul yang sesuai dengan pencarian Anda.
+              {courses.length === 0
+                ? "Belum ada course atau modul yang tersedia dari backend."
+                : "Tidak ada course atau modul yang sesuai dengan pencarian Anda."}
             </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {visibleCourses.map(({ course, visibleModules }) => (
+              <div
+                key={course.id}
+                className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col"
+              >
+                {/* Header Card Course */}
+                <div className="p-6 pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-800 border border-sky-200">
+                      {course.mode === "offline" ? "Tatap Muka" : "Online"}
+                    </span>
+                    {course.hasCertificate && (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200">
+                        Bersertifikat
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="font-bold text-slate-900 text-lg leading-snug">{course.judul}</h2>
+                  {course.deskripsi && (
+                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed line-clamp-2">
+                      {course.deskripsi}
+                    </p>
+                  )}
+
+                  {/* Progress Course */}
+                  <div className="mt-4 space-y-1.5">
+                    <div className="flex justify-between items-center text-[11px] font-medium">
+                      <span className="text-slate-500">
+                        Progres Course · {course.modules.length} Modul
+                      </span>
+                      <span className="text-slate-800 font-bold">
+                        {course.progressPercentage ?? 0}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-600 rounded-full transition-all duration-500"
+                        style={{ width: `${course.progressPercentage ?? 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* DAFTAR MODUL */}
+                <div className="p-4 sm:p-5 space-y-2.5 flex-1">
+                  {visibleModules.length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-6">
+                      {course.modules.length === 0
+                        ? "Belum ada modul pada course ini."
+                        : "Tidak ada modul yang sesuai dengan filter/pencarian."}
+                    </p>
+                  ) : (
+                    visibleModules.map((mod) => {
+                      const rowContent = (
+                        <>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${mod.badgeColor}`}
+                              >
+                                {mod.category}
+                              </span>
+                              <span className="text-[10px] text-slate-400">{mod.code}</span>
+                            </div>
+                            <p className="text-sm font-semibold text-slate-800 truncate">
+                              {mod.title}
+                            </p>
+                            <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-1">
+                              <span>{mod.totalContents} Materi</span>
+                              <span>{mod.totalQuizzes} Evaluasi</span>
+                              <span>{mod.durationMinutes} Mnt</span>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 flex flex-col items-end gap-1.5 pl-3">
+                            {mod.isLocked ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                  />
+                                </svg>
+                                Terkunci
+                              </span>
+                            ) : mod.progress === 100 ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Selesai
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-700">{mod.progress}%</span>
+                            )}
+
+                            {!mod.isLocked && (
+                              <svg
+                                className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </>
+                      );
+
+                      if (mod.isLocked) {
+                        return (
+                          <div
+                            key={mod.id}
+                            className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/60 opacity-80 cursor-not-allowed"
+                          >
+                            {rowContent}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <Link
+                          key={mod.id}
+                          href={`/modules/${mod.id}`}
+                          className="group flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-100 hover:border-emerald-400 hover:shadow-sm transition-all"
+                        >
+                          {rowContent}
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
