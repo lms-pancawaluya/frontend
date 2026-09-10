@@ -559,8 +559,188 @@ export default function AdminModuleDetailPage() {
                           </p>
                         </div>
                        )}
-                        {editingContentId !== content.id && <div className="flex flex-wrap gap-2 mt-4"><button type="button" onClick={() => startContentEdit(content)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg">Edit</button><button type="button" onClick={() => handleContentDelete(content)} disabled={contentBusy} className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60">Hapus</button>{content.tipe === "video" && <button type="button" onClick={() => toggleInteractiveQuestions(content.id)} className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg">{expandedVideoId === content.id ? "Tutup Pertanyaan Interaktif" : "Kelola Pertanyaan Interaktif"}</button>}</div>}
-                        {content.tipe === "video" && expandedVideoId === content.id && <div className="mt-6 border-t border-slate-100 pt-6 space-y-5"><div className="space-y-2"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div><h4 className="text-base font-bold text-slate-900">Pertanyaan Interaktif</h4><p className="text-sm text-slate-500 mt-1">Tambahkan checkpoint pada waktu tertentu di video untuk menampilkan pertanyaan kepada peserta.</p></div><button type="button" onClick={() => setCheckpointForm({ contentId: content.id, judul: "", timestamp: "" })} className="shrink-0 text-sm font-semibold text-emerald-700 border border-emerald-200 rounded-xl px-4 py-2 hover:bg-emerald-50">+ Tambah Checkpoint</button></div>{checkpointForm?.contentId === content.id && <form onSubmit={saveCheckpoint} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4"><h5 className="text-sm font-bold text-slate-900">Tambah Checkpoint</h5><div><label className="block text-xs font-semibold text-slate-600 mb-1">Nama Checkpoint</label><input value={checkpointForm.judul} onChange={(e) => setCheckpointForm({ ...checkpointForm, judul: e.target.value })} placeholder="Nama checkpoint" className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white" required /></div><div><label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Video</label><input value={checkpointForm.timestamp} onChange={(e) => setCheckpointForm({ ...checkpointForm, timestamp: e.target.value })} placeholder="MM:SS" inputMode="numeric" pattern="\d+:\d{2}" aria-label="Waktu checkpoint MM:SS" className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white" required /></div><div className="flex justify-end gap-2"><button type="button" onClick={() => setCheckpointForm(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl bg-white">Batal</button><button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">Simpan Checkpoint</button></div></form>}</div>{interactiveLoading === content.id ? <p className="text-xs text-slate-500">Memuat...</p> : interactiveError[content.id] ? <p className="text-xs text-red-600">{interactiveError[content.id]}</p> : (videoQuizzes[content.id] || []).length === 0 ? <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">Belum ada checkpoint pada video ini.</p> : <div className="space-y-4">{(videoQuizzes[content.id] || []).map((quiz) => <div key={quiz.id} className="rounded-2xl border border-slate-200 p-5 space-y-5"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Checkpoint</p><h5 className="text-base font-bold text-slate-900 mt-1">{quiz.judul || "Checkpoint tanpa nama"}</h5></div><span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">{formatTimestamp(quiz.timestampSeconds)}</span></div>{(quiz.questions || []).length === 0 ? <p className="text-sm text-slate-500">Belum ada pertanyaan pada checkpoint ini.</p> : <div className="space-y-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pertanyaan Interaktif</p>{(quiz.questions || []).map((question) => <div key={question.id} className="rounded-xl bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-800">{question.pertanyaan}</p><div className="flex gap-3 mt-3"><button type="button" onClick={() => setInteractiveForm({ quizId: quiz.id, questionId: question.id, pertanyaan: question.pertanyaan, options: question.options.map(({ teksOpsi, isCorrect }) => ({ teksOpsi, isCorrect })) })} className="text-xs font-semibold text-slate-600">Edit</button><button type="button" onClick={() => removeInteractiveQuestion(content.id, question.id)} className="text-xs font-semibold text-red-600">Hapus</button></div></div>)}</div>}<button type="button" onClick={() => setInteractiveForm({ quizId: quiz.id, pertanyaan: "", options: [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }] })} className="text-sm font-semibold text-emerald-700 text-right">+ Tambah Pertanyaan</button></div>)}</div>}{interactiveForm && <form onSubmit={saveInteractiveQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2"><textarea value={interactiveForm.pertanyaan} onChange={(e) => setInteractiveForm({ ...interactiveForm, pertanyaan: e.target.value })} className="w-full border border-slate-200 rounded-xl p-2 text-xs" placeholder="Pertanyaan" required />{interactiveForm.options.map((option, index) => <div key={index} className="flex gap-2"><input value={option.teksOpsi} onChange={(e) => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => itemIndex === index ? { ...item, teksOpsi: e.target.value } : item) })} className="flex-1 border border-slate-200 rounded-xl p-2 text-xs" placeholder={`Opsi ${index + 1}`} required /><button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === index })) })} className={`text-xs px-2 rounded-lg ${option.isCorrect ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 text-slate-500"}`}>{option.isCorrect ? "Benar" : "Tandai benar"}</button>{interactiveForm.options.length > 2 && <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.filter((_, itemIndex) => itemIndex !== index) })} className="text-xs text-red-600">Hapus</button>}</div>)}<button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: [...interactiveForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">+ Tambah opsi</button><div className="flex gap-2"><button type="submit" className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs">Simpan</button><button type="button" onClick={() => setInteractiveForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs">Batal</button></div></form>}</div>}
+                        {editingContentId !== content.id && (
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            <button
+                              type="button"
+                              onClick={() => startContentEdit(content)}
+                              className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleContentDelete(content)}
+                              disabled={contentBusy}
+                              className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60"
+                            >
+                              Hapus
+                            </button>
+                            {content.tipe === "video" && (
+                              <button
+                                type="button"
+                                onClick={() => toggleInteractiveQuestions(content.id)}
+                                className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg"
+                              >
+                                {expandedVideoId === content.id ? "Tutup Pertanyaan Interaktif" : "Kelola Pertanyaan Interaktif"}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        {content.tipe === "video" && expandedVideoId === content.id && (
+                          <div className="mt-6 border-t border-slate-100 pt-6 space-y-5">
+                            <div className="space-y-2">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                <div>
+                                  <h4 className="text-base font-bold text-slate-900">Pertanyaan Interaktif</h4>
+                                  <p className="text-sm text-slate-500 mt-1">
+                                    Tambahkan checkpoint pada waktu tertentu di video untuk menampilkan pertanyaan kepada peserta.
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setCheckpointForm({ contentId: content.id, judul: "", timestamp: "" })}
+                                  className="shrink-0 text-sm font-semibold text-emerald-700 border border-emerald-200 rounded-xl px-4 py-2 hover:bg-emerald-50"
+                                >
+                                  + Tambah Checkpoint
+                                </button>
+                              </div>
+                              {checkpointForm?.contentId === content.id && (
+                                <form onSubmit={saveCheckpoint} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+                                  <h5 className="text-sm font-bold text-slate-900">Tambah Checkpoint</h5>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Checkpoint</label>
+                                    <input
+                                      value={checkpointForm.judul}
+                                      onChange={(e) => setCheckpointForm({ ...checkpointForm, judul: e.target.value })}
+                                      placeholder="Nama checkpoint"
+                                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"
+                                      required
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Video</label>
+                                    <input
+                                      value={checkpointForm.timestamp}
+                                      onChange={(e) => setCheckpointForm({ ...checkpointForm, timestamp: e.target.value })}
+                                      placeholder="MM:SS"
+                                      inputMode="numeric"
+                                      pattern="\d+:\d{2}"
+                                      aria-label="Waktu checkpoint MM:SS"
+                                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"
+                                      required
+                                    />
+                                  </div>
+                                  <div className="flex justify-end gap-2">
+                                    <button type="button" onClick={() => setCheckpointForm(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl bg-white">
+                                      Batal
+                                    </button>
+                                    <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">
+                                      Simpan Checkpoint
+                                    </button>
+                                  </div>
+                                </form>
+                              )}
+                            </div>
+                            {interactiveLoading === content.id ? (
+                              <p className="text-xs text-slate-500">Memuat...</p>
+                            ) : interactiveError[content.id] ? (
+                              <p className="text-xs text-red-600">{interactiveError[content.id]}</p>
+                            ) : (videoQuizzes[content.id] || []).length === 0 ? (
+                              <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                                Belum ada checkpoint pada video ini.
+                              </p>
+                            ) : (
+                              <div className="space-y-4">
+                                {(videoQuizzes[content.id] || []).map((quiz) => (
+                                  <div key={quiz.id} className="rounded-2xl border border-slate-200 p-5 space-y-5">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Checkpoint</p>
+                                        <h5 className="text-base font-bold text-slate-900 mt-1">{quiz.judul || "Checkpoint tanpa nama"}</h5>
+                                      </div>
+                                      <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
+                                        {formatTimestamp(quiz.timestampSeconds)}
+                                      </span>
+                                    </div>
+                                    {(quiz.questions || []).length === 0 ? (
+                                      <p className="text-sm text-slate-500">Belum ada pertanyaan pada checkpoint ini.</p>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pertanyaan Interaktif</p>
+                                        {(quiz.questions || []).map((question) => (
+                                          <div key={question.id} className="rounded-xl bg-slate-50 p-4">
+                                            <p className="text-sm font-semibold text-slate-800">{question.pertanyaan}</p>
+                                            <div className="flex gap-3 mt-3">
+                                              <button
+                                                type="button"
+                                                onClick={() => setInteractiveForm({ quizId: quiz.id, questionId: question.id, pertanyaan: question.pertanyaan, options: question.options.map(({ teksOpsi, isCorrect }) => ({ teksOpsi, isCorrect })) })}
+                                                className="text-xs font-semibold text-slate-600"
+                                              >
+                                                Edit
+                                              </button>
+                                              <button type="button" onClick={() => removeInteractiveQuestion(content.id, question.id)} className="text-xs font-semibold text-red-600">
+                                                Hapus
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => setInteractiveForm({ quizId: quiz.id, pertanyaan: "", options: [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }] })}
+                                      className="text-sm font-semibold text-emerald-700 text-right"
+                                    >
+                                      + Tambah Pertanyaan
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {interactiveForm && (
+                              <form onSubmit={saveInteractiveQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+                                <textarea
+                                  value={interactiveForm.pertanyaan}
+                                  onChange={(e) => setInteractiveForm({ ...interactiveForm, pertanyaan: e.target.value })}
+                                  className="w-full border border-slate-200 rounded-xl p-2 text-xs"
+                                  placeholder="Pertanyaan"
+                                  required
+                                />
+                                {interactiveForm.options.map((option, index) => (
+                                  <div key={index} className="flex gap-2">
+                                    <input
+                                      value={option.teksOpsi}
+                                      onChange={(e) => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => itemIndex === index ? { ...item, teksOpsi: e.target.value } : item) })}
+                                      className="flex-1 border border-slate-200 rounded-xl p-2 text-xs"
+                                      placeholder={`Opsi ${index + 1}`}
+                                      required
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === index })) })}
+                                      className={`text-xs px-2 rounded-lg ${option.isCorrect ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 text-slate-500"}`}
+                                    >
+                                      {option.isCorrect ? "Benar" : "Tandai benar"}
+                                    </button>
+                                    {interactiveForm.options.length > 2 && (
+                                      <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.filter((_, itemIndex) => itemIndex !== index) })} className="text-xs text-red-600">
+                                        Hapus
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                                <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: [...interactiveForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">
+                                  + Tambah opsi
+                                </button>
+                                <div className="flex gap-2">
+                                  <button type="submit" className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs">Simpan</button>
+                                  <button type="button" onClick={() => setInteractiveForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs">Batal</button>
+                                </div>
+                              </form>
+                            )}
+                          </div>
+                        )}
                        {contentMessage && editingContentId === null && <p className="text-xs text-red-600 mt-2">{contentMessage}</p>}
                      </div>
                    </div>
