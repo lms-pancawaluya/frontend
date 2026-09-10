@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getModuleById, getModuleContents } from "@/services/module.service";
+import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
 import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
 
 interface ModuleDetail {
@@ -53,6 +53,8 @@ const aspekColor: Record<string, string> = {
   pinter: "bg-purple-100 text-purple-700",
   singer: "bg-red-100 text-red-700",
 };
+
+const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer"];
 
 function getYoutubeEmbedUrl(url: string): string {
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]+)/);
@@ -127,6 +129,17 @@ export default function AdminModuleDetailPage() {
   const [busyCommentId, setBusyCommentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    judul: "",
+    deskripsi: "",
+    aspekPancawaluya: "cageur",
+    urutan: 1,
+  });
+  const [savingModule, setSavingModule] = useState(false);
+  const [moduleMessage, setModuleMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -136,6 +149,12 @@ export default function AdminModuleDetailPage() {
           getModuleContents(id),
         ]);
         setModule(moduleData);
+        setFormData({
+          judul: moduleData.judul,
+          deskripsi: moduleData.deskripsi || "",
+          aspekPancawaluya: moduleData.aspekPancawaluya,
+          urutan: moduleData.urutan,
+        });
         setContents(contentsData);
       } catch (err) {
         if (err instanceof Error) {
@@ -193,8 +212,43 @@ export default function AdminModuleDetailPage() {
     );
   }
 
-  async function handleReplySubmit(e: React.FormEvent) {
+  function handleModuleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "urutan" ? Number(value) : value,
+    }));
+  }
+
+  async function handleModuleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setModuleMessage(null);
+    setSavingModule(true);
+
+    try {
+      const updatedModule = await updateModule(id, formData);
+      const nextModule = { ...module, ...formData, ...(updatedModule || {}) };
+      setModule(nextModule);
+      setFormData({
+        judul: nextModule.judul,
+        deskripsi: nextModule.deskripsi || "",
+        aspekPancawaluya: nextModule.aspekPancawaluya,
+        urutan: nextModule.urutan,
+      });
+      setModuleMessage({ type: "success", text: "Informasi modul berhasil diperbarui." });
+    } catch (err) {
+      setModuleMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Gagal memperbarui modul.",
+      });
+    } finally {
+      setSavingModule(false);
+    }
+  }
+
+  async function handleReplySubmit(e: React.FormEvent) {
     if (!replyTo?.id || !replyText.trim()) return;
 
     setBusyCommentId(replyTo.id);
@@ -279,36 +333,17 @@ export default function AdminModuleDetailPage() {
           </div>
         </div>
 
-        {/* Informasi Modul */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-.01M13 12h-.01M13 8h-.01M5 20h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2zm7-14V4a1 1 0 00-1-1h-2a1 1 0 00-1 1v3m3 0h-1.5" />
-            </svg>
-            Informasi Modul
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/70 space-y-1">
-              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Aspek Pancawaluya</p>
-              <span
-                className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${
-                  aspekColor[module.aspekPancawaluya] || "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {module.aspekPancawaluya}
-              </span>
-            </div>
-            <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/70 space-y-1">
-              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Urutan Modul</p>
-              <p className="text-slate-800 font-medium text-sm">#{module.urutan}</p>
-            </div>
-            <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/70 space-y-1">
-              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Konten</p>
-              <p className="text-slate-800 font-medium text-sm">{contents.length} konten</p>
-            </div>
-          </div>
-        </div>
+         {/* Informasi Modul */}
+         <form onSubmit={handleModuleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+           <h2 className="text-base font-bold text-slate-900 tracking-tight">Informasi Modul</h2>
+           {moduleMessage && <div className={`text-sm px-4 py-3 rounded-xl border ${moduleMessage.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>{moduleMessage.text}</div>}
+           <div className="space-y-4">
+             <div><label htmlFor="judul" className="block text-xs font-semibold text-slate-600 mb-1">Judul Modul</label><input id="judul" name="judul" value={formData.judul} onChange={handleModuleChange} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required /></div>
+             <div><label htmlFor="deskripsi" className="block text-xs font-semibold text-slate-600 mb-1">Deskripsi</label><textarea id="deskripsi" name="deskripsi" value={formData.deskripsi} onChange={handleModuleChange} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm resize-y" rows={4} required /></div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label htmlFor="aspekPancawaluya" className="block text-xs font-semibold text-slate-600 mb-1">Aspek Pancawaluya</label><select id="aspekPancawaluya" name="aspekPancawaluya" value={formData.aspekPancawaluya} onChange={handleModuleChange} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize">{aspekOptions.map((aspek) => <option key={aspek} value={aspek}>{aspek}</option>)}</select></div><div><label htmlFor="urutan" className="block text-xs font-semibold text-slate-600 mb-1">Urutan Modul</label><input id="urutan" type="number" name="urutan" value={formData.urutan} onChange={handleModuleChange} min={1} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required /></div></div>
+           </div>
+           <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? "Menyimpan..." : "Simpan Perubahan"}</button></div>
+         </form>
 
         {/* Konten Pembelajaran - Kartu */}
         <div className="space-y-6">
@@ -519,12 +554,7 @@ export default function AdminModuleDetailPage() {
           </h2>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Link
-              href={`/admin/modules/${module.id}/edit`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-2xl shadow-sm transition"
-            >
-              Edit Modul
-            </Link>
+
             <Link
               href={`/admin/modules/${module.id}/evaluations`}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
