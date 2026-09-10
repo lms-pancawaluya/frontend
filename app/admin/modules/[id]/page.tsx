@@ -7,6 +7,7 @@ import { getModuleById, getModuleContents, updateModule } from "@/services/modul
 import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
 import { deleteContent, updateContent } from "@/services/content.service";
 import { createEvaluation, getModuleEvaluations } from "@/services/evaluation.service";
+import { addQuestion, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
 
 interface ModuleDetail {
   id: string;
@@ -32,6 +33,9 @@ interface EvaluationItem {
   maxAttempts?: number;
   _count?: { questions: number };
 }
+
+interface InteractiveQuestion { id: string; pertanyaan: string; options: { id?: string; teksOpsi: string; isCorrect: boolean }[]; }
+interface InteractiveQuiz { id: string; judul: string; timestampSeconds: number; questions: InteractiveQuestion[]; }
 
 interface CommentUser {
   id?: string;
@@ -155,6 +159,11 @@ export default function AdminModuleDetailPage() {
   const [maxAttempts, setMaxAttempts] = useState(3);
   const [evaluationBusy, setEvaluationBusy] = useState(false);
   const [evaluationMessage, setEvaluationMessage] = useState("");
+  const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null);
+  const [videoQuizzes, setVideoQuizzes] = useState<Record<string, InteractiveQuiz[]>>({});
+  const [interactiveLoading, setInteractiveLoading] = useState<string | null>(null);
+  const [interactiveError, setInteractiveError] = useState<Record<string, string>>({});
+  const [interactiveForm, setInteractiveForm] = useState<{ quizId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -315,6 +324,38 @@ export default function AdminModuleDetailPage() {
     } finally {
       setEvaluationBusy(false);
     }
+  }
+
+  async function toggleInteractiveQuestions(contentId: string) {
+    if (expandedVideoId === contentId) { setExpandedVideoId(null); return; }
+    setExpandedVideoId(contentId);
+    if (videoQuizzes[contentId]) return;
+    setInteractiveLoading(contentId);
+    try { const quizzes = await getMiniQuizzesByContent(contentId); setVideoQuizzes((prev) => ({ ...prev, [contentId]: quizzes })); }
+    catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal memuat Pertanyaan Interaktif." })); }
+    finally { setInteractiveLoading(null); }
+  }
+
+  async function saveInteractiveQuestion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!interactiveForm) return;
+    const payload = { pertanyaan: interactiveForm.pertanyaan, options: interactiveForm.options };
+    const quizzes = videoQuizzes[expandedVideoId || ""] || [];
+    const quiz = quizzes.find((item) => item.id === interactiveForm.quizId);
+    if (!quiz) return;
+    try {
+      if (interactiveForm.questionId) await updateQuestion(interactiveForm.questionId, payload);
+      else await addQuestion(quiz.id, payload);
+      const refreshed = await getMiniQuizzesByContent(expandedVideoId!);
+      setVideoQuizzes((prev) => ({ ...prev, [expandedVideoId!]: refreshed }));
+      setInteractiveForm(null);
+    } catch (err) { setInteractiveError((prev) => ({ ...prev, [expandedVideoId!]: err instanceof Error ? err.message : "Gagal menyimpan Pertanyaan Interaktif." })); }
+  }
+
+  async function removeInteractiveQuestion(contentId: string, questionId: string) {
+    if (!window.confirm("Hapus Pertanyaan Interaktif ini?")) return;
+    try { await deleteQuestion(questionId); setVideoQuizzes((prev) => ({ ...prev, [contentId]: (prev[contentId] || []).map((quiz) => ({ ...quiz, questions: quiz.questions.filter((question) => question.id !== questionId) })) })); }
+    catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal menghapus Pertanyaan Interaktif." })); }
   }
 
   async function handleReplySubmit(e: React.FormEvent) {
@@ -481,7 +522,8 @@ export default function AdminModuleDetailPage() {
                           </p>
                         </div>
                        )}
-                        {editingContentId !== content.id && <div className="flex flex-wrap gap-2 mt-4"><button type="button" onClick={() => startContentEdit(content)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg">Edit</button><button type="button" onClick={() => handleContentDelete(content)} disabled={contentBusy} className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60">Hapus</button>{content.tipe === "video" && <Link href={`/admin/modules/${id}/quiz/${content.id}`} className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg">Kelola Pertanyaan Interaktif</Link>}</div>}
+                        {editingContentId !== content.id && <div className="flex flex-wrap gap-2 mt-4"><button type="button" onClick={() => startContentEdit(content)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg">Edit</button><button type="button" onClick={() => handleContentDelete(content)} disabled={contentBusy} className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60">Hapus</button>{content.tipe === "video" && <button type="button" onClick={() => toggleInteractiveQuestions(content.id)} className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg">{expandedVideoId === content.id ? "Tutup Pertanyaan Interaktif" : "Kelola Pertanyaan Interaktif"}</button>}</div>}
+                        {content.tipe === "video" && expandedVideoId === content.id && <div className="mt-4 border-t border-slate-100 pt-4 space-y-3"><h4 className="text-sm font-bold text-slate-900">Pertanyaan Interaktif</h4>{interactiveLoading === content.id ? <p className="text-xs text-slate-500">Memuat...</p> : interactiveError[content.id] ? <p className="text-xs text-red-600">{interactiveError[content.id]}</p> : (videoQuizzes[content.id] || []).length === 0 ? <p className="text-xs text-slate-500">Belum ada Pertanyaan Interaktif.</p> : (videoQuizzes[content.id] || []).map((quiz) => <div key={quiz.id} className="space-y-3"><div className="flex items-center justify-between"><p className="text-xs font-semibold text-slate-700">{quiz.judul}</p><button type="button" onClick={() => setInteractiveForm({ quizId: quiz.id, pertanyaan: "", options: [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">+ Tambah</button></div>{quiz.questions.map((question) => <div key={question.id} className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-semibold text-slate-800">{question.pertanyaan}</p><div className="flex gap-2 mt-2"><button type="button" onClick={() => setInteractiveForm({ quizId: quiz.id, questionId: question.id, pertanyaan: question.pertanyaan, options: question.options.map(({ teksOpsi, isCorrect }) => ({ teksOpsi, isCorrect })) })} className="text-xs text-slate-600">Edit</button><button type="button" onClick={() => removeInteractiveQuestion(content.id, question.id)} className="text-xs text-red-600">Hapus</button></div></div>)}</div>)}{interactiveForm && <form onSubmit={saveInteractiveQuestion} className="space-y-2"><textarea value={interactiveForm.pertanyaan} onChange={(e) => setInteractiveForm({ ...interactiveForm, pertanyaan: e.target.value })} className="w-full border border-slate-200 rounded-xl p-2 text-xs" placeholder="Pertanyaan" required />{interactiveForm.options.map((option, index) => <input key={index} value={option.teksOpsi} onChange={(e) => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => itemIndex === index ? { ...item, teksOpsi: e.target.value } : item) })} className="w-full border border-slate-200 rounded-xl p-2 text-xs" placeholder={`Opsi ${index + 1}`} required />)}<div className="flex gap-2"><button type="submit" className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs">Simpan</button><button type="button" onClick={() => setInteractiveForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs">Batal</button></div></form>}</div>}
                        {contentMessage && editingContentId === null && <p className="text-xs text-red-600 mt-2">{contentMessage}</p>}
                      </div>
                    </div>
