@@ -23,6 +23,9 @@ export default function ModuleEvaluationsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [evaluationType, setEvaluationType] = useState<"pre_test" | "post_test">("pre_test");
+  const [passingScore, setPassingScore] = useState(80);
+  const [maxAttempts, setMaxAttempts] = useState(3);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -63,7 +66,7 @@ export default function ModuleEvaluationsPage() {
     setCreating(true);
 
     try {
-      const newEvaluation = await createEvaluation(moduleId, newTitle);
+      const newEvaluation = await createEvaluation(moduleId, { judul: newTitle, tipe: evaluationType, passingScore, maxAttempts });
       router.push(`/admin/modules/${moduleId}/evaluations/${newEvaluation.id}`);
     } catch (err) {
       if (err instanceof Error) {
