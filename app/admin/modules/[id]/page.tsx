@@ -485,9 +485,68 @@ export default function AdminModuleDetailPage() {
            <h2 className="text-base font-bold text-slate-900 tracking-tight">Informasi Modul</h2>
            {moduleMessage && <div className={`text-sm px-4 py-3 rounded-xl border ${moduleMessage.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>{moduleMessage.text}</div>}
            <div className="space-y-4">
-             <div><label htmlFor="judul" className="block text-xs font-semibold text-slate-600 mb-1">Judul Modul</label><input id="judul" name="judul" value={formData.judul} onChange={handleModuleChange} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required /></div>
-             <div><label htmlFor="deskripsi" className="block text-xs font-semibold text-slate-600 mb-1">Deskripsi</label><textarea id="deskripsi" name="deskripsi" value={formData.deskripsi} onChange={handleModuleChange} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm resize-y" rows={4} required /></div>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label htmlFor="aspekPancawaluya" className="block text-xs font-semibold text-slate-600 mb-1">Aspek Pancawaluya</label><select id="aspekPancawaluya" name="aspekPancawaluya" value={formData.aspekPancawaluya} onChange={handleModuleChange} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize">{aspekOptions.map((aspek) => <option key={aspek} value={aspek}>{aspek}</option>)}</select></div><div><label htmlFor="urutan" className="block text-xs font-semibold text-slate-600 mb-1">Urutan Modul</label><input id="urutan" type="number" name="urutan" value={formData.urutan} onChange={handleModuleChange} min={1} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required /></div></div>
+              <div>
+                <label htmlFor="judul" className="block text-xs font-semibold text-slate-600 mb-1">
+                  Judul Modul
+                </label>
+                <input
+                  id="judul"
+                  name="judul"
+                  value={formData.judul}
+                  onChange={handleModuleChange}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="deskripsi" className="block text-xs font-semibold text-slate-600 mb-1">
+                  Deskripsi
+                </label>
+                <textarea
+                  id="deskripsi"
+                  name="deskripsi"
+                  value={formData.deskripsi}
+                  onChange={handleModuleChange}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm resize-y"
+                  rows={4}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="aspekPancawaluya" className="block text-xs font-semibold text-slate-600 mb-1">
+                    Aspek Pancawaluya
+                  </label>
+                  <select
+                    id="aspekPancawaluya"
+                    name="aspekPancawaluya"
+                    value={formData.aspekPancawaluya}
+                    onChange={handleModuleChange}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"
+                  >
+                    {aspekOptions.map((aspek) => (
+                      <option key={aspek} value={aspek}>
+                        {aspek}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="urutan" className="block text-xs font-semibold text-slate-600 mb-1">
+                    Urutan Modul
+                  </label>
+                  <input
+                    id="urutan"
+                    type="number"
+                    name="urutan"
+                    value={formData.urutan}
+                    onChange={handleModuleChange}
+                    min={1}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                    required
+                  />
+                </div>
+              </div>
            </div>
            <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? "Menyimpan..." : "Simpan Perubahan"}</button></div>
          </form>
@@ -537,11 +596,43 @@ export default function AdminModuleDetailPage() {
                      <div className="p-5 sm:p-6">
                        {editingContentId === content.id ? (
                          <form onSubmit={handleContentSubmit} className="space-y-4">
-                           <input value={contentData.judul} onChange={(e) => setContentData({ ...contentData, judul: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required />
-                           <select value={contentData.tipe} onChange={(e) => setContentData({ ...contentData, tipe: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"><option value="teks">Text</option><option value="video">Video</option></select>
-                           <textarea value={contentData.konten} onChange={(e) => setContentData({ ...contentData, konten: e.target.value })} rows={contentData.tipe === "video" ? 2 : 6} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required />
-                           <input type="number" min={1} value={contentData.urutan} onChange={(e) => setContentData({ ...contentData, urutan: Number(e.target.value) })} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required />
-                           <div className="flex gap-2"><button type="submit" disabled={contentBusy} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">Simpan</button><button type="button" onClick={() => setEditingContentId(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl">Batal</button></div>
+                           <input
+                             value={contentData.judul}
+                             onChange={(e) => setContentData({ ...contentData, judul: e.target.value })}
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                             required
+                           />
+                           <select
+                             value={contentData.tipe}
+                             onChange={(e) => setContentData({ ...contentData, tipe: e.target.value })}
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"
+                           >
+                             <option value="teks">Text</option>
+                             <option value="video">Video</option>
+                           </select>
+                           <textarea
+                             value={contentData.konten}
+                             onChange={(e) => setContentData({ ...contentData, konten: e.target.value })}
+                             rows={contentData.tipe === "video" ? 2 : 6}
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                             required
+                           />
+                           <input
+                             type="number"
+                             min={1}
+                             value={contentData.urutan}
+                             onChange={(e) => setContentData({ ...contentData, urutan: Number(e.target.value) })}
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                             required
+                           />
+                           <div className="flex gap-2">
+                             <button type="submit" disabled={contentBusy} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">
+                               Simpan
+                             </button>
+                             <button type="button" onClick={() => setEditingContentId(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl">
+                               Batal
+                             </button>
+                           </div>
                          </form>
                        ) : content.tipe === "video" ? (
                         <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-lg border border-slate-800 ring-1 ring-slate-900/10">
@@ -755,9 +846,80 @@ export default function AdminModuleDetailPage() {
              <h2 className="text-base font-bold text-slate-900">Evaluasi</h2>
              <button type="button" onClick={() => setShowEvaluationForm((value) => !value)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">+ Buat Evaluasi</button>
            </div>
-           {evaluationMessage && <p className="text-sm text-red-600">{evaluationMessage}</p>}
-           {showEvaluationForm && <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-3"><input value={evaluationTitle} onChange={(e) => setEvaluationTitle(e.target.value)} placeholder="Judul Evaluasi" className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" required /><select value={evaluationType} onChange={(e) => setEvaluationType(e.target.value as "pre_test" | "post_test")} className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"><option value="pre_test">Pre-Test</option><option value="post_test">Post-Test</option></select><input type="number" min={0} max={100} value={passingScore} onChange={(e) => setPassingScore(Number(e.target.value))} className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" aria-label="Passing Score" /><input type="number" min={1} value={maxAttempts} onChange={(e) => setMaxAttempts(Number(e.target.value))} className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm" aria-label="Max Attempts" /><button type="submit" disabled={evaluationBusy} className="px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">{evaluationBusy ? "Membuat..." : "Simpan"}</button></form>}
-           {evaluations.length === 0 ? <p className="text-sm text-slate-500">Belum ada evaluasi untuk modul ini.</p> : <div className="space-y-3">{evaluations.map((evaluation) => <div key={evaluation.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-slate-200 rounded-2xl p-4"><div><p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p><div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1"><span className="capitalize">{(evaluation.tipe || "evaluation").replace("_", "-")}</span>{evaluation._count && <span>{evaluation._count.questions} soal</span>}{evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}{evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}</div></div><Link href={`/admin/modules/${id}/evaluations/${evaluation.id}`} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">Kelola</Link></div>)}</div>}
+            {evaluationMessage && (
+              <p className="text-sm text-red-600">{evaluationMessage}</p>
+            )}
+            {showEvaluationForm && (
+              <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-3">
+                <input
+                  value={evaluationTitle}
+                  onChange={(e) => setEvaluationTitle(e.target.value)}
+                  placeholder="Judul Evaluasi"
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  required
+                />
+                <select
+                  value={evaluationType}
+                  onChange={(e) => setEvaluationType(e.target.value as "pre_test" | "post_test")}
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                >
+                  <option value="pre_test">Pre-Test</option>
+                  <option value="post_test">Post-Test</option>
+                </select>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={passingScore}
+                  onChange={(e) => setPassingScore(Number(e.target.value))}
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  aria-label="Passing Score"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  value={maxAttempts}
+                  onChange={(e) => setMaxAttempts(Number(e.target.value))}
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  aria-label="Max Attempts"
+                />
+                <button
+                  type="submit"
+                  disabled={evaluationBusy}
+                  className="px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60"
+                >
+                  {evaluationBusy ? "Membuat..." : "Simpan"}
+                </button>
+              </form>
+            )}
+            {evaluations.length === 0 ? (
+              <p className="text-sm text-slate-500">Belum ada evaluasi untuk modul ini.</p>
+            ) : (
+              <div className="space-y-3">
+                {evaluations.map((evaluation) => (
+                  <div
+                    key={evaluation.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-slate-200 rounded-2xl p-4"
+                  >
+                    <div>
+                      <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
+                        <span className="capitalize">{(evaluation.tipe || "evaluation").replace("_", "-")}</span>
+                        {evaluation._count && <span>{evaluation._count.questions} soal</span>}
+                        {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
+                        {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
+                      </div>
+                    </div>
+                    <Link
+                      href={`/admin/modules/${id}/evaluations/${evaluation.id}`}
+                      className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center"
+                    >
+                      Kelola
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
          </section>
 
          {/* Moderasi Diskusi */}
@@ -894,13 +1056,18 @@ export default function AdminModuleDetailPage() {
         </div>
 
         {/* Area Aksi Admin */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-6">
-            <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.488c.457-.66 1.245-.904 2.054-.65A17.267 17.267 0 0115 5.5c0 1.005-.2 2.001-.606 2.933A7.5 7.5 0 0017 12.5a7.5 0 01-2 5.36l-2.744 2.744a1 1 0 01-1.415-.001l-.003-.003a1 1 0 01-.001-1.414l1.742-1.742A5.5 5.5 0 0112.5 10.5c0-1.057.094-2.103.286-3.114z" />
-            </svg>
-            Aksi Pengelolaan
-          </h2>
+         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
+           <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-6">
+             <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path
+                 strokeLinecap="round"
+                 strokeLinejoin="round"
+                 strokeWidth="2"
+                 d="M10.325 4.488c.457-.66 1.245-.904 2.054-.65A17.267 17.267 0 0115 5.5c0 1.005-.2 2.001-.606 2.933A7.5 7.5 0 0017 12.5a7.5 7.5 0 01-2 5.36l-2.744 2.744a1 1 0 01-1.415-.001l-.003-.003a1 1 0 01-.001-1.414l1.742-1.742A5.5 5.5 0 0112.5 10.5c0-1.057.094-2.103.286-3.114z"
+               />
+             </svg>
+             Aksi Pengelolaan
+           </h2>
 
           <div className="flex flex-col sm:flex-row gap-3">
 
@@ -910,15 +1077,14 @@ export default function AdminModuleDetailPage() {
             >
               Edit Evaluasi
             </Link>
-            {contents.some((c) => c.tipe === "video") && (
-              <Link
+             {contents.some((c) => c.tipe === "video") && (
+               <Link
                  href={`/admin/modules/${module.id}/quiz/${contents.find((c) => c.tipe === "video")!.id}`}
                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
                >
                  Pertanyaan Interaktif
                </Link>
-
-            )}
+             )}
           </div>
         </div>
       </div>
