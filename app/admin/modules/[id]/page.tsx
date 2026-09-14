@@ -6,8 +6,8 @@ import Link from "next/link";
 import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
 import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
 import { deleteContent, updateContent } from "@/services/content.service";
-import { addQuestion as addEvaluationQuestion, createEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
-import { addQuestion, createMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
+import { addQuestion as addEvaluationQuestion, createEvaluation, deleteEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
+import { addQuestion, createMiniQuiz, deleteMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
 
 interface ModuleDetail {
   id: string;
@@ -188,11 +188,13 @@ export default function AdminModuleDetailPage() {
   const [evaluationQuestionForm, setEvaluationQuestionForm] = useState<{ evaluationId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
   const [evaluationQuestionBusy, setEvaluationQuestionBusy] = useState(false);
   const [evaluationQuestionDeletingId, setEvaluationQuestionDeletingId] = useState<string | null>(null);
+  const [evaluationDeletingId, setEvaluationDeletingId] = useState<string | null>(null);
   const [evaluationQuestionError, setEvaluationQuestionError] = useState<Record<string, string>>({});
   const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null);
   const [videoQuizzes, setVideoQuizzes] = useState<Record<string, InteractiveQuiz[]>>({});
   const [interactiveLoading, setInteractiveLoading] = useState<string | null>(null);
   const [interactiveError, setInteractiveError] = useState<Record<string, string>>({});
+  const [interactiveDeletingId, setInteractiveDeletingId] = useState<string | null>(null);
   const [interactiveForm, setInteractiveForm] = useState<{ quizId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
   const [checkpointForm, setCheckpointForm] = useState<{ contentId: string; judul: string; timestamp: string } | null>(null);
 
@@ -358,6 +360,20 @@ export default function AdminModuleDetailPage() {
     }
   }
 
+  async function handleEvaluationDelete(evaluationId: string, title: string) {
+    if (!window.confirm(`Yakin ingin menghapus ${title} ini?`)) return;
+    setEvaluationDeletingId(evaluationId);
+    setEvaluationMessage("");
+    try {
+      await deleteEvaluation(id, evaluationId);
+      setEvaluations((prev) => prev.filter((item) => item.id !== evaluationId));
+    } catch (err) {
+      setEvaluationMessage(err instanceof Error ? err.message : `Gagal menghapus ${title}.`);
+    } finally {
+      setEvaluationDeletingId(null);
+    }
+  }
+
   function getInitialEvaluationOptions() {
     return [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }];
   }
@@ -457,6 +473,19 @@ export default function AdminModuleDetailPage() {
       setCheckpointForm(null);
     } catch (err) {
       setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: err instanceof Error ? err.message : "Gagal membuat checkpoint video." }));
+    }
+  }
+
+  async function removeCheckpoint(contentId: string, quizId: string) {
+    if (!window.confirm("Hapus checkpoint ini beserta semua pertanyaan di dalamnya?")) return;
+    setInteractiveDeletingId(quizId);
+    try {
+      await deleteMiniQuiz(quizId);
+      setVideoQuizzes((prev) => ({ ...prev, [contentId]: (prev[contentId] || []).filter((quiz) => quiz.id !== quizId) }));
+    } catch (err) {
+      setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal menghapus checkpoint." }));
+    } finally {
+      setInteractiveDeletingId(null);
     }
   }
 
@@ -604,7 +633,10 @@ export default function AdminModuleDetailPage() {
                         {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
                       </div>
                     </div>
-                    <button type="button" onClick={() => startEvaluationQuestionForm(evaluation.id)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">+ Tambah Soal</button>
+                    <div className="flex gap-2 shrink-0">
+                      <button type="button" onClick={() => startEvaluationQuestionForm(evaluation.id)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">+ Tambah Soal</button>
+                      <button type="button" onClick={() => handleEvaluationDelete(evaluation.id, title)} disabled={evaluationDeletingId === evaluation.id} className="px-4 py-2 border border-red-200 text-red-600 text-xs font-semibold rounded-full text-center hover:bg-red-50 disabled:opacity-60">{evaluationDeletingId === evaluation.id ? "Menghapus..." : "Hapus"}</button>
+                    </div>
                   </div>
                   {evaluationQuestionError[evaluation.id] && <p className="text-sm text-red-600">{evaluationQuestionError[evaluation.id]}</p>}
                   {questions.length === 0 ? (
@@ -975,9 +1007,12 @@ export default function AdminModuleDetailPage() {
                                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Checkpoint</p>
                                         <h5 className="text-base font-bold text-slate-900 mt-1">{quiz.judul || "Checkpoint tanpa nama"}</h5>
                                       </div>
-                                      <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
-                                        {formatTimestamp(quiz.timestampSeconds)}
-                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
+                                          {formatTimestamp(quiz.timestampSeconds)}
+                                        </span>
+                                        <button type="button" onClick={() => removeCheckpoint(content.id, quiz.id)} disabled={interactiveDeletingId === quiz.id} className="text-xs font-semibold text-red-600 border border-red-200 px-2 py-1 rounded-lg hover:bg-red-50 disabled:opacity-60">Hapus</button>
+                                      </div>
                                     </div>
                                     {(quiz.questions || []).length === 0 ? (
                                       <p className="text-sm text-slate-500">Belum ada pertanyaan pada checkpoint ini.</p>
