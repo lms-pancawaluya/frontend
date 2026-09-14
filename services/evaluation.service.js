@@ -139,6 +139,21 @@ export async function createEvaluation(moduleId, { judul, tipe, passingScore, ma
   return result.data;
 }
 
+export async function deleteEvaluation(moduleId, evaluationId) {
+  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}`, {
+    method: "DELETE",
+    headers: getHeaders(),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal menghapus evaluasi");
+  }
+
+  return result;
+}
+
 export async function addQuestion(moduleId, evaluationId, questionData) {
   const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/questions`, {
     method: "POST",

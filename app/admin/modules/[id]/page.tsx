@@ -6,8 +6,8 @@ import Link from "next/link";
 import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
 import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
 import { deleteContent, updateContent } from "@/services/content.service";
-import { createEvaluation, getModuleEvaluations } from "@/services/evaluation.service";
-import { addQuestion, createMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
+import { addQuestion as addEvaluationQuestion, createEvaluation, deleteEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
+import { addQuestion, createMiniQuiz, deleteMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
 
 interface ModuleDetail {
   id: string;
@@ -25,12 +25,27 @@ interface ContentItem {
   urutan: number;
 }
 
+interface EvaluationOption {
+  id?: string;
+  teksOpsi?: string;
+  teks?: string;
+  isCorrect?: boolean;
+}
+
+interface EvaluationQuestion {
+  id: string;
+  pertanyaan: string;
+  tipe: string;
+  options: EvaluationOption[];
+}
+
 interface EvaluationItem {
   id: string;
   judul: string;
   tipe?: "pre_test" | "post_test" | string;
   passingScore?: number;
   maxAttempts?: number;
+  questions?: EvaluationQuestion[];
   _count?: { questions: number };
 }
 
@@ -170,10 +185,16 @@ export default function AdminModuleDetailPage() {
   const [maxAttempts, setMaxAttempts] = useState(3);
   const [evaluationBusy, setEvaluationBusy] = useState(false);
   const [evaluationMessage, setEvaluationMessage] = useState("");
+  const [evaluationQuestionForm, setEvaluationQuestionForm] = useState<{ evaluationId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
+  const [evaluationQuestionBusy, setEvaluationQuestionBusy] = useState(false);
+  const [evaluationQuestionDeletingId, setEvaluationQuestionDeletingId] = useState<string | null>(null);
+  const [evaluationDeletingId, setEvaluationDeletingId] = useState<string | null>(null);
+  const [evaluationQuestionError, setEvaluationQuestionError] = useState<Record<string, string>>({});
   const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null);
   const [videoQuizzes, setVideoQuizzes] = useState<Record<string, InteractiveQuiz[]>>({});
   const [interactiveLoading, setInteractiveLoading] = useState<string | null>(null);
   const [interactiveError, setInteractiveError] = useState<Record<string, string>>({});
+  const [interactiveDeletingId, setInteractiveDeletingId] = useState<string | null>(null);
   const [interactiveForm, setInteractiveForm] = useState<{ quizId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
   const [checkpointForm, setCheckpointForm] = useState<{ contentId: string; judul: string; timestamp: string } | null>(null);
 
@@ -192,7 +213,8 @@ export default function AdminModuleDetailPage() {
           urutan: moduleData.urutan,
         });
          setContents(contentsData);
-         setEvaluations((await getModuleEvaluations(id)) as EvaluationItem[]);
+         const evaluationList = await getModuleEvaluations(id) as EvaluationItem[];
+         setEvaluations(await Promise.all(evaluationList.map(async (evaluation) => ({ ...evaluation, ...(await getEvaluationDetail(id, evaluation.id)) }))));
 
       } catch (err) {
         if (err instanceof Error) {
@@ -327,14 +349,99 @@ export default function AdminModuleDetailPage() {
     setEvaluationBusy(true);
     setEvaluationMessage("");
     try {
-      const created = await createEvaluation(id, { judul: evaluationTitle, tipe: evaluationType, passingScore, maxAttempts });
-      setEvaluations((prev) => [...prev, created as EvaluationItem]);
+      const created = await createEvaluation(id, { judul: evaluationTitle, tipe: evaluationType, passingScore, maxAttempts }) as EvaluationItem;
+      setEvaluations((prev) => [...prev, { ...created, questions: [] }]);
       setEvaluationTitle("");
       setShowEvaluationForm(false);
     } catch (err) {
       setEvaluationMessage(err instanceof Error ? err.message : "Gagal membuat evaluasi.");
     } finally {
       setEvaluationBusy(false);
+    }
+  }
+
+  async function handleEvaluationDelete(evaluationId: string, title: string) {
+    if (!window.confirm(`Yakin ingin menghapus ${title} ini?`)) return;
+    setEvaluationDeletingId(evaluationId);
+    setEvaluationMessage("");
+    try {
+      await deleteEvaluation(id, evaluationId);
+      setEvaluations((prev) => prev.filter((item) => item.id !== evaluationId));
+    } catch (err) {
+      setEvaluationMessage(err instanceof Error ? err.message : `Gagal menghapus ${title}.`);
+    } finally {
+      setEvaluationDeletingId(null);
+    }
+  }
+
+  function getInitialEvaluationOptions() {
+    return [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }];
+  }
+
+  function mapEvaluationOptions(options: EvaluationOption[]) {
+    const mapped = options.map((option) => ({ teksOpsi: (option.teksOpsi || option.teks || "").trim(), isCorrect: option.isCorrect === true }));
+    return mapped.length >= 2 ? mapped : getInitialEvaluationOptions();
+  }
+
+  function startEvaluationQuestionForm(evaluationId: string) {
+    setEvaluationQuestionForm({ evaluationId, pertanyaan: "", options: getInitialEvaluationOptions() });
+    setEvaluationQuestionError((prev) => ({ ...prev, [evaluationId]: "" }));
+  }
+
+  function startEvaluationQuestionEdit(evaluationId: string, question: EvaluationQuestion) {
+    setEvaluationQuestionForm({ evaluationId, questionId: question.id, pertanyaan: question.pertanyaan, options: mapEvaluationOptions(question.options || []) });
+    setEvaluationQuestionError((prev) => ({ ...prev, [evaluationId]: "" }));
+  }
+
+  function refreshEvaluationQuestions(evaluationId: string, questions: EvaluationQuestion[]) {
+    setEvaluations((prev) => prev.map((evaluation) => evaluation.id === evaluationId ? { ...evaluation, questions, _count: { questions: questions.length } } : evaluation));
+  }
+
+  function validateEvaluationQuestionForm() {
+    if (!evaluationQuestionForm?.pertanyaan.trim()) return "Pertanyaan wajib diisi.";
+    if (evaluationQuestionForm.options.length < 2) return "Minimal 2 opsi jawaban.";
+    if (evaluationQuestionForm.options.some((option) => !option.teksOpsi.trim())) return "Semua opsi jawaban harus diisi.";
+    if (evaluationQuestionForm.options.filter((option) => option.isCorrect).length !== 1) return "Pilih tepat 1 jawaban benar.";
+    return "";
+  }
+
+  async function saveEvaluationQuestion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!evaluationQuestionForm) return;
+    const validationError = validateEvaluationQuestionForm();
+    if (validationError) {
+      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationQuestionForm.evaluationId]: validationError }));
+      return;
+    }
+    setEvaluationQuestionBusy(true);
+    try {
+      const payload = {
+        pertanyaan: evaluationQuestionForm.pertanyaan.trim(),
+        options: evaluationQuestionForm.options.map((option) => ({ teks: option.teksOpsi.trim(), isCorrect: option.isCorrect })),
+      };
+      if (evaluationQuestionForm.questionId) await updateEvaluationQuestion(id, evaluationQuestionForm.questionId, payload);
+      else await addEvaluationQuestion(id, evaluationQuestionForm.evaluationId, { pertanyaan: payload.pertanyaan, options: evaluationQuestionForm.options });
+      const refreshed = await getEvaluationDetail(id, evaluationQuestionForm.evaluationId) as EvaluationItem;
+      refreshEvaluationQuestions(evaluationQuestionForm.evaluationId, refreshed.questions || []);
+      setEvaluationQuestionForm(null);
+    } catch (err) {
+      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationQuestionForm.evaluationId]: err instanceof Error ? err.message : "Gagal menyimpan soal." }));
+    } finally {
+      setEvaluationQuestionBusy(false);
+    }
+  }
+
+  async function removeEvaluationQuestion(evaluationId: string, questionId: string) {
+    if (!window.confirm("Hapus soal ini?")) return;
+    setEvaluationQuestionDeletingId(questionId);
+    try {
+      await deleteEvaluationQuestion(id, questionId);
+      const refreshed = await getEvaluationDetail(id, evaluationId) as EvaluationItem;
+      refreshEvaluationQuestions(evaluationId, refreshed.questions || []);
+    } catch (err) {
+      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationId]: err instanceof Error ? err.message : "Gagal menghapus soal." }));
+    } finally {
+      setEvaluationQuestionDeletingId(null);
     }
   }
 
@@ -366,6 +473,19 @@ export default function AdminModuleDetailPage() {
       setCheckpointForm(null);
     } catch (err) {
       setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: err instanceof Error ? err.message : "Gagal membuat checkpoint video." }));
+    }
+  }
+
+  async function removeCheckpoint(contentId: string, quizId: string) {
+    if (!window.confirm("Hapus checkpoint ini beserta semua pertanyaan di dalamnya?")) return;
+    setInteractiveDeletingId(quizId);
+    try {
+      await deleteMiniQuiz(quizId);
+      setVideoQuizzes((prev) => ({ ...prev, [contentId]: (prev[contentId] || []).filter((quiz) => quiz.id !== quizId) }));
+    } catch (err) {
+      setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal menghapus checkpoint." }));
+    } finally {
+      setInteractiveDeletingId(null);
     }
   }
 
@@ -438,6 +558,141 @@ export default function AdminModuleDetailPage() {
   }
 
   const commentTree = normalizeCommentTree(comments);
+  const preTestEvaluations = evaluations.filter((evaluation) => evaluation.tipe === "pre_test");
+  const postTestEvaluations = evaluations.filter((evaluation) => evaluation.tipe === "post_test");
+
+  function openEvaluationForm(type: "pre_test" | "post_test") {
+    setEvaluationType(type);
+    setEvaluationTitle("");
+    setShowEvaluationForm(true);
+    setEvaluationMessage("");
+  }
+
+  function renderEvaluationSection(title: string, type: "pre_test" | "post_test", items: EvaluationItem[]) {
+    const isActiveForm = showEvaluationForm && evaluationType === type;
+
+    return (
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold text-slate-900">{title}</h2>
+          {items.length === 0 && <button type="button" onClick={() => openEvaluationForm(type)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">+ Buat {title}</button>}
+        </div>
+        {evaluationMessage && isActiveForm && <p className="text-sm text-red-600">{evaluationMessage}</p>}
+        {isActiveForm && (
+          <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_auto] gap-3">
+            <input
+              value={evaluationTitle}
+              onChange={(e) => setEvaluationTitle(e.target.value)}
+              placeholder={`Judul ${title}`}
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              required
+            />
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={passingScore}
+              onChange={(e) => setPassingScore(Number(e.target.value))}
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              aria-label="Passing Score"
+            />
+            <input
+              type="number"
+              min={1}
+              value={maxAttempts}
+              onChange={(e) => setMaxAttempts(Number(e.target.value))}
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              aria-label="Max Attempts"
+            />
+            <button
+              type="submit"
+              disabled={evaluationBusy}
+              className="px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60"
+            >
+              {evaluationBusy ? "Membuat..." : "Simpan"}
+            </button>
+          </form>
+        )}
+        {items.length === 0 ? (
+          <p className="text-sm text-slate-500">Belum ada {title} untuk modul ini.</p>
+        ) : (
+          <div className="space-y-3">
+            {items.map((evaluation) => {
+              const questions = evaluation.questions || [];
+              const activeForm = evaluationQuestionForm?.evaluationId === evaluation.id;
+
+              return (
+                <div key={evaluation.id} className="border border-slate-200 rounded-2xl p-4 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
+                        <span>{title}</span>
+                        <span>{questions.length} soal</span>
+                        {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
+                        {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button type="button" onClick={() => startEvaluationQuestionForm(evaluation.id)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">+ Tambah Soal</button>
+                      <button type="button" onClick={() => handleEvaluationDelete(evaluation.id, title)} disabled={evaluationDeletingId === evaluation.id} className="px-4 py-2 border border-red-200 text-red-600 text-xs font-semibold rounded-full text-center hover:bg-red-50 disabled:opacity-60">{evaluationDeletingId === evaluation.id ? "Menghapus..." : "Hapus"}</button>
+                    </div>
+                  </div>
+                  {evaluationQuestionError[evaluation.id] && <p className="text-sm text-red-600">{evaluationQuestionError[evaluation.id]}</p>}
+                  {questions.length === 0 ? (
+                    <p className="text-sm text-slate-500">Belum ada soal untuk {title} ini.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {questions.map((question, index) => (
+                        <div key={question.id} className="rounded-xl bg-slate-50 p-4 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">{index + 1}. {question.pertanyaan}</p>
+                              <p className="text-xs text-slate-500 mt-1">{(question.options || []).length} opsi</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => startEvaluationQuestionEdit(evaluation.id, question)} className="text-xs font-semibold text-slate-600">Edit</button>
+                              <button type="button" onClick={() => removeEvaluationQuestion(evaluation.id, question.id)} disabled={evaluationQuestionDeletingId === question.id} className="text-xs font-semibold text-red-600 disabled:opacity-60">{evaluationQuestionDeletingId === question.id ? "Menghapus..." : "Hapus"}</button>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            {(question.options || []).map((option, optionIndex) => (
+                              <p key={option.id || optionIndex} className={`text-xs rounded-lg px-3 py-2 ${option.isCorrect ? "bg-emerald-50 text-emerald-700" : "bg-white text-slate-600"}`}>
+                                {option.teksOpsi || option.teks || "Opsi kosong"}{option.isCorrect ? " • Jawaban benar" : ""}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {activeForm && (
+                    <form onSubmit={saveEvaluationQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                      <textarea value={evaluationQuestionForm.pertanyaan} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, pertanyaan: e.target.value })} className="w-full border border-slate-200 rounded-xl p-2 text-sm" placeholder="Pertanyaan" rows={2} required />
+                      <div className="space-y-2">
+                        {evaluationQuestionForm.options.map((option, optionIndex) => (
+                          <div key={optionIndex} className="flex gap-2">
+                            <input type="radio" name={`correct-${evaluation.id}`} checked={option.isCorrect} onChange={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === optionIndex })) })} />
+                            <input value={option.teksOpsi} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => itemIndex === optionIndex ? { ...item, teksOpsi: e.target.value } : item) })} className="flex-1 border border-slate-200 rounded-xl p-2 text-sm" placeholder={`Opsi ${optionIndex + 1}`} required />
+                            {evaluationQuestionForm.options.length > 2 && <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.filter((_, itemIndex) => itemIndex !== optionIndex) })} className="text-xs text-red-600">Hapus</button>}
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: [...evaluationQuestionForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">+ Tambah Opsi</button>
+                      <div className="flex gap-2">
+                        <button type="submit" disabled={evaluationQuestionBusy} className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs disabled:opacity-60">{evaluationQuestionBusy ? "Menyimpan..." : evaluationQuestionForm.questionId ? "Simpan Perubahan" : "Tambah Soal"}</button>
+                        <button type="button" onClick={() => setEvaluationQuestionForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white">Batal</button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
@@ -550,6 +805,8 @@ export default function AdminModuleDetailPage() {
            </div>
            <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? "Menyimpan..." : "Simpan Perubahan"}</button></div>
          </form>
+
+        {renderEvaluationSection("Pre-Test", "pre_test", preTestEvaluations)}
 
         {/* Konten Pembelajaran - Kartu */}
         <div className="space-y-6">
@@ -750,9 +1007,12 @@ export default function AdminModuleDetailPage() {
                                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Checkpoint</p>
                                         <h5 className="text-base font-bold text-slate-900 mt-1">{quiz.judul || "Checkpoint tanpa nama"}</h5>
                                       </div>
-                                      <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
-                                        {formatTimestamp(quiz.timestampSeconds)}
-                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
+                                          {formatTimestamp(quiz.timestampSeconds)}
+                                        </span>
+                                        <button type="button" onClick={() => removeCheckpoint(content.id, quiz.id)} disabled={interactiveDeletingId === quiz.id} className="text-xs font-semibold text-red-600 border border-red-200 px-2 py-1 rounded-lg hover:bg-red-50 disabled:opacity-60">Hapus</button>
+                                      </div>
                                     </div>
                                     {(quiz.questions || []).length === 0 ? (
                                       <p className="text-sm text-slate-500">Belum ada pertanyaan pada checkpoint ini.</p>
@@ -841,86 +1101,7 @@ export default function AdminModuleDetailPage() {
           )}
         </div>
 
-         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-           <div className="flex items-center justify-between gap-3">
-             <h2 className="text-base font-bold text-slate-900">Evaluasi</h2>
-             <button type="button" onClick={() => setShowEvaluationForm((value) => !value)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">+ Buat Evaluasi</button>
-           </div>
-            {evaluationMessage && (
-              <p className="text-sm text-red-600">{evaluationMessage}</p>
-            )}
-            {showEvaluationForm && (
-              <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-3">
-                <input
-                  value={evaluationTitle}
-                  onChange={(e) => setEvaluationTitle(e.target.value)}
-                  placeholder="Judul Evaluasi"
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                  required
-                />
-                <select
-                  value={evaluationType}
-                  onChange={(e) => setEvaluationType(e.target.value as "pre_test" | "post_test")}
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                >
-                  <option value="pre_test">Pre-Test</option>
-                  <option value="post_test">Post-Test</option>
-                </select>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={passingScore}
-                  onChange={(e) => setPassingScore(Number(e.target.value))}
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                  aria-label="Passing Score"
-                />
-                <input
-                  type="number"
-                  min={1}
-                  value={maxAttempts}
-                  onChange={(e) => setMaxAttempts(Number(e.target.value))}
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                  aria-label="Max Attempts"
-                />
-                <button
-                  type="submit"
-                  disabled={evaluationBusy}
-                  className="px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60"
-                >
-                  {evaluationBusy ? "Membuat..." : "Simpan"}
-                </button>
-              </form>
-            )}
-            {evaluations.length === 0 ? (
-              <p className="text-sm text-slate-500">Belum ada evaluasi untuk modul ini.</p>
-            ) : (
-              <div className="space-y-3">
-                {evaluations.map((evaluation) => (
-                  <div
-                    key={evaluation.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-slate-200 rounded-2xl p-4"
-                  >
-                    <div>
-                      <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
-                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
-                        <span className="capitalize">{(evaluation.tipe || "evaluation").replace("_", "-")}</span>
-                        {evaluation._count && <span>{evaluation._count.questions} soal</span>}
-                        {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
-                        {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
-                      </div>
-                    </div>
-                    <Link
-                      href={`/admin/modules/${id}/evaluations/${evaluation.id}`}
-                      className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center"
-                    >
-                      Kelola
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-         </section>
+        {renderEvaluationSection("Post-Test", "post_test", postTestEvaluations)}
 
          {/* Moderasi Diskusi */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
@@ -1055,38 +1236,6 @@ export default function AdminModuleDetailPage() {
           )}
         </div>
 
-        {/* Area Aksi Admin */}
-         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-           <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-6">
-             <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path
-                 strokeLinecap="round"
-                 strokeLinejoin="round"
-                 strokeWidth="2"
-                 d="M10.325 4.488c.457-.66 1.245-.904 2.054-.65A17.267 17.267 0 0115 5.5c0 1.005-.2 2.001-.606 2.933A7.5 7.5 0 0017 12.5a7.5 7.5 0 01-2 5.36l-2.744 2.744a1 1 0 01-1.415-.001l-.003-.003a1 1 0 01-.001-1.414l1.742-1.742A5.5 5.5 0 0112.5 10.5c0-1.057.094-2.103.286-3.114z"
-               />
-             </svg>
-             Aksi Pengelolaan
-           </h2>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-
-            <Link
-              href={`/admin/modules/${module.id}/evaluations`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
-            >
-              Edit Evaluasi
-            </Link>
-             {contents.some((c) => c.tipe === "video") && (
-               <Link
-                 href={`/admin/modules/${module.id}/quiz/${contents.find((c) => c.tipe === "video")!.id}`}
-                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
-               >
-                 Pertanyaan Interaktif
-               </Link>
-             )}
-          </div>
-        </div>
       </div>
     </div>
   );
