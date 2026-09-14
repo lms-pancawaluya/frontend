@@ -438,6 +438,84 @@ export default function AdminModuleDetailPage() {
   }
 
   const commentTree = normalizeCommentTree(comments);
+  const preTestEvaluations = evaluations.filter((evaluation) => evaluation.tipe === "pre_test");
+  const postTestEvaluations = evaluations.filter((evaluation) => evaluation.tipe === "post_test");
+
+  function openEvaluationForm(type: "pre_test" | "post_test") {
+    setEvaluationType(type);
+    setEvaluationTitle("");
+    setShowEvaluationForm(true);
+    setEvaluationMessage("");
+  }
+
+  function renderEvaluationSection(title: string, type: "pre_test" | "post_test", items: EvaluationItem[]) {
+    const isActiveForm = showEvaluationForm && evaluationType === type;
+
+    return (
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold text-slate-900">{title}</h2>
+          {items.length === 0 && <button type="button" onClick={() => openEvaluationForm(type)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">+ Buat {title}</button>}
+        </div>
+        {evaluationMessage && isActiveForm && <p className="text-sm text-red-600">{evaluationMessage}</p>}
+        {isActiveForm && (
+          <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_auto] gap-3">
+            <input
+              value={evaluationTitle}
+              onChange={(e) => setEvaluationTitle(e.target.value)}
+              placeholder={`Judul ${title}`}
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              required
+            />
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={passingScore}
+              onChange={(e) => setPassingScore(Number(e.target.value))}
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              aria-label="Passing Score"
+            />
+            <input
+              type="number"
+              min={1}
+              value={maxAttempts}
+              onChange={(e) => setMaxAttempts(Number(e.target.value))}
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              aria-label="Max Attempts"
+            />
+            <button
+              type="submit"
+              disabled={evaluationBusy}
+              className="px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60"
+            >
+              {evaluationBusy ? "Membuat..." : "Simpan"}
+            </button>
+          </form>
+        )}
+        {items.length === 0 ? (
+          <p className="text-sm text-slate-500">Belum ada {title} untuk modul ini.</p>
+        ) : (
+          <div className="space-y-3">
+            {items.map((evaluation) => (
+              <div key={evaluation.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-slate-200 rounded-2xl p-4">
+                <div>
+                  <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
+                    <span>{title}</span>
+                    {evaluation._count && <span>{evaluation._count.questions} soal</span>}
+                    {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
+                    {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
+                  </div>
+                </div>
+                <Link href={`/admin/modules/${id}/evaluations/${evaluation.id}`} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">Kelola</Link>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
@@ -550,6 +628,8 @@ export default function AdminModuleDetailPage() {
            </div>
            <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? "Menyimpan..." : "Simpan Perubahan"}</button></div>
          </form>
+
+        {renderEvaluationSection("Pre-Test", "pre_test", preTestEvaluations)}
 
         {/* Konten Pembelajaran - Kartu */}
         <div className="space-y-6">
@@ -841,86 +921,7 @@ export default function AdminModuleDetailPage() {
           )}
         </div>
 
-         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-           <div className="flex items-center justify-between gap-3">
-             <h2 className="text-base font-bold text-slate-900">Evaluasi</h2>
-             <button type="button" onClick={() => setShowEvaluationForm((value) => !value)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">+ Buat Evaluasi</button>
-           </div>
-            {evaluationMessage && (
-              <p className="text-sm text-red-600">{evaluationMessage}</p>
-            )}
-            {showEvaluationForm && (
-              <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-3">
-                <input
-                  value={evaluationTitle}
-                  onChange={(e) => setEvaluationTitle(e.target.value)}
-                  placeholder="Judul Evaluasi"
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                  required
-                />
-                <select
-                  value={evaluationType}
-                  onChange={(e) => setEvaluationType(e.target.value as "pre_test" | "post_test")}
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                >
-                  <option value="pre_test">Pre-Test</option>
-                  <option value="post_test">Post-Test</option>
-                </select>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={passingScore}
-                  onChange={(e) => setPassingScore(Number(e.target.value))}
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                  aria-label="Passing Score"
-                />
-                <input
-                  type="number"
-                  min={1}
-                  value={maxAttempts}
-                  onChange={(e) => setMaxAttempts(Number(e.target.value))}
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                  aria-label="Max Attempts"
-                />
-                <button
-                  type="submit"
-                  disabled={evaluationBusy}
-                  className="px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60"
-                >
-                  {evaluationBusy ? "Membuat..." : "Simpan"}
-                </button>
-              </form>
-            )}
-            {evaluations.length === 0 ? (
-              <p className="text-sm text-slate-500">Belum ada evaluasi untuk modul ini.</p>
-            ) : (
-              <div className="space-y-3">
-                {evaluations.map((evaluation) => (
-                  <div
-                    key={evaluation.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-slate-200 rounded-2xl p-4"
-                  >
-                    <div>
-                      <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
-                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
-                        <span className="capitalize">{(evaluation.tipe || "evaluation").replace("_", "-")}</span>
-                        {evaluation._count && <span>{evaluation._count.questions} soal</span>}
-                        {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
-                        {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
-                      </div>
-                    </div>
-                    <Link
-                      href={`/admin/modules/${id}/evaluations/${evaluation.id}`}
-                      className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center"
-                    >
-                      Kelola
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-         </section>
+        {renderEvaluationSection("Post-Test", "post_test", postTestEvaluations)}
 
          {/* Moderasi Diskusi */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
