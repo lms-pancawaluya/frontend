@@ -83,17 +83,6 @@ export default function AdminCourseDetailPage() {
     setModuleForm({ judul: "", deskripsi: "", aspekPancawaluya: "cageur", urutan: 1 });
   }
 
-  function startEditModule(module: CourseModule) {
-    setEditingModuleId(module.id);
-    setModuleError("");
-    setModuleForm({
-      judul: module.judul || "",
-      deskripsi: module.deskripsi || "",
-      aspekPancawaluya: module.aspekPancawaluya || "cageur",
-      urutan: module.urutan || 1,
-    });
-  }
-
   function handleModuleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) {
@@ -316,7 +305,7 @@ export default function AdminCourseDetailPage() {
                   <span className="text-xs text-slate-500">{module.status || (module.isLocked ? "Terkunci" : "Tersedia")}</span>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button type="button" onClick={() => startEditModule(module)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-[var(--color-navy)]">Edit</button>
+                  <Link href={`/admin/modules/${module.id}`} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-[var(--color-navy)]">Edit</Link>
                   <button type="button" onClick={() => handleModuleDelete(module)} disabled={moduleDeletingId === module.id} className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 disabled:text-gray-400">{moduleDeletingId === module.id ? "Menghapus..." : "Hapus"}</button>
                 </div>
               </li>
