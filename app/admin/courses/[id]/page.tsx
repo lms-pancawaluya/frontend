@@ -9,6 +9,9 @@ import { createModule, deleteModule, getModules, updateModule } from "@/services
 interface CourseModule {
   id: string;
   judul?: string;
+  nama?: string;
+  title?: string;
+  name?: string;
   deskripsi?: string;
   aspekPancawaluya?: string;
   urutan?: number;
@@ -34,6 +37,10 @@ function formatDate(value?: string) {
   if (!value) return "—";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("id-ID");
+}
+
+function getModuleTitle(module: CourseModule) {
+  return module.judul || module.nama || module.title || module.name || module.id;
 }
 
 export default function AdminCourseDetailPage() {
@@ -81,8 +88,7 @@ export default function AdminCourseDetailPage() {
     if (course?.modules?.some((courseModule) => courseModule.id === module.id)) return false;
     if (!moduleSearchValue) return true;
 
-    return [module.judul, module.deskripsi, module.aspekPancawaluya, module.id]
-      .some((value) => value?.toLowerCase().includes(moduleSearchValue));
+    return getModuleTitle(module).toLowerCase().includes(moduleSearchValue);
   });
 
   function resetModuleForm() {
@@ -294,9 +300,10 @@ export default function AdminCourseDetailPage() {
             <input value={moduleSearch} onChange={(event) => setModuleSearch(event.target.value)} placeholder="Cari module" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm sm:col-span-2" />
             <select value={selectedModuleId} onChange={(event) => setSelectedModuleId(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
               <option value="">Pilih module existing</option>
-              {availableExistingModules.map((module) => <option key={module.id} value={module.id}>{module.judul || module.id}</option>)}
+              {availableExistingModules.map((module) => <option key={module.id} value={module.id}>{getModuleTitle(module)}</option>)}
             </select>
             <button type="submit" disabled={!selectedModuleId || existingModuleSaving} className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white disabled:bg-gray-400">{existingModuleSaving ? "Menambahkan..." : "Tambah Existing"}</button>
+            {availableExistingModules.length === 0 && <p className="text-sm text-slate-500 sm:col-span-2">Tidak ada module yang cocok.</p>}
           </form>
         )}
 
@@ -322,7 +329,7 @@ export default function AdminCourseDetailPage() {
             {course.modules.map((module) => (
               <li key={module.id} className="flex flex-col gap-3 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="font-medium">{module.judul || module.id}</p>
+                  <p className="font-medium">{getModuleTitle(module)}</p>
                   {module.deskripsi && <p className="mt-1 line-clamp-1 text-xs text-slate-500">{module.deskripsi}</p>}
                   <span className="text-xs text-slate-500">{module.status || (module.isLocked ? "Terkunci" : "Tersedia")}</span>
                 </div>
