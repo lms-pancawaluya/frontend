@@ -6,7 +6,7 @@ import Link from "next/link";
 import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
 import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
 import { deleteContent, updateContent } from "@/services/content.service";
-import { createEvaluation, getModuleEvaluations } from "@/services/evaluation.service";
+import { addQuestion as addEvaluationQuestion, createEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
 import { addQuestion, createMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
 
 interface ModuleDetail {
@@ -25,12 +25,27 @@ interface ContentItem {
   urutan: number;
 }
 
+interface EvaluationOption {
+  id?: string;
+  teksOpsi?: string;
+  teks?: string;
+  isCorrect?: boolean;
+}
+
+interface EvaluationQuestion {
+  id: string;
+  pertanyaan: string;
+  tipe: string;
+  options: EvaluationOption[];
+}
+
 interface EvaluationItem {
   id: string;
   judul: string;
   tipe?: "pre_test" | "post_test" | string;
   passingScore?: number;
   maxAttempts?: number;
+  questions?: EvaluationQuestion[];
   _count?: { questions: number };
 }
 
@@ -170,6 +185,10 @@ export default function AdminModuleDetailPage() {
   const [maxAttempts, setMaxAttempts] = useState(3);
   const [evaluationBusy, setEvaluationBusy] = useState(false);
   const [evaluationMessage, setEvaluationMessage] = useState("");
+  const [evaluationQuestionForm, setEvaluationQuestionForm] = useState<{ evaluationId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
+  const [evaluationQuestionBusy, setEvaluationQuestionBusy] = useState(false);
+  const [evaluationQuestionDeletingId, setEvaluationQuestionDeletingId] = useState<string | null>(null);
+  const [evaluationQuestionError, setEvaluationQuestionError] = useState<Record<string, string>>({});
   const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null);
   const [videoQuizzes, setVideoQuizzes] = useState<Record<string, InteractiveQuiz[]>>({});
   const [interactiveLoading, setInteractiveLoading] = useState<string | null>(null);
@@ -192,7 +211,8 @@ export default function AdminModuleDetailPage() {
           urutan: moduleData.urutan,
         });
          setContents(contentsData);
-         setEvaluations((await getModuleEvaluations(id)) as EvaluationItem[]);
+         const evaluationList = await getModuleEvaluations(id) as EvaluationItem[];
+         setEvaluations(await Promise.all(evaluationList.map(async (evaluation) => ({ ...evaluation, ...(await getEvaluationDetail(id, evaluation.id)) }))));
 
       } catch (err) {
         if (err instanceof Error) {
@@ -327,14 +347,85 @@ export default function AdminModuleDetailPage() {
     setEvaluationBusy(true);
     setEvaluationMessage("");
     try {
-      const created = await createEvaluation(id, { judul: evaluationTitle, tipe: evaluationType, passingScore, maxAttempts });
-      setEvaluations((prev) => [...prev, created as EvaluationItem]);
+      const created = await createEvaluation(id, { judul: evaluationTitle, tipe: evaluationType, passingScore, maxAttempts }) as EvaluationItem;
+      setEvaluations((prev) => [...prev, { ...created, questions: [] }]);
       setEvaluationTitle("");
       setShowEvaluationForm(false);
     } catch (err) {
       setEvaluationMessage(err instanceof Error ? err.message : "Gagal membuat evaluasi.");
     } finally {
       setEvaluationBusy(false);
+    }
+  }
+
+  function getInitialEvaluationOptions() {
+    return [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }];
+  }
+
+  function mapEvaluationOptions(options: EvaluationOption[]) {
+    const mapped = options.map((option) => ({ teksOpsi: (option.teksOpsi || option.teks || "").trim(), isCorrect: option.isCorrect === true }));
+    return mapped.length >= 2 ? mapped : getInitialEvaluationOptions();
+  }
+
+  function startEvaluationQuestionForm(evaluationId: string) {
+    setEvaluationQuestionForm({ evaluationId, pertanyaan: "", options: getInitialEvaluationOptions() });
+    setEvaluationQuestionError((prev) => ({ ...prev, [evaluationId]: "" }));
+  }
+
+  function startEvaluationQuestionEdit(evaluationId: string, question: EvaluationQuestion) {
+    setEvaluationQuestionForm({ evaluationId, questionId: question.id, pertanyaan: question.pertanyaan, options: mapEvaluationOptions(question.options || []) });
+    setEvaluationQuestionError((prev) => ({ ...prev, [evaluationId]: "" }));
+  }
+
+  function refreshEvaluationQuestions(evaluationId: string, questions: EvaluationQuestion[]) {
+    setEvaluations((prev) => prev.map((evaluation) => evaluation.id === evaluationId ? { ...evaluation, questions, _count: { questions: questions.length } } : evaluation));
+  }
+
+  function validateEvaluationQuestionForm() {
+    if (!evaluationQuestionForm?.pertanyaan.trim()) return "Pertanyaan wajib diisi.";
+    if (evaluationQuestionForm.options.length < 2) return "Minimal 2 opsi jawaban.";
+    if (evaluationQuestionForm.options.some((option) => !option.teksOpsi.trim())) return "Semua opsi jawaban harus diisi.";
+    if (evaluationQuestionForm.options.filter((option) => option.isCorrect).length !== 1) return "Pilih tepat 1 jawaban benar.";
+    return "";
+  }
+
+  async function saveEvaluationQuestion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!evaluationQuestionForm) return;
+    const validationError = validateEvaluationQuestionForm();
+    if (validationError) {
+      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationQuestionForm.evaluationId]: validationError }));
+      return;
+    }
+    setEvaluationQuestionBusy(true);
+    try {
+      const payload = {
+        pertanyaan: evaluationQuestionForm.pertanyaan.trim(),
+        options: evaluationQuestionForm.options.map((option) => ({ teks: option.teksOpsi.trim(), isCorrect: option.isCorrect })),
+      };
+      if (evaluationQuestionForm.questionId) await updateEvaluationQuestion(id, evaluationQuestionForm.questionId, payload);
+      else await addEvaluationQuestion(id, evaluationQuestionForm.evaluationId, { pertanyaan: payload.pertanyaan, options: evaluationQuestionForm.options });
+      const refreshed = await getEvaluationDetail(id, evaluationQuestionForm.evaluationId) as EvaluationItem;
+      refreshEvaluationQuestions(evaluationQuestionForm.evaluationId, refreshed.questions || []);
+      setEvaluationQuestionForm(null);
+    } catch (err) {
+      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationQuestionForm.evaluationId]: err instanceof Error ? err.message : "Gagal menyimpan soal." }));
+    } finally {
+      setEvaluationQuestionBusy(false);
+    }
+  }
+
+  async function removeEvaluationQuestion(evaluationId: string, questionId: string) {
+    if (!window.confirm("Hapus soal ini?")) return;
+    setEvaluationQuestionDeletingId(questionId);
+    try {
+      await deleteEvaluationQuestion(id, questionId);
+      const refreshed = await getEvaluationDetail(id, evaluationId) as EvaluationItem;
+      refreshEvaluationQuestions(evaluationId, refreshed.questions || []);
+    } catch (err) {
+      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationId]: err instanceof Error ? err.message : "Gagal menghapus soal." }));
+    } finally {
+      setEvaluationQuestionDeletingId(null);
     }
   }
 
@@ -497,20 +588,74 @@ export default function AdminModuleDetailPage() {
           <p className="text-sm text-slate-500">Belum ada {title} untuk modul ini.</p>
         ) : (
           <div className="space-y-3">
-            {items.map((evaluation) => (
-              <div key={evaluation.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-slate-200 rounded-2xl p-4">
-                <div>
-                  <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
-                  <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
-                    <span>{title}</span>
-                    {evaluation._count && <span>{evaluation._count.questions} soal</span>}
-                    {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
-                    {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
+            {items.map((evaluation) => {
+              const questions = evaluation.questions || [];
+              const activeForm = evaluationQuestionForm?.evaluationId === evaluation.id;
+
+              return (
+                <div key={evaluation.id} className="border border-slate-200 rounded-2xl p-4 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
+                        <span>{title}</span>
+                        <span>{questions.length} soal</span>
+                        {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
+                        {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => startEvaluationQuestionForm(evaluation.id)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">+ Tambah Soal</button>
                   </div>
+                  {evaluationQuestionError[evaluation.id] && <p className="text-sm text-red-600">{evaluationQuestionError[evaluation.id]}</p>}
+                  {questions.length === 0 ? (
+                    <p className="text-sm text-slate-500">Belum ada soal untuk {title} ini.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {questions.map((question, index) => (
+                        <div key={question.id} className="rounded-xl bg-slate-50 p-4 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">{index + 1}. {question.pertanyaan}</p>
+                              <p className="text-xs text-slate-500 mt-1">{(question.options || []).length} opsi</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => startEvaluationQuestionEdit(evaluation.id, question)} className="text-xs font-semibold text-slate-600">Edit</button>
+                              <button type="button" onClick={() => removeEvaluationQuestion(evaluation.id, question.id)} disabled={evaluationQuestionDeletingId === question.id} className="text-xs font-semibold text-red-600 disabled:opacity-60">{evaluationQuestionDeletingId === question.id ? "Menghapus..." : "Hapus"}</button>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            {(question.options || []).map((option, optionIndex) => (
+                              <p key={option.id || optionIndex} className={`text-xs rounded-lg px-3 py-2 ${option.isCorrect ? "bg-emerald-50 text-emerald-700" : "bg-white text-slate-600"}`}>
+                                {option.teksOpsi || option.teks || "Opsi kosong"}{option.isCorrect ? " • Jawaban benar" : ""}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {activeForm && (
+                    <form onSubmit={saveEvaluationQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                      <textarea value={evaluationQuestionForm.pertanyaan} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, pertanyaan: e.target.value })} className="w-full border border-slate-200 rounded-xl p-2 text-sm" placeholder="Pertanyaan" rows={2} required />
+                      <div className="space-y-2">
+                        {evaluationQuestionForm.options.map((option, optionIndex) => (
+                          <div key={optionIndex} className="flex gap-2">
+                            <input type="radio" name={`correct-${evaluation.id}`} checked={option.isCorrect} onChange={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === optionIndex })) })} />
+                            <input value={option.teksOpsi} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => itemIndex === optionIndex ? { ...item, teksOpsi: e.target.value } : item) })} className="flex-1 border border-slate-200 rounded-xl p-2 text-sm" placeholder={`Opsi ${optionIndex + 1}`} required />
+                            {evaluationQuestionForm.options.length > 2 && <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.filter((_, itemIndex) => itemIndex !== optionIndex) })} className="text-xs text-red-600">Hapus</button>}
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: [...evaluationQuestionForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">+ Tambah Opsi</button>
+                      <div className="flex gap-2">
+                        <button type="submit" disabled={evaluationQuestionBusy} className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs disabled:opacity-60">{evaluationQuestionBusy ? "Menyimpan..." : evaluationQuestionForm.questionId ? "Simpan Perubahan" : "Tambah Soal"}</button>
+                        <button type="button" onClick={() => setEvaluationQuestionForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white">Batal</button>
+                      </div>
+                    </form>
+                  )}
                 </div>
-                <Link href={`/admin/modules/${id}/evaluations/${evaluation.id}`} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">Kelola</Link>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
