@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { deleteCourse, getCourseById } from "@/services/course.service";
-import { createModule, deleteModule, updateModule } from "@/services/module.service";
+import { createModule, deleteModule, getModules, updateModule } from "@/services/module.service";
 
 interface CourseModule {
   id: string;
@@ -52,7 +52,10 @@ export default function AdminCourseDetailPage() {
     urutan: 1,
   });
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+  const [existingModules, setExistingModules] = useState<CourseModule[]>([]);
+  const [selectedModuleId, setSelectedModuleId] = useState("");
   const [moduleSaving, setModuleSaving] = useState(false);
+  const [existingModuleSaving, setExistingModuleSaving] = useState(false);
   const [moduleDeletingId, setModuleDeletingId] = useState<string | null>(null);
   const [moduleError, setModuleError] = useState("");
 
@@ -70,6 +73,10 @@ export default function AdminCourseDetailPage() {
       setDeleting(false);
     }
   }
+
+  const availableExistingModules = existingModules.filter(
+    (module) => !course?.modules?.some((courseModule) => courseModule.id === module.id)
+  );
 
   function resetModuleForm() {
     setEditingModuleId(null);
@@ -129,6 +136,27 @@ export default function AdminCourseDetailPage() {
     }
   }
 
+  async function handleExistingModuleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!selectedModuleId) return;
+
+    const selectedModule = existingModules.find((module) => module.id === selectedModuleId);
+    if (!selectedModule) return;
+
+    setExistingModuleSaving(true);
+    setModuleError("");
+    try {
+      await updateModule(selectedModule.id, { courseId: id });
+      const refreshed = await getCourseById(id);
+      setCourse(refreshed as Course);
+      setSelectedModuleId("");
+    } catch (err) {
+      setModuleError(err instanceof Error ? err.message : "Gagal menambahkan module existing.");
+    } finally {
+      setExistingModuleSaving(false);
+    }
+  }
+
   async function handleModuleDelete(module: CourseModule) {
     if (!window.confirm(`Yakin ingin menghapus module "${module.judul || module.id}"?`)) return;
 
@@ -151,8 +179,9 @@ export default function AdminCourseDetailPage() {
   useEffect(() => {
     async function loadCourse() {
       try {
-        const data = await getCourseById(id);
-        setCourse(data as Course);
+        const [courseData, modulesData] = await Promise.all([getCourseById(id), getModules()]);
+        setCourse(courseData as Course);
+        setExistingModules(modulesData as CourseModule[]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Gagal memuat detail course.");
       } finally {
@@ -252,15 +281,25 @@ export default function AdminCourseDetailPage() {
 
         {moduleError && <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{moduleError}</div>}
 
+        {!editingModuleId && (
+          <form onSubmit={handleExistingModuleSubmit} className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-[1fr_auto]">
+            <select value={selectedModuleId} onChange={(event) => setSelectedModuleId(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+              <option value="">Pilih module existing</option>
+              {availableExistingModules.map((module) => <option key={module.id} value={module.id}>{module.judul || module.id}</option>)}
+            </select>
+            <button type="submit" disabled={!selectedModuleId || existingModuleSaving} className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white disabled:bg-gray-400">{existingModuleSaving ? "Menambahkan..." : "Tambah Existing"}</button>
+          </form>
+        )}
+
         <form onSubmit={handleModuleSubmit} className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
-          <input name="judul" value={moduleForm.judul} onChange={handleModuleChange} placeholder="Judul module" required className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" />
+          <input name="judul" value={moduleForm.judul} onChange={handleModuleChange} placeholder="Judul module baru" required className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" />
           <select name="aspekPancawaluya" value={moduleForm.aspekPancawaluya} onChange={handleModuleChange} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm capitalize">
             {['cageur', 'bageur', 'bener', 'pinter', 'singer'].map((aspek) => <option key={aspek} value={aspek}>{aspek}</option>)}
           </select>
           <textarea name="deskripsi" value={moduleForm.deskripsi} onChange={handleModuleChange} placeholder="Deskripsi module" required rows={3} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm sm:col-span-2" />
           <input name="urutan" type="number" min={1} value={moduleForm.urutan} onChange={handleModuleChange} required className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" />
           <div className="flex items-center gap-2">
-            <button type="submit" disabled={moduleSaving} className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white disabled:bg-gray-400">{moduleSaving ? "Menyimpan..." : editingModuleId ? "Simpan Perubahan" : "Simpan Module"}</button>
+            <button type="submit" disabled={moduleSaving} className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white disabled:bg-gray-400">{moduleSaving ? "Menyimpan..." : editingModuleId ? "Simpan Perubahan" : "Simpan Module Baru"}</button>
             {editingModuleId && <button type="button" onClick={resetModuleForm} className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600">Batal</button>}
           </div>
         </form>
