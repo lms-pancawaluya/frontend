@@ -1056,38 +1056,6 @@ export default function AdminModuleDetailPage() {
           )}
         </div>
 
-        {/* Area Aksi Admin */}
-         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-           <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-6">
-             <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path
-                 strokeLinecap="round"
-                 strokeLinejoin="round"
-                 strokeWidth="2"
-                 d="M10.325 4.488c.457-.66 1.245-.904 2.054-.65A17.267 17.267 0 0115 5.5c0 1.005-.2 2.001-.606 2.933A7.5 7.5 0 0017 12.5a7.5 7.5 0 01-2 5.36l-2.744 2.744a1 1 0 01-1.415-.001l-.003-.003a1 1 0 01-.001-1.414l1.742-1.742A5.5 5.5 0 0112.5 10.5c0-1.057.094-2.103.286-3.114z"
-               />
-             </svg>
-             Aksi Pengelolaan
-           </h2>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-
-            <Link
-              href={`/admin/modules/${module.id}/evaluations`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
-            >
-              Edit Evaluasi
-            </Link>
-             {contents.some((c) => c.tipe === "video") && (
-               <Link
-                 href={`/admin/modules/${module.id}/quiz/${contents.find((c) => c.tipe === "video")!.id}`}
-                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
-               >
-                 Pertanyaan Interaktif
-               </Link>
-             )}
-          </div>
-        </div>
       </div>
     </div>
   );
