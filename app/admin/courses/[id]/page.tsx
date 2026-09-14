@@ -63,6 +63,7 @@ export default function AdminCourseDetailPage() {
   const [existingModules, setExistingModules] = useState<CourseModule[]>([]);
   const [selectedModuleId, setSelectedModuleId] = useState("");
   const [moduleSearch, setModuleSearch] = useState("");
+  const [existingModuleListOpen, setExistingModuleListOpen] = useState(false);
   const [moduleSaving, setModuleSaving] = useState(false);
   const [existingModuleSaving, setExistingModuleSaving] = useState(false);
   const [moduleDeletingId, setModuleDeletingId] = useState<string | null>(null);
@@ -94,6 +95,12 @@ export default function AdminCourseDetailPage() {
   function resetModuleForm() {
     setEditingModuleId(null);
     setModuleForm({ judul: "", deskripsi: "", aspekPancawaluya: "cageur", urutan: 1 });
+  }
+
+  function selectExistingModule(module: CourseModule) {
+    setSelectedModuleId(module.id);
+    setModuleSearch(getModuleTitle(module));
+    setExistingModuleListOpen(false);
   }
 
   function handleModuleChange(
@@ -154,6 +161,7 @@ export default function AdminCourseDetailPage() {
       setCourse(refreshed as Course);
       setSelectedModuleId("");
       setModuleSearch("");
+      setExistingModuleListOpen(false);
       setModuleAddMode(null);
     } catch (err) {
       setModuleError(err instanceof Error ? err.message : "Gagal menambahkan module existing.");
@@ -278,14 +286,14 @@ export default function AdminCourseDetailPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => { resetModuleForm(); setSelectedModuleId(""); setModuleSearch(""); setModuleAddMode("create"); setModuleError(""); }}
+              onClick={() => { resetModuleForm(); setSelectedModuleId(""); setModuleSearch(""); setExistingModuleListOpen(false); setModuleAddMode("create"); setModuleError(""); }}
               className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white transition hover:opacity-90"
             >
               Buat Modul Baru
             </button>
             <button
               type="button"
-              onClick={() => { resetModuleForm(); setSelectedModuleId(""); setModuleSearch(""); setModuleAddMode("existing"); setModuleError(""); }}
+              onClick={() => { resetModuleForm(); setSelectedModuleId(""); setModuleSearch(""); setExistingModuleListOpen(true); setModuleAddMode("existing"); setModuleError(""); }}
               className="rounded-full border border-[var(--color-border-soft)] px-4 py-2 text-sm text-[var(--color-navy)] transition hover:bg-gray-50"
             >
               Tambah Modul yang Ada
@@ -297,13 +305,27 @@ export default function AdminCourseDetailPage() {
 
         {moduleAddMode === "existing" && (
           <form onSubmit={handleExistingModuleSubmit} className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-[1fr_auto]">
-            <input value={moduleSearch} onChange={(event) => setModuleSearch(event.target.value)} placeholder="Cari module" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm sm:col-span-2" />
-            <select value={selectedModuleId} onChange={(event) => setSelectedModuleId(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-              <option value="">Pilih module existing</option>
-              {availableExistingModules.map((module) => <option key={module.id} value={module.id}>{getModuleTitle(module)}</option>)}
-            </select>
+            <div className="relative">
+              <input
+                value={moduleSearch}
+                onChange={(event) => { setModuleSearch(event.target.value); setSelectedModuleId(""); setExistingModuleListOpen(true); }}
+                onFocus={() => setExistingModuleListOpen(true)}
+                placeholder="Cari dan pilih module"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              />
+              {existingModuleListOpen && (
+                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                  {availableExistingModules.length === 0 ? (
+                    <p className="px-3 py-2 text-sm text-slate-500">Tidak ada module yang cocok.</p>
+                  ) : availableExistingModules.map((module) => (
+                    <button key={module.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => selectExistingModule(module)} className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                      {getModuleTitle(module)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button type="submit" disabled={!selectedModuleId || existingModuleSaving} className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white disabled:bg-gray-400">{existingModuleSaving ? "Menambahkan..." : "Tambah Existing"}</button>
-            {availableExistingModules.length === 0 && <p className="text-sm text-slate-500 sm:col-span-2">Tidak ada module yang cocok.</p>}
           </form>
         )}
 
