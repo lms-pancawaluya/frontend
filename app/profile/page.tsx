@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import AdminProfileView from "./AdminProfileView";
 import GuruProfileView from "./GuruProfileView";
 import { API_URL, fetchApi } from "@/lib/api";
@@ -17,7 +18,42 @@ interface ProfileData {
   fotoProfil?: string;
 }
 
+// Sidebar mengarah ke /profile?tab=personal|progress|security (lihat Sidebar.tsx →
+// getProfileSubItems). Nilai query-nya beda penamaan dari tab internal GuruProfileView
+// ("profil" | "progres" | "keamanan"), jadi dipetakan di sini.
+export type GuruProfileTab = "profil" | "progres" | "keamanan";
+
+const TAB_QUERY_MAP: Record<string, GuruProfileTab> = {
+  personal: "profil",
+  progress: "progres",
+  security: "keamanan",
+};
+
+function parseProfileTabParam(tabParam: string | null): GuruProfileTab {
+  if (!tabParam) return "profil";
+  return TAB_QUERY_MAP[tabParam] ?? "profil";
+}
+
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilePageWithTab />
+    </Suspense>
+  );
+}
+
+// Membaca ?tab= dan menjadikannya bagian dari `key`, supaya setiap kali menu Sidebar
+// (Data Pribadi & Instansi / Progres Modul / Keamanan Akun) diklik, GuruProfileView
+// remount dengan tab aktif yang benar — tanpa useEffect+setState tambahan.
+function ProfilePageWithTab() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab = parseProfileTabParam(tabParam);
+
+  return <ProfilePageContent key={tabParam ?? "personal"} initialTab={initialTab} />;
+}
+
+function ProfilePageContent({ initialTab }: { initialTab: GuruProfileTab }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +127,7 @@ export default function ProfilePage() {
       {profile.role === "admin" ? (
         <AdminProfileView profile={profile} onRefresh={fetchProfile} />
       ) : (
-        <GuruProfileView profile={profile} onRefresh={fetchProfile} />
+        <GuruProfileView profile={profile} onRefresh={fetchProfile} initialTab={initialTab} />
       )}
     </div>
   );

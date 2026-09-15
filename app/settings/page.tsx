@@ -1,12 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useApp } from "@/app/context/AppContext";
 import { Sun, Moon, Monitor, Globe } from "lucide-react";
 import { API_URL, fetchApi } from "@/lib/api";
 
 type TabType = "general" | "preferences" | "security" | "notifications";
+
+const VALID_TABS: TabType[] = ["general", "preferences", "security", "notifications"];
+
+// Sidebar mengarah ke /settings?tab=general|preferences|security|notifications
+// (lihat Sidebar.tsx). Nilainya sudah sama persis dengan TabType di sini,
+// tinggal divalidasi & fallback ke "general" kalau query-nya kosong/tidak dikenal.
+function parseTabParam(tabParam: string | null): TabType {
+  return VALID_TABS.includes(tabParam as TabType) ? (tabParam as TabType) : "general";
+}
 
 interface ProfileData {
   nama: string;
@@ -19,8 +29,26 @@ interface ProfileData {
 }
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageWithTab />
+    </Suspense>
+  );
+}
+
+// Membaca ?tab= dan menjadikannya bagian dari `key`, supaya setiap kali menu
+// Sidebar (General Information / Preferences / Security / Notifications) diklik,
+// komponen di bawah remount dengan tab aktif yang benar — tanpa useEffect+setState.
+function SettingsPageWithTab() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
+  return <SettingsPageContent key={tabParam ?? "general"} initialTab={parseTabParam(tabParam)} />;
+}
+
+function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
   const { theme, setTheme, language, setLanguage, t } = useApp();
-  const [activeTab, setActiveTab] = useState<TabType>("general");
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);

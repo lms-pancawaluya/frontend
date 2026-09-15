@@ -29,6 +29,13 @@ interface GuruProfileProps {
     progress?: ProgressItem[];
   };
   onRefresh: () => void;
+  /**
+   * Tab yang aktif saat komponen pertama kali dirender, dikirim dari
+   * app/profile/page.tsx berdasarkan query param `?tab=` di URL (diklik dari
+   * menu Sidebar: Data Pribadi & Instansi / Progres Modul / Keamanan Akun).
+   * Kalau tidak dikirim, default ke tab "profil".
+   */
+  initialTab?: "profil" | "progres" | "keamanan";
 }
 
 interface SekolahData {
@@ -248,7 +255,7 @@ export default function GuruProfileView(props: GuruProfileProps) {
   return <GuruProfileViewContent key={getProfileStateKey(props.profile)} {...props} />;
 }
 
-function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
+function GuruProfileViewContent({ profile, onRefresh, initialTab }: GuruProfileProps) {
   const getToken = () => localStorage.getItem("token") || "";
 
   const [initialProfileState] = useState(() => getInitialProfileState(profile));
@@ -256,7 +263,9 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
   const [selectedDaerah, setSelectedDaerah] = useState<string>(initialProfileState.selectedDaerah);
   const [ketikManual, setKetikManual] = useState<boolean>(initialProfileState.ketikManual);
 
-  const [activeTab, setActiveTab] = useState<"profil" | "progres" | "keamanan">("profil");
+  const [activeTab, setActiveTab] = useState<"profil" | "progres" | "keamanan">(
+    initialTab || "profil"
+  );
 
   const [passwordData, setPasswordData] = useState({
     passwordLama: "",
