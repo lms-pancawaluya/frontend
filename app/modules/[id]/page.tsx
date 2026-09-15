@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, useRef, useCallback } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
+import { getMaterialRoute, isVideoMaterial, sortMaterialsByUrutan, type ModuleMaterial } from "@/lib/materials";
 
 import { API_URL, fetchApi } from "@/lib/api";
 
@@ -29,6 +30,7 @@ interface ModuleContent {
   judul?: string;
   tipe?: string;
   konten?: string;
+  urutan?: number;
 }
 
 interface AttemptResult {
@@ -98,11 +100,22 @@ const getYoutubeId = (url?: string): string => {
 };
 
 export default function ModuleVideoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 text-xs text-slate-500">Memuat materi...</div>}>
+      <ModuleVideoPageContent />
+    </Suspense>
+  );
+}
+
+function ModuleVideoPageContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const moduleId = params.id as string;
 
   const [videoContent, setVideoContent] = useState<ModuleContent | null>(null);
+  const [materials, setMaterials] = useState<ModuleMaterial[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [moduleDescription, setModuleDescription] = useState<string>("");
   const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
@@ -115,8 +128,11 @@ export default function ModuleVideoPage() {
   const [authToken] = useState(getStoredAuthToken);
 
   // Loading & Error States
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Status resolusi material awal. Video UI HANYA boleh dirender saat status
+  // ini bernilai "video", sehingga tidak ada paint Video sebelum material
+  // aktif benar-benar diketahui.
+  const [resolutionStatus, setResolutionStatus] = useState<"resolving" | "video" | "non-video" | "error">("resolving");
 
   const playerRef = useRef<YouTubePlayer | null>(null);
   const maxWatchedTimeRef = useRef<number>(0);
@@ -147,8 +163,8 @@ export default function ModuleVideoPage() {
   // Memuat konten dan metadata modul
   useEffect(() => {
     async function init() {
-      setIsLoadingContent(true);
       setErrorMessage(null);
+      setResolutionStatus("resolving");
       try {
         const [contentsRes, moduleRes] = await Promise.all([
           getModuleContents(moduleId),
@@ -159,14 +175,24 @@ export default function ModuleVideoPage() {
           setModuleDescription(moduleRes.deskripsi);
         }
 
-        const contents = contentsRes as ModuleContent[];
-        if (Array.isArray(contents) && contents.length > 0) {
-          const vid = contents.find((c) => c.tipe === "video");
-          if (vid) {
-            setVideoContent(vid);
+        const contents = sortMaterialsByUrutan(contentsRes as ModuleMaterial[]);
+        setMaterials(contents);
+
+        if (contents.length > 0) {
+          const requestedIndex = Number(searchParams.get("i"));
+          const hasRequestedIndex = Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < contents.length;
+          // Tanpa index eksplisit, mulai dari material pertama (paling kecil
+          // `urutan`-nya) — bukan dari tipe tertentu (mis. video).
+          const targetIndex = hasRequestedIndex ? requestedIndex : 0;
+          setCurrentIndex(targetIndex);
+
+          const target = contents[targetIndex];
+          if (target && isVideoMaterial(target.tipe)) {
+            setVideoContent(target as ModuleContent);
+            setResolutionStatus("video");
 
             try {
-              const quizRes = await fetchApi(`${API_BASE_URL}/mini-quizzes/content/${vid.id}`, {
+              const quizRes = await fetchApi(`${API_BASE_URL}/mini-quizzes/content/${target.id}`, {
                 headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
               });
               const quizJson = await quizRes.json();
@@ -182,21 +208,28 @@ export default function ModuleVideoPage() {
               console.error("Gagal memuat mini quiz:", err);
               setMiniQuizzes([]);
             }
+          } else if (target) {
+            // Material pertama (atau pada index ini) bukan video → serahkan ke
+            // halaman material generik pada posisi yang sama. Tandai sebagai
+            // non-video agar UI Video tidak pernah dirender.
+            setResolutionStatus("non-video");
+            router.replace(getMaterialRoute(moduleId, contents, targetIndex));
           } else {
-            setErrorMessage("Modul ini tidak memiliki konten video pembelajaran.");
+            setResolutionStatus("error");
+            router.replace(`/modules/${moduleId}/evaluation`);
           }
         } else {
+          setResolutionStatus("error");
           setErrorMessage(`Modul tidak ditemukan atau tidak memiliki konten.`);
         }
       } catch (err) {
         console.error("Gagal memuat konten pembelajaran:", err);
+        setResolutionStatus("error");
         setErrorMessage("Gagal terhubung ke server backend.");
-      } finally {
-        setIsLoadingContent(false);
       }
     }
     init();
-  }, [moduleId, authToken]);
+  }, [moduleId, authToken, router, searchParams]);
 
   // ❌ useEffect fetch detail kuis ke endpoint GET /mini-quizzes/:id sudah
   // DIHAPUS. Endpoint itu tidak tersedia di backend dan menyebabkan error
@@ -408,6 +441,33 @@ export default function ModuleVideoPage() {
     }
   };
 
+  // Video UI HANYA dirender setelah resolusi material awal memastikan material
+  // aktif adalah video. Selama resolving / saat diarahkan ke material non-video
+  // / saat error, tampilkan state netral saja (tidak ada badge/judul/player
+  // Video maupun fallback "Materi Video Utama").
+  if (resolutionStatus !== "video" || !videoContent) {
+    const isError = resolutionStatus === "error";
+    return (
+      <div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6">
+        {isError ? (
+          <div className="max-w-md text-center space-y-2">
+            <p className="text-sm font-semibold text-slate-700">
+              {displayErrorMessage || "Materi tidak dapat ditampilkan."}
+            </p>
+            <p className="text-xs text-slate-500">
+              Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 text-slate-500">
+            <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs font-medium">Memuat materi pembelajaran...</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/70 pb-16 pt-6 relative overflow-hidden">
       {/* ================= BACKGROUND DEKORATIF DISDIK JABAR ================= */}
@@ -491,16 +551,8 @@ export default function ModuleVideoPage() {
 
         {/* Container Pemutar Video */}
         <div className="relative aspect-video bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 ring-1 ring-slate-900/10">
-          {/* Tampilan Loading */}
-          {isLoadingContent && (
-            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950 text-slate-300 space-y-3">
-              <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-medium">Memuat Konten Pembelajaran...</p>
-            </div>
-          )}
-
           {/* Tampilan Error Fallback */}
-          {!isLoadingContent && displayErrorMessage && (
+          {displayErrorMessage && (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950 p-6 text-center text-slate-300 space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -702,13 +754,13 @@ export default function ModuleVideoPage() {
             />
             <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
               {!isVideoFinished
-                ? "Selesaikan penayangan video dan evaluasi pembelajaran untuk melanjutkan ke modul teks."
+                ? "Selesaikan penayangan video dan evaluasi pembelajaran untuk melanjutkan ke materi berikutnya."
                 : "Seluruh tahapan pembelajaran video dan evaluasi telah diselesaikan."}
             </p>
           </div>
 
           <button
-            onClick={() => isVideoFinished && router.push(`/modules/${moduleId}/text`)}
+            onClick={() => isVideoFinished && router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
             disabled={!isVideoFinished}
             className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-xs sm:text-sm rounded-2xl transition-all duration-200 ${
               isVideoFinished
@@ -716,7 +768,7 @@ export default function ModuleVideoPage() {
                 : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60 shadow-none"
             }`}
           >
-            <span>Lanjut ke Materi Teks</span>
+            <span>{currentIndex + 1 >= materials.length ? "Lanjut ke Evaluasi & Feedback" : "Lanjut ke Materi Berikutnya"}</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>

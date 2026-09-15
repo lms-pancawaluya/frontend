@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, updateModule, getModuleContents } from "@/services/module.service";
 import { deleteContent, updateContent } from "@/services/content.service";
+import { validateExternalUrl } from "@/lib/link";
 import { getCourseModulePermissions } from "@/lib/rbac";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
@@ -173,12 +174,23 @@ export default function EditModulePage() {
     setEditContentData((prev) => ({
       ...prev,
       [name]: name === "urutan" ? Number(value) : value,
+      ...(name === "tipe" && value === "link" ? { konten: "" } : {}),
     }));
+
+    if (name === "tipe") setContentMessage(null);
   }
 
   async function handleUpdateContent(e: React.FormEvent) {
     e.preventDefault();
     if (!editingContentId) return;
+
+    if (editContentData.tipe === "link") {
+      const urlError = validateExternalUrl(editContentData.konten);
+      if (urlError) {
+        setContentMessage({ type: "error", text: urlError });
+        return;
+      }
+    }
 
     setSavingContent(true);
     setContentMessage(null);
@@ -437,21 +449,44 @@ export default function EditModulePage() {
                             >
                               <option value="teks">Teks</option>
                               <option value="video">Video (YouTube)</option>
+                              <option value="link">Link</option>
                             </select>
                           </div>
 
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">
-                              {editContentData.tipe === "video" ? "Link Video YouTube" : "Isi Konten"}
+                              {editContentData.tipe === "video"
+                                ? "Link Video YouTube"
+                                : editContentData.tipe === "link"
+                                ? "URL Link"
+                                : "Isi Konten"}
                             </label>
-                            <textarea
-                              name="konten"
-                              value={editContentData.konten}
-                              onChange={handleEditContentChange}
-                              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
-                              rows={editContentData.tipe === "video" ? 2 : 6}
-                              required
-                            />
+                            {editContentData.tipe === "link" ? (
+                              <input
+                                type="url"
+                                name="konten"
+                                value={editContentData.konten}
+                                onChange={handleEditContentChange}
+                                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                placeholder="https://contoh.com/materi"
+                                aria-describedby="edit-content-link-help"
+                                required
+                              />
+                            ) : (
+                              <textarea
+                                name="konten"
+                                value={editContentData.konten}
+                                onChange={handleEditContentChange}
+                                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
+                                rows={editContentData.tipe === "video" ? 2 : 6}
+                                required
+                              />
+                            )}
+                            {editContentData.tipe === "link" && (
+                              <p id="edit-content-link-help" className="mt-1 text-xs text-gray-500">
+                                Masukkan URL eksternal lengkap (http:// atau https://).
+                              </p>
+                            )}
                           </div>
 
                           <div>
@@ -497,6 +532,29 @@ export default function EditModulePage() {
                                 allowFullScreen
                                 title={content.judul}
                               />
+                            </div>
+                          ) : content.tipe === "link" ? (
+                            <div className="space-y-3">
+                              {content.konten ? (
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tautan Eksternal</p>
+                                  <p className="mt-1 text-sm text-slate-700 break-all">{content.konten}</p>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                                  URL link belum tersedia untuk materi ini.
+                                </p>
+                              )}
+                              {content.konten && (
+                                <a
+                                  href={content.konten}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition"
+                                >
+                                  Buka Link
+                                </a>
+                              )}
                             </div>
                           ) : (
                             <div className="prose prose-slate prose-sm max-w-none">

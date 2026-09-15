@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
 import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
-import { deleteContent, updateContent } from "@/services/content.service";
+import { deleteContent, updateContent, uploadPdf } from "@/services/content.service";
 import { addQuestion as addEvaluationQuestion, createEvaluation, deleteEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
 import { addQuestion, createMiniQuiz, deleteMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
+import { buildPdfFileName, downloadPdfFile, loadPdfPreviewObjectUrl, validatePdfFile } from "@/lib/pdf";
+import { validateExternalUrl } from "@/lib/link";
 
 interface ModuleDetail {
   id: string;
@@ -177,6 +179,17 @@ export default function AdminModuleDetailPage() {
   const [contentData, setContentData] = useState({ judul: "", tipe: "teks", konten: "", urutan: 1 });
   const [contentMessage, setContentMessage] = useState("");
   const [contentBusy, setContentBusy] = useState(false);
+  const [pdfUploadingId, setPdfUploadingId] = useState<string | null>(null);
+  const [pdfMessage, setPdfMessage] = useState("");
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [downloadingContentId, setDownloadingContentId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<Record<string, string>>({});
+  const [previewContentId, setPreviewContentId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<Record<string, string>>({});
+  const previewRequestRef = useRef(0);
+  const previewUrlRef = useRef<string | null>(null);
   const [evaluations, setEvaluations] = useState<EvaluationItem[]>([]);
   const [showEvaluationForm, setShowEvaluationForm] = useState(false);
   const [evaluationTitle, setEvaluationTitle] = useState("");
@@ -198,6 +211,11 @@ export default function AdminModuleDetailPage() {
   const [interactiveForm, setInteractiveForm] = useState<{ quizId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
   const [checkpointForm, setCheckpointForm] = useState<{ contentId: string; judul: string; timestamp: string } | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
   useEffect(() => {
     async function fetchData() {
       try {
@@ -309,20 +327,124 @@ export default function AdminModuleDetailPage() {
   }
 
   function startContentEdit(content: ContentItem) {
+    closePdfPreview();
     setEditingContentId(content.id);
     setContentMessage("");
+    setPdfMessage("");
+    setPdfFileName("");
     setContentData({ judul: content.judul, tipe: content.tipe, konten: content.konten, urutan: content.urutan });
+  }
+
+  function cancelContentEdit() {
+    setEditingContentId(null);
+    setPdfMessage("");
+    setPdfFileName("");
+  }
+
+  async function handleContentPdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    const validationError = validatePdfFile(file);
+    if (validationError) {
+      setPdfMessage(validationError);
+      setPdfFileName("");
+      return;
+    }
+
+    setPdfMessage("");
+    setPdfUploadingId(editingContentId);
+    try {
+      const url = await uploadPdf(file);
+      setContentData((prev) => ({ ...prev, konten: url }));
+      setPdfFileName(file.name);
+    } catch (err) {
+      setPdfMessage(err instanceof Error ? err.message : "Gagal mengunggah file PDF.");
+      setPdfFileName("");
+    } finally {
+      setPdfUploadingId(null);
+    }
+  }
+
+  async function handleContentDownload(content: ContentItem) {
+    setDownloadError((prev) => ({ ...prev, [content.id]: "" }));
+    setDownloadingContentId(content.id);
+    try {
+      await downloadPdfFile(content.konten, buildPdfFileName(content.judul, content.konten));
+    } catch (err) {
+      setDownloadError((prev) => ({ ...prev, [content.id]: err instanceof Error ? err.message : "Gagal mengunduh file PDF." }));
+    } finally {
+      setDownloadingContentId(null);
+    }
+  }
+
+  function closePdfPreview() {
+    previewRequestRef.current += 1;
+    setPreviewContentId(null);
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setPreviewUrl(null);
+    setPreviewLoading(false);
+  }
+
+  async function handleContentPreview(content: ContentItem) {
+    if (previewContentId === content.id) {
+      closePdfPreview();
+      return;
+    }
+
+    const requestId = previewRequestRef.current + 1;
+    previewRequestRef.current = requestId;
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setPreviewUrl(null);
+    setPreviewError((prev) => ({ ...prev, [content.id]: "" }));
+    setPreviewContentId(content.id);
+    setPreviewLoading(true);
+    try {
+      const objectUrl = await loadPdfPreviewObjectUrl(content.konten);
+      if (previewRequestRef.current !== requestId) {
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+      previewUrlRef.current = objectUrl;
+      setPreviewUrl(objectUrl);
+    } catch (err) {
+      if (previewRequestRef.current === requestId) {
+        setPreviewError((prev) => ({ ...prev, [content.id]: err instanceof Error ? err.message : "Gagal memuat pratinjau PDF." }));
+      }
+    } finally {
+      if (previewRequestRef.current === requestId) setPreviewLoading(false);
+    }
   }
 
   async function handleContentSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!editingContentId) return;
+    if (contentData.tipe === "pdf" && !contentData.konten) {
+      setPdfMessage("Silakan unggah file PDF terlebih dahulu.");
+      return;
+    }
+    if (contentData.tipe === "link") {
+      const urlError = validateExternalUrl(contentData.konten);
+      if (urlError) {
+        setContentMessage(urlError);
+        return;
+      }
+    }
     setContentBusy(true);
     setContentMessage("");
+    setPdfMessage("");
     try {
       const updated = await updateContent(editingContentId, contentData);
       setContents((prev) => prev.map((content) => content.id === editingContentId ? { ...content, ...contentData, ...updated } : content));
       setEditingContentId(null);
+      setPdfFileName("");
       setContentMessage("Learning Material berhasil diperbarui.");
     } catch (err) {
       setContentMessage(err instanceof Error ? err.message : "Gagal memperbarui Learning Material.");
@@ -333,6 +455,7 @@ export default function AdminModuleDetailPage() {
 
   async function handleContentDelete(content: ContentItem) {
     if (!window.confirm(`Yakin ingin menghapus konten "${content.judul}"?`)) return;
+    if (previewContentId === content.id) closePdfPreview();
     setContentBusy(true);
     try {
       await deleteContent(content.id);
@@ -861,19 +984,65 @@ export default function AdminModuleDetailPage() {
                            />
                            <select
                              value={contentData.tipe}
-                             onChange={(e) => setContentData({ ...contentData, tipe: e.target.value })}
+                             onChange={(e) => {
+                               const tipe = e.target.value;
+                               setPdfMessage("");
+                               setPdfFileName("");
+                               setContentMessage("");
+                               setContentData((prev) => ({ ...prev, tipe, ...(tipe === "pdf" || tipe === "link" ? { konten: "" } : {}) }));
+                             }}
                              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"
                            >
                              <option value="teks">Text</option>
                              <option value="video">Video</option>
+                             <option value="pdf">PDF</option>
+                             <option value="link">Link</option>
                            </select>
-                           <textarea
-                             value={contentData.konten}
-                             onChange={(e) => setContentData({ ...contentData, konten: e.target.value })}
-                             rows={contentData.tipe === "video" ? 2 : 6}
-                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
-                             required
-                           />
+                           {contentData.tipe === "pdf" ? (
+                             <div>
+                               <label htmlFor={`pdf-file-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1">File PDF</label>
+                               <input
+                                 id={`pdf-file-${content.id}`}
+                                 type="file"
+                                 accept="application/pdf,.pdf"
+                                 onChange={handleContentPdfUpload}
+                                 disabled={pdfUploadingId === content.id}
+                                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm file:mr-3 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-1.5 file:text-white disabled:opacity-60"
+                                 aria-describedby={`pdf-file-help-${content.id}`}
+                               />
+                               <p id={`pdf-file-help-${content.id}`} className="mt-1 text-xs text-slate-500">Format PDF, maksimal 10MB.</p>
+                               {pdfUploadingId === content.id && <p className="mt-1 text-xs text-slate-500">Mengunggah file PDF...</p>}
+                               {pdfMessage && <p className="mt-1 text-xs text-red-600">{pdfMessage}</p>}
+                               {pdfUploadingId !== content.id && !pdfMessage && contentData.konten && (
+                                 <p className="mt-1 text-xs text-emerald-700">
+                                   {pdfFileName ? `${pdfFileName} — ` : ""}File PDF berhasil diunggah.
+                                 </p>
+                               )}
+                             </div>
+                           ) : contentData.tipe === "link" ? (
+                             <div>
+                               <label htmlFor={`link-url-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1">URL Link</label>
+                               <input
+                                 id={`link-url-${content.id}`}
+                                 type="url"
+                                 value={contentData.konten}
+                                 onChange={(e) => setContentData({ ...contentData, konten: e.target.value })}
+                                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                                 placeholder="https://contoh.com/materi"
+                                 aria-describedby={`link-url-help-${content.id}`}
+                                 required
+                               />
+                               <p id={`link-url-help-${content.id}`} className="mt-1 text-xs text-slate-500">Masukkan URL eksternal lengkap (http:// atau https://).</p>
+                             </div>
+                           ) : (
+                             <textarea
+                               value={contentData.konten}
+                               onChange={(e) => setContentData({ ...contentData, konten: e.target.value })}
+                               rows={contentData.tipe === "video" ? 2 : 6}
+                               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                               required
+                             />
+                           )}
                            <input
                              type="number"
                              min={1}
@@ -883,10 +1052,10 @@ export default function AdminModuleDetailPage() {
                              required
                            />
                            <div className="flex gap-2">
-                             <button type="submit" disabled={contentBusy} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">
+                             <button type="submit" disabled={contentBusy || pdfUploadingId === content.id} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">
                                Simpan
                              </button>
-                             <button type="button" onClick={() => setEditingContentId(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl">
+                             <button type="button" onClick={cancelContentEdit} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl">
                                Batal
                              </button>
                            </div>
@@ -899,6 +1068,86 @@ export default function AdminModuleDetailPage() {
                             allowFullScreen
                             title={content.judul}
                           />
+                        </div>
+                      ) : content.tipe === "pdf" ? (
+                        <div className="space-y-3">
+                          {!content.konten && (
+                            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                              File PDF belum tersedia untuk materi ini.
+                            </p>
+                          )}
+                          {content.konten && previewContentId === content.id && (
+                            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                              {previewLoading ? (
+                                <div className="flex h-[480px] items-center justify-center text-sm text-slate-500">Memuat pratinjau PDF...</div>
+                              ) : previewError[content.id] ? (
+                                <div className="flex h-[480px] flex-col items-center justify-center gap-3 p-6 text-center">
+                                  <p className="text-sm text-red-600">{previewError[content.id]}</p>
+                                  <a
+                                    href={content.konten}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition"
+                                  >
+                                    Buka PDF di tab baru
+                                  </a>
+                                </div>
+                              ) : previewUrl ? (
+                                <iframe
+                                  src={previewUrl}
+                                  className="w-full h-[480px]"
+                                  title={content.judul}
+                                />
+                              ) : null}
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleContentDownload(content)}
+                              disabled={!content.konten || downloadingContentId === content.id}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {downloadingContentId === content.id ? "Mengunduh..." : "Download PDF"}
+                            </button>
+                            {content.konten && (
+                              <button
+                                type="button"
+                                onClick={() => handleContentPreview(content)}
+                                disabled={previewLoading && previewContentId === content.id}
+                                aria-expanded={previewContentId === content.id}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                {previewContentId === content.id ? "Tutup Preview" : previewLoading && previewContentId === content.id ? "Memuat..." : "Preview PDF"}
+                              </button>
+                            )}
+                          </div>
+                          {downloadError[content.id] && <p className="text-xs text-red-600">{downloadError[content.id]}</p>}
+                        </div>
+                      ) : content.tipe === "link" ? (
+                        <div className="space-y-3">
+                          {content.konten ? (
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tautan Eksternal</p>
+                              <p className="mt-1 text-sm text-slate-700 break-all">{content.konten}</p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                              URL link belum tersedia untuk materi ini.
+                            </p>
+                          )}
+                          {content.konten && (
+                            <div className="flex flex-wrap gap-2">
+                              <a
+                                href={content.konten}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition"
+                              >
+                                Buka Link
+                              </a>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="prose prose-slate prose-sm max-w-none">
