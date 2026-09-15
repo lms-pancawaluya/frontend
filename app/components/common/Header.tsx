@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { logoutUser } from "@/services/auth.service";
 import NotificationDropdown from "./NotificationDropdown";
+import { getPagesForRole, searchPages, type SearchablePage } from "@/lib/pageRegistry";
 
 interface User {
   id?: string;
@@ -35,6 +36,13 @@ export default function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
 
+  // ---- Page search state ----
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
   // Sync state user dari localStorage
   useEffect(() => {
     function checkLoginStatus() {
@@ -63,6 +71,67 @@ export default function Header() {
       window.removeEventListener("authChange", checkLoginStatus);
     };
   }, []);
+
+  // Tutup dropdown search kalau klik di luar area search
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Shortcut Cmd+K / Ctrl+K untuk fokus ke search, Escape untuk menutup
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        setIsSearchOpen(true);
+      } else if (event.key === "Escape") {
+        setIsSearchOpen(false);
+        searchInputRef.current?.blur();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Daftar halaman yang boleh dilihat role user saat ini, difilter oleh query
+  const searchResults = useMemo<SearchablePage[]>(() => {
+    const pagesForRole = getPagesForRole(user?.role);
+    return searchPages(pagesForRole, searchQuery).slice(0, 8);
+  }, [user?.role, searchQuery]);
+
+  function handleSearchChange(value: string) {
+    setSearchQuery(value);
+    setHighlightedIndex(0);
+  }
+
+  function goToPage(page: SearchablePage) {
+    router.push(page.href);
+    setSearchQuery("");
+    setIsSearchOpen(false);
+    searchInputRef.current?.blur();
+  }
+
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (!isSearchOpen || searchResults.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1) % searchResults.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedIndex((prev) => (prev - 1 + searchResults.length) % searchResults.length);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      const target = searchResults[highlightedIndex];
+      if (target) goToPage(target);
+    }
+  }
 
   function handleLogout() {
     logoutUser();
@@ -114,20 +183,78 @@ export default function Header() {
         <div className="flex items-center justify-between gap-2 sm:gap-4 px-1 sm:px-2">
           
           {/* SEARCH BAR */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md" ref={searchBoxRef}>
             <div className="relative flex items-center">
               <svg className="w-4 h-4 text-slate-400 absolute left-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder="Cari siswa, kelas, tugas, sumber daya..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => setIsSearchOpen(true)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Cari halaman: modul, profil, pengaturan..."
                 className="w-full bg-slate-50/80 border border-slate-200/80 rounded-xl py-2 pl-10 pr-12 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] transition-all"
               />
-              <span className="absolute right-3 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
-                ⌘ K
-              </span>
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSearchChange("");
+                    searchInputRef.current?.focus();
+                  }}
+                  aria-label="Hapus pencarian"
+                  className="absolute right-3 text-slate-400 hover:text-slate-600"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              ) : (
+                <span className="absolute right-3 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
+                
+                </span>
+              )}
             </div>
+
+            {/* DROPDOWN HASIL PENCARIAN HALAMAN */}
+            {isSearchOpen && (
+              <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200/80 rounded-2xl shadow-xl py-1.5 z-50 max-h-80 overflow-y-auto">
+                {searchResults.length > 0 ? (
+                  searchResults.map((page, index) => (
+                    <button
+                      key={page.href}
+                      type="button"
+                      onMouseEnter={() => setHighlightedIndex(index)}
+                      onClick={() => goToPage(page)}
+                      className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left text-xs transition-colors ${
+                        index === highlightedIndex
+                          ? "bg-[#0047A5]/5 text-[#0047A5]"
+                          : "text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span>
+                        <span className="font-semibold block">{page.label}</span>
+                        {page.description && (
+                          <span className="text-[10px] text-slate-400">{page.description}</span>
+                        )}
+                      </span>
+                      <svg className="w-3.5 h-3.5 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-4 py-3 text-xs text-slate-400">
+                    {searchQuery
+                      ? `Tidak ada halaman yang cocok dengan "${searchQuery}".`
+                      : "Ketik untuk mencari halaman."}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ACTION ICONS & USER PROFILE */}

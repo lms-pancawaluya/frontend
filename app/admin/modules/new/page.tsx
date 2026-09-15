@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createModule } from "@/services/module.service";
+import { getCourses } from "@/services/course.service";
+import { getCourseModulePermissions } from "@/lib/rbac";
+import type { Course } from "@/types/course";
 
-const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer"];
+const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
 
-export default function NewModulePage() {
+function NewModuleForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedCourseId = searchParams.get("courseId") || "";
+
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
 
   const [formData, setFormData] = useState({
+    courseId: preselectedCourseId,
     judul: "",
     deskripsi: "",
     aspekPancawaluya: "cageur",
@@ -18,6 +28,43 @@ export default function NewModulePage() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function checkAccess() {
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+
+    if (!token || !userData) {
+      router.push("/login");
+      return;
+    }
+
+    const currentUser = JSON.parse(userData);
+    const perms = getCourseModulePermissions(currentUser?.role);
+
+    // Guru read-only tidak boleh mengakses halaman tambah modul.
+    if (!perms.canCreate) {
+      router.push("/admin/modules");
+      return;
+    }
+
+    await Promise.resolve();
+    setCheckingAccess(false);
+    }
+
+    checkAccess();
+  }, [router]);
+
+  useEffect(() => {
+    if (checkingAccess) return;
+
+    async function fetchCourses() {
+      const data = await getCourses();
+      setCourses(data);
+      setLoadingCourses(false);
+    }
+    fetchCourses();
+  }, [checkingAccess]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -32,6 +79,12 @@ export default function NewModulePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!formData.courseId) {
+      setError("Pilih course terlebih dahulu — setiap modul harus terhubung ke sebuah course.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -46,6 +99,10 @@ export default function NewModulePage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checkingAccess) {
+    return <p className="text-center mt-16 text-gray-500">Memeriksa akses...</p>;
   }
 
   return (
@@ -67,6 +124,32 @@ export default function NewModulePage() {
           {error}
         </div>
       )}
+
+      <div>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Course</label>
+        <select
+          name="courseId"
+          value={formData.courseId}
+          onChange={handleChange}
+          disabled={loadingCourses}
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          required
+        >
+          <option value="" disabled>
+            {loadingCourses ? "Memuat daftar course..." : "Pilih course"}
+          </option>
+          {courses.map((course) => (
+            <option key={course.id} value={course.id}>
+              {course.judul}
+            </option>
+          ))}
+        </select>
+        {!loadingCourses && courses.length === 0 && (
+          <p className="text-xs text-amber-600 mt-1">
+            Belum ada course. Buat course terlebih dahulu sebelum menambah modul.
+          </p>
+        )}
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Judul Modul</label>
@@ -125,7 +208,7 @@ export default function NewModulePage() {
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || loadingCourses}
         className="bg-[var(--color-navy)] text-white py-2.5 rounded-full font-medium hover:opacity-90 transition disabled:bg-gray-400 mt-2"
       >
         {loading ? "Menyimpan..." : "Simpan Modul"}
@@ -133,4 +216,12 @@ export default function NewModulePage() {
     </form>
   </div>
 );
+}
+
+export default function NewModulePage() {
+  return (
+    <Suspense fallback={<p className="text-center mt-16 text-gray-500">Memuat halaman...</p>}>
+      <NewModuleForm />
+    </Suspense>
+  );
 }

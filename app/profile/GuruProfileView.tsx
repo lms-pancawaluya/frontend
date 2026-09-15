@@ -29,6 +29,13 @@ interface GuruProfileProps {
     progress?: ProgressItem[];
   };
   onRefresh: () => void;
+  /**
+   * Tab yang aktif saat komponen pertama kali dirender, dikirim dari
+   * app/profile/page.tsx berdasarkan query param `?tab=` di URL (diklik dari
+   * menu Sidebar: Data Pribadi & Instansi / Progres Modul / Keamanan Akun).
+   * Kalau tidak dikirim, default ke tab "profil".
+   */
+  initialTab?: "profil" | "progres" | "keamanan";
 }
 
 interface SekolahData {
@@ -145,25 +152,6 @@ const DATA_SEKOLAH_JABAR: Record<string, SekolahData[]> = {
   ],
 };
 
-const DAFTAR_GELAR = [
-  "",
-  "S.Pd.",
-  "S.Pd.I.",
-  "S.S.",
-  "S.Si.",
-  "S.T.",
-  "S.Kom.",
-  "S.E.",
-  "S.Sos.",
-  "M.Pd.",
-  "M.Pd.I.",
-  "M.Si.",
-  "M.T.",
-  "M.Kom.",
-  "M.M.",
-  "Dr.",
-];
-
 const getProfileFormData = (profile: GuruProfileProps["profile"]) => {
   let currentGelar = profile.gelar;
   let currentNip = profile.nip;
@@ -248,7 +236,7 @@ export default function GuruProfileView(props: GuruProfileProps) {
   return <GuruProfileViewContent key={getProfileStateKey(props.profile)} {...props} />;
 }
 
-function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
+function GuruProfileViewContent({ profile, onRefresh, initialTab }: GuruProfileProps) {
   const getToken = () => localStorage.getItem("token") || "";
 
   const [initialProfileState] = useState(() => getInitialProfileState(profile));
@@ -256,7 +244,9 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
   const [selectedDaerah, setSelectedDaerah] = useState<string>(initialProfileState.selectedDaerah);
   const [ketikManual, setKetikManual] = useState<boolean>(initialProfileState.ketikManual);
 
-  const [activeTab, setActiveTab] = useState<"profil" | "progres" | "keamanan">("profil");
+  const [activeTab, setActiveTab] = useState<"profil" | "progres" | "keamanan">(
+    initialTab || "profil"
+  );
 
   const [passwordData, setPasswordData] = useState({
     passwordLama: "",
@@ -607,22 +597,6 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
                   placeholder="Masukkan Nama Lengkap"
                   className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Gelar Akademik</label>
-                <select
-                  value={formData.gelar}
-                  onChange={(e) => setFormData({ ...formData, gelar: e.target.value })}
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer transition-all"
-                >
-                  <option value="">-- Tanpa Gelar --</option>
-                  {DAFTAR_GELAR.filter(Boolean).map((gelar, idx) => (
-                    <option key={idx} value={gelar}>
-                      {gelar}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 

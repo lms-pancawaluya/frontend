@@ -77,6 +77,28 @@ export async function submitEvaluation(moduleId, evaluationId, jawaban) {
 }
 
 /**
+ * Cek riwayat jawaban milik Guru pada satu evaluasi
+ * URL: GET /api/modules/:moduleId/evaluations/:evaluationId/my-answers
+ */
+export async function getMyAnswers(moduleId, evaluationId) {
+  const response = await fetchApi(
+    `${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/my-answers`,
+    {
+      method: "GET",
+      headers: getHeaders(),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal mengambil riwayat jawaban");
+  }
+
+  return result.data;
+}
+
+/**
  * Kirim saran & kritik per modul oleh Guru
  * URL: POST /api/feedbacks/module/:moduleId
  */

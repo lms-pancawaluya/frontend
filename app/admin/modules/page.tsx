@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModules, deleteModule } from "@/services/module.service";
+import { getCourseModulePermissions, getStoredUser } from "@/lib/rbac";
 
 interface Module {
   id: string;
@@ -32,6 +33,7 @@ export default function AdminModulesPage() {
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const permissions = getCourseModulePermissions(getStoredUser()?.role);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -43,7 +45,9 @@ export default function AdminModulesPage() {
     }
 
     const currentUser = JSON.parse(userData);
-    if (currentUser?.role !== "admin") {
+    const perms = getCourseModulePermissions(currentUser?.role);
+    // Guru read-only tidak diarahkan ke halaman kelola modul (admin/pengajar saja).
+    if (!perms.canEdit) {
       router.push("/dashboard");
       return;
     }
@@ -115,12 +119,14 @@ export default function AdminModulesPage() {
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)]">
           Kelola Modul
         </h1>
-        <Link
-          href="/admin/modules/new"
-          className="bg-[var(--color-navy)] text-white text-sm px-4 py-2 rounded-full hover:opacity-90 transition"
-        >
-          + Tambah Modul
-        </Link>
+        {permissions.canCreate && (
+          <Link
+            href="/admin/modules/new"
+            className="bg-[var(--color-navy)] text-white text-sm px-4 py-2 rounded-full hover:opacity-90 transition"
+          >
+            + Tambah Modul
+          </Link>
+        )}
       </div>
 
       <div className="relative w-full sm:max-w-sm mb-6">
@@ -193,13 +199,15 @@ export default function AdminModulesPage() {
                   >
                     Edit
                   </Link>
-                  <button
-                    onClick={() => handleDelete(mod.id, mod.judul)}
-                    disabled={deletingId === mod.id}
-                    className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
-                  >
-                    {deletingId === mod.id ? "Menghapus..." : "Hapus"}
-                  </button>
+                  {permissions.canDelete && (
+                    <button
+                      onClick={() => handleDelete(mod.id, mod.judul)}
+                      disabled={deletingId === mod.id}
+                      className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
+                    >
+                      {deletingId === mod.id ? "Menghapus..." : "Hapus"}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

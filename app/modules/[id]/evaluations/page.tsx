@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getModuleEvaluations } from "@/services/evaluation.service";
-
-interface ModuleEvaluationSummary {
-  id: string;
-}
+import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -19,25 +16,30 @@ export default function ModuleEvaluationsIndexPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function redirectFirstEvaluation() {
+    async function redirectToTarget() {
       try {
-        // Fetch daftar evaluasi berdasarkan moduleId
-        const evaluations = (await getModuleEvaluations(moduleId)) as ModuleEvaluationSummary[];
+        const evaluations = (await getModuleEvaluations(moduleId)) as EvaluationSummary[];
 
-        if (evaluations && evaluations.length > 0) {
-          // Ambil ID dari evaluasi pertama dan redirect
-          const targetId = evaluations[0].id;
-          router.replace(`/modules/${moduleId}/evaluations/${targetId}`);
-        } else {
+        if (!evaluations || evaluations.length === 0) {
           setError("Belum ada evaluasi yang dibuat untuk modul ini.");
+          return;
         }
+
+        // Urutan wajib: Pre-Test dulu (membuka materi), baru Post-Test
+        // (setelah materi selesai). Kalau salah satunya tidak ada,
+        // jatuh ke evaluasi apa pun yang tersedia.
+        const preTest = evaluations.find((e) => isPreTest(e.tipe));
+        const postTest = evaluations.find((e) => isPostTest(e.tipe));
+        const target = preTest || postTest || evaluations[0];
+
+        router.replace(`/modules/${moduleId}/evaluations/${target.id}`);
       } catch (err: unknown) {
         setError(getErrorMessage(err, "Gagal mengambil data evaluasi modul."));
       }
     }
 
     if (moduleId) {
-      redirectFirstEvaluation();
+      redirectToTarget();
     }
   }, [moduleId, router]);
 

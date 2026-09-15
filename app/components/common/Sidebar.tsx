@@ -231,8 +231,8 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
       {
         title: t("Manajemen Sistem", "System Management"),
         items: [
+          { label: t("Kelola Course", "Manage Courses"), href: "/admin/courses", icon: ICONS.modules, id: "admin-courses" },
           { label: t("Kelola Modul Pembelajaran", "Manage Learning Modules"), href: "/admin/modules", icon: ICONS.modules, id: "admin-modules" },
-          { label: t("Kelola Course", "Manage Courses"), href: "/admin/courses", icon: ICONS.document, id: "admin-courses" },
           { label: t("Kelola Akun Guru", "Manage Teacher Accounts"), href: "/admin/users", icon: ICONS.users, id: "admin-users" },
           { label: t("Kelola Item Checklist", "Manage Checklist Items"), href: "/admin/checklist", icon: ICONS.checklist, id: "admin-checklist" },
         ],
@@ -267,6 +267,8 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
       {
         title: t("Pembinaan Guru", "Teacher Mentoring"),
         items: [
+          { label: t("Kelola Course", "Manage Courses"), href: "/admin/courses", icon: ICONS.modules, id: "pengajar-courses" },
+          { label: t("Kelola Modul Pembelajaran", "Manage Learning Modules"), href: "/admin/modules", icon: ICONS.modules, id: "pengajar-modules" },
           { label: t("Kelola Guru", "Manage Teachers"), href: "/pengajar/guru", icon: ICONS.users, id: "pengajar-guru" },
           { label: t("Monitoring Pengerjaan Modul", "Module Progress Monitoring"), href: "/pengajar/monitoring", icon: ICONS.monitoring, id: "pengajar-monitoring" },
           { label: t("RTL", "Action Plan (RTL)"), href: "/pengajar/rtl", icon: ICONS.document, id: "pengajar-rtl" },
