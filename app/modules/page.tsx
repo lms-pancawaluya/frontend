@@ -40,6 +40,13 @@ interface CourseWithModules extends Course {
   modules: ModuleCard[];
 }
 
+interface CourseApiItem extends Course {
+  modules?: ModuleApiItem[];
+  moduls?: ModuleApiItem[];
+}
+
+type UnknownRecord = Record<string, unknown>;
+
 const BADGE_COLORS: Record<string, string> = {
   cageur: "bg-emerald-100 text-emerald-800 border-emerald-200",
   bageur: "bg-blue-100 text-blue-800 border-blue-200",
@@ -80,8 +87,13 @@ function mapApiModules(apiData: ModuleApiItem[]): ModuleCard[] {
 }
 
 /** Helper untuk ekstrak array murni meski dibungkus { data: [...] } atau { courses: [...] } */
-function extractArray<T>(res: any): T[] {
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function extractArray<T>(res: unknown): T[] {
   if (Array.isArray(res)) return res;
+  if (!isRecord(res)) return [];
   if (res && Array.isArray(res.data)) return res.data;
   if (res && Array.isArray(res.courses)) return res.courses;
   if (res && Array.isArray(res.modules)) return res.modules;
@@ -101,14 +113,18 @@ export default function ModulesPage() {
       setIsLoading(true);
       try {
         const rawCourseList = await getCourses();
-        const courseList = extractArray<Course>(rawCourseList);
+        const courseList = extractArray<CourseApiItem>(rawCourseList);
 
         if (courseList.length > 0) {
           const withModules = await Promise.all(
-            courseList.map(async (course: any) => {
+            courseList.map(async (course) => {
               // Cek apakah modul sudah nempel di objek course atau perlu fetch via getModules
-              let rawModules = course.modules || course.moduls;
-              if (!rawModules || !Array.isArray(rawModules) || rawModules.length === 0) {
+              const attachedModules = course.modules ?? course.moduls;
+              let rawModules: ModuleApiItem[] = [];
+
+              if (Array.isArray(attachedModules) && attachedModules.length > 0) {
+                rawModules = attachedModules;
+              } else {
                 const modulesRes = await getModules(course.id);
                 rawModules = extractArray<ModuleApiItem>(modulesRes);
               }

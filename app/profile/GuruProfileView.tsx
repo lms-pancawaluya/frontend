@@ -152,25 +152,6 @@ const DATA_SEKOLAH_JABAR: Record<string, SekolahData[]> = {
   ],
 };
 
-const DAFTAR_GELAR = [
-  "",
-  "S.Pd.",
-  "S.Pd.I.",
-  "S.S.",
-  "S.Si.",
-  "S.T.",
-  "S.Kom.",
-  "S.E.",
-  "S.Sos.",
-  "M.Pd.",
-  "M.Pd.I.",
-  "M.Si.",
-  "M.T.",
-  "M.Kom.",
-  "M.M.",
-  "Dr.",
-];
-
 const getProfileFormData = (profile: GuruProfileProps["profile"]) => {
   let currentGelar = profile.gelar;
   let currentNip = profile.nip;
