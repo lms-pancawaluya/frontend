@@ -608,22 +608,6 @@ function GuruProfileViewContent({ profile, onRefresh }: GuruProfileProps) {
                   className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Gelar Akademik</label>
-                <select
-                  value={formData.gelar}
-                  onChange={(e) => setFormData({ ...formData, gelar: e.target.value })}
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer transition-all"
-                >
-                  <option value="">-- Tanpa Gelar --</option>
-                  {DAFTAR_GELAR.filter(Boolean).map((gelar, idx) => (
-                    <option key={idx} value={gelar}>
-                      {gelar}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
