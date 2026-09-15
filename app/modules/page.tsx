@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { getModules } from "@/services/module.service";
 import { getCourses } from "@/services/course.service";
 import type { Course } from "@/types/course";
@@ -150,36 +149,33 @@ export default function ModulesPage() {
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
-  function moduleMatchesTab(m: ModuleCard): boolean {
-    if (activeTab === "proses") return m.progress > 0 && m.progress < 100;
-    if (activeTab === "selesai") return m.progress === 100;
+  function courseMatchesTab(course: CourseWithModules): boolean {
+    const progress = course.progressPercentage ?? 0;
+    if (activeTab === "proses") return progress > 0 && progress < 100;
+    if (activeTab === "selesai") return progress === 100;
     return true;
-  }
-
-  function moduleMatchesSearch(m: ModuleCard): boolean {
-    if (!normalizedQuery) return true;
-    return (
-      m.title.toLowerCase().includes(normalizedQuery) ||
-      m.description.toLowerCase().includes(normalizedQuery)
-    );
   }
 
   function courseMatchesSearch(course: CourseWithModules): boolean {
     if (!normalizedQuery) return true;
-    return (
+    if (
       (course.judul || "").toLowerCase().includes(normalizedQuery) ||
       (course.deskripsi || "").toLowerCase().includes(normalizedQuery)
+    ) {
+      return true;
+    }
+    // Pertahankan pencarian terhadap materi modul di dalam course tanpa
+    // menampilkan daftar modulnya.
+    return course.modules.some(
+      (m) =>
+        m.title.toLowerCase().includes(normalizedQuery) ||
+        m.description.toLowerCase().includes(normalizedQuery)
     );
   }
 
-  const visibleCourses = courses
-    .map((course) => {
-      const visibleModules = course.modules.filter(
-        (m) => moduleMatchesTab(m) && (courseMatchesSearch(course) || moduleMatchesSearch(m))
-      );
-      return { course, visibleModules };
-    })
-    .filter(({ course, visibleModules }) => courseMatchesSearch(course) || visibleModules.length > 0);
+  const visibleCourses = courses.filter(
+    (course) => courseMatchesTab(course) && courseMatchesSearch(course)
+  );
 
   const allModules = courses.flatMap((c) => c.modules);
   const totalModules = allModules.length;
@@ -218,9 +214,10 @@ export default function ModulesPage() {
               <p className="text-xl font-extrabold mt-0.5">{courses.length} Course</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Progres Modul</p>
-              <p className="text-xl font-extrabold mt-0.5">
-                {totalCompleted} / {totalModules} Diselesaikan
+              <p className="text-white/70 font-medium">Total Modul</p>
+              <p className="text-xl font-extrabold mt-0.5">{totalModules} Modul</p>
+              <p className="text-white/60 font-medium mt-0.5">
+                {totalCompleted} / {totalModules} Selesai
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
@@ -300,19 +297,19 @@ export default function ModulesPage() {
           <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8">
             <p className="text-slate-500 text-sm font-medium">
               {courses.length === 0
-                ? "Belum ada course atau modul yang tersedia dari backend."
-                : "Tidak ada course atau modul yang sesuai dengan pencarian Anda."}
+                ? "Belum ada course yang tersedia dari backend."
+                : "Tidak ada course yang sesuai dengan pencarian Anda."}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {visibleCourses.map(({ course, visibleModules }) => (
+            {visibleCourses.map((course) => (
               <div
                 key={course.id}
                 className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col"
               >
                 {/* Header Card Course */}
-                <div className="p-6 pb-4 border-b border-slate-100">
+                <div className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-800 border border-sky-200">
                       {course.mode === "offline" ? "Tatap Muka" : "Online"}
@@ -347,99 +344,6 @@ export default function ModulesPage() {
                       />
                     </div>
                   </div>
-                </div>
-
-                {/* DAFTAR MODUL */}
-                <div className="p-4 sm:p-5 space-y-2.5 flex-1">
-                  {visibleModules.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-6">
-                      {course.modules.length === 0
-                        ? "Belum ada modul pada course ini."
-                        : "Tidak ada modul yang sesuai dengan filter/pencarian."}
-                    </p>
-                  ) : (
-                    visibleModules.map((mod) => {
-                      const rowContent = (
-                        <>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${mod.badgeColor}`}
-                              >
-                                {mod.category}
-                              </span>
-                              <span className="text-[10px] text-slate-400">{mod.code}</span>
-                            </div>
-                            <p className="text-sm font-semibold text-slate-800 truncate">
-                              {mod.title}
-                            </p>
-                            <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-1">
-                              <span>{mod.totalContents} Materi</span>
-                              <span>{mod.totalQuizzes} Evaluasi</span>
-                              <span>{mod.durationMinutes} Mnt</span>
-                            </div>
-                          </div>
-
-                          <div className="shrink-0 flex flex-col items-end gap-1.5 pl-3">
-                            {mod.isLocked ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                  />
-                                </svg>
-                                Terkunci
-                              </span>
-                            ) : mod.progress === 100 ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                Selesai
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-bold text-slate-700">{mod.progress}%</span>
-                            )}
-
-                            {!mod.isLocked && (
-                              <svg
-                                className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                              </svg>
-                            )}
-                          </div>
-                        </>
-                      );
-
-                      if (mod.isLocked) {
-                        return (
-                          <div
-                            key={mod.id}
-                            className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/60 opacity-80 cursor-not-allowed"
-                          >
-                            {rowContent}
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <Link
-                          key={mod.id}
-                          href={`/modules/${mod.id}`}
-                          className="group flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-100 hover:border-emerald-400 hover:shadow-sm transition-all"
-                        >
-                          {rowContent}
-                        </Link>
-                      );
-                    })
-                  )}
                 </div>
               </div>
             ))}
