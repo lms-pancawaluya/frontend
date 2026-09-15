@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { getModules } from "@/services/module.service";
 import { getCourses } from "@/services/course.service";
 import type { Course } from "@/types/course";
@@ -304,9 +305,10 @@ export default function ModulesPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {visibleCourses.map((course) => (
-              <div
+              <Link
                 key={course.id}
-                className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col"
+                href={`/modules/courses/${course.id}`}
+                className="group bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col transition-all hover:border-emerald-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
               >
                 {/* Header Card Course */}
                 <div className="p-6">
@@ -344,8 +346,21 @@ export default function ModulesPage() {
                       />
                     </div>
                   </div>
+
+                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                    Lihat Detail Course
+                    <svg
+                      className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
