@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getCourseById } from "@/services/course.service";
 import { getModuleContents, getModules } from "@/services/module.service";
 import { getModuleEvaluations } from "@/services/evaluation.service";
+import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
 import type { Course, CourseModule } from "@/types/course";
 
 interface CourseWithModules extends Course {
@@ -13,25 +14,10 @@ interface CourseWithModules extends Course {
   moduls?: CourseModule[];
 }
 
-interface ModuleMaterial {
-  id?: string;
-  judul?: string;
-  tipe?: string;
-  urutan?: number;
-}
-
-interface ModuleEvaluation {
-  id: string;
-  judul?: string;
-  tipe?: string;
-  _count?: { questions?: number };
-  questions?: { id: string }[];
-}
-
 interface ModuleOverview {
-  materials: ModuleMaterial[];
-  preTest: ModuleEvaluation[];
-  postTest: ModuleEvaluation[];
+  hasMaterials: boolean;
+  preTestId: string | null;
+  postTestId: string | null;
 }
 
 function formatDate(value?: string) {
@@ -42,39 +28,6 @@ function formatDate(value?: string) {
 
 function getModuleTitle(module: CourseModule) {
   return module.judul || module.id;
-}
-
-/** Human-readable label for a learning material type. */
-function getMaterialTypeLabel(tipe?: string) {
-  switch ((tipe || "").toLowerCase()) {
-    case "video":
-      return "Video";
-    case "teks":
-    case "text":
-      return "Text";
-    case "pdf":
-      return "PDF";
-    case "link":
-      return "Link";
-    default:
-      return tipe ? tipe.charAt(0).toUpperCase() + tipe.slice(1) : "Materi";
-  }
-}
-
-function getMaterialTypeBadgeClass(tipe?: string) {
-  switch ((tipe || "").toLowerCase()) {
-    case "video":
-      return "bg-rose-50 text-rose-700 border-rose-200";
-    case "teks":
-    case "text":
-      return "bg-slate-50 text-slate-700 border-slate-200";
-    case "pdf":
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    case "link":
-      return "bg-sky-50 text-sky-700 border-sky-200";
-    default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
-  }
 }
 
 export default function GuruCourseDetailPage() {
@@ -127,15 +80,18 @@ export default function GuruCourseDetailPage() {
         getModuleEvaluations(moduleId),
       ]);
 
-      const materials = Array.isArray(contentsRes) ? (contentsRes as ModuleMaterial[]) : [];
-      const evaluations = Array.isArray(evaluationsRes) ? (evaluationsRes as ModuleEvaluation[]) : [];
+      const materials = Array.isArray(contentsRes) ? contentsRes : [];
+      const evaluations = Array.isArray(evaluationsRes) ? (evaluationsRes as EvaluationSummary[]) : [];
+
+      const preTest = evaluations.find((evaluation) => isPreTest(evaluation.tipe));
+      const postTest = evaluations.find((evaluation) => isPostTest(evaluation.tipe));
 
       setModuleOverview((prev) => ({
         ...prev,
         [moduleId]: {
-          materials,
-          preTest: evaluations.filter((evaluation) => evaluation.tipe === "pre_test"),
-          postTest: evaluations.filter((evaluation) => evaluation.tipe === "post_test"),
+          hasMaterials: materials.length > 0,
+          preTestId: preTest?.id ?? null,
+          postTestId: postTest?.id ?? null,
         },
       }));
     } catch (err) {
@@ -186,44 +142,6 @@ export default function GuruCourseDetailPage() {
   }
 
   const isOffline = course.mode?.toLowerCase() === "offline";
-
-  function renderEvaluationGroup(
-    title: string,
-    evaluations: ModuleEvaluation[],
-    emptyText: string,
-    accentClass: string
-  ) {
-    return (
-      <div className="space-y-2">
-        <h4 className={`text-xs font-bold uppercase tracking-wide ${accentClass}`}>{title}</h4>
-        {evaluations.length === 0 ? (
-          <p className="text-xs text-slate-500 rounded-xl border border-dashed border-slate-200 px-3 py-2">
-            {emptyText}
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {evaluations.map((evaluation) => {
-              const questionCount =
-                evaluation._count?.questions ?? evaluation.questions?.length ?? null;
-              return (
-                <li
-                  key={evaluation.id}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2"
-                >
-                  <span className="text-sm text-slate-700 truncate">
-                    {evaluation.judul || title}
-                  </span>
-                  {questionCount !== null && (
-                    <span className="shrink-0 text-[11px] text-slate-400">{questionCount} soal</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50/80 pb-20 pt-6 relative overflow-hidden">
@@ -380,81 +298,102 @@ export default function GuruCourseDetailPage() {
                       </svg>
                     </button>
 
-                    {/* Panel (isi overview saat dibuka) */}
+                    {/* Panel (overview aktivitas saat dibuka) */}
                     {isOpen && (
                       <div id={panelId} role="region" aria-labelledby={buttonId} className="border-t border-slate-100 p-4 space-y-5 bg-slate-50/50">
+                        {/* Informasi Module */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Deskripsi Module</h4>
+                          <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                            {module.deskripsi || "Belum ada deskripsi untuk module ini."}
+                          </p>
+                        </div>
+
                         {isLoadingOverview ? (
-                          <p className="text-xs text-slate-500">Memuat isi modul...</p>
+                          <p className="text-xs text-slate-500">Memuat aktivitas modul...</p>
                         ) : overviewError ? (
                           <p className="text-xs text-red-600">{overviewError}</p>
                         ) : (
-                          <>
-                            {/* 1. Deskripsi Module */}
-                            <div className="space-y-2">
-                              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Deskripsi Module</h4>
-                              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                                {module.deskripsi || "Belum ada deskripsi untuk module ini."}
-                              </p>
-                            </div>
-
-                            {/* 2. Pre-Test */}
-                            {renderEvaluationGroup(
-                              "Pre-Test",
-                              overview?.preTest || [],
-                              "Belum ada Pre-Test untuk module ini.",
-                              "text-sky-700"
-                            )}
-
-                            {/* 3. Learning Materials */}
-                            <div className="space-y-2">
-                              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Learning Materials</h4>
-                              {!overview || overview.materials.length === 0 ? (
-                                <p className="text-xs text-slate-500 rounded-xl border border-dashed border-slate-200 px-3 py-2">
-                                  Belum ada learning material untuk module ini.
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            {/* 1. Pre-Test */}
+                            <div className="flex flex-col rounded-2xl border border-sky-100 bg-white p-4 space-y-3">
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-sky-700">
+                                  Pre-Test
+                                </span>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                  {overview?.preTestId
+                                    ? "Kerjakan Pre-Test sebelum mempelajari materi modul."
+                                    : "Pre-Test belum tersedia untuk module ini."}
                                 </p>
+                              </div>
+                              {overview?.preTestId ? (
+                                <Link
+                                  href={`/modules/${module.id}/evaluations/${overview.preTestId}`}
+                                  className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-700 text-white text-xs font-semibold rounded-full hover:bg-sky-800 transition"
+                                >
+                                  Mulai Pre-Test
+                                </Link>
                               ) : (
-                                <ul className="space-y-2">
-                                  {overview.materials.map((material, materialIndex) => (
-                                    <li
-                                      key={material.id || materialIndex}
-                                      className="flex items-center justify-between gap-3 rounded-xl bg-white border border-slate-100 px-3 py-2"
-                                    >
-                                      <span className="text-sm text-slate-700 truncate">
-                                        {material.judul || "Materi tanpa judul"}
-                                      </span>
-                                      <span
-                                        className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getMaterialTypeBadgeClass(material.tipe)}`}
-                                      >
-                                        {getMaterialTypeLabel(material.tipe)}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                  Belum tersedia
+                                </span>
                               )}
                             </div>
 
-                            {/* 4. Post-Test */}
-                            {renderEvaluationGroup(
-                              "Post-Test",
-                              overview?.postTest || [],
-                              "Belum ada Post-Test untuk module ini.",
-                              "text-purple-700"
-                            )}
-                          </>
-                        )}
+                            {/* 2. Learning Material */}
+                            <div className="flex flex-col rounded-2xl border border-emerald-100 bg-white p-4 space-y-3">
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-700">
+                                  Learning Material
+                                </span>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                  {overview?.hasMaterials
+                                    ? "Pelajari materi pembelajaran modul ini."
+                                    : "Learning material belum tersedia untuk module ini."}
+                                </p>
+                              </div>
+                              {overview?.hasMaterials ? (
+                                <Link
+                                  href={`/modules/${module.id}`}
+                                  className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-700 text-white text-xs font-semibold rounded-full hover:bg-emerald-800 transition"
+                                >
+                                  Mulai Belajar
+                                </Link>
+                              ) : (
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                  Belum tersedia
+                                </span>
+                              )}
+                            </div>
 
-                        {/* Action mulai/lanjut belajar */}
-                        <div className="pt-1">
-                          <Link
-                            href={`/modules/${module.id}`}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition"
-                          >
-                            Mulai / Lanjut Belajar
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                          </Link>
-                        </div>
+                            {/* 3. Post-Test */}
+                            <div className="flex flex-col rounded-2xl border border-purple-100 bg-white p-4 space-y-3">
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-purple-700">
+                                  Post-Test
+                                </span>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                  {overview?.postTestId
+                                    ? "Kerjakan Post-Test setelah menyelesaikan materi modul."
+                                    : "Post-Test belum tersedia untuk module ini."}
+                                </p>
+                              </div>
+                              {overview?.postTestId ? (
+                                <Link
+                                  href={`/modules/${module.id}/evaluations/${overview.postTestId}`}
+                                  className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-700 text-white text-xs font-semibold rounded-full hover:bg-purple-800 transition"
+                                >
+                                  Mulai Post-Test
+                                </Link>
+                              ) : (
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                  Belum tersedia
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </li>
