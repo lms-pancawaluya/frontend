@@ -9,6 +9,7 @@ import { deleteContent, updateContent, uploadPdf } from "@/services/content.serv
 import { addQuestion as addEvaluationQuestion, createEvaluation, deleteEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
 import { addQuestion, createMiniQuiz, deleteMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
 import { buildPdfFileName, downloadPdfFile, validatePdfFile } from "@/lib/pdf";
+import { validateExternalUrl } from "@/lib/link";
 
 interface ModuleDetail {
   id: string;
@@ -372,6 +373,13 @@ export default function AdminModuleDetailPage() {
     if (contentData.tipe === "pdf" && !contentData.konten) {
       setPdfMessage("Silakan unggah file PDF terlebih dahulu.");
       return;
+    }
+    if (contentData.tipe === "link") {
+      const urlError = validateExternalUrl(contentData.konten);
+      if (urlError) {
+        setContentMessage(urlError);
+        return;
+      }
     }
     setContentBusy(true);
     setContentMessage("");
@@ -923,13 +931,15 @@ export default function AdminModuleDetailPage() {
                                const tipe = e.target.value;
                                setPdfMessage("");
                                setPdfFileName("");
-                               setContentData((prev) => ({ ...prev, tipe, ...(tipe === "pdf" ? { konten: "" } : {}) }));
+                               setContentMessage("");
+                               setContentData((prev) => ({ ...prev, tipe, ...(tipe === "pdf" || tipe === "link" ? { konten: "" } : {}) }));
                              }}
                              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"
                            >
                              <option value="teks">Text</option>
                              <option value="video">Video</option>
                              <option value="pdf">PDF</option>
+                             <option value="link">Link</option>
                            </select>
                            {contentData.tipe === "pdf" ? (
                              <div>
@@ -951,6 +961,21 @@ export default function AdminModuleDetailPage() {
                                    {pdfFileName ? `${pdfFileName} — ` : ""}File PDF berhasil diunggah.
                                  </p>
                                )}
+                             </div>
+                           ) : contentData.tipe === "link" ? (
+                             <div>
+                               <label htmlFor={`link-url-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1">URL Link</label>
+                               <input
+                                 id={`link-url-${content.id}`}
+                                 type="url"
+                                 value={contentData.konten}
+                                 onChange={(e) => setContentData({ ...contentData, konten: e.target.value })}
+                                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                                 placeholder="https://contoh.com/materi"
+                                 aria-describedby={`link-url-help-${content.id}`}
+                                 required
+                               />
+                               <p id={`link-url-help-${content.id}`} className="mt-1 text-xs text-slate-500">Masukkan URL eksternal lengkap (http:// atau https://).</p>
                              </div>
                            ) : (
                              <textarea
@@ -1023,6 +1048,31 @@ export default function AdminModuleDetailPage() {
                             )}
                           </div>
                           {downloadError[content.id] && <p className="text-xs text-red-600">{downloadError[content.id]}</p>}
+                        </div>
+                      ) : content.tipe === "link" ? (
+                        <div className="space-y-3">
+                          {content.konten ? (
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tautan Eksternal</p>
+                              <p className="mt-1 text-sm text-slate-700 break-all">{content.konten}</p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                              URL link belum tersedia untuk materi ini.
+                            </p>
+                          )}
+                          {content.konten && (
+                            <div className="flex flex-wrap gap-2">
+                              <a
+                                href={content.konten}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition"
+                              >
+                                Buka Link
+                              </a>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="prose prose-slate prose-sm max-w-none">

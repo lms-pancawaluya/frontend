@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createContent, uploadPdf } from "@/services/content.service";
 import { validatePdfFile } from "@/lib/pdf";
+import { validateExternalUrl } from "@/lib/link";
 
 export default function NewContentPage() {
   const params = useParams();
@@ -30,7 +31,7 @@ export default function NewContentPage() {
     setFormData((prev) => ({
       ...prev,
       [name]: name === "urutan" ? Number(value) : value,
-      ...(name === "tipe" && value === "pdf" ? { konten: "" } : {}),
+      ...(name === "tipe" && (value === "pdf" || value === "link") ? { konten: "" } : {}),
     }));
 
     if (name === "tipe") {
@@ -74,6 +75,14 @@ export default function NewContentPage() {
     if (formData.tipe === "pdf" && !formData.konten) {
       setError("Silakan unggah file PDF terlebih dahulu.");
       return;
+    }
+
+    if (formData.tipe === "link") {
+      const urlError = validateExternalUrl(formData.konten);
+      if (urlError) {
+        setError(urlError);
+        return;
+      }
     }
 
     setLoading(true);
@@ -138,10 +147,31 @@ export default function NewContentPage() {
           <option value="teks">Teks</option>
           <option value="video">Video (YouTube)</option>
           <option value="pdf">PDF</option>
+          <option value="link">Link</option>
         </select>
       </div>
 
-      {formData.tipe === "pdf" ? (
+      {formData.tipe === "link" ? (
+        <div>
+          <label htmlFor="konten" className="block text-sm font-medium text-[var(--color-navy)] mb-1">
+            URL Link
+          </label>
+          <input
+            id="konten"
+            type="url"
+            name="konten"
+            value={formData.konten}
+            onChange={handleChange}
+            className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+            placeholder="https://contoh.com/materi"
+            aria-describedby="konten-link-help"
+            required
+          />
+          <p id="konten-link-help" className="mt-1 text-xs text-gray-500">
+            Masukkan URL eksternal lengkap (http:// atau https://).
+          </p>
+        </div>
+      ) : formData.tipe === "pdf" ? (
         <div>
           <label htmlFor="file-pdf" className="block text-sm font-medium text-[var(--color-navy)] mb-1">File PDF</label>
           <input
