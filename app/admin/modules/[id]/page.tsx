@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
@@ -8,7 +8,7 @@ import { deleteComment, getModuleComments, postComment } from "@/services/commen
 import { deleteContent, updateContent, uploadPdf } from "@/services/content.service";
 import { addQuestion as addEvaluationQuestion, createEvaluation, deleteEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
 import { addQuestion, createMiniQuiz, deleteMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
-import { buildPdfFileName, downloadPdfFile, validatePdfFile } from "@/lib/pdf";
+import { buildPdfFileName, downloadPdfFile, loadPdfPreviewObjectUrl, validatePdfFile } from "@/lib/pdf";
 import { validateExternalUrl } from "@/lib/link";
 
 interface ModuleDetail {
@@ -184,6 +184,12 @@ export default function AdminModuleDetailPage() {
   const [pdfFileName, setPdfFileName] = useState("");
   const [downloadingContentId, setDownloadingContentId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<Record<string, string>>({});
+  const [previewContentId, setPreviewContentId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<Record<string, string>>({});
+  const previewRequestRef = useRef(0);
+  const previewUrlRef = useRef<string | null>(null);
   const [evaluations, setEvaluations] = useState<EvaluationItem[]>([]);
   const [showEvaluationForm, setShowEvaluationForm] = useState(false);
   const [evaluationTitle, setEvaluationTitle] = useState("");
@@ -205,6 +211,11 @@ export default function AdminModuleDetailPage() {
   const [interactiveForm, setInteractiveForm] = useState<{ quizId: string; questionId?: string; pertanyaan: string; options: { teksOpsi: string; isCorrect: boolean }[] } | null>(null);
   const [checkpointForm, setCheckpointForm] = useState<{ contentId: string; judul: string; timestamp: string } | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
   useEffect(() => {
     async function fetchData() {
       try {
@@ -316,6 +327,7 @@ export default function AdminModuleDetailPage() {
   }
 
   function startContentEdit(content: ContentItem) {
+    closePdfPreview();
     setEditingContentId(content.id);
     setContentMessage("");
     setPdfMessage("");
@@ -367,6 +379,50 @@ export default function AdminModuleDetailPage() {
     }
   }
 
+  function closePdfPreview() {
+    previewRequestRef.current += 1;
+    setPreviewContentId(null);
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setPreviewUrl(null);
+    setPreviewLoading(false);
+  }
+
+  async function handleContentPreview(content: ContentItem) {
+    if (previewContentId === content.id) {
+      closePdfPreview();
+      return;
+    }
+
+    const requestId = previewRequestRef.current + 1;
+    previewRequestRef.current = requestId;
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setPreviewUrl(null);
+    setPreviewError((prev) => ({ ...prev, [content.id]: "" }));
+    setPreviewContentId(content.id);
+    setPreviewLoading(true);
+    try {
+      const objectUrl = await loadPdfPreviewObjectUrl(content.konten);
+      if (previewRequestRef.current !== requestId) {
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+      previewUrlRef.current = objectUrl;
+      setPreviewUrl(objectUrl);
+    } catch (err) {
+      if (previewRequestRef.current === requestId) {
+        setPreviewError((prev) => ({ ...prev, [content.id]: err instanceof Error ? err.message : "Gagal memuat pratinjau PDF." }));
+      }
+    } finally {
+      if (previewRequestRef.current === requestId) setPreviewLoading(false);
+    }
+  }
+
   async function handleContentSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!editingContentId) return;
@@ -399,6 +455,7 @@ export default function AdminModuleDetailPage() {
 
   async function handleContentDelete(content: ContentItem) {
     if (!window.confirm(`Yakin ingin menghapus konten "${content.judul}"?`)) return;
+    if (previewContentId === content.id) closePdfPreview();
     setContentBusy(true);
     try {
       await deleteContent(content.id);
@@ -1014,18 +1071,35 @@ export default function AdminModuleDetailPage() {
                         </div>
                       ) : content.tipe === "pdf" ? (
                         <div className="space-y-3">
-                          {content.konten ? (
-                            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
-                              <iframe
-                                src={content.konten}
-                                className="w-full h-[480px]"
-                                title={content.judul}
-                              />
-                            </div>
-                          ) : (
+                          {!content.konten && (
                             <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
                               File PDF belum tersedia untuk materi ini.
                             </p>
+                          )}
+                          {content.konten && previewContentId === content.id && (
+                            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                              {previewLoading ? (
+                                <div className="flex h-[480px] items-center justify-center text-sm text-slate-500">Memuat pratinjau PDF...</div>
+                              ) : previewError[content.id] ? (
+                                <div className="flex h-[480px] flex-col items-center justify-center gap-3 p-6 text-center">
+                                  <p className="text-sm text-red-600">{previewError[content.id]}</p>
+                                  <a
+                                    href={content.konten}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition"
+                                  >
+                                    Buka PDF di tab baru
+                                  </a>
+                                </div>
+                              ) : previewUrl ? (
+                                <iframe
+                                  src={previewUrl}
+                                  className="w-full h-[480px]"
+                                  title={content.judul}
+                                />
+                              ) : null}
+                            </div>
                           )}
                           <div className="flex flex-wrap gap-2">
                             <button
@@ -1037,14 +1111,15 @@ export default function AdminModuleDetailPage() {
                               {downloadingContentId === content.id ? "Mengunduh..." : "Download PDF"}
                             </button>
                             {content.konten && (
-                              <a
-                                href={content.konten}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition"
+                              <button
+                                type="button"
+                                onClick={() => handleContentPreview(content)}
+                                disabled={previewLoading && previewContentId === content.id}
+                                aria-expanded={previewContentId === content.id}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
                               >
-                                Preview PDF
-                              </a>
+                                {previewContentId === content.id ? "Tutup Preview" : previewLoading && previewContentId === content.id ? "Memuat..." : "Preview PDF"}
+                              </button>
                             )}
                           </div>
                           {downloadError[content.id] && <p className="text-xs text-red-600">{downloadError[content.id]}</p>}

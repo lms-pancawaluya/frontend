@@ -49,3 +49,18 @@ export async function downloadPdfFile(url: string, fileName: string): Promise<vo
   document.body.removeChild(link);
   URL.revokeObjectURL(objectUrl);
 }
+
+/**
+ * Loads the direct PDF URL as an in-memory blob URL for inline preview.
+ * The blob is typed `application/pdf` so the browser renders it inside an
+ * iframe/embed even when the response carries `Content-Disposition: attachment`.
+ * This only fetches bytes — it never triggers a download and never touches the DOM.
+ * Callers must release the returned URL with `URL.revokeObjectURL` when done.
+ */
+export async function loadPdfPreviewObjectUrl(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Gagal memuat pratinjau PDF.");
+
+  const blob = await response.blob();
+  return URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+}
