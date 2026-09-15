@@ -1,25 +1,42 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
 import { buildPdfFileName, downloadPdfFile, loadPdfPreviewObjectUrl } from "@/lib/pdf";
+import {
+  getMaterialRoute,
+  isTextMaterial,
+  isVideoMaterial,
+  sortMaterialsByUrutan,
+  type ModuleMaterial,
+} from "@/lib/materials";
 
 interface ModuleContent {
   id?: string;
   judul?: string;
   tipe?: string;
   konten?: string;
+  urutan?: number;
 }
 
-const SUPPORTED_TYPES = ["teks", "text", "pdf", "link"];
-
 export default function ModuleTextPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20 text-xs text-slate-500">Memuat materi...</div>}>
+      <ModuleTextPageContent />
+    </Suspense>
+  );
+}
+
+function ModuleTextPageContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const moduleId = params.id as string;
 
   const [material, setMaterial] = useState<ModuleContent | null>(null);
+  const [materials, setMaterials] = useState<ModuleMaterial[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [moduleDescription, setModuleDescription] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -45,9 +62,20 @@ export default function ModuleTextPage() {
           getModuleContents(moduleId),
           getModuleById(moduleId).catch(() => null),
         ]);
-        const typedContents = contents as ModuleContent[];
-        const supported = typedContents.find((c) => c.tipe && SUPPORTED_TYPES.includes(c.tipe));
-        setMaterial(supported || null);
+        const ordered = sortMaterialsByUrutan(contents as ModuleContent[]);
+        setMaterials(ordered);
+
+        const requestedIndex = Number(searchParams.get("i"));
+        const index = Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < ordered.length ? requestedIndex : 0;
+        setCurrentIndex(index);
+
+        const active = ordered[index];
+        if (active && isVideoMaterial(active.tipe)) {
+          // Video memiliki halaman/ renderer khusus — arahkan ke sana.
+          router.replace(getMaterialRoute(moduleId, ordered, index));
+          return;
+        }
+        setMaterial(active || null);
         if (moduleData && moduleData.deskripsi) {
           setModuleDescription(moduleData.deskripsi);
         }
@@ -58,7 +86,7 @@ export default function ModuleTextPage() {
       }
     }
     loadMaterial();
-  }, [moduleId]);
+  }, [moduleId, searchParams, router]);
 
   function closePreview() {
     previewRequestRef.current += 1;
@@ -121,17 +149,23 @@ export default function ModuleTextPage() {
   if (loading) return <div className="text-center py-20 text-xs text-slate-500">Memuat materi...</div>;
 
   const tipe = material?.tipe;
-  const isText = tipe === "teks" || tipe === "text";
+  const isText = isTextMaterial(tipe);
   const isPdf = tipe === "pdf";
   const isLink = tipe === "link";
+  const hasPrevious = currentIndex > 0;
+  const isLastMaterial = currentIndex + 1 >= materials.length;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <button
-        onClick={() => router.push(`/modules/${moduleId}/video`)}
+        onClick={() =>
+          hasPrevious
+            ? router.push(getMaterialRoute(moduleId, materials, currentIndex - 1))
+            : router.push(`/modules/${moduleId}`)
+        }
         className="text-xs font-semibold text-slate-500 hover:underline"
       >
-        ← Kembali ke Video Pembelajaran
+        ← Materi Sebelumnya
       </button>
 
       {moduleDescription && (
@@ -240,10 +274,10 @@ export default function ModuleTextPage() {
 
       <div className="flex justify-end pt-2">
         <button
-          onClick={() => router.push(`/modules/${moduleId}/evaluation`)}
+          onClick={() => router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
           className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition"
         >
-          Lanjut ke Evaluasi & Feedback →
+          {isLastMaterial ? "Lanjut ke Evaluasi & Feedback →" : "Materi Berikutnya →"}
         </button>
       </div>
     </div>
