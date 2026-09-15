@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getModuleById, updateModule, getModuleContents } from "@/services/module.service";
 import { deleteContent, updateContent } from "@/services/content.service";
 import { validateExternalUrl } from "@/lib/link";
+import { getCourseModulePermissions } from "@/lib/rbac";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
 
