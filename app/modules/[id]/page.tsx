@@ -128,8 +128,11 @@ function ModuleVideoPageContent() {
   const [authToken] = useState(getStoredAuthToken);
 
   // Loading & Error States
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Status resolusi material awal. Video UI HANYA boleh dirender saat status
+  // ini bernilai "video", sehingga tidak ada paint Video sebelum material
+  // aktif benar-benar diketahui.
+  const [resolutionStatus, setResolutionStatus] = useState<"resolving" | "video" | "non-video" | "error">("resolving");
 
   const playerRef = useRef<YouTubePlayer | null>(null);
   const maxWatchedTimeRef = useRef<number>(0);
@@ -160,8 +163,8 @@ function ModuleVideoPageContent() {
   // Memuat konten dan metadata modul
   useEffect(() => {
     async function init() {
-      setIsLoadingContent(true);
       setErrorMessage(null);
+      setResolutionStatus("resolving");
       try {
         const [contentsRes, moduleRes] = await Promise.all([
           getModuleContents(moduleId),
@@ -178,17 +181,15 @@ function ModuleVideoPageContent() {
         if (contents.length > 0) {
           const requestedIndex = Number(searchParams.get("i"));
           const hasRequestedIndex = Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < contents.length;
-          // Tanpa index eksplisit, mulai dari material pertama (sesuai urutan).
-          const targetIndex = hasRequestedIndex
-            ? requestedIndex
-            : contents.findIndex((c) => isVideoMaterial(c.tipe)) >= 0
-            ? contents.findIndex((c) => isVideoMaterial(c.tipe))
-            : 0;
+          // Tanpa index eksplisit, mulai dari material pertama (paling kecil
+          // `urutan`-nya) — bukan dari tipe tertentu (mis. video).
+          const targetIndex = hasRequestedIndex ? requestedIndex : 0;
           setCurrentIndex(targetIndex);
 
           const target = contents[targetIndex];
           if (target && isVideoMaterial(target.tipe)) {
             setVideoContent(target as ModuleContent);
+            setResolutionStatus("video");
 
             try {
               const quizRes = await fetchApi(`${API_BASE_URL}/mini-quizzes/content/${target.id}`, {
@@ -209,19 +210,22 @@ function ModuleVideoPageContent() {
             }
           } else if (target) {
             // Material pertama (atau pada index ini) bukan video → serahkan ke
-            // halaman material generik pada posisi yang sama.
+            // halaman material generik pada posisi yang sama. Tandai sebagai
+            // non-video agar UI Video tidak pernah dirender.
+            setResolutionStatus("non-video");
             router.replace(getMaterialRoute(moduleId, contents, targetIndex));
           } else {
+            setResolutionStatus("error");
             router.replace(`/modules/${moduleId}/evaluation`);
           }
         } else {
+          setResolutionStatus("error");
           setErrorMessage(`Modul tidak ditemukan atau tidak memiliki konten.`);
         }
       } catch (err) {
         console.error("Gagal memuat konten pembelajaran:", err);
+        setResolutionStatus("error");
         setErrorMessage("Gagal terhubung ke server backend.");
-      } finally {
-        setIsLoadingContent(false);
       }
     }
     init();
@@ -437,6 +441,33 @@ function ModuleVideoPageContent() {
     }
   };
 
+  // Video UI HANYA dirender setelah resolusi material awal memastikan material
+  // aktif adalah video. Selama resolving / saat diarahkan ke material non-video
+  // / saat error, tampilkan state netral saja (tidak ada badge/judul/player
+  // Video maupun fallback "Materi Video Utama").
+  if (resolutionStatus !== "video" || !videoContent) {
+    const isError = resolutionStatus === "error";
+    return (
+      <div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6">
+        {isError ? (
+          <div className="max-w-md text-center space-y-2">
+            <p className="text-sm font-semibold text-slate-700">
+              {displayErrorMessage || "Materi tidak dapat ditampilkan."}
+            </p>
+            <p className="text-xs text-slate-500">
+              Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 text-slate-500">
+            <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs font-medium">Memuat materi pembelajaran...</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/70 pb-16 pt-6 relative overflow-hidden">
       {/* ================= BACKGROUND DEKORATIF DISDIK JABAR ================= */}
@@ -520,16 +551,8 @@ function ModuleVideoPageContent() {
 
         {/* Container Pemutar Video */}
         <div className="relative aspect-video bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 ring-1 ring-slate-900/10">
-          {/* Tampilan Loading */}
-          {isLoadingContent && (
-            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950 text-slate-300 space-y-3">
-              <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-medium">Memuat Konten Pembelajaran...</p>
-            </div>
-          )}
-
           {/* Tampilan Error Fallback */}
-          {!isLoadingContent && displayErrorMessage && (
+          {displayErrorMessage && (
             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950 p-6 text-center text-slate-300 space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
