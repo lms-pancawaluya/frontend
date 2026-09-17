@@ -8,6 +8,8 @@ import {
   getEvaluationDetail,
   submitEvaluation,
 } from "@/services/evaluation.service";
+import { getModuleById } from "@/services/module.service";
+import { isPostTestLocked, readModuleStageProgress } from "@/lib/moduleStages";
 import {
   isPreTest,
   isPostTest,
@@ -32,6 +34,8 @@ export default function EvaluationDetailPage() {
   const [evaluation, setEvaluation] = useState<EvaluationDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Validasi prerequisite Post-Test berbasis progress BE (bukan sekadar lock tombol).
+  const [stageBlocked, setStageBlocked] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -42,6 +46,7 @@ export default function EvaluationDetailPage() {
     async function fetchEvaluation() {
       setLoading(true);
       setLoadError(null);
+      setStageBlocked(false);
       try {
         // Ambil daftar evaluasi (untuk tahu `tipe`, passingScore, maxAttempts milik
         // evaluationId ini) sekaligus detail soal-nya secara paralel.
@@ -53,6 +58,21 @@ export default function EvaluationDetailPage() {
         const currentSummary = Array.isArray(list)
           ? list.find((e) => e.id === evaluationId) || null
           : null;
+
+        // Post-Test hanya boleh diakses setelah Learning Material selesai.
+        // Status diambil dari progress BE pada Module (single source of truth).
+        const tipe = currentSummary?.tipe ?? detail?.tipe;
+        if (isPostTest(tipe)) {
+          const moduleData = await getModuleById(moduleId);
+          if (!moduleData) {
+            throw new Error("Gagal memuat status tahapan modul.");
+          }
+          const progress = readModuleStageProgress(moduleData);
+          if (isPostTestLocked(progress)) {
+            setStageBlocked(true);
+            return;
+          }
+        }
 
         setSummary(currentSummary);
         setEvaluation(detail);
@@ -140,6 +160,29 @@ export default function EvaluationDetailPage() {
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm inline-block">
           {loadError}
+        </div>
+      </div>
+    );
+  }
+
+  if (stageBlocked) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-8 space-y-3">
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-xl">
+            🔒
+          </div>
+          <h2 className="text-base font-bold text-slate-800">Post-Test Terkunci</h2>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Selesaikan seluruh materi pembelajaran modul ini terlebih dahulu sebelum
+            mengerjakan Post-Test.
+          </p>
+          <button
+            onClick={() => router.push(`/modules/${moduleId}/evaluations`)}
+            className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-full transition"
+          >
+            Kembali ke Modul
+          </button>
         </div>
       </div>
     );

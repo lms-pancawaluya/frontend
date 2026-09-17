@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
 import { buildPdfFileName, downloadPdfFile, loadPdfPreviewObjectUrl } from "@/lib/pdf";
+import ModuleStageGuard from "@/app/components/common/ModuleStageGuard";
 import {
   getMaterialRoute,
   isTextMaterial,
@@ -23,8 +24,19 @@ interface ModuleContent {
 export default function ModuleTextPage() {
   return (
     <Suspense fallback={<div className="text-center py-20 text-xs text-slate-500">Memuat materi...</div>}>
-      <ModuleTextPageContent />
+      <ModuleStageGuardWrapper />
     </Suspense>
+  );
+}
+
+function ModuleStageGuardWrapper() {
+  const params = useParams();
+  const moduleId = params.id as string;
+
+  return (
+    <ModuleStageGuard moduleId={moduleId} stage="material">
+      <ModuleTextPageContent />
+    </ModuleStageGuard>
   );
 }
 

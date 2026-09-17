@@ -6,8 +6,16 @@ import { useParams, useRouter } from "next/navigation";
 import { getCourseById } from "@/services/course.service";
 import { getModuleContents, getModules } from "@/services/module.service";
 import { getModuleEvaluations } from "@/services/evaluation.service";
+import { getProgress } from "@/services/progress.service";
 import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
 import type { Course, CourseModule } from "@/types/course";
+import {
+  isMaterialLocked,
+  isPostTestLocked,
+  readModuleStageProgress,
+  readProgressModuleId,
+  type ModuleStageProgress,
+} from "@/lib/moduleStages";
 
 interface CourseWithModules extends Course {
   modules?: CourseModule[];
@@ -30,6 +38,33 @@ function getModuleTitle(module: CourseModule) {
   return module.judul || module.id;
 }
 
+/**
+ * Memetakan per-stage completion flags dari BE, keyed by moduleId.
+ * Sumber utama: GET /api/progress (list progress per module). Field stage yang
+ * menempel pada Module entity (GET /api/modules/:id) melengkapi/menimpa.
+ */
+function buildStageProgress(
+  modulesList: CourseModule[],
+  progressList: unknown[]
+): Record<string, ModuleStageProgress> {
+  const map: Record<string, ModuleStageProgress> = {};
+
+  if (Array.isArray(progressList)) {
+    progressList.forEach((item) => {
+      const moduleId = readProgressModuleId(item);
+      if (!moduleId) return;
+      map[moduleId] = { ...(map[moduleId] || {}), ...readModuleStageProgress(item) };
+    });
+  }
+
+  modulesList.forEach((module) => {
+    const fromModule = readModuleStageProgress(module);
+    map[module.id] = { ...(map[module.id] || {}), ...fromModule };
+  });
+
+  return map;
+}
+
 export default function GuruCourseDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -40,11 +75,20 @@ export default function GuruCourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Per-stage completion flags dari BE, keyed by moduleId. Menjadi single
+  // source of truth untuk gating Pre-Test → Material → Post-Test.
+  const [stageProgress, setStageProgress] = useState<Record<string, ModuleStageProgress>>({});
+
   // Accordion state + data overview per module (diambil saat module dibuka).
   const [openModuleIds, setOpenModuleIds] = useState<Record<string, boolean>>({});
   const [moduleOverview, setModuleOverview] = useState<Record<string, ModuleOverview>>({});
   const [moduleOverviewLoading, setModuleOverviewLoading] = useState<Record<string, boolean>>({});
   const [moduleOverviewError, setModuleOverviewError] = useState<Record<string, string>>({});
+
+  const loadStageProgress = useCallback(async (modulesList: CourseModule[]) => {
+    const progressList = await getProgress();
+    setStageProgress(buildStageProgress(modulesList, Array.isArray(progressList) ? progressList : []));
+  }, []);
 
   useEffect(() => {
     async function loadCourse() {
@@ -55,12 +99,15 @@ export default function GuruCourseDetailPage() {
         setCourse(courseData);
 
         const attached = courseData?.modules ?? courseData?.moduls;
+        let modulesList: CourseModule[];
         if (Array.isArray(attached) && attached.length > 0) {
-          setModules(attached);
+          modulesList = attached;
         } else {
           const modulesData = await getModules(id);
-          setModules(Array.isArray(modulesData) ? (modulesData as CourseModule[]) : []);
+          modulesList = Array.isArray(modulesData) ? (modulesData as CourseModule[]) : [];
         }
+        setModules(modulesList);
+        await loadStageProgress(modulesList);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Gagal memuat detail course.");
       } finally {
@@ -69,7 +116,7 @@ export default function GuruCourseDetailPage() {
     }
 
     if (id) loadCourse();
-  }, [id]);
+  }, [id, loadStageProgress]);
 
   const loadModuleOverview = useCallback(async (moduleId: string) => {
     setModuleOverviewLoading((prev) => ({ ...prev, [moduleId]: true }));
@@ -112,6 +159,22 @@ export default function GuruCourseDetailPage() {
       loadModuleOverview(moduleId);
     }
   }
+
+  // Segarkan status stage dari BE ketika Guru kembali ke tab ini (mis. setelah
+  // menyelesaikan Pre-Test/Material di halaman lain). Satu request saat focus,
+  // bukan polling berkala.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleFocus = () => {
+      if (modules.length > 0) {
+        loadStageProgress(modules);
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [modules, loadStageProgress]);
 
   if (loading) {
     return (
@@ -250,6 +313,13 @@ export default function GuruCourseDetailPage() {
                 const panelId = `module-panel-${module.id}`;
                 const buttonId = `module-toggle-${module.id}`;
 
+                const progress = stageProgress[module.id] || {};
+                const preTestCompleted = progress.preTestCompleted === true;
+                const materialCompleted = progress.materialCompleted === true;
+                const postTestCompleted = progress.postTestCompleted === true;
+                const materialLocked = isMaterialLocked(progress);
+                const postTestLocked = isPostTestLocked(progress);
+
                 return (
                   <li key={module.id} className="rounded-2xl border border-slate-200/80 overflow-hidden">
                     {/* Header (selalu tampil) */}
@@ -316,23 +386,40 @@ export default function GuruCourseDetailPage() {
                         ) : (
                           <div className="grid gap-3 sm:grid-cols-3">
                             {/* 1. Pre-Test */}
-                            <div className="flex flex-col rounded-2xl border border-sky-100 bg-white p-4 space-y-3">
+                            <div
+                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 ${
+                                preTestCompleted ? "border-sky-200" : "border-sky-100"
+                              }`}
+                            >
                               <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-sky-700">
-                                  Pre-Test
-                                </span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-sky-700">
+                                    Pre-Test
+                                  </span>
+                                  {preTestCompleted && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      Selesai
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-xs text-slate-500 leading-relaxed">
                                   {overview?.preTestId
-                                    ? "Kerjakan Pre-Test sebelum mempelajari materi modul."
+                                    ? preTestCompleted
+                                      ? "Pre-Test telah Anda selesaikan."
+                                      : "Kerjakan Pre-Test sebelum mempelajari materi modul."
                                     : "Pre-Test belum tersedia untuk module ini."}
                                 </p>
                               </div>
                               {overview?.preTestId ? (
                                 <Link
                                   href={`/modules/${module.id}/evaluations/${overview.preTestId}`}
-                                  className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-700 text-white text-xs font-semibold rounded-full hover:bg-sky-800 transition"
+                                  className={`mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-white text-xs font-semibold rounded-full transition ${
+                                    preTestCompleted
+                                      ? "bg-sky-600 hover:bg-sky-700"
+                                      : "bg-sky-700 hover:bg-sky-800"
+                                  }`}
                                 >
-                                  Mulai Pre-Test
+                                  {preTestCompleted ? "Lanjutkan Pre-Test" : "Mulai Pre-Test"}
                                 </Link>
                               ) : (
                                 <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
@@ -342,23 +429,49 @@ export default function GuruCourseDetailPage() {
                             </div>
 
                             {/* 2. Learning Material */}
-                            <div className="flex flex-col rounded-2xl border border-emerald-100 bg-white p-4 space-y-3">
+                            <div
+                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 ${
+                                materialLocked ? "border-slate-200 bg-slate-50/60" : "border-emerald-100"
+                              }`}
+                            >
                               <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-700">
-                                  Learning Material
-                                </span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-700">
+                                    Learning Material
+                                  </span>
+                                  {materialLocked ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                      </svg>
+                                      Terkunci
+                                    </span>
+                                  ) : materialCompleted ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      Selesai
+                                    </span>
+                                  ) : null}
+                                </div>
                                 <p className="text-xs text-slate-500 leading-relaxed">
-                                  {overview?.hasMaterials
-                                    ? "Pelajari materi pembelajaran modul ini."
-                                    : "Learning material belum tersedia untuk module ini."}
+                                  {materialLocked
+                                    ? "Selesaikan Pre-Test terlebih dahulu untuk membuka materi."
+                                    : overview?.hasMaterials
+                                      ? materialCompleted
+                                        ? "Materi pembelajaran telah Anda selesaikan."
+                                        : "Pelajari materi pembelajaran modul ini."
+                                      : "Learning material belum tersedia untuk module ini."}
                                 </p>
                               </div>
-                              {overview?.hasMaterials ? (
+                              {materialLocked ? (
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                  Terkunci
+                                </span>
+                              ) : overview?.hasMaterials ? (
                                 <Link
                                   href={`/modules/${module.id}`}
                                   className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-700 text-white text-xs font-semibold rounded-full hover:bg-emerald-800 transition"
                                 >
-                                  Mulai Belajar
+                                  {materialCompleted ? "Lanjutkan Belajar" : "Mulai Belajar"}
                                 </Link>
                               ) : (
                                 <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
@@ -368,23 +481,49 @@ export default function GuruCourseDetailPage() {
                             </div>
 
                             {/* 3. Post-Test */}
-                            <div className="flex flex-col rounded-2xl border border-purple-100 bg-white p-4 space-y-3">
+                            <div
+                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 ${
+                                postTestLocked ? "border-slate-200 bg-slate-50/60" : "border-purple-100"
+                              }`}
+                            >
                               <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-purple-700">
-                                  Post-Test
-                                </span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-purple-700">
+                                    Post-Test
+                                  </span>
+                                  {postTestLocked ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                      </svg>
+                                      Terkunci
+                                    </span>
+                                  ) : postTestCompleted ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      Selesai
+                                    </span>
+                                  ) : null}
+                                </div>
                                 <p className="text-xs text-slate-500 leading-relaxed">
-                                  {overview?.postTestId
-                                    ? "Kerjakan Post-Test setelah menyelesaikan materi modul."
-                                    : "Post-Test belum tersedia untuk module ini."}
+                                  {postTestLocked
+                                    ? "Selesaikan seluruh materi pembelajaran untuk membuka Post-Test."
+                                    : overview?.postTestId
+                                      ? postTestCompleted
+                                        ? "Post-Test telah Anda selesaikan."
+                                        : "Kerjakan Post-Test setelah menyelesaikan materi modul."
+                                      : "Post-Test belum tersedia untuk module ini."}
                                 </p>
                               </div>
-                              {overview?.postTestId ? (
+                              {postTestLocked ? (
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                  Terkunci
+                                </span>
+                              ) : overview?.postTestId ? (
                                 <Link
                                   href={`/modules/${module.id}/evaluations/${overview.postTestId}`}
                                   className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-700 text-white text-xs font-semibold rounded-full hover:bg-purple-800 transition"
                                 >
-                                  Mulai Post-Test
+                                  {postTestCompleted ? "Lanjutkan Post-Test" : "Mulai Post-Test"}
                                 </Link>
                               ) : (
                                 <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">

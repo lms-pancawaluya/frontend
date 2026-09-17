@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
 import { getMaterialRoute, isVideoMaterial, sortMaterialsByUrutan, type ModuleMaterial } from "@/lib/materials";
+import ModuleStageGuard from "@/app/components/common/ModuleStageGuard";
 
 import { API_URL, fetchApi } from "@/lib/api";
 
@@ -102,8 +103,19 @@ const getYoutubeId = (url?: string): string => {
 export default function ModuleVideoPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 text-xs text-slate-500">Memuat materi...</div>}>
-      <ModuleVideoPageContent />
+      <ModuleStageGuardWrapper />
     </Suspense>
+  );
+}
+
+function ModuleStageGuardWrapper() {
+  const params = useParams();
+  const moduleId = params.id as string;
+
+  return (
+    <ModuleStageGuard moduleId={moduleId} stage="material">
+      <ModuleVideoPageContent />
+    </ModuleStageGuard>
   );
 }
 

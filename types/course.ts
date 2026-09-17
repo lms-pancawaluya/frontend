@@ -12,6 +12,10 @@ export interface CourseModule {
     postTest?: string;
   };
   progressPercentage?: number;
+  /** Per-stage completion flags provided by the backend (single source of truth). */
+  preTestCompleted?: boolean;
+  materialCompleted?: boolean;
+  postTestCompleted?: boolean;
 }
 
 export interface Course {
