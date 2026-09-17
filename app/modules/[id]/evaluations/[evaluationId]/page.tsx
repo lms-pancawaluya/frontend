@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -9,7 +9,7 @@ import {
   submitEvaluation,
 } from "@/services/evaluation.service";
 import { getModuleById } from "@/services/module.service";
-import { isPostTestLocked, readModuleStageProgress } from "@/lib/moduleStages";
+import { isPostTestLocked, readModuleStageProgress, type ModuleStageProgress } from "@/lib/moduleStages";
 import {
   isPreTest,
   isPostTest,
@@ -36,11 +36,23 @@ export default function EvaluationDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   // Validasi prerequisite Post-Test berbasis progress BE (bukan sekadar lock tombol).
   const [stageBlocked, setStageBlocked] = useState(false);
+  // Status stage terbaru dari BE (source of truth), di-refresh setelah submit.
+  const [moduleStage, setModuleStage] = useState<ModuleStageProgress>({});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<SubmitEvaluationResult | null>(null);
+
+  // Ambil status stage terbaru dari BE untuk module ini (single source of truth).
+  // Dipakai saat validasi prerequisite dan setelah submit evaluation.
+  const refreshStageProgress = useCallback(async (): Promise<ModuleStageProgress | null> => {
+    const moduleData = await getModuleById(moduleId);
+    if (!moduleData) return null;
+    const progress = readModuleStageProgress(moduleData);
+    setModuleStage(progress);
+    return progress;
+  }, [moduleId]);
 
   useEffect(() => {
     async function fetchEvaluation() {
@@ -63,11 +75,10 @@ export default function EvaluationDetailPage() {
         // Status diambil dari progress BE pada Module (single source of truth).
         const tipe = currentSummary?.tipe ?? detail?.tipe;
         if (isPostTest(tipe)) {
-          const moduleData = await getModuleById(moduleId);
-          if (!moduleData) {
+          const progress = await refreshStageProgress();
+          if (!progress) {
             throw new Error("Gagal memuat status tahapan modul.");
           }
-          const progress = readModuleStageProgress(moduleData);
           if (isPostTestLocked(progress)) {
             setStageBlocked(true);
             return;
@@ -86,7 +97,7 @@ export default function EvaluationDetailPage() {
     if (moduleId && evaluationId) {
       fetchEvaluation();
     }
-  }, [moduleId, evaluationId]);
+  }, [moduleId, evaluationId, refreshStageProgress]);
 
   const questionsList = evaluation?.questions || [];
   const tipe = summary?.tipe ?? evaluation?.tipe;
@@ -133,6 +144,13 @@ export default function EvaluationDetailPage() {
       )) as SubmitEvaluationResult;
 
       setResult(submitResult);
+
+      // Setelah submit, ambil status stage terbaru dari BE agar Course Detail &
+      // stage gating (Pre-Test → Material → Post-Test) memakai status resmi BE.
+      // Tidak menyimpan completion state lokal.
+      await refreshStageProgress().catch((err) =>
+        console.warn("Gagal me-refresh status tahapan setelah submit:", err)
+      );
     } catch (err) {
       setSubmitError(getErrorMessage(err, "Gagal mengirim jawaban evaluasi."));
     } finally {
@@ -144,6 +162,11 @@ export default function EvaluationDetailPage() {
     setResult(null);
     setAnswers({});
     setSubmitError(null);
+    // Status stage bisa berubah (mis. modul di-reset BE setelah gagal berulang),
+    // jadi validasi ulang prerequisite dari BE sebelum mengulang.
+    void refreshStageProgress().catch((err) =>
+      console.warn("Gagal me-refresh status tahapan:", err)
+    );
   };
 
   if (loading) {
@@ -280,11 +303,29 @@ export default function EvaluationDetailPage() {
               </p>
             )}
 
+            {preTest && moduleStage.preTestCompleted && (
+              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                Pre-Test tercatat selesai di server
+              </span>
+            )}
+
             {postTest && result.isLolos && (
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
                 Selamat! Anda telah memenuhi nilai minimal kelulusan ({result.passingScore ?? passingScore}%).
                 Modul ini kini berstatus <span className="font-semibold">selesai</span>.
               </p>
+            )}
+
+            {postTest && moduleStage.postTestCompleted && (
+              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                Post-Test tercatat selesai di server
+              </span>
             )}
 
             {postTest && !result.isLolos && !result.mustRepeat && (
