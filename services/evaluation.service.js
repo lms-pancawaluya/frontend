@@ -167,10 +167,19 @@ export async function deleteEvaluation(moduleId, evaluationId) {
     headers: getHeaders(),
   });
 
-  const result = await response.json();
+  // Robust terhadap respons non-JSON (mis. 404/HTML) agar pesan error jelas,
+  // bukan error parsing yang membingungkan.
+  let result = null;
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
 
-  if (!response.ok || !result.sukses) {
-    throw new Error(result.pesan || result.message || "Gagal menghapus evaluasi");
+  if (!response.ok || result?.sukses === false || result === null) {
+    throw new Error(
+      result?.pesan || result?.message || `Gagal menghapus evaluasi (status ${response.status}).`
+    );
   }
 
   return result;
