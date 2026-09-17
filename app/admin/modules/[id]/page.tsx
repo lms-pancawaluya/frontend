@@ -477,7 +477,7 @@ export default function AdminModuleDetailPage() {
       setEvaluationTitle("");
       setShowEvaluationForm(false);
     } catch (err) {
-      setEvaluationMessage(err instanceof Error ? err.message : "Gagal membuat evaluasi.");
+      setEvaluationMessage(err instanceof Error ? err.message : "Gagal membuat asesmen.");
     } finally {
       setEvaluationBusy(false);
     }

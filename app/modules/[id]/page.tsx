@@ -252,7 +252,7 @@ function ModuleVideoPageContent() {
             router.replace(getMaterialRoute(moduleId, contents, targetIndex));
           } else {
             setResolutionStatus("error");
-            router.replace(`/modules/${moduleId}/evaluation`);
+            router.replace(`/modules/${moduleId}/evaluations?stage=post`);
           }
         } else {
           setResolutionStatus("error");
@@ -675,7 +675,7 @@ function ModuleVideoPageContent() {
                           <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Evaluasi Pembelajaran
+                          Kuis Interaktif
                         </span>
                         <span className="text-xs text-slate-400 font-medium">
                           Batas Kelulusan: {activeQuiz.passingScore}%
@@ -749,7 +749,7 @@ function ModuleVideoPageContent() {
                       }
                       className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? "Memproses Evaluasi..." : "Kirim Jawaban Evaluasi"}
+                      {isSubmitting ? "Memproses Jawaban..." : "Kirim Jawaban Kuis"}
                     </button>
                   </form>
                 ) : (
@@ -775,7 +775,7 @@ function ModuleVideoPageContent() {
 
                     <div className="space-y-1">
                       <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Hasil Evaluasi Pembelajaran
+                        Hasil Kuis Interaktif
                       </span>
                       <h4 className="text-2xl font-bold text-slate-900">
                         Capaian Skor: {attemptResult.skor}%
@@ -828,7 +828,7 @@ function ModuleVideoPageContent() {
                         }}
                         className="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
                       >
-                        Coba Kembali Evaluasi
+                        Coba Kembali Kuis
                       </button>
                     )}
                   </div>
@@ -848,8 +848,8 @@ function ModuleVideoPageContent() {
             />
             <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
               {!isVideoFinished
-                ? "Selesaikan penayangan video dan evaluasi pembelajaran untuk melanjutkan ke materi berikutnya."
-                : "Seluruh tahapan pembelajaran video dan evaluasi telah diselesaikan."}
+                ? "Selesaikan penayangan video dan kuis interaktif untuk melanjutkan ke materi berikutnya."
+                : "Seluruh tahapan pembelajaran video dan kuis interaktif telah diselesaikan."}
             </p>
           </div>
 
@@ -862,7 +862,7 @@ function ModuleVideoPageContent() {
                 : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60 shadow-none"
             }`}
           >
-            <span>{currentIndex + 1 >= materials.length ? "Lanjut ke Evaluasi & Feedback" : "Lanjut ke Materi Berikutnya"}</span>
+            <span>{currentIndex + 1 >= materials.length ? "Lanjut ke Post-Test" : "Lanjut ke Materi Berikutnya"}</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>

@@ -450,7 +450,7 @@ export default function ModuleVideoPage() {
                           <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Evaluasi Pembelajaran
+                          Kuis Interaktif
                         </span>
                         <span className="text-xs text-slate-400 font-medium">
                           Batas Kelulusan: {activeQuiz.passingScore}%
@@ -514,7 +514,7 @@ export default function ModuleVideoPage() {
                       }
                       className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? "Memproses Evaluasi..." : "Kirim Jawaban Evaluasi"}
+                      {isSubmitting ? "Memproses Jawaban..." : "Kirim Jawaban Kuis"}
                     </button>
                   </form>
                 ) : (
@@ -540,7 +540,7 @@ export default function ModuleVideoPage() {
 
                     <div className="space-y-1">
                       <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Hasil Evaluasi Pembelajaran
+                        Hasil Kuis Interaktif
                       </span>
                       <h4 className="text-2xl font-bold text-slate-900">
                         Capaian Skor: {attemptResult.skor}%
@@ -593,7 +593,7 @@ export default function ModuleVideoPage() {
                         }}
                         className="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
                       >
-                        Coba Kembali Evaluasi
+                        Coba Kembali Kuis
                       </button>
                     )}
                   </div>
@@ -609,8 +609,8 @@ export default function ModuleVideoPage() {
             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isVideoFinished ? "bg-emerald-600" : "bg-amber-500"}`} />
             <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
               {!isVideoFinished
-                ? "Selesaikan penayangan video dan evaluasi pembelajaran untuk melanjutkan ke modul teks."
-                : "Seluruh tahapan pembelajaran video dan evaluasi telah diselesaikan."}
+                ? "Selesaikan penayangan video dan kuis interaktif untuk melanjutkan ke modul teks."
+                : "Seluruh tahapan pembelajaran video dan kuis interaktif telah diselesaikan."}
             </p>
           </div>
 

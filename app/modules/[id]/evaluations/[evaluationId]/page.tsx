@@ -13,6 +13,7 @@ import { isPostTestLocked, readModuleStageProgress, type ModuleStageProgress } f
 import {
   isPreTest,
   isPostTest,
+  getStageLabel,
   type EvaluationSummary,
   type EvaluationDetailData,
   type SubmitAnswerItem,
@@ -88,7 +89,7 @@ export default function EvaluationDetailPage() {
         setSummary(currentSummary);
         setEvaluation(detail);
       } catch (err) {
-        setLoadError(getErrorMessage(err, "Gagal mengambil data evaluasi."));
+        setLoadError(getErrorMessage(err, "Gagal mengambil data asesmen."));
       } finally {
         setLoading(false);
       }
@@ -152,7 +153,7 @@ export default function EvaluationDetailPage() {
         console.warn("Gagal me-refresh status tahapan setelah submit:", err)
       );
     } catch (err) {
-      setSubmitError(getErrorMessage(err, "Gagal mengirim jawaban evaluasi."));
+      setSubmitError(getErrorMessage(err, "Gagal mengirim jawaban asesmen."));
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +174,7 @@ export default function EvaluationDetailPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[60vh] gap-3">
         <div className="w-10 h-10 border-4 border-[var(--color-biru-muda)] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[var(--color-navy)] font-medium text-sm">Memuat soal evaluasi...</p>
+        <p className="text-[var(--color-navy)] font-medium text-sm">Memuat soal asesmen...</p>
       </div>
     );
   }
@@ -236,10 +237,10 @@ export default function EvaluationDetailPage() {
                   : "bg-[var(--color-pale)] text-[var(--color-accent)]"
               }`}
             >
-              {preTest ? "Pre-Test" : postTest ? "Post-Test" : "Evaluasi Modul"}
+              {getStageLabel(tipe)}
             </span>
             <h1 className="text-2xl font-bold text-[var(--color-navy)]">
-              {evaluation?.judul || summary?.judul || "Evaluasi Pembelajaran"}
+              {evaluation?.judul || summary?.judul || getStageLabel(tipe)}
             </h1>
             {postTest && passingScore > 0 && (
               <p className="text-xs text-slate-500 mt-1">
@@ -292,7 +293,7 @@ export default function EvaluationDetailPage() {
 
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Hasil {preTest ? "Pre-Test" : postTest ? "Post-Test" : "Evaluasi"}
+              Hasil {getStageLabel(tipe)}
             </span>
             <h2 className="text-2xl font-bold text-slate-900">Capaian Skor: {result.skor}%</h2>
 
@@ -439,7 +440,7 @@ export default function EvaluationDetailPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm mt-8">
             <p className="text-xs text-[var(--color-accent)] text-center sm:text-left font-medium">
-              Pastikan seluruh soal telah terjawab sebelum mengirim evaluasi.
+              Pastikan seluruh soal telah terjawab sebelum mengirim asesmen.
             </p>
             <button
               onClick={handleSubmit}
@@ -459,7 +460,7 @@ export default function EvaluationDetailPage() {
         </div>
       ) : (
         <div className="text-center py-16 bg-white rounded-2xl border border-[var(--color-border-soft)] text-[var(--color-navy)]">
-          Belum ada soal yang tersedia pada evaluasi ini.
+          Belum ada soal yang tersedia pada asesmen ini.
         </div>
       )}
     </div>

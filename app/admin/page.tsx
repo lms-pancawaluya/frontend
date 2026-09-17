@@ -357,7 +357,7 @@ export default function AdminDashboardPage() {
     },
     {
       title: "Monitoring Pengerjaan Modul Guru",
-      desc: "Pantau progres pengerjaan modul dan hasil evaluasi tiap guru.",
+          desc: "Pantau progres pengerjaan modul dan hasil Pre-Test/Post-Test tiap guru.",
       href: "/admin/checklist/report",
       icon: ICONS.monitoring,
       iconWrap: "bg-amber-100 text-amber-600",

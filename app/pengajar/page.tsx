@@ -301,7 +301,7 @@ export default function PengajarDashboardPage() {
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Selamat datang, {user?.nama ?? "Pengajar"}.</h1>
             <p className="text-xs leading-relaxed text-slate-100/90 sm:text-sm">
-              Bina dan pantau perkembangan guru{user?.sekolah ? ` di ${user.sekolah}` : ""}: progres modul, hasil evaluasi, RTL, dan diskusi.
+              Bina dan pantau perkembangan guru{user?.sekolah ? ` di ${user.sekolah}` : ""}: progres modul, hasil Pre-Test/Post-Test, RTL, dan diskusi.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3 self-start md:self-auto">

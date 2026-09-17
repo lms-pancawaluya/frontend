@@ -197,7 +197,7 @@ export default function DashboardPage() {
                   <h2 className="font-[family-name:var(--font-display)] text-base font-bold text-[var(--color-navy)]">
                     Modul Pembelajaran Guru
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Akses materi dan evaluasi Pancawaluya</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Akses materi, Pre-Test, dan Post-Test Pancawaluya</p>
                 </div>
                 <Link href="/modules" className="text-xs font-semibold text-[var(--color-accent)] hover:underline">
                   Lihat Semua Modul →

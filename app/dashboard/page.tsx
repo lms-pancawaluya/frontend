@@ -374,7 +374,7 @@ export default function DashboardPage() {
                   <h2 className="text-sm font-bold text-slate-900 tracking-tight">
                     Modul Pembelajaran Utama
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Akses cepat materi dan evaluasi kompetensi</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Akses cepat materi, Pre-Test, dan Post-Test</p>
                 </div>
                 <Link
                   href="/modules"

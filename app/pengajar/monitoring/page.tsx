@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUsers, getMonitoringUserProgress, getMonitoringUserEvaluations } from "@/services/user.service";
+import { getStageLabel } from "@/types/evaluation";
 
 interface GuruItem {
   id: string;
@@ -22,6 +23,7 @@ interface EvaluationItem {
   moduleJudul: string;
   evaluationId: string;
   evaluationJudul: string;
+  tipe?: string;
   dikerjakan: boolean;
   skor: number | null;
   status: string;
@@ -111,7 +113,7 @@ export default function PengajarMonitoringPage() {
       } catch (err) {
         setEvaluationErrors((prev) => ({
           ...prev,
-          [userId]: err instanceof Error ? err.message : "Gagal memuat hasil evaluasi.",
+          [userId]: err instanceof Error ? err.message : "Gagal memuat hasil asesmen.",
         }));
       } finally {
         setEvaluatingUserIds((prev) => {
@@ -136,7 +138,7 @@ export default function PengajarMonitoringPage() {
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)]">
           Monitoring Pengerjaan Modul
         </h1>
-        <p className="mt-1 text-sm text-gray-500">Pantau progres pengerjaan modul dan hasil evaluasi tiap guru binaan.</p>
+        <p className="mt-1 text-sm text-gray-500">Pantau progres pengerjaan modul dan hasil Pre-Test/Post-Test tiap guru binaan.</p>
       </div>
 
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
@@ -223,7 +225,7 @@ export default function PengajarMonitoringPage() {
                           onClick={() => toggleEvaluations(guru.id)}
                           className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-gray-600 transition hover:bg-slate-50"
                         >
-                          {isEvalLoading ? "Memuat..." : isExpanded ? "Tutup" : "Hasil Evaluasi"}
+                          {isEvalLoading ? "Memuat..." : isExpanded ? "Tutup" : "Hasil Pre-Test/Post-Test"}
                         </button>
                       </td>
                     </tr>
@@ -234,14 +236,14 @@ export default function PengajarMonitoringPage() {
                           <div className="px-4 py-5 sm:px-6">
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                               <h3 className="mb-4 text-sm font-bold text-[var(--color-navy)]">
-                                Hasil Evaluasi — {evaluationData[guru.id]?.namaGuru || guru.nama}
+                                Hasil Pre-Test/Post-Test — {evaluationData[guru.id]?.namaGuru || guru.nama}
                               </h3>
                               {evalError ? (
                                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{evalError}</div>
                               ) : isEvalLoading ? (
-                                <div className="py-6 text-center text-sm text-gray-500">Memuat hasil evaluasi...</div>
+                                <div className="py-6 text-center text-sm text-gray-500">Memuat hasil asesmen...</div>
                               ) : evaluations.length === 0 ? (
-                                <p className="text-sm text-gray-500">Belum ada data hasil evaluasi untuk guru ini.</p>
+                                <p className="text-sm text-gray-500">Belum ada data hasil asesmen untuk guru ini.</p>
                               ) : (
                                 <div className="space-y-3">
                                   {evaluations.map((ev) => (
@@ -249,7 +251,7 @@ export default function PengajarMonitoringPage() {
                                       <div className="flex items-center justify-between gap-3">
                                         <div>
                                           <p className="text-sm font-bold text-slate-800">{ev.moduleJudul}</p>
-                                          <p className="mt-0.5 text-xs text-gray-500">{ev.evaluationJudul}</p>
+                                          <p className="mt-0.5 text-xs text-gray-500">{getStageLabel(ev.tipe)} · {ev.evaluationJudul}</p>
                                           <p className="mt-2 text-xs text-gray-500">
                                             {ev.dikerjakan ? (
                                               <span className="inline-flex items-center gap-1.5">

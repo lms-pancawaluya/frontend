@@ -45,3 +45,14 @@ export function isPreTest(tipe?: string) {
 export function isPostTest(tipe?: string) {
   return String(tipe || "").toLowerCase().replace(/[ _-]/g, "") === "posttest";
 }
+
+/**
+ * Label tahapan untuk UI. Pre-Test/Post-Test adalah terminology utama FE.
+ * `Evaluation` hanya resource teknis BE, jadi tipe lain (atau tidak diketahui)
+ * ditampilkan netral sebagai "Asesmen" — bukan "Evaluasi".
+ */
+export function getStageLabel(tipe?: string): string {
+  if (isPreTest(tipe)) return "Pre-Test";
+  if (isPostTest(tipe)) return "Post-Test";
+  return "Asesmen";
+}

@@ -178,7 +178,7 @@ const TUTORIAL_ITEMS: { title: string; body: string }[] = [
   },
   {
     title: "Kapan sebaiknya membuat tiket",
-    body: "Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan evaluasi, atau masalah pada akun. Untuk masukan atau saran umum terhadap modul, gunakan fitur Saran & Kritik, bukan tiket bantuan.",
+    body: "Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan Pre-Test atau Post-Test, atau masalah pada akun. Untuk masukan atau saran umum terhadap modul, gunakan fitur Saran & Kritik, bukan tiket bantuan.",
   },
 ];
 
@@ -657,7 +657,7 @@ function HelpdeskContent() {
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  placeholder="mis. Materi & Video, Akun, Evaluasi"
+                  placeholder="mis. Materi & Video, Akun, Pre-Test/Post-Test"
                   className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
                   required
                 />

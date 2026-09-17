@@ -347,7 +347,7 @@ function ModuleTextPageContent() {
           onClick={() => router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
           className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition"
         >
-          {isLastMaterial ? "Lanjut ke Evaluasi & Feedback →" : "Materi Berikutnya →"}
+          {isLastMaterial ? "Lanjut ke Post-Test →" : "Materi Berikutnya →"}
         </button>
       </div>
     </div>
