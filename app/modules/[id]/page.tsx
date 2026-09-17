@@ -3,8 +3,15 @@
 import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
+import { completeContent, getModuleProgress, reportContentProgress } from "@/services/progress.service";
 import { getMaterialRoute, isVideoMaterial, sortMaterialsByUrutan, type ModuleMaterial } from "@/lib/materials";
+import {
+  clampPercent,
+  readMaterialStatus,
+  type MaterialProgressEntry,
+} from "@/lib/contentProgress";
 import ModuleStageGuard from "@/app/components/common/ModuleStageGuard";
+import MaterialStatusBadge from "@/app/components/common/MaterialStatusBadge";
 
 import { API_URL, fetchApi } from "@/lib/api";
 
@@ -139,6 +146,12 @@ function ModuleVideoPageContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authToken] = useState(getStoredAuthToken);
 
+  // Progress/status per material dari BE (single source of truth).
+  const [materialStatus, setMaterialStatus] = useState<Record<string, MaterialProgressEntry>>({});
+  // progressPercent terakhir yang sudah berhasil dilaporkan ke BE (throttle).
+  const lastReportedPercentRef = useRef<number>(0);
+  const completionSentRef = useRef<boolean>(false);
+
   // Loading & Error States
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Status resolusi material awal. Video UI HANYA boleh dirender saat status
@@ -172,6 +185,14 @@ function ModuleVideoPageContent() {
     miniQuizzesRef.current = miniQuizzes;
   }, [miniQuizzes]);
 
+  // Memuat status per-material dari BE (GET /api/progress/:moduleId).
+  const refreshMaterialStatus = useCallback(async () => {
+    const data = await getModuleProgress(moduleId);
+    if (data) {
+      setMaterialStatus(readMaterialStatus(data));
+    }
+  }, [moduleId]);
+
   // Memuat konten dan metadata modul
   useEffect(() => {
     async function init() {
@@ -189,6 +210,9 @@ function ModuleVideoPageContent() {
 
         const contents = sortMaterialsByUrutan(contentsRes as ModuleMaterial[]);
         setMaterials(contents);
+
+        // Muat status per-material dari progress BE (single source of truth).
+        void refreshMaterialStatus();
 
         if (contents.length > 0) {
           const requestedIndex = Number(searchParams.get("i"));
@@ -241,13 +265,59 @@ function ModuleVideoPageContent() {
       }
     }
     init();
-  }, [moduleId, authToken, router, searchParams]);
+  }, [moduleId, authToken, router, searchParams, refreshMaterialStatus]);
 
   // ❌ useEffect fetch detail kuis ke endpoint GET /mini-quizzes/:id sudah
   // DIHAPUS. Endpoint itu tidak tersedia di backend dan menyebabkan error
   // "Unexpected token '<', "<!DOCTYPE "... is not valid JSON". Data
   // questions sekarang sudah lengkap sejak fetch pertama di atas, jadi
   // effect ini tidak diperlukan lagi.
+
+  // Ref contentId video aktif, agar pelaporan progress memakai id yang benar.
+  const videoContentIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    videoContentIdRef.current = videoContent?.id ?? null;
+    // Reset pelaporan & waktu tonton saat berpindah ke video/material lain
+    // (route sama, query beda).
+    lastReportedPercentRef.current = 0;
+    completionSentRef.current = false;
+    maxWatchedTimeRef.current = 0;
+  }, [videoContent]);
+
+  // Laporkan progress video ke BE. Throttle: kirim saat kenaikan >= 5% atau saat
+  // mencapai 100%. Video hanya di-`complete` saat progress benar-benar 100%.
+  const reportVideoProgress = useCallback((percent: number) => {
+    const contentId = videoContentIdRef.current;
+    if (!contentId) return;
+
+    const clamped = clampPercent(percent);
+    const lastReported = lastReportedPercentRef.current;
+
+    // Jangan turunkan/mengulang laporan yang tidak perlu.
+    if (clamped <= lastReported && clamped < 100) return;
+
+    if (clamped >= 100) {
+      if (completionSentRef.current) return;
+      completionSentRef.current = true;
+      lastReportedPercentRef.current = 100;
+
+      // Laporkan 100% lalu tandai selesai. BE yang menegakkan syarat Mini Quiz.
+      reportContentProgress(contentId, 100)
+        .then(() => completeContent(contentId))
+        .then(() => refreshMaterialStatus())
+        .catch((err) => console.warn("Gagal menyelesaikan materi video:", err));
+      return;
+    }
+
+    if (clamped - lastReported < 5) return;
+    lastReportedPercentRef.current = clamped;
+
+    // Hanya laporkan; status final diambil ulang saat completion (di bawah),
+    // sehingga tidak ada request GET berulang yang tidak perlu.
+    reportContentProgress(contentId, clamped).catch((err) =>
+      console.warn("Gagal mengirim progress video:", err)
+    );
+  }, [refreshMaterialStatus]);
 
   // Evaluasi waktu pemutaran video
   const checkTimeAndTriggers = useCallback((cTime: number, dur: number) => {
@@ -261,6 +331,11 @@ function ModuleVideoPageContent() {
 
     if (cTime > maxWatchedTimeRef.current) {
       maxWatchedTimeRef.current = cTime;
+    }
+
+    // Laporkan progress berdasarkan waktu tonton aktual (maxWatchedTime).
+    if (dur > 0) {
+      reportVideoProgress((maxWatchedTimeRef.current / dur) * 100);
     }
 
     const currentSec = Math.floor(cTime);
@@ -301,7 +376,7 @@ function ModuleVideoPageContent() {
         setActiveQuiz(endQuiz);
       }
     }
-  }, []);
+  }, [reportVideoProgress]);
 
   // Inisialisasi Pemutar YouTube Iframe API
   useEffect(() => {
@@ -363,8 +438,10 @@ function ModuleVideoPageContent() {
               }
 
               if (evt.data === 0) {
-                // Ended
+                // Ended — video benar-benar selesai → laporkan 100% & complete.
+                maxWatchedTimeRef.current = Number.MAX_SAFE_INTEGER;
                 setIsVideoFinished(true);
+                reportVideoProgress(100);
                 const quizzes = miniQuizzesRef.current;
                 const answeredIds = answeredQuizIdsRef.current;
                 const endQuiz = quizzes.find((q) => !answeredIds.includes(q.id));
@@ -412,7 +489,7 @@ function ModuleVideoPageContent() {
         timerIntervalRef.current = null;
       }
     };
-  }, [videoContent, checkTimeAndTriggers]);
+  }, [videoContent, checkTimeAndTriggers, reportVideoProgress]);
 
   // Pengiriman jawaban kuis
   const handleSubmitQuiz = async (e: React.FormEvent) => {
@@ -556,9 +633,14 @@ function ModuleVideoPageContent() {
             </svg>
             Materi Pembelajaran Video
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            {videoContent?.judul || "Materi Video Utama"}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              {videoContent?.judul || "Materi Video Utama"}
+            </h1>
+            <MaterialStatusBadge
+              entry={videoContent ? materialStatus[videoContent.id] : undefined}
+            />
+          </div>
         </div>
 
         {/* Container Pemutar Video */}
