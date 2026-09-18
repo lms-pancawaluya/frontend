@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
-import { deleteComment, getModuleComments, postComment } from "@/services/comment.service";
 import { deleteContent, updateContent, uploadPdf } from "@/services/content.service";
 import { addQuestion as addEvaluationQuestion, createEvaluation, deleteEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
 import { addQuestion, createMiniQuiz, deleteMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
@@ -54,30 +53,6 @@ interface EvaluationItem {
 interface InteractiveQuestion { id: string; pertanyaan: string; options: { id?: string; teksOpsi: string; isCorrect: boolean }[]; }
 interface InteractiveQuiz { id: string; judul: string; timestampSeconds: number; questions?: InteractiveQuestion[]; }
 
-interface CommentUser {
-  id?: string;
-  nama?: string;
-  name?: string;
-  username?: string;
-  email?: string;
-  role?: string;
-}
-
-interface ModuleComment {
-  id?: string;
-  konten?: string;
-  isi?: string;
-  pesan?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  user?: CommentUser;
-  author?: CommentUser;
-  pengirim?: CommentUser;
-  replies?: ModuleComment[];
-  parentCommentId?: string;
-  parentId?: string;
-}
-
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer"];
 
 function formatTimestamp(seconds: number): string {
@@ -97,58 +72,6 @@ function getYoutubeEmbedUrl(url: string): string {
   return `https://www.youtube.com/embed/${videoId}`;
 }
 
-function getUserLabel(user?: CommentUser) {
-  return user?.nama || user?.name || user?.username || user?.email || user?.role || "Pengguna";
-}
-
-function getCommentText(comment: ModuleComment) {
-  return comment.konten || comment.isi || comment.pesan || "";
-}
-
-function formatCommentDate(value?: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-function normalizeCommentTree(comments: ModuleComment[]): (ModuleComment & { children?: ModuleComment[] })[] {
-  const hasNestedReplies = comments.some((comment) => Array.isArray(comment.replies) && comment.replies.length > 0);
-
-  if (hasNestedReplies) {
-    return comments.map((comment) => ({
-      ...comment,
-      children: normalizeCommentTree(comment.replies || []),
-    }));
-  }
-
-  const tree = new Map<string, ModuleComment & { children: ModuleComment[] }>();
-  const roots: (ModuleComment & { children: ModuleComment[] })[] = [];
-
-  comments.forEach((comment, index) => {
-    const key = comment.id || `comment-${index}`;
-    tree.set(key, { ...comment, children: [] });
-  });
-
-  comments.forEach((comment, index) => {
-    const key = comment.id || `comment-${index}`;
-    const node = tree.get(key);
-    if (!node) return;
-
-    const parentKey = comment.parentCommentId || comment.parentId;
-    if (parentKey && tree.has(parentKey)) {
-      tree.get(parentKey)!.children.push(node);
-    } else {
-      roots.push(node);
-    }
-  });
-
-  return roots;
-}
-
 export default function AdminModuleDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -156,12 +79,6 @@ export default function AdminModuleDetailPage() {
 
   const [module, setModule] = useState<ModuleDetail | null>(null);
   const [contents, setContents] = useState<ContentItem[]>([]);
-  const [comments, setComments] = useState<ModuleComment[]>([]);
-  const [commentLoading, setCommentLoading] = useState(true);
-  const [commentError, setCommentError] = useState("");
-  const [replyTo, setReplyTo] = useState<ModuleComment | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [busyCommentId, setBusyCommentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -260,21 +177,7 @@ export default function AdminModuleDetailPage() {
       }
     }
 
-    async function fetchComments() {
-      setCommentLoading(true);
-      setCommentError("");
-      try {
-        const data = await getModuleComments(id);
-        setComments(data as ModuleComment[]);
-      } catch (err) {
-        setCommentError(err instanceof Error ? err.message : "Gagal memuat komentar modul.");
-      } finally {
-        setCommentLoading(false);
-      }
-    }
-
     fetchData();
-    fetchComments();
   }, [id, loadEvaluations]);
 
   if (loading) {
@@ -664,49 +567,6 @@ export default function AdminModuleDetailPage() {
     catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal menghapus Pertanyaan Interaktif." })); }
   }
 
-  async function handleReplySubmit() {
-    if (!replyTo?.id || !replyText.trim()) return;
-
-    setBusyCommentId(replyTo.id);
-    try {
-      await postComment({ moduleId: id, komentar: replyText.trim(), parentId: replyTo.id });
-      setReplyText("");
-      setReplyTo(null);
-      const refreshed = await getModuleComments(id);
-      setComments(refreshed as ModuleComment[]);
-    } catch (err) {
-      setCommentError(err instanceof Error ? err.message : "Gagal mengirim balasan.");
-    } finally {
-      setBusyCommentId(null);
-    }
-  }
-
-  async function handleDeleteComment(commentId?: string) {
-    if (!commentId) return;
-    const confirmed = window.confirm("Hapus komentar ini?");
-    if (!confirmed) return;
-
-    setBusyCommentId(commentId);
-    try {
-      await deleteComment(commentId);
-
-      const removeById = (items: ModuleComment[]): ModuleComment[] =>
-        items
-          .filter((comment) => comment.id !== commentId)
-          .map((comment) => ({
-            ...comment,
-            replies: comment.replies ? removeById(comment.replies) : [],
-          }));
-
-      setComments((prev) => removeById(prev));
-    } catch (err) {
-      setCommentError(err instanceof Error ? err.message : "Gagal menghapus komentar.");
-    } finally {
-      setBusyCommentId(null);
-    }
-  }
-
-  const commentTree = normalizeCommentTree(comments);
   const preTestEvaluations = evaluations.filter((evaluation) => evaluation.tipe === "pre_test");
   const postTestEvaluations = evaluations.filter((evaluation) => evaluation.tipe === "post_test");
 
@@ -1378,139 +1238,6 @@ export default function AdminModuleDetailPage() {
         </div>
 
         {renderEvaluationSection("Post-Test", "post_test", postTestEvaluations)}
-
-         {/* Moderasi Diskusi */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z" />
-              </svg>
-              Moderasi Diskusi
-            </h2>
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-              {comments.length} komentar
-            </span>
-          </div>
-
-          {commentError && (
-            <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-xl border border-red-200">
-              {commentError}
-            </div>
-          )}
-
-          {replyTo && (
-            <form onSubmit={handleReplySubmit} className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
-              <p className="text-xs text-slate-500">
-                Membalas komentar dari <span className="font-semibold text-slate-700">{getUserLabel(replyTo.user || replyTo.author || replyTo.pengirim)}</span>
-              </p>
-              <textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
-                rows={3}
-                placeholder="Tulis balasan admin..."
-              />
-              <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReplyTo(null);
-                    setReplyText("");
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded-xl border border-slate-200 hover:bg-white transition"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={busyCommentId === replyTo.id || !replyText.trim()}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl transition"
-                >
-                  {busyCommentId === replyTo.id ? "Mengirim..." : "Kirim Balasan"}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {commentLoading ? (
-            <p className="text-sm text-slate-500">Memuat komentar modul...</p>
-          ) : commentTree.length === 0 ? (
-            <p className="text-sm text-slate-500">Belum ada komentar pada modul ini.</p>
-          ) : (
-            <div className="space-y-4">
-              {commentTree.map((comment, index) => {
-                const user = comment.user || comment.author || comment.pengirim;
-                const commentKey = comment.id || `comment-${index}`;
-                const dateLabel = formatCommentDate(comment.createdAt || comment.updatedAt);
-
-                return (
-                  <div key={commentKey} className="border border-slate-200 rounded-2xl p-4 space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-slate-900">{getUserLabel(user)}</p>
-                        {dateLabel && <p className="text-xs text-slate-400">{dateLabel}</p>}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setReplyTo(comment)}
-                          disabled={!comment.id || busyCommentId === comment.id}
-                          className="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg transition"
-                        >
-                          Balas
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteComment(comment.id)}
-                          disabled={!comment.id || busyCommentId === comment.id}
-                          className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg transition"
-                        >
-                          {busyCommentId === comment.id ? "Memproses..." : "Hapus/Moderasi"}
-                        </button>
-                      </div>
-                    </div>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                      {getCommentText(comment) || "Komentar kosong."}
-                    </p>
-
-                    {comment.children && comment.children.length > 0 && (
-                      <div className="pl-4 border-l-2 border-slate-100 space-y-3">
-                        {comment.children.map((reply, replyIndex) => {
-                          const replyUser = reply.user || reply.author || reply.pengirim;
-                          const replyKey = reply.id || `${commentKey}-reply-${replyIndex}`;
-                          const replyDate = formatCommentDate(reply.createdAt || reply.updatedAt);
-
-                          return (
-                            <div key={replyKey} className="bg-slate-50 rounded-xl p-3 space-y-2">
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                                <div>
-                                  <p className="text-xs font-semibold text-slate-900">{getUserLabel(replyUser)}</p>
-                                  {replyDate && <p className="text-xs text-slate-400">{replyDate}</p>}
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteComment(reply.id)}
-                                  disabled={!reply.id || busyCommentId === reply.id}
-                                  className="self-start px-3 py-1.5 text-xs font-semibold text-red-600 bg-white hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg border border-red-100 transition"
-                                >
-                                  {busyCommentId === reply.id ? "Memproses..." : "Hapus/Moderasi"}
-                                </button>
-                              </div>
-                              <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
-                                {getCommentText(reply) || "Komentar kosong."}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
       </div>
     </div>

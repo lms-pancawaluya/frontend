@@ -30,26 +30,36 @@ export interface CommentUser {
 }
 
 /**
- * User hasil pencarian untuk mention.
- * Contract: id, nama, fotoProfil, role, gelar.
+ * User di dalam entri mention. Contract final BE:
+ * `{ id, nama, fotoProfil: string | null, role, gelar: string | null }`.
  */
 export interface CommentMentionUser {
   id: string;
   nama: string;
-  fotoProfil?: string;
-  role?: CommentUserRole;
-  gelar?: string;
+  fotoProfil: string | null;
+  role: CommentUserRole;
+  gelar: string | null;
+}
+
+/** Entri mention pada sebuah komentar (contract final BE). */
+export interface CommentMention {
+  id: string;
+  commentId: string;
+  userId: string;
+  createdAt: string;
+  user: CommentMentionUser;
 }
 
 /**
- * Entri mention pada sebuah komentar. Bentuk defensif: BE dapat mengirim
- * `user` (objek user lengkap) dan/atau `userId`/`mentionedUserId`.
+ * User hasil pencarian untuk mention.
+ * Contract: id, nama, fotoProfil, role, gelar.
  */
-export interface CommentMention {
-  userId?: string;
-  mentionedUserId?: string;
-  id?: string;
-  user?: CommentMentionUser;
+export interface CommentUserSearchUser {
+  id: string;
+  nama: string;
+  fotoProfil?: string | null;
+  role?: CommentUserRole;
+  gelar?: string | null;
 }
 
 /** Komentar diskusi (Course-level), termasuk balasan bersarang. */
@@ -86,4 +96,4 @@ export interface CreateCommentInput {
 }
 
 /** Hasil pencarian user untuk mention. */
-export type CommentUserSearchResult = CommentMentionUser[];
+export type CommentUserSearchResult = CommentUserSearchUser[];
