@@ -504,7 +504,7 @@ export default function AdminModuleDetailPage() {
     setEvaluationMessage("");
     setEvaluationDeleteError((prev) => ({ ...prev, [type]: "" }));
     try {
-      await deleteEvaluation(id, evaluationId);
+      await deleteEvaluation(id, evaluationId, type);
       // Refresh dari BE agar Pre-Test/Post-Test langsung hilang dari UI.
       await loadEvaluations();
     } catch (err) {
@@ -540,6 +540,12 @@ export default function AdminModuleDetailPage() {
     setEvaluations((prev) => prev.map((evaluation) => evaluation.id === evaluationId ? { ...evaluation, questions, _count: { questions: questions.length } } : evaluation));
   }
 
+  // Tipe Pre-Test/Post-Test milik sebuah evaluasi (dibutuhkan agar question CRUD
+  // memanggil endpoint per-tahap yang benar).
+  function getEvaluationTipe(evaluationId: string): string {
+    return evaluations.find((evaluation) => evaluation.id === evaluationId)?.tipe || "";
+  }
+
   function validateEvaluationQuestionForm() {
     if (!evaluationQuestionForm?.pertanyaan.trim()) return "Pertanyaan wajib diisi.";
     if (evaluationQuestionForm.options.length < 2) return "Minimal 2 opsi jawaban.";
@@ -562,8 +568,8 @@ export default function AdminModuleDetailPage() {
         pertanyaan: evaluationQuestionForm.pertanyaan.trim(),
         options: evaluationQuestionForm.options.map((option) => ({ teks: option.teksOpsi.trim(), isCorrect: option.isCorrect })),
       };
-      if (evaluationQuestionForm.questionId) await updateEvaluationQuestion(id, evaluationQuestionForm.questionId, payload);
-      else await addEvaluationQuestion(id, evaluationQuestionForm.evaluationId, { pertanyaan: payload.pertanyaan, options: evaluationQuestionForm.options });
+      if (evaluationQuestionForm.questionId) await updateEvaluationQuestion(id, evaluationQuestionForm.questionId, payload, getEvaluationTipe(evaluationQuestionForm.evaluationId));
+      else await addEvaluationQuestion(id, evaluationQuestionForm.evaluationId, { pertanyaan: payload.pertanyaan, options: evaluationQuestionForm.options }, getEvaluationTipe(evaluationQuestionForm.evaluationId));
       const refreshed = await getEvaluationDetail(id, evaluationQuestionForm.evaluationId) as EvaluationItem;
       refreshEvaluationQuestions(evaluationQuestionForm.evaluationId, refreshed.questions || []);
       setEvaluationQuestionForm(null);
@@ -578,7 +584,7 @@ export default function AdminModuleDetailPage() {
     if (!window.confirm("Hapus soal ini?")) return;
     setEvaluationQuestionDeletingId(questionId);
     try {
-      await deleteEvaluationQuestion(id, questionId);
+      await deleteEvaluationQuestion(id, questionId, getEvaluationTipe(evaluationId));
       const refreshed = await getEvaluationDetail(id, evaluationId) as EvaluationItem;
       refreshEvaluationQuestions(evaluationId, refreshed.questions || []);
     } catch (err) {

@@ -141,7 +141,8 @@ export default function EvaluationDetailPage() {
       const submitResult = (await submitEvaluation(
         moduleId,
         evaluationId,
-        payload
+        payload,
+        tipe
       )) as SubmitEvaluationResult;
 
       setResult(submitResult);

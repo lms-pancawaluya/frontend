@@ -21,6 +21,7 @@ interface Question {
 interface EvaluationDetail {
   id: string;
   judul: string;
+  tipe?: string;
   questions: Question[];
   passingScore?: number;
   maxAttempts?: number;
@@ -61,7 +62,7 @@ export default function EvaluationDetailAdminPage() {
     setDeletingQuestionId(questionId);
 
     try {
-      await deleteQuestion(moduleId, questionId);
+      await deleteQuestion(moduleId, questionId, evaluation?.tipe);
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Gagal menghapus soal.");
@@ -205,14 +206,14 @@ export default function EvaluationDetailAdminPage() {
             teks: opt.teksOpsi.trim(),
             isCorrect: opt.isCorrect,
           })),
-        });
+        }, evaluation.tipe);
       } else {
         const questionData =
           tipe === "pilihan_ganda"
             ? { pertanyaan, options }
             : { pertanyaan, tipe };
 
-        await addQuestion(moduleId, evalId, questionData);
+        await addQuestion(moduleId, evalId, questionData, evaluation.tipe);
       }
 
       resetForm();
