@@ -7,6 +7,11 @@ import { getCourseById } from "@/services/course.service";
 import { getModuleContents, getModules } from "@/services/module.service";
 import { getModuleEvaluations } from "@/services/evaluation.service";
 import { getProgress } from "@/services/progress.service";
+import {
+  claimCertificate,
+  getCertificateById,
+  getUserCertificates,
+} from "@/services/certificate.service";
 import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
 import type { Course, CourseModule } from "@/types/course";
 import {
@@ -16,6 +21,7 @@ import {
   readProgressModuleId,
   type ModuleStageProgress,
 } from "@/lib/moduleStages";
+import { isCourseCompletedByBackend } from "@/lib/certificate";
 
 interface CourseWithModules extends Course {
   modules?: CourseModule[];
@@ -26,6 +32,13 @@ interface ModuleOverview {
   hasMaterials: boolean;
   preTestId: string | null;
   postTestId: string | null;
+}
+
+interface UserCertificate {
+  id: string | null;
+  courseId: string | null;
+  status: string | null;
+  fileUrl: string | null;
 }
 
 function formatDate(value?: string) {
@@ -85,9 +98,41 @@ export default function GuruCourseDetailPage() {
   const [moduleOverviewLoading, setModuleOverviewLoading] = useState<Record<string, boolean>>({});
   const [moduleOverviewError, setModuleOverviewError] = useState<Record<string, string>>({});
 
+  // Sertifikat user untuk course ini (dari BE). `null` = belum ada record.
+  // Status & fileUrl sepenuhnya berasal dari BE; FE tidak meng-generate PDF.
+  const [certificate, setCertificate] = useState<UserCertificate | null>(null);
+  const [certificateBusy, setCertificateBusy] = useState(false);
+  const [certificateMessage, setCertificateMessage] = useState("");
+
   const loadStageProgress = useCallback(async (modulesList: CourseModule[]) => {
     const progressList = await getProgress();
     setStageProgress(buildStageProgress(modulesList, Array.isArray(progressList) ? progressList : []));
+  }, []);
+
+  // Baca sertifikat milik user untuk course ini langsung dari BE.
+  // Tidak membuat sertifikat; hanya membaca record yang sudah ada.
+  const loadCertificate = useCallback(async (courseId: string) => {
+    try {
+      const list = (await getUserCertificates()) as UserCertificate[];
+      const current = list.find((item) => item.courseId === courseId) ?? null;
+
+      // Bila record sudah ada dan belum punya fileUrl (mis. status `issued`),
+      // ambil detailnya untuk memastikan fileUrl terbaru dari BE.
+      if (current && !current.fileUrl && current.id) {
+        try {
+          const detail = (await getCertificateById(current.id)) as UserCertificate;
+          setCertificate(detail ?? current);
+          return;
+        } catch {
+          // Abaikan; tampilkan record dari daftar sebagai fallback.
+        }
+      }
+
+      setCertificate(current);
+    } catch {
+      // Diamkan: status sertifikat tidak menghalangi halaman Course Detail.
+      setCertificate(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -108,6 +153,7 @@ export default function GuruCourseDetailPage() {
         }
         setModules(modulesList);
         await loadStageProgress(modulesList);
+        await loadCertificate(id);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Gagal memuat detail course.");
       } finally {
@@ -116,7 +162,7 @@ export default function GuruCourseDetailPage() {
     }
 
     if (id) loadCourse();
-  }, [id, loadStageProgress]);
+  }, [id, loadStageProgress, loadCertificate]);
 
   const loadModuleOverview = useCallback(async (moduleId: string) => {
     setModuleOverviewLoading((prev) => ({ ...prev, [moduleId]: true }));
@@ -160,6 +206,57 @@ export default function GuruCourseDetailPage() {
     }
   }
 
+  // Buka file sertifikat (view/download) memakai fileUrl dari BE.
+  function openCertificateFile(fileUrl: string) {
+    window.open(fileUrl, "_blank", "noopener,noreferrer");
+  }
+
+  // Aksi tombol Certificate:
+  //  - Sudah punya fileUrl → langsung buka.
+  //  - Sudah ada record tapi belum ada file → refresh dari BE (tanpa claim ulang).
+  //  - Belum ada record & eligible → claim (idempotent), lalu refresh & buka bila siap.
+  async function handleCertificateClick() {
+    if (certificateBusy) return;
+    setCertificateMessage("");
+
+    if (certificate?.fileUrl) {
+      openCertificateFile(certificate.fileUrl);
+      return;
+    }
+
+    setCertificateBusy(true);
+    try {
+      if (!certificate) {
+        await claimCertificate(id);
+      }
+      // Selalu refresh dari BE agar UI memakai status & fileUrl terbaru.
+      const list = (await getUserCertificates()) as UserCertificate[];
+      let current = list.find((item) => item.courseId === id) ?? null;
+      if (current && !current.fileUrl && current.id) {
+        try {
+          current = (await getCertificateById(current.id)) as UserCertificate;
+        } catch {
+          // pertahankan record dari daftar
+        }
+      }
+      setCertificate(current);
+
+      if (current?.fileUrl) {
+        openCertificateFile(current.fileUrl);
+      } else if (current) {
+        setCertificateMessage("Sertifikat sedang diproses oleh server. Silakan coba lagi nanti.");
+      } else {
+        setCertificateMessage("Sertifikat belum tersedia. Pastikan seluruh modul telah selesai.");
+      }
+    } catch (err) {
+      setCertificateMessage(
+        err instanceof Error ? err.message : "Gagal memproses sertifikat."
+      );
+    } finally {
+      setCertificateBusy(false);
+    }
+  }
+
   // Segarkan status stage dari BE ketika Guru kembali ke tab ini (mis. setelah
   // menyelesaikan Pre-Test/Material di halaman lain). Satu request saat focus,
   // bukan polling berkala.
@@ -170,11 +267,12 @@ export default function GuruCourseDetailPage() {
       if (modules.length > 0) {
         loadStageProgress(modules);
       }
+      loadCertificate(id);
     };
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [modules, loadStageProgress]);
+  }, [id, modules, loadStageProgress, loadCertificate]);
 
   if (loading) {
     return (
@@ -206,6 +304,14 @@ export default function GuruCourseDetailPage() {
 
   const isOffline = course.mode?.toLowerCase() === "offline";
 
+  // Eligibility sepenuhnya mengikuti BE: course harus menawarkan sertifikat
+  // (hasCertificate) dan seluruh modul dilaporkan selesai oleh BE.
+  const modulesCompleted = isCourseCompletedByBackend(modules, stageProgress);
+  const certificateEligible = Boolean(course.hasCertificate) && modulesCompleted;
+  const hasCertificateRecord = Boolean(certificate && (certificate.id || certificate.fileUrl));
+  // Tombol aktif bila sudah ada record sertifikat, atau course eligible untuk di-claim.
+  const certificateEnabled = hasCertificateRecord || certificateEligible;
+
   return (
     <div className="min-h-screen bg-slate-50/80 pb-20 pt-6 relative overflow-hidden">
       {/* BACKGROUND DEKORATIF DISDIK JABAR */}
@@ -232,6 +338,43 @@ export default function GuruCourseDetailPage() {
 
         {/* Banner Course */}
         <div className="bg-gradient-to-r from-[#0047A5] via-[#0052C2] to-[#109B51] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+          {course.hasCertificate && (
+            <div className="relative z-20 sm:absolute sm:top-6 sm:right-6 flex flex-col items-stretch sm:items-end">
+              <button
+                type="button"
+                onClick={handleCertificateClick}
+                disabled={!certificateEnabled || certificateBusy}
+                title={
+                  certificateEnabled
+                    ? hasCertificateRecord
+                      ? "Lihat / unduh sertifikat"
+                      : "Ambil sertifikat"
+                    : "Sertifikat tersedia setelah seluruh modul selesai"
+                }
+                aria-label="Sertifikat"
+                className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition ${
+                  certificateEnabled && !certificateBusy
+                    ? "bg-white text-[#0047A5] hover:bg-white/90"
+                    : "bg-white/40 text-white/70 cursor-not-allowed"
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.043-.133-2.052-.382-3.016z" />
+                </svg>
+                {certificateBusy
+                  ? "Memproses..."
+                  : hasCertificateRecord
+                    ? "Sertifikat"
+                    : "Ambil Sertifikat"}
+              </button>
+              {certificateMessage && (
+                <p className="mt-2 max-w-[16rem] text-right text-[11px] font-medium text-white/90">
+                  {certificateMessage}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="relative z-10 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md border border-white/20">
