@@ -390,12 +390,6 @@ export default function GuruCourseDetailPage() {
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               {course.judul || "Tanpa judul"}
             </h1>
-
-            {course.deskripsi && (
-              <p className="text-slate-100 text-xs sm:text-sm leading-relaxed opacity-90 max-w-3xl">
-                {course.deskripsi}
-              </p>
-            )}
           </div>
 
           {/* Ringkasan Course */}
