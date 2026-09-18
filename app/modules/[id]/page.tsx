@@ -3,7 +3,15 @@
 import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
+import { completeContent, getModuleProgress, reportContentProgress } from "@/services/progress.service";
 import { getMaterialRoute, isVideoMaterial, sortMaterialsByUrutan, type ModuleMaterial } from "@/lib/materials";
+import {
+  clampPercent,
+  readMaterialStatus,
+  type MaterialProgressEntry,
+} from "@/lib/contentProgress";
+import ModuleStageGuard from "@/app/components/common/ModuleStageGuard";
+import MaterialStatusBadge from "@/app/components/common/MaterialStatusBadge";
 
 import { API_URL, fetchApi } from "@/lib/api";
 
@@ -102,8 +110,19 @@ const getYoutubeId = (url?: string): string => {
 export default function ModuleVideoPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 text-xs text-slate-500">Memuat materi...</div>}>
-      <ModuleVideoPageContent />
+      <ModuleStageGuardWrapper />
     </Suspense>
+  );
+}
+
+function ModuleStageGuardWrapper() {
+  const params = useParams();
+  const moduleId = params.id as string;
+
+  return (
+    <ModuleStageGuard moduleId={moduleId} stage="material">
+      <ModuleVideoPageContent />
+    </ModuleStageGuard>
   );
 }
 
@@ -126,6 +145,12 @@ function ModuleVideoPageContent() {
   const [attemptResult, setAttemptResult] = useState<AttemptResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authToken] = useState(getStoredAuthToken);
+
+  // Progress/status per material dari BE (single source of truth).
+  const [materialStatus, setMaterialStatus] = useState<Record<string, MaterialProgressEntry>>({});
+  // progressPercent terakhir yang sudah berhasil dilaporkan ke BE (throttle).
+  const lastReportedPercentRef = useRef<number>(0);
+  const completionSentRef = useRef<boolean>(false);
 
   // Loading & Error States
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -160,6 +185,14 @@ function ModuleVideoPageContent() {
     miniQuizzesRef.current = miniQuizzes;
   }, [miniQuizzes]);
 
+  // Memuat status per-material dari BE (GET /api/progress/:moduleId).
+  const refreshMaterialStatus = useCallback(async () => {
+    const data = await getModuleProgress(moduleId);
+    if (data) {
+      setMaterialStatus(readMaterialStatus(data));
+    }
+  }, [moduleId]);
+
   // Memuat konten dan metadata modul
   useEffect(() => {
     async function init() {
@@ -177,6 +210,9 @@ function ModuleVideoPageContent() {
 
         const contents = sortMaterialsByUrutan(contentsRes as ModuleMaterial[]);
         setMaterials(contents);
+
+        // Muat status per-material dari progress BE (single source of truth).
+        void refreshMaterialStatus();
 
         if (contents.length > 0) {
           const requestedIndex = Number(searchParams.get("i"));
@@ -216,7 +252,7 @@ function ModuleVideoPageContent() {
             router.replace(getMaterialRoute(moduleId, contents, targetIndex));
           } else {
             setResolutionStatus("error");
-            router.replace(`/modules/${moduleId}/evaluation`);
+            router.replace(`/modules/${moduleId}/evaluations?stage=post`);
           }
         } else {
           setResolutionStatus("error");
@@ -229,13 +265,59 @@ function ModuleVideoPageContent() {
       }
     }
     init();
-  }, [moduleId, authToken, router, searchParams]);
+  }, [moduleId, authToken, router, searchParams, refreshMaterialStatus]);
 
   // ❌ useEffect fetch detail kuis ke endpoint GET /mini-quizzes/:id sudah
   // DIHAPUS. Endpoint itu tidak tersedia di backend dan menyebabkan error
   // "Unexpected token '<', "<!DOCTYPE "... is not valid JSON". Data
   // questions sekarang sudah lengkap sejak fetch pertama di atas, jadi
   // effect ini tidak diperlukan lagi.
+
+  // Ref contentId video aktif, agar pelaporan progress memakai id yang benar.
+  const videoContentIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    videoContentIdRef.current = videoContent?.id ?? null;
+    // Reset pelaporan & waktu tonton saat berpindah ke video/material lain
+    // (route sama, query beda).
+    lastReportedPercentRef.current = 0;
+    completionSentRef.current = false;
+    maxWatchedTimeRef.current = 0;
+  }, [videoContent]);
+
+  // Laporkan progress video ke BE. Throttle: kirim saat kenaikan >= 5% atau saat
+  // mencapai 100%. Video hanya di-`complete` saat progress benar-benar 100%.
+  const reportVideoProgress = useCallback((percent: number) => {
+    const contentId = videoContentIdRef.current;
+    if (!contentId) return;
+
+    const clamped = clampPercent(percent);
+    const lastReported = lastReportedPercentRef.current;
+
+    // Jangan turunkan/mengulang laporan yang tidak perlu.
+    if (clamped <= lastReported && clamped < 100) return;
+
+    if (clamped >= 100) {
+      if (completionSentRef.current) return;
+      completionSentRef.current = true;
+      lastReportedPercentRef.current = 100;
+
+      // Laporkan 100% lalu tandai selesai. BE yang menegakkan syarat Mini Quiz.
+      reportContentProgress(contentId, 100)
+        .then(() => completeContent(contentId))
+        .then(() => refreshMaterialStatus())
+        .catch((err) => console.warn("Gagal menyelesaikan materi video:", err));
+      return;
+    }
+
+    if (clamped - lastReported < 5) return;
+    lastReportedPercentRef.current = clamped;
+
+    // Hanya laporkan; status final diambil ulang saat completion (di bawah),
+    // sehingga tidak ada request GET berulang yang tidak perlu.
+    reportContentProgress(contentId, clamped).catch((err) =>
+      console.warn("Gagal mengirim progress video:", err)
+    );
+  }, [refreshMaterialStatus]);
 
   // Evaluasi waktu pemutaran video
   const checkTimeAndTriggers = useCallback((cTime: number, dur: number) => {
@@ -249,6 +331,11 @@ function ModuleVideoPageContent() {
 
     if (cTime > maxWatchedTimeRef.current) {
       maxWatchedTimeRef.current = cTime;
+    }
+
+    // Laporkan progress berdasarkan waktu tonton aktual (maxWatchedTime).
+    if (dur > 0) {
+      reportVideoProgress((maxWatchedTimeRef.current / dur) * 100);
     }
 
     const currentSec = Math.floor(cTime);
@@ -289,7 +376,7 @@ function ModuleVideoPageContent() {
         setActiveQuiz(endQuiz);
       }
     }
-  }, []);
+  }, [reportVideoProgress]);
 
   // Inisialisasi Pemutar YouTube Iframe API
   useEffect(() => {
@@ -351,8 +438,10 @@ function ModuleVideoPageContent() {
               }
 
               if (evt.data === 0) {
-                // Ended
+                // Ended — video benar-benar selesai → laporkan 100% & complete.
+                maxWatchedTimeRef.current = Number.MAX_SAFE_INTEGER;
                 setIsVideoFinished(true);
+                reportVideoProgress(100);
                 const quizzes = miniQuizzesRef.current;
                 const answeredIds = answeredQuizIdsRef.current;
                 const endQuiz = quizzes.find((q) => !answeredIds.includes(q.id));
@@ -400,7 +489,7 @@ function ModuleVideoPageContent() {
         timerIntervalRef.current = null;
       }
     };
-  }, [videoContent, checkTimeAndTriggers]);
+  }, [videoContent, checkTimeAndTriggers, reportVideoProgress]);
 
   // Pengiriman jawaban kuis
   const handleSubmitQuiz = async (e: React.FormEvent) => {
@@ -544,9 +633,14 @@ function ModuleVideoPageContent() {
             </svg>
             Materi Pembelajaran Video
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            {videoContent?.judul || "Materi Video Utama"}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              {videoContent?.judul || "Materi Video Utama"}
+            </h1>
+            <MaterialStatusBadge
+              entry={videoContent ? materialStatus[videoContent.id] : undefined}
+            />
+          </div>
         </div>
 
         {/* Container Pemutar Video */}
@@ -581,7 +675,7 @@ function ModuleVideoPageContent() {
                           <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Evaluasi Pembelajaran
+                          Kuis Interaktif
                         </span>
                         <span className="text-xs text-slate-400 font-medium">
                           Batas Kelulusan: {activeQuiz.passingScore}%
@@ -655,7 +749,7 @@ function ModuleVideoPageContent() {
                       }
                       className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? "Memproses Evaluasi..." : "Kirim Jawaban Evaluasi"}
+                      {isSubmitting ? "Memproses Jawaban..." : "Kirim Jawaban Kuis"}
                     </button>
                   </form>
                 ) : (
@@ -681,7 +775,7 @@ function ModuleVideoPageContent() {
 
                     <div className="space-y-1">
                       <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Hasil Evaluasi Pembelajaran
+                        Hasil Kuis Interaktif
                       </span>
                       <h4 className="text-2xl font-bold text-slate-900">
                         Capaian Skor: {attemptResult.skor}%
@@ -734,7 +828,7 @@ function ModuleVideoPageContent() {
                         }}
                         className="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
                       >
-                        Coba Kembali Evaluasi
+                        Coba Kembali Kuis
                       </button>
                     )}
                   </div>
@@ -754,8 +848,8 @@ function ModuleVideoPageContent() {
             />
             <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
               {!isVideoFinished
-                ? "Selesaikan penayangan video dan evaluasi pembelajaran untuk melanjutkan ke materi berikutnya."
-                : "Seluruh tahapan pembelajaran video dan evaluasi telah diselesaikan."}
+                ? "Selesaikan penayangan video dan kuis interaktif untuk melanjutkan ke materi berikutnya."
+                : "Seluruh tahapan pembelajaran video dan kuis interaktif telah diselesaikan."}
             </p>
           </div>
 
@@ -768,7 +862,7 @@ function ModuleVideoPageContent() {
                 : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60 shadow-none"
             }`}
           >
-            <span>{currentIndex + 1 >= materials.length ? "Lanjut ke Evaluasi & Feedback" : "Lanjut ke Materi Berikutnya"}</span>
+            <span>{currentIndex + 1 >= materials.length ? "Lanjut ke Post-Test" : "Lanjut ke Materi Berikutnya"}</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>

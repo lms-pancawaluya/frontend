@@ -109,7 +109,7 @@ export default function EvaluationDetailAdminPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat detail evaluasi.");
+          setError("Gagal memuat detail asesmen.");
         }
       } finally {
         setLoading(false);
@@ -251,7 +251,7 @@ export default function EvaluationDetailAdminPage() {
       <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6">
         <div className="max-w-md mx-auto">
           <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
-            {error || "Evaluasi tidak ditemukan."}
+            {error || "Asesmen tidak ditemukan."}
           </div>
         </div>
       </div>
@@ -272,11 +272,11 @@ export default function EvaluationDetailAdminPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </span>
-            Kembali ke Evaluasi
+            Kembali ke Pre-Test & Post-Test
           </button>
         </div>
 
-        {/* Header Evaluasi */}
+        {/* Header Pre-Test/Post-Test */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             {evaluation.judul}

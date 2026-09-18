@@ -188,7 +188,7 @@ export default function AdminModulesPage() {
                   <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{mod.deskripsi}</p>
                   <div className="text-xs text-gray-400 flex gap-3 mt-1">
                     <span>{mod._count.contents} konten</span>
-                    <span>{mod._count.evaluations} evaluasi</span>
+                    <span>{mod._count.evaluations} asesmen</span>
                   </div>
                 </Link>
 

@@ -381,7 +381,7 @@ function AdminHelpdeskContent() {
             type="text"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            placeholder="mis. Materi & Video, Akun, Evaluasi"
+            placeholder="mis. Materi & Video, Akun, Pre-Test/Post-Test"
             className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
           />
         </div>

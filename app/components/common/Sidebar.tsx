@@ -63,11 +63,6 @@ const ICONS = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     </svg>
   ),
-  checklist: (
-    <svg {...iconProps}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
   helpdesk: (
     <svg {...iconProps}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -234,7 +229,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
           { label: t("Kelola Course", "Manage Courses"), href: "/admin/courses", icon: ICONS.modules, id: "admin-courses" },
           { label: t("Kelola Modul Pembelajaran", "Manage Learning Modules"), href: "/admin/modules", icon: ICONS.modules, id: "admin-modules" },
           { label: t("Kelola Akun Guru", "Manage Teacher Accounts"), href: "/admin/users", icon: ICONS.users, id: "admin-users" },
-          { label: t("Kelola Item Checklist", "Manage Checklist Items"), href: "/admin/checklist", icon: ICONS.checklist, id: "admin-checklist" },
+          { label: t("Manajemen Sertifikat", "Certificate Management"), href: "/admin/certificates", icon: ICONS.document, id: "admin-certificates" },
         ],
       },
       {

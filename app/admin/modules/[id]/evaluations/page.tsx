@@ -51,7 +51,7 @@ export default function ModuleEvaluationsPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat daftar evaluasi.");
+          setError("Gagal memuat daftar asesmen.");
         }
       } finally {
         setLoading(false);
@@ -72,7 +72,7 @@ export default function ModuleEvaluationsPage() {
       if (err instanceof Error) {
         alert(err.message);
       } else {
-        alert("Gagal membuat evaluasi.");
+        alert("Gagal membuat Pre-Test.");
       }
       setCreating(false);
     }
@@ -90,7 +90,7 @@ export default function ModuleEvaluationsPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          Memuat evaluasi...
+          Memuat asesmen...
         </div>
       </div>
     );
@@ -117,10 +117,10 @@ export default function ModuleEvaluationsPage() {
         {/* Judul Halaman */}
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Kelola Evaluasi
+            Kelola Pre-Test & Post-Test
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Kelola soal dan pengaturan evaluasi untuk modul ini.
+            Kelola soal dan pengaturan Pre-Test & Post-Test untuk modul ini.
           </p>
         </div>
 
@@ -131,39 +131,39 @@ export default function ModuleEvaluationsPage() {
           </div>
         )}
 
-        {/* Tombol Tambah Evaluasi */}
+        {/* Tombol Tambah Pre-Test */}
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-3 3l3-3-3-3M9 5v2m0 10v2" />
             </svg>
-            Daftar Evaluasi
+            Daftar Pre-Test & Post-Test
           </h2>
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs sm:text-sm font-semibold rounded-full hover:bg-slate-800 transition shadow-sm"
             >
-              + Buat Evaluasi
+              + Buat Pre-Test
             </button>
           )}
         </div>
 
-        {/* Form Buat Evaluasi */}
+        {/* Form Buat Pre-Test */}
         {showForm && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-            <h3 className="text-base font-bold text-slate-900">Buat Evaluasi Baru</h3>
+            <h3 className="text-base font-bold text-slate-900">Buat Pre-Test Baru</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">
-                  Judul Evaluasi
+                  Judul Pre-Test
                 </label>
                 <input
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="Evaluasi Modul Cageur"
+                  placeholder="Pre-Test Modul Cageur"
                   required
                 />
               </div>
@@ -187,11 +187,11 @@ export default function ModuleEvaluationsPage() {
           </div>
         )}
 
-        {/* Daftar Evaluasi */}
+        {/* Daftar Pre-Test & Post-Test */}
         {evaluations.length === 0 ? (
           !showForm && (
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-              <p className="text-sm text-slate-500">Belum ada evaluasi untuk modul ini.</p>
+              <p className="text-sm text-slate-500">Belum ada Pre-Test & Post-Test untuk modul ini.</p>
             </div>
           )
         ) : (
@@ -241,7 +241,7 @@ export default function ModuleEvaluationsPage() {
               onClick={() => setShowForm(true)}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
             >
-              Buat Evaluasi
+              Buat Pre-Test
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, getModuleContents, updateModule } from "@/services/module.service";
@@ -202,6 +202,8 @@ export default function AdminModuleDetailPage() {
   const [evaluationQuestionBusy, setEvaluationQuestionBusy] = useState(false);
   const [evaluationQuestionDeletingId, setEvaluationQuestionDeletingId] = useState<string | null>(null);
   const [evaluationDeletingId, setEvaluationDeletingId] = useState<string | null>(null);
+  // Error delete per-stage, ditampilkan terlepas dari form create terbuka atau tidak.
+  const [evaluationDeleteError, setEvaluationDeleteError] = useState<Record<"pre_test" | "post_test", string>>({ pre_test: "", post_test: "" });
   const [evaluationQuestionError, setEvaluationQuestionError] = useState<Record<string, string>>({});
   const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null);
   const [videoQuizzes, setVideoQuizzes] = useState<Record<string, InteractiveQuiz[]>>({});
@@ -216,6 +218,20 @@ export default function AdminModuleDetailPage() {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     };
   }, []);
+
+  // Muat ulang daftar evaluasi (Pre-Test/Post-Test) beserta soalnya dari BE.
+  // Dipakai saat load awal maupun setelah delete agar list mencerminkan BE.
+  const loadEvaluations = useCallback(async () => {
+    const evaluationList = (await getModuleEvaluations(id)) as EvaluationItem[];
+    const detailed = await Promise.all(
+      evaluationList.map(async (evaluation) => ({
+        ...evaluation,
+        ...(await getEvaluationDetail(id, evaluation.id)),
+      }))
+    );
+    setEvaluations(detailed);
+  }, [id]);
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -231,8 +247,7 @@ export default function AdminModuleDetailPage() {
           urutan: moduleData.urutan,
         });
          setContents(contentsData);
-         const evaluationList = await getModuleEvaluations(id) as EvaluationItem[];
-         setEvaluations(await Promise.all(evaluationList.map(async (evaluation) => ({ ...evaluation, ...(await getEvaluationDetail(id, evaluation.id)) }))));
+         await loadEvaluations();
 
       } catch (err) {
         if (err instanceof Error) {
@@ -260,7 +275,7 @@ export default function AdminModuleDetailPage() {
 
     fetchData();
     fetchComments();
-  }, [id]);
+  }, [id, loadEvaluations]);
 
   if (loading) {
     return (
@@ -477,21 +492,26 @@ export default function AdminModuleDetailPage() {
       setEvaluationTitle("");
       setShowEvaluationForm(false);
     } catch (err) {
-      setEvaluationMessage(err instanceof Error ? err.message : "Gagal membuat evaluasi.");
+      setEvaluationMessage(err instanceof Error ? err.message : "Gagal membuat asesmen.");
     } finally {
       setEvaluationBusy(false);
     }
   }
 
-  async function handleEvaluationDelete(evaluationId: string, title: string) {
-    if (!window.confirm(`Yakin ingin menghapus ${title} ini?`)) return;
+  async function handleEvaluationDelete(evaluationId: string, title: string, type: "pre_test" | "post_test") {
+    if (!window.confirm(`Yakin ingin menghapus ${title} ini? Semua soal di dalamnya juga akan terhapus.`)) return;
     setEvaluationDeletingId(evaluationId);
     setEvaluationMessage("");
+    setEvaluationDeleteError((prev) => ({ ...prev, [type]: "" }));
     try {
       await deleteEvaluation(id, evaluationId);
-      setEvaluations((prev) => prev.filter((item) => item.id !== evaluationId));
+      // Refresh dari BE agar Pre-Test/Post-Test langsung hilang dari UI.
+      await loadEvaluations();
     } catch (err) {
-      setEvaluationMessage(err instanceof Error ? err.message : `Gagal menghapus ${title}.`);
+      setEvaluationDeleteError((prev) => ({
+        ...prev,
+        [type]: err instanceof Error ? err.message : `Gagal menghapus ${title}.`,
+      }));
     } finally {
       setEvaluationDeletingId(null);
     }
@@ -701,6 +721,7 @@ export default function AdminModuleDetailPage() {
           {items.length === 0 && <button type="button" onClick={() => openEvaluationForm(type)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">+ Buat {title}</button>}
         </div>
         {evaluationMessage && isActiveForm && <p className="text-sm text-red-600">{evaluationMessage}</p>}
+        {evaluationDeleteError[type] && <p className="text-sm text-red-600">{evaluationDeleteError[type]}</p>}
         {isActiveForm && (
           <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_auto] gap-3">
             <input
@@ -758,7 +779,7 @@ export default function AdminModuleDetailPage() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button type="button" onClick={() => startEvaluationQuestionForm(evaluation.id)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">+ Tambah Soal</button>
-                      <button type="button" onClick={() => handleEvaluationDelete(evaluation.id, title)} disabled={evaluationDeletingId === evaluation.id} className="px-4 py-2 border border-red-200 text-red-600 text-xs font-semibold rounded-full text-center hover:bg-red-50 disabled:opacity-60">{evaluationDeletingId === evaluation.id ? "Menghapus..." : "Hapus"}</button>
+                      <button type="button" onClick={() => handleEvaluationDelete(evaluation.id, title, type)} disabled={evaluationDeletingId === evaluation.id} className="px-4 py-2 border border-red-200 text-red-600 text-xs font-semibold rounded-full text-center hover:bg-red-50 disabled:opacity-60">{evaluationDeletingId === evaluation.id ? "Menghapus..." : "Hapus"}</button>
                     </div>
                   </div>
                   {evaluationQuestionError[evaluation.id] && <p className="text-sm text-red-600">{evaluationQuestionError[evaluation.id]}</p>}

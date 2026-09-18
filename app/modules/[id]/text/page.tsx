@@ -1,9 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getModuleById, getModuleContents } from "@/services/module.service";
+import { completeContent, getModuleProgress } from "@/services/progress.service";
 import { buildPdfFileName, downloadPdfFile, loadPdfPreviewObjectUrl } from "@/lib/pdf";
+import { isMaterialEntryCompleted, readMaterialStatus, type MaterialProgressEntry } from "@/lib/contentProgress";
+import ModuleStageGuard from "@/app/components/common/ModuleStageGuard";
+import MaterialStatusBadge from "@/app/components/common/MaterialStatusBadge";
 import {
   getMaterialRoute,
   isTextMaterial,
@@ -23,8 +27,19 @@ interface ModuleContent {
 export default function ModuleTextPage() {
   return (
     <Suspense fallback={<div className="text-center py-20 text-xs text-slate-500">Memuat materi...</div>}>
-      <ModuleTextPageContent />
+      <ModuleStageGuardWrapper />
     </Suspense>
+  );
+}
+
+function ModuleStageGuardWrapper() {
+  const params = useParams();
+  const moduleId = params.id as string;
+
+  return (
+    <ModuleStageGuard moduleId={moduleId} stage="material">
+      <ModuleTextPageContent />
+    </ModuleStageGuard>
   );
 }
 
@@ -49,6 +64,18 @@ function ModuleTextPageContent() {
   const previewRequestRef = useRef(0);
   const previewUrlRef = useRef<string | null>(null);
 
+  // Progress/status per material dari BE (single source of truth).
+  const [materialStatus, setMaterialStatus] = useState<Record<string, MaterialProgressEntry>>({});
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState("");
+
+  const refreshMaterialStatus = useCallback(async () => {
+    const data = await getModuleProgress(moduleId);
+    if (data) {
+      setMaterialStatus(readMaterialStatus(data));
+    }
+  }, [moduleId]);
+
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -64,6 +91,7 @@ function ModuleTextPageContent() {
         ]);
         const ordered = sortMaterialsByUrutan(contents as ModuleContent[]);
         setMaterials(ordered);
+        void refreshMaterialStatus();
 
         const requestedIndex = Number(searchParams.get("i"));
         const index = Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < ordered.length ? requestedIndex : 0;
@@ -86,7 +114,7 @@ function ModuleTextPageContent() {
       }
     }
     loadMaterial();
-  }, [moduleId, searchParams, router]);
+  }, [moduleId, searchParams, router, refreshMaterialStatus]);
 
   function closePreview() {
     previewRequestRef.current += 1;
@@ -109,6 +137,22 @@ function ModuleTextPageContent() {
       setDownloadError(err instanceof Error ? err.message : "Gagal mengunduh file PDF.");
     } finally {
       setDownloading(false);
+    }
+  }
+
+  // Tandai material selesai (PDF/Text/Link) setelah Guru menyelesaikannya.
+  // BE yang menegakkan syarat Mini Quiz / Interactive Question.
+  async function handleComplete() {
+    if (!material?.id) return;
+    setCompleteError("");
+    setIsCompleting(true);
+    try {
+      await completeContent(material.id);
+      await refreshMaterialStatus();
+    } catch (err) {
+      setCompleteError(err instanceof Error ? err.message : "Gagal menandai materi selesai.");
+    } finally {
+      setIsCompleting(false);
     }
   }
 
@@ -154,6 +198,8 @@ function ModuleTextPageContent() {
   const isLink = tipe === "link";
   const hasPrevious = currentIndex > 0;
   const isLastMaterial = currentIndex + 1 >= materials.length;
+  const currentStatus = material?.id ? materialStatus[material.id] : undefined;
+  const isMaterialCompleted = isMaterialEntryCompleted(currentStatus);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -177,9 +223,12 @@ function ModuleTextPageContent() {
       )}
 
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-        <h1 className="text-2xl font-bold text-slate-900">
-          {material?.judul || (isPdf ? "Materi PDF" : isLink ? "Tautan Materi" : "Materi Bacaan")}
-        </h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900">
+            {material?.judul || (isPdf ? "Materi PDF" : isLink ? "Tautan Materi" : "Materi Bacaan")}
+          </h1>
+          <MaterialStatusBadge entry={currentStatus} />
+        </div>
 
         {!material ? (
           <p className="text-sm text-slate-500">Belum ada materi yang dapat ditampilkan untuk modul ini.</p>
@@ -272,12 +321,33 @@ function ModuleTextPageContent() {
         )}
       </div>
 
-      <div className="flex justify-end pt-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+        <div className="flex flex-col gap-1">
+          {material && !isMaterialCompleted && (
+            <button
+              onClick={handleComplete}
+              disabled={isCompleting}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-bold rounded-xl shadow-md transition disabled:cursor-not-allowed"
+            >
+              {isCompleting ? "Menyimpan..." : "Tandai Materi Selesai"}
+            </button>
+          )}
+          {isMaterialCompleted && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+              Materi ini sudah selesai
+            </span>
+          )}
+          {completeError && <p className="text-xs text-red-600">{completeError}</p>}
+        </div>
+
         <button
           onClick={() => router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
           className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition"
         >
-          {isLastMaterial ? "Lanjut ke Evaluasi & Feedback →" : "Materi Berikutnya →"}
+          {isLastMaterial ? "Lanjut ke Post-Test →" : "Materi Berikutnya →"}
         </button>
       </div>
     </div>

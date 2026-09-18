@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getModuleEvaluations } from "@/services/evaluation.service";
 import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
 
@@ -12,6 +12,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export default function ModuleEvaluationsIndexPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const moduleId = params.id as string;
   const [error, setError] = useState<string | null>(null);
 
@@ -21,27 +22,31 @@ export default function ModuleEvaluationsIndexPage() {
         const evaluations = (await getModuleEvaluations(moduleId)) as EvaluationSummary[];
 
         if (!evaluations || evaluations.length === 0) {
-          setError("Belum ada evaluasi yang dibuat untuk modul ini.");
+          setError("Belum ada Pre-Test atau Post-Test yang dibuat untuk modul ini.");
           return;
         }
 
-        // Urutan wajib: Pre-Test dulu (membuka materi), baru Post-Test
-        // (setelah materi selesai). Kalau salah satunya tidak ada,
-        // jatuh ke evaluasi apa pun yang tersedia.
+        // Sequencing: Pre-Test → Learning Material → Post-Test.
+        // `?stage=post` dipakai setelah seluruh material selesai agar langsung
+        // menuju Post-Test; default (masuk dari awal modul) menuju Pre-Test.
         const preTest = evaluations.find((e) => isPreTest(e.tipe));
         const postTest = evaluations.find((e) => isPostTest(e.tipe));
-        const target = preTest || postTest || evaluations[0];
+        const wantsPostStage = searchParams.get("stage") === "post";
+
+        const target = wantsPostStage
+          ? postTest || preTest || evaluations[0]
+          : preTest || postTest || evaluations[0];
 
         router.replace(`/modules/${moduleId}/evaluations/${target.id}`);
       } catch (err: unknown) {
-        setError(getErrorMessage(err, "Gagal mengambil data evaluasi modul."));
+        setError(getErrorMessage(err, "Gagal mengambil data asesmen modul."));
       }
     }
 
     if (moduleId) {
       redirectToTarget();
     }
-  }, [moduleId, router]);
+  }, [moduleId, router, searchParams]);
 
   if (error) {
     return (
@@ -56,7 +61,7 @@ export default function ModuleEvaluationsIndexPage() {
   return (
     <div className="flex justify-center items-center min-h-[50vh]">
       <div className="text-slate-500 text-sm animate-pulse">
-        Memuat evaluasi modul...
+        Memuat asesmen modul...
       </div>
     </div>
   );

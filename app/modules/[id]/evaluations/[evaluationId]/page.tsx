@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -8,9 +8,12 @@ import {
   getEvaluationDetail,
   submitEvaluation,
 } from "@/services/evaluation.service";
+import { getModuleById } from "@/services/module.service";
+import { isPostTestLocked, readModuleStageProgress, type ModuleStageProgress } from "@/lib/moduleStages";
 import {
   isPreTest,
   isPostTest,
+  getStageLabel,
   type EvaluationSummary,
   type EvaluationDetailData,
   type SubmitAnswerItem,
@@ -32,16 +35,31 @@ export default function EvaluationDetailPage() {
   const [evaluation, setEvaluation] = useState<EvaluationDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Validasi prerequisite Post-Test berbasis progress BE (bukan sekadar lock tombol).
+  const [stageBlocked, setStageBlocked] = useState(false);
+  // Status stage terbaru dari BE (source of truth), di-refresh setelah submit.
+  const [moduleStage, setModuleStage] = useState<ModuleStageProgress>({});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<SubmitEvaluationResult | null>(null);
 
+  // Ambil status stage terbaru dari BE untuk module ini (single source of truth).
+  // Dipakai saat validasi prerequisite dan setelah submit evaluation.
+  const refreshStageProgress = useCallback(async (): Promise<ModuleStageProgress | null> => {
+    const moduleData = await getModuleById(moduleId);
+    if (!moduleData) return null;
+    const progress = readModuleStageProgress(moduleData);
+    setModuleStage(progress);
+    return progress;
+  }, [moduleId]);
+
   useEffect(() => {
     async function fetchEvaluation() {
       setLoading(true);
       setLoadError(null);
+      setStageBlocked(false);
       try {
         // Ambil daftar evaluasi (untuk tahu `tipe`, passingScore, maxAttempts milik
         // evaluationId ini) sekaligus detail soal-nya secara paralel.
@@ -54,10 +72,24 @@ export default function EvaluationDetailPage() {
           ? list.find((e) => e.id === evaluationId) || null
           : null;
 
+        // Post-Test hanya boleh diakses setelah Learning Material selesai.
+        // Status diambil dari progress BE pada Module (single source of truth).
+        const tipe = currentSummary?.tipe ?? detail?.tipe;
+        if (isPostTest(tipe)) {
+          const progress = await refreshStageProgress();
+          if (!progress) {
+            throw new Error("Gagal memuat status tahapan modul.");
+          }
+          if (isPostTestLocked(progress)) {
+            setStageBlocked(true);
+            return;
+          }
+        }
+
         setSummary(currentSummary);
         setEvaluation(detail);
       } catch (err) {
-        setLoadError(getErrorMessage(err, "Gagal mengambil data evaluasi."));
+        setLoadError(getErrorMessage(err, "Gagal mengambil data asesmen."));
       } finally {
         setLoading(false);
       }
@@ -66,7 +98,7 @@ export default function EvaluationDetailPage() {
     if (moduleId && evaluationId) {
       fetchEvaluation();
     }
-  }, [moduleId, evaluationId]);
+  }, [moduleId, evaluationId, refreshStageProgress]);
 
   const questionsList = evaluation?.questions || [];
   const tipe = summary?.tipe ?? evaluation?.tipe;
@@ -113,8 +145,15 @@ export default function EvaluationDetailPage() {
       )) as SubmitEvaluationResult;
 
       setResult(submitResult);
+
+      // Setelah submit, ambil status stage terbaru dari BE agar Course Detail &
+      // stage gating (Pre-Test → Material → Post-Test) memakai status resmi BE.
+      // Tidak menyimpan completion state lokal.
+      await refreshStageProgress().catch((err) =>
+        console.warn("Gagal me-refresh status tahapan setelah submit:", err)
+      );
     } catch (err) {
-      setSubmitError(getErrorMessage(err, "Gagal mengirim jawaban evaluasi."));
+      setSubmitError(getErrorMessage(err, "Gagal mengirim jawaban asesmen."));
     } finally {
       setIsSubmitting(false);
     }
@@ -124,13 +163,18 @@ export default function EvaluationDetailPage() {
     setResult(null);
     setAnswers({});
     setSubmitError(null);
+    // Status stage bisa berubah (mis. modul di-reset BE setelah gagal berulang),
+    // jadi validasi ulang prerequisite dari BE sebelum mengulang.
+    void refreshStageProgress().catch((err) =>
+      console.warn("Gagal me-refresh status tahapan:", err)
+    );
   };
 
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[60vh] gap-3">
         <div className="w-10 h-10 border-4 border-[var(--color-biru-muda)] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[var(--color-navy)] font-medium text-sm">Memuat soal evaluasi...</p>
+        <p className="text-[var(--color-navy)] font-medium text-sm">Memuat soal asesmen...</p>
       </div>
     );
   }
@@ -140,6 +184,29 @@ export default function EvaluationDetailPage() {
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm inline-block">
           {loadError}
+        </div>
+      </div>
+    );
+  }
+
+  if (stageBlocked) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-8 space-y-3">
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-xl">
+            🔒
+          </div>
+          <h2 className="text-base font-bold text-slate-800">Post-Test Terkunci</h2>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Selesaikan seluruh materi pembelajaran modul ini terlebih dahulu sebelum
+            mengerjakan Post-Test.
+          </p>
+          <button
+            onClick={() => router.push(`/modules/${moduleId}/evaluations`)}
+            className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-full transition"
+          >
+            Kembali ke Modul
+          </button>
         </div>
       </div>
     );
@@ -170,10 +237,10 @@ export default function EvaluationDetailPage() {
                   : "bg-[var(--color-pale)] text-[var(--color-accent)]"
               }`}
             >
-              {preTest ? "Pre-Test" : postTest ? "Post-Test" : "Evaluasi Modul"}
+              {getStageLabel(tipe)}
             </span>
             <h1 className="text-2xl font-bold text-[var(--color-navy)]">
-              {evaluation?.judul || summary?.judul || "Evaluasi Pembelajaran"}
+              {evaluation?.judul || summary?.judul || getStageLabel(tipe)}
             </h1>
             {postTest && passingScore > 0 && (
               <p className="text-xs text-slate-500 mt-1">
@@ -226,7 +293,7 @@ export default function EvaluationDetailPage() {
 
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Hasil {preTest ? "Pre-Test" : postTest ? "Post-Test" : "Evaluasi"}
+              Hasil {getStageLabel(tipe)}
             </span>
             <h2 className="text-2xl font-bold text-slate-900">Capaian Skor: {result.skor}%</h2>
 
@@ -237,11 +304,29 @@ export default function EvaluationDetailPage() {
               </p>
             )}
 
+            {preTest && moduleStage.preTestCompleted && (
+              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                Pre-Test tercatat selesai di server
+              </span>
+            )}
+
             {postTest && result.isLolos && (
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
                 Selamat! Anda telah memenuhi nilai minimal kelulusan ({result.passingScore ?? passingScore}%).
                 Modul ini kini berstatus <span className="font-semibold">selesai</span>.
               </p>
+            )}
+
+            {postTest && moduleStage.postTestCompleted && (
+              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                Post-Test tercatat selesai di server
+              </span>
             )}
 
             {postTest && !result.isLolos && !result.mustRepeat && (
@@ -355,7 +440,7 @@ export default function EvaluationDetailPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm mt-8">
             <p className="text-xs text-[var(--color-accent)] text-center sm:text-left font-medium">
-              Pastikan seluruh soal telah terjawab sebelum mengirim evaluasi.
+              Pastikan seluruh soal telah terjawab sebelum mengirim asesmen.
             </p>
             <button
               onClick={handleSubmit}
@@ -375,7 +460,7 @@ export default function EvaluationDetailPage() {
         </div>
       ) : (
         <div className="text-center py-16 bg-white rounded-2xl border border-[var(--color-border-soft)] text-[var(--color-navy)]">
-          Belum ada soal yang tersedia pada evaluasi ini.
+          Belum ada soal yang tersedia pada asesmen ini.
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUsers, getUserProgress, getUserEvaluations } from "@/services/user.service";
 import { getAllFeedbacks } from "@/services/evaluation.service";
+import { getStageLabel } from "@/types/evaluation";
 
 interface UserItem {
   id: string;
@@ -26,6 +27,7 @@ interface EvaluationItem {
   moduleJudul: string;
   evaluationId: string;
   evaluationJudul: string;
+  tipe?: string;
   dikerjakan: boolean;
   skor: number | null;
   status: string;
@@ -185,7 +187,7 @@ export default function AdminMonitoringPage() {
       } catch (err) {
         setEvaluationErrors((prev) => ({
           ...prev,
-          [userId]: err instanceof Error ? err.message : "Gagal memuat hasil evaluasi.",
+          [userId]: err instanceof Error ? err.message : "Gagal memuat hasil asesmen.",
         }));
       } finally {
         setEvaluatingUserIds((prev) => {
@@ -244,7 +246,7 @@ export default function AdminMonitoringPage() {
             Monitoring Pengerjaan Modul Guru
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Pantau progres pengerjaan modul dan hasil evaluasi tiap guru.
+            Pantau progres pengerjaan modul dan hasil Pre-Test/Post-Test tiap guru.
           </p>
         </div>
 
@@ -365,7 +367,7 @@ export default function AdminMonitoringPage() {
                             onClick={() => toggleEvaluations(guru.id)}
                             className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition"
                           >
-                            {isEvaluationLoading ? "Memuat..." : isExpanded ? "Tutup" : "Hasil Evaluasi"}
+                            {isEvaluationLoading ? "Memuat..." : isExpanded ? "Tutup" : "Hasil Pre-Test/Post-Test"}
                           </button>
                         </td>
                       </tr>
@@ -376,7 +378,7 @@ export default function AdminMonitoringPage() {
                             <div className="px-4 py-5 sm:px-6">
                               <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                                 <h3 className="mb-4 text-sm font-bold text-slate-900">
-                                  Hasil Evaluasi — {evaluationData[guru.id]?.namaGuru || guru.nama}
+                                  Hasil Pre-Test/Post-Test — {evaluationData[guru.id]?.namaGuru || guru.nama}
                                 </h3>
 
                                 {evaluationError ? (
@@ -385,12 +387,12 @@ export default function AdminMonitoringPage() {
                                   </div>
                                 ) : isEvaluationLoading ? (
                                   <div className="py-6 text-center text-sm text-slate-500">
-                                    Memuat hasil evaluasi...
-                                  </div>
-                                ) : evaluations.length === 0 ? (
-                                  <p className="text-sm text-slate-500">
-                                    Belum ada data hasil evaluasi untuk guru ini.
-                                  </p>
+                                     Memuat hasil asesmen...
+                                   </div>
+                                 ) : evaluations.length === 0 ? (
+                                   <p className="text-sm text-slate-500">
+                                     Belum ada data hasil asesmen untuk guru ini.
+                                   </p>
                                 ) : (
                                   <div className="space-y-3">
                                     {evaluations.map((ev) => {
@@ -411,7 +413,7 @@ export default function AdminMonitoringPage() {
                                               {ev.moduleJudul}
                                             </p>
                                             <p className="mt-0.5 text-xs text-slate-500">
-                                              {ev.evaluationJudul}
+                                              {getStageLabel(ev.tipe)} · {ev.evaluationJudul}
                                             </p>
                                             <p className="mt-2 text-xs text-slate-500">
                                               {ev.dikerjakan ? (
