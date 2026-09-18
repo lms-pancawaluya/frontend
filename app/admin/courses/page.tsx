@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCourses } from "@/services/course.service";
+import { getCourseModulePermissions } from "@/lib/rbac";
 
 interface Course {
   id: string;
@@ -37,13 +38,18 @@ export default function AdminCoursesPage() {
       return;
     }
 
+    let currentUser: { role?: string } | null = null;
     try {
-      if (JSON.parse(userData)?.role !== "admin") {
-        router.push("/dashboard");
-        return;
-      }
+      currentUser = JSON.parse(userData);
     } catch {
       router.push("/login");
+      return;
+    }
+
+    // Kelola Course memakai permission yang sama dengan Course/Module (BE):
+    // Admin & Pengajar boleh mengelola, Guru read-only diarahkan keluar.
+    if (!getCourseModulePermissions(currentUser?.role).canEdit) {
+      router.push("/dashboard");
       return;
     }
 
