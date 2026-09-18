@@ -40,7 +40,6 @@ export const PAGE_REGISTRY: SearchablePage[] = [
   { label: "Kelola Modul", href: "/admin/modules", keywords: ["modul", "materi"], roles: ["admin"] },
   { label: "Kelola Pengguna", href: "/admin/users", keywords: ["user", "akun", "guru", "pengajar"], roles: ["admin"] },
   { label: "Manajemen Sertifikat", href: "/admin/certificates", keywords: ["sertifikat", "certificate", "template"], roles: ["admin"] },
-  { label: "Checklist", href: "/admin/checklist", keywords: ["daftar periksa", "tugas"], roles: ["admin"] },
   { label: "Diskusi", href: "/admin/diskusi", keywords: ["forum", "tanya jawab"], roles: ["admin"] },
   { label: "Helpdesk", href: "/admin/helpdesk", keywords: ["bantuan", "tiket", "keluhan", "support"], roles: ["admin"] },
   { label: "RTL", href: "/admin/rtl", keywords: ["rencana tindak lanjut"], roles: ["admin"] },

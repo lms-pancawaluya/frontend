@@ -7,7 +7,6 @@ import { getProfile } from "@/services/auth.service";
 import Header from "@/app/components/common/Header";
 import { getModules } from "@/services/module.service";
 import { getUsers, getUsersProgressAll } from "@/services/user.service";
-import { getChecklistItems } from "@/services/checklist.service";
 import { getAllTickets } from "@/services/helpdesk.service";
 
 interface User {
@@ -52,7 +51,6 @@ interface ActivityItem {
 interface DashboardStats {
   modulCount: number;
   guruCount: number;
-  checklistCount: number;
   ticketTotal: number;
   ticketPerluTindak: number;
   avgProgress: number | null;
@@ -90,11 +88,6 @@ const ICONS = {
   users: (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  checklist: (
-    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   ),
   helpdesk: (
@@ -156,10 +149,9 @@ export default function AdminDashboardPage() {
     async function loadStats() {
       setStatsLoading(true);
       try {
-        const [modules, users, checklistItems, tickets, progressAll] = await Promise.all([
+        const [modules, users, tickets, progressAll] = await Promise.all([
           getModules(),
           getUsers().catch(() => []),
-          getChecklistItems().catch(() => []),
           getAllTickets().catch(() => []),
           getUsersProgressAll().catch(() => [] as ProgressData[]),
         ]);
@@ -220,7 +212,6 @@ export default function AdminDashboardPage() {
         setStats({
           modulCount: modules.length,
           guruCount: guru.length,
-          checklistCount: (checklistItems as unknown[]).length,
           ticketTotal: ticketList.length,
           ticketPerluTindak,
           avgProgress,
@@ -270,15 +261,6 @@ export default function AdminDashboardPage() {
       icon: ICONS.users,
       iconWrap: "bg-emerald-100 text-emerald-600",
       card: "border-emerald-100 bg-emerald-50/40",
-    },
-    {
-      label: "Checklist Template",
-      value: stats?.checklistCount ?? 0,
-      sub: "item checklist aktif",
-      subClass: "text-gray-400",
-      icon: ICONS.checklist,
-      iconWrap: "bg-purple-100 text-purple-600",
-      card: "border-purple-100 bg-purple-50/40",
     },
     {
       label: "Tiket Bantuan",
@@ -338,14 +320,6 @@ export default function AdminDashboardPage() {
       icon: ICONS.users,
       iconWrap: "bg-emerald-100 text-emerald-600",
       arrow: "bg-emerald-50 text-emerald-600",
-    },
-    {
-      title: "Kelola Item Checklist",
-      desc: "Atur template item daily checklist per 5 aspek Pancawaluya.",
-      href: "/admin/checklist",
-      icon: ICONS.checklist,
-      iconWrap: "bg-purple-100 text-purple-600",
-      arrow: "bg-purple-50 text-purple-600",
     },
     {
       title: "Kelola Tiket Bantuan (Helpdesk)",
