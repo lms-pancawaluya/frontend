@@ -7,6 +7,8 @@ import { getModuleById, getModuleContents, updateModule } from "@/services/modul
 import { deleteContent, updateContent, uploadPdf } from "@/services/content.service";
 import { addQuestion as addEvaluationQuestion, createEvaluation, deleteEvaluation, deleteQuestion as deleteEvaluationQuestion, getEvaluationDetail, getModuleEvaluations, updateQuestion as updateEvaluationQuestion } from "@/services/evaluation.service";
 import { addQuestion, createMiniQuiz, deleteMiniQuiz, deleteQuestion, getMiniQuizzesByContent, updateQuestion } from "@/services/miniQuiz.service";
+import { getCourseById } from "@/services/course.service";
+import { canManageCourse } from "@/lib/rbac";
 import { buildPdfFileName, downloadPdfFile, loadPdfPreviewObjectUrl, validatePdfFile } from "@/lib/pdf";
 import { validateExternalUrl } from "@/lib/link";
 
@@ -16,6 +18,7 @@ interface ModuleDetail {
   deskripsi: string;
   aspekPancawaluya: string;
   urutan: number;
+  courseId?: string | null;
 }
 
 interface ContentItem {
@@ -81,6 +84,8 @@ export default function AdminModuleDetailPage() {
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // Guard ownership: Module mewarisi ownership dari parent Course.
+  const [accessDenied, setAccessDenied] = useState(false);
   const [formData, setFormData] = useState({
     judul: "",
     deskripsi: "",
@@ -151,11 +156,36 @@ export default function AdminModuleDetailPage() {
 
   useEffect(() => {
     async function fetchData() {
+      // Ownership ditentukan dari parent Course (data canonical `createdBy`).
+      let currentUser: { role?: string; id?: string } = {};
+      try {
+        const raw = localStorage.getItem("user");
+        currentUser = raw ? JSON.parse(raw) : {};
+      } catch {
+        currentUser = {};
+      }
+
       try {
         const [moduleData, contentsData] = await Promise.all([
           getModuleById(id),
           getModuleContents(id),
         ]);
+
+        // Pengajar hanya boleh mengelola Module pada Course miliknya.
+        const courseId = (moduleData as ModuleDetail)?.courseId;
+        if (courseId) {
+          try {
+            const course = await getCourseById(courseId);
+            if (!canManageCourse(currentUser.role, currentUser.id, course)) {
+              setAccessDenied(true);
+              return;
+            }
+          } catch {
+            // Bila detail Course tidak dapat diakses, blocking natural oleh BE
+            // saat action; jangan memblokir render Module di sini.
+          }
+        }
+
         setModule(moduleData);
         setFormData({
           judul: moduleData.judul,
@@ -194,6 +224,23 @@ export default function AdminModuleDetailPage() {
           </svg>
           Memuat Informasi Modul...
         </div>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="max-w-md mx-auto mt-16 p-6 text-center">
+        <div className="bg-amber-50 text-amber-700 text-sm px-4 py-3 rounded-lg border border-amber-200">
+          Module ini berada pada Course yang bukan milik Anda, sehingga tidak dapat dikelola. Hubungi Admin jika perlu.
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/admin/modules")}
+          className="mt-4 text-sm text-emerald-700 hover:underline"
+        >
+          ← Kembali ke daftar modul
+        </button>
       </div>
     );
   }

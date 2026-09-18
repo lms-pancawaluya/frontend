@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createModule } from "@/services/module.service";
 import { getCourses } from "@/services/course.service";
-import { getCourseModulePermissions } from "@/lib/rbac";
+import { canManageCourse, getCourseModulePermissions } from "@/lib/rbac";
 import type { Course } from "@/types/course";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
@@ -59,8 +59,20 @@ function NewModuleForm() {
     if (checkingAccess) return;
 
     async function fetchCourses() {
+      let currentUser: { role?: string; id?: string } = {};
+      try {
+        const raw = localStorage.getItem("user");
+        currentUser = raw ? JSON.parse(raw) : {};
+      } catch {
+        currentUser = {};
+      }
       const data = await getCourses();
-      setCourses(data);
+      // Module harus terikat ke Course. Untuk Pengajar, hanya Course miliknya yang
+      // boleh dipilih sebagai target (Module mewarisi ownership parent Course).
+      const manageable = (data as Course[]).filter((course) =>
+        canManageCourse(currentUser.role, currentUser.id, course)
+      );
+      setCourses(manageable);
       setLoadingCourses(false);
     }
     fetchCourses();

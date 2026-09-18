@@ -29,6 +29,11 @@ export interface Course {
   tanggalSelesai?: string;
   totalModules?: number;
   progressPercentage?: number;
+  /** Scope sekolah Course. `null` = Global Course (lintas sekolah). */
+  schoolId?: string | null;
+  /** ID user pembuat Course (owner). Dipakai untuk scope manage Pengajar. */
+  createdBy?: string | null;
+  isGlobal?: boolean;
 }
 
 export interface CourseDetail extends Course {

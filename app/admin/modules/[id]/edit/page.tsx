@@ -5,8 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModuleById, updateModule, getModuleContents } from "@/services/module.service";
 import { deleteContent, updateContent } from "@/services/content.service";
+import { getCourseById } from "@/services/course.service";
 import { validateExternalUrl } from "@/lib/link";
-import { getCourseModulePermissions } from "@/lib/rbac";
+import { canManageCourse, getCourseModulePermissions } from "@/lib/rbac";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
 
@@ -31,6 +32,7 @@ export default function EditModulePage() {
   });
 
   const [checkingAccess, setCheckingAccess] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
@@ -79,11 +81,33 @@ export default function EditModulePage() {
     if (checkingAccess) return;
 
     async function loadData() {
+      // Ownership Module mewarisi parent Course (data canonical `createdBy`).
+      let currentUser: { role?: string; id?: string } = {};
+      try {
+        const raw = localStorage.getItem("user");
+        currentUser = raw ? JSON.parse(raw) : {};
+      } catch {
+        currentUser = {};
+      }
+
       try {
         const [moduleData, contentsData] = await Promise.all([
           getModuleById(id),
           getModuleContents(id),
         ]);
+
+        const courseId = moduleData?.courseId;
+        if (courseId) {
+          try {
+            const course = await getCourseById(courseId);
+            if (!canManageCourse(currentUser.role, currentUser.id, course)) {
+              setAccessDenied(true);
+              return;
+            }
+          } catch {
+            // Biarkan BE menolak secara natural saat action; jangan blokir render.
+          }
+        }
 
         setFormData({
           judul: moduleData.judul,
@@ -228,11 +252,28 @@ export default function EditModulePage() {
             <path
               className="opacity-75"
               fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
           Memuat data modul...
         </div>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="mx-auto mt-16 max-w-md p-6 text-center">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          Module ini berada pada Course yang bukan milik Anda, sehingga tidak dapat diedit. Hubungi Admin jika perlu.
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/admin/modules")}
+          className="mt-4 text-sm text-emerald-700 hover:underline"
+        >
+          ← Kembali ke daftar modul
+        </button>
       </div>
     );
   }
