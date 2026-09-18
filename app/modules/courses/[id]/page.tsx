@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getCourseById } from "@/services/course.service";
 import { getModuleContents, getModules } from "@/services/module.service";
 import { getModuleEvaluations } from "@/services/evaluation.service";
 import { getProgress } from "@/services/progress.service";
+import { getCourseComments, postComment } from "@/services/comment.service";
+import type { Comment as DiscussionComment, CommentUser } from "@/types/comment";
 import {
   claimCertificate,
   getCertificateById,
@@ -49,6 +52,44 @@ function formatDate(value?: string) {
 
 function getModuleTitle(module: CourseModule) {
   return module.judul || module.id;
+}
+
+function getCommentUserLabel(user?: CommentUser) {
+  if (!user) return "Pengguna";
+  return user.gelar ? `${user.nama ?? "Pengguna"}, ${user.gelar}` : user.nama ?? "Pengguna";
+}
+
+function getCommentUserPhoto(user?: CommentUser) {
+  return user?.fotoProfil || user?.foto || user?.avatar || "";
+}
+
+function roleLabel(role?: string): string {
+  const r = String(role || "").toLowerCase();
+  if (r === "admin") return "Admin";
+  if (r === "pengajar") return "Pengajar";
+  if (r === "guru") return "Guru";
+  return role || "Pengguna";
+}
+
+function roleBadgeClass(role?: string): string {
+  const r = String(role || "").toLowerCase();
+  if (r === "admin") return "bg-purple-100 text-purple-700";
+  if (r === "pengajar") return "bg-amber-100 text-amber-700";
+  if (r === "guru") return "bg-sky-100 text-sky-700";
+  return "bg-slate-100 text-slate-600";
+}
+
+function formatCommentDateTime(raw?: string): string {
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /**
@@ -104,6 +145,19 @@ export default function GuruCourseDetailPage() {
   const [certificateBusy, setCertificateBusy] = useState(false);
   const [certificateMessage, setCertificateMessage] = useState("");
 
+  // Course-level Discussion (Guru). Response BE sudah nested via `replies[]`,
+  // sehingga tidak ada pembangunan tree dari data flat di FE.
+  const [discussion, setDiscussion] = useState<DiscussionComment[]>([]);
+  const [discussionLoading, setDiscussionLoading] = useState(true);
+  const [discussionError, setDiscussionError] = useState("");
+  const [newComment, setNewComment] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+  const [commentPostError, setCommentPostError] = useState("");
+  const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [postingReply, setPostingReply] = useState(false);
+  const [replyPostError, setReplyPostError] = useState("");
+
   const loadStageProgress = useCallback(async (modulesList: CourseModule[]) => {
     const progressList = await getProgress();
     setStageProgress(buildStageProgress(modulesList, Array.isArray(progressList) ? progressList : []));
@@ -135,6 +189,20 @@ export default function GuruCourseDetailPage() {
     }
   }, []);
 
+  // Muat Course-level Discussion dari BE. Response sudah nested (replies[]).
+  const loadDiscussion = useCallback(async (courseId: string) => {
+    setDiscussionLoading(true);
+    setDiscussionError("");
+    try {
+      const data = await getCourseComments(courseId);
+      setDiscussion(Array.isArray(data) ? (data as DiscussionComment[]) : []);
+    } catch (err) {
+      setDiscussionError(err instanceof Error ? err.message : "Gagal memuat diskusi course.");
+    } finally {
+      setDiscussionLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     async function loadCourse() {
       setLoading(true);
@@ -163,6 +231,12 @@ export default function GuruCourseDetailPage() {
 
     if (id) loadCourse();
   }, [id, loadStageProgress, loadCertificate]);
+
+  // Discussion dimuat terpisah dari data course agar kegagalan endpoint diskusi
+  // (mis. belum tersedia di BE) tidak memblokir Course Detail.
+  useEffect(() => {
+    if (id) loadDiscussion(id);
+  }, [id, loadDiscussion]);
 
   const loadModuleOverview = useCallback(async (moduleId: string) => {
     setModuleOverviewLoading((prev) => ({ ...prev, [moduleId]: true }));
@@ -255,6 +329,57 @@ export default function GuruCourseDetailPage() {
     } finally {
       setCertificateBusy(false);
     }
+  }
+
+  // Kirim komentar utama (Course-level). Tidak mengirim moduleId.
+  async function handlePostComment(e: React.FormEvent) {
+    e.preventDefault();
+    const text = newComment.trim();
+    if (!text) return;
+
+    setPostingComment(true);
+    setCommentPostError("");
+    try {
+      await postComment({ courseId: id, komentar: text });
+      setNewComment("");
+      await loadDiscussion(id);
+    } catch (err) {
+      setCommentPostError(err instanceof Error ? err.message : "Gagal mengirim komentar.");
+    } finally {
+      setPostingComment(false);
+    }
+  }
+
+  // Kirim balasan pada root comment (Course-level + parentId).
+  async function handlePostReply(e: React.FormEvent, parentId: string) {
+    e.preventDefault();
+    const text = replyText.trim();
+    if (!text) return;
+
+    setPostingReply(true);
+    setReplyPostError("");
+    try {
+      await postComment({ courseId: id, parentId, komentar: text });
+      setReplyText("");
+      setReplyToId(null);
+      await loadDiscussion(id);
+    } catch (err) {
+      setReplyPostError(err instanceof Error ? err.message : "Gagal mengirim balasan.");
+    } finally {
+      setPostingReply(false);
+    }
+  }
+
+  function startReply(commentId: string) {
+    setReplyToId(commentId);
+    setReplyText("");
+    setReplyPostError("");
+  }
+
+  function cancelReply() {
+    setReplyToId(null);
+    setReplyText("");
+    setReplyPostError("");
   }
 
   // Segarkan status stage dari BE ketika Guru kembali ke tab ini (mis. setelah
@@ -672,6 +797,187 @@ export default function GuruCourseDetailPage() {
                         )}
                       </div>
                     )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        {/* Diskusi Course */}
+        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z" />
+              </svg>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">Diskusi Course</h2>
+            </div>
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+              {discussion.length} diskusi
+            </span>
+          </div>
+
+          {/* Form komentar utama */}
+          <form onSubmit={handlePostComment} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+            <label htmlFor="new-course-comment" className="block text-xs font-bold text-slate-600">
+              Tulis Komentar
+            </label>
+            {commentPostError && (
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{commentPostError}</p>
+            )}
+            <textarea
+              id="new-course-comment"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              rows={3}
+              placeholder="Bagikan pertanyaan atau tanggapan untuk course ini..."
+              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20"
+            />
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={postingComment || !newComment.trim()}
+                className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:opacity-60"
+              >
+                {postingComment ? "Mengirim..." : "Kirim Komentar"}
+              </button>
+            </div>
+          </form>
+
+          {/* Daftar diskusi (nested) */}
+          {discussionLoading ? (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-center text-sm text-slate-500">
+              Memuat diskusi...
+            </div>
+          ) : discussionError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {discussionError}
+            </div>
+          ) : discussion.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+              Belum ada diskusi pada course ini.
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {discussion.map((comment) => {
+                const user = comment.user || comment.author || comment.pengirim;
+                const photo = getCommentUserPhoto(user);
+                const name = getCommentUserLabel(user);
+                const text = comment.komentar || comment.isi || comment.pesan || "";
+                const replies = Array.isArray(comment.replies) ? comment.replies : [];
+
+                return (
+                  <li key={comment.id} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      {photo ? (
+                        <Image
+                          src={photo}
+                          alt={name}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold uppercase text-white">
+                          {name.charAt(0)}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-slate-900">{name}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(user?.role)}`}>
+                            {roleLabel(user?.role)}
+                          </span>
+                          {comment.createdAt && (
+                            <span className="text-[11px] text-slate-400">{formatCommentDateTime(comment.createdAt)}</span>
+                          )}
+                        </div>
+                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700">{text}</p>
+
+                        <div className="mt-2">
+                          <button
+                            type="button"
+                            onClick={() => (replyToId === comment.id ? cancelReply() : startReply(comment.id))}
+                            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                          >
+                            {replyToId === comment.id ? "Batal" : "Balas"}
+                          </button>
+                        </div>
+
+                        {/* Form balasan */}
+                        {replyToId === comment.id && (
+                          <form
+                            onSubmit={(e) => handlePostReply(e, comment.id)}
+                            className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2"
+                          >
+                            {replyPostError && (
+                              <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{replyPostError}</p>
+                            )}
+                            <textarea
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              rows={2}
+                              placeholder="Tulis balasan..."
+                              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20"
+                            />
+                            <div className="flex justify-end">
+                              <button
+                                type="submit"
+                                disabled={postingReply || !replyText.trim()}
+                                className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:opacity-60"
+                              >
+                                {postingReply ? "Mengirim..." : "Kirim Balasan"}
+                              </button>
+                            </div>
+                          </form>
+                        )}
+
+                        {/* Balasan nested (struktur langsung dari BE) */}
+                        {replies.length > 0 && (
+                          <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4">
+                            {replies.map((reply) => {
+                              const replyUser = reply.user || reply.author || reply.pengirim;
+                              const replyPhoto = getCommentUserPhoto(replyUser);
+                              const replyName = getCommentUserLabel(replyUser);
+                              const replyContent = reply.komentar || reply.isi || reply.pesan || "";
+
+                              return (
+                                <li key={reply.id} className="rounded-xl bg-slate-50 p-3">
+                                  <div className="flex items-start gap-2.5">
+                                    {replyPhoto ? (
+                                      <Image
+                                        src={replyPhoto}
+                                        alt={replyName}
+                                        width={32}
+                                        height={32}
+                                        className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover"
+                                      />
+                                    ) : (
+                                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-500 text-xs font-bold uppercase text-white">
+                                        {replyName.charAt(0)}
+                                      </span>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-xs font-bold text-slate-800">{replyName}</span>
+                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(replyUser?.role)}`}>
+                                          {roleLabel(replyUser?.role)}
+                                        </span>
+                                        {reply.createdAt && (
+                                          <span className="text-[11px] text-slate-400">{formatCommentDateTime(reply.createdAt)}</span>
+                                        )}
+                                      </div>
+                                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{replyContent}</p>
+                                    </div>
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
                   </li>
                 );
               })}
