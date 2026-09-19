@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getModules, deleteModule } from "@/services/module.service";
-import { getCourseModulePermissions, getStoredUser } from "@/lib/rbac";
+import { getCourses } from "@/services/course.service";
+import { buildManageableCourseIdSet, getCourseModulePermissions, getStoredUser } from "@/lib/rbac";
 
 interface Module {
   id: string;
@@ -12,6 +13,7 @@ interface Module {
   deskripsi: string;
   aspekPancawaluya: string;
   urutan: number;
+  courseId?: string | null;
   _count: {
     contents: number;
     evaluations: number;
@@ -33,6 +35,8 @@ export default function AdminModulesPage() {
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [manageableCourseIds, setManageableCourseIds] = useState<Set<string>>(new Set());
+  const [isAdmin, setIsAdmin] = useState(false);
   const permissions = getCourseModulePermissions(getStoredUser()?.role);
 
   useEffect(() => {
@@ -44,7 +48,14 @@ export default function AdminModulesPage() {
       return;
     }
 
-    const currentUser = JSON.parse(userData);
+    let currentUser: { role?: string; id?: string } | null = null;
+    try {
+      currentUser = JSON.parse(userData);
+    } catch {
+      router.push("/login");
+      return;
+    }
+
     const perms = getCourseModulePermissions(currentUser?.role);
     // Guru read-only tidak diarahkan ke halaman kelola modul (admin/pengajar saja).
     if (!perms.canEdit) {
@@ -52,10 +63,17 @@ export default function AdminModulesPage() {
       return;
     }
 
-    async function fetchModules() {
+    // Module mewarisi ownership dari parent Course. Bangun himpunan Course yang
+    // boleh dikelola user (Admin: semua; Pengajar: hanya miliknya) untuk membatasi
+    // action manage per module.
+    async function fetchData() {
       try {
-        const data = await getModules();
-        setModules(data);
+        const [modulesData, coursesData] = await Promise.all([getModules(), getCourses()]);
+        setIsAdmin(perms.canDelete);
+        setManageableCourseIds(
+          buildManageableCourseIdSet(currentUser?.role, currentUser?.id, coursesData)
+        );
+        setModules(modulesData);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -67,7 +85,7 @@ export default function AdminModulesPage() {
       }
     }
 
-    fetchModules();
+    fetchData();
   }, [router]);
 
   async function handleDelete(id: string, judul: string) {
@@ -165,52 +183,82 @@ export default function AdminModulesPage() {
         <div className="flex flex-col gap-3">
           {filteredModules
             .sort((a, b) => a.urutan - b.urutan)
-            .map((mod) => (
+            .map((mod) => {
+              // Module dapat dikelola bila parent Course-nya dapat dikelola.
+              const manageable =
+                isAdmin || Boolean(mod.courseId && manageableCourseIds.has(mod.courseId));
+
+              return (
               <div
                 key={mod.id}
                 className="border border-[var(--color-border-soft)] rounded-2xl p-5 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-md transition"
               >
-                <Link
-                  href={`/admin/modules/${mod.id}`}
-                  className="flex-1 min-w-0 cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-gray-400">#{mod.urutan}</span>
-                    <span
-                      className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
-                        aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {mod.aspekPancawaluya}
-                    </span>
-                  </div>
-                  <p className="font-medium text-[var(--color-navy)] truncate">{mod.judul}</p>
-                  <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{mod.deskripsi}</p>
-                  <div className="text-xs text-gray-400 flex gap-3 mt-1">
-                    <span>{mod._count.contents} konten</span>
-                    <span>{mod._count.evaluations} asesmen</span>
-                  </div>
-                </Link>
-
-                <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                {manageable ? (
                   <Link
                     href={`/admin/modules/${mod.id}`}
-                    className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
+                    className="flex-1 min-w-0 cursor-pointer"
                   >
-                    Edit
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-400">#{mod.urutan}</span>
+                      <span
+                        className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
+                          aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {mod.aspekPancawaluya}
+                      </span>
+                    </div>
+                    <p className="font-medium text-[var(--color-navy)] truncate">{mod.judul}</p>
+                    <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{mod.deskripsi}</p>
+                    <div className="text-xs text-gray-400 flex gap-3 mt-1">
+                      <span>{mod._count.contents} konten</span>
+                      <span>{mod._count.evaluations} asesmen</span>
+                    </div>
                   </Link>
-                  {permissions.canDelete && (
-                    <button
-                      onClick={() => handleDelete(mod.id, mod.judul)}
-                      disabled={deletingId === mod.id}
-                      className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
+                ) : (
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-400">#{mod.urutan}</span>
+                      <span
+                        className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
+                          aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {mod.aspekPancawaluya}
+                      </span>
+                    </div>
+                    <p className="font-medium text-[var(--color-navy)] truncate">{mod.judul}</p>
+                    <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{mod.deskripsi}</p>
+                    <div className="text-xs text-gray-400 flex gap-3 mt-1">
+                      <span>{mod._count.contents} konten</span>
+                      <span>{mod._count.evaluations} asesmen</span>
+                      <span className="text-amber-600">Bukan course Anda</span>
+                    </div>
+                  </div>
+                )}
+
+                {manageable && (
+                  <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Link
+                      href={`/admin/modules/${mod.id}`}
+                      className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
                     >
-                      {deletingId === mod.id ? "Menghapus..." : "Hapus"}
-                    </button>
-                  )}
-                </div>
+                      Edit
+                    </Link>
+                    {permissions.canDelete && (
+                      <button
+                        onClick={() => handleDelete(mod.id, mod.judul)}
+                        disabled={deletingId === mod.id}
+                        className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
+                      >
+                        {deletingId === mod.id ? "Menghapus..." : "Hapus"}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
         </div>
       )}
     </div>

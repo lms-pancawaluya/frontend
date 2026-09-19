@@ -10,14 +10,56 @@ function getHeaders() {
 }
 
 // ----------------------------------------------------
-// FITUR EVALUASI HALAMAN GURU
+// ASSESSMENT DOMAIN (Pre-Test / Post-Test)
 // ----------------------------------------------------
+// Backend sekarang memisahkan endpoint per tahap:
+//   pre_test  → /api/modules/:moduleId/pre-tests
+//   post_test → /api/modules/:moduleId/post-tests
+//
+// Helper ini menerjemahkan tipe BE ("pre_test" / "post_test") menjadi prefix
+// endpoint yang sesuai. Menerima penulisan variatif ("pre-test", "Pre Test",
+// dst.) untuk ketahanan, namun nilai yang dikirim/diminta ke BE tetap sesuai
+// contract (`pre_test` / `post_test`).
+
+const PRE_TEST = "pre_test";
+const POST_TEST = "post_test";
+
+/** Normalisasi tipe menjadi "pre_test" / "post_test" (atau "" bila tidak dikenali). */
+function normalizeTipe(tipe) {
+  const value = String(tipe || "").toLowerCase().replace(/[ _-]/g, "");
+  if (value === "pretest") return PRE_TEST;
+  if (value === "posttest") return POST_TEST;
+  return "";
+}
+
+/** Prefix endpoint resource sesuai tipe. Default ke pre-tests bila tidak dikenali. */
+function getAssessmentPrefix(tipe) {
+  return normalizeTipe(tipe) === POST_TEST ? "post-tests" : "pre-tests";
+}
+
+function getAssessmentBase(moduleId, tipe) {
+  return `${API_URL}/api/modules/${moduleId}/${getAssessmentPrefix(tipe)}`;
+}
 
 /**
- * Get daftar evaluasi berdasarkan ID Modul
+ * Resolusi tipe assessment dari sebuah ID bila caller tidak menyediakannya.
+ * Hanya menelusuri endpoint baru (pre-tests & post-tests), tanpa fallback ke
+ * endpoint evaluasi lama. Mengembalikan "pre_test" / "post_test" / "".
  */
-export async function getModuleEvaluations(moduleId) {
-  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations`, {
+async function resolveTipe(moduleId, evaluationId, providedTipe) {
+  const normalized = normalizeTipe(providedTipe);
+  if (normalized) return normalized;
+
+  const list = await getModuleEvaluations(moduleId);
+  const match = Array.isArray(list)
+    ? list.find((item) => item && item.id === evaluationId)
+    : null;
+  return normalizeTipe(match?.tipe);
+}
+
+/** Ambil semua assessment pada satu tipe (list endpoint). */
+async function getAssessmentsByTipe(moduleId, tipe) {
+  const response = await fetchApi(getAssessmentBase(moduleId, tipe), {
     method: "GET",
     headers: getHeaders(),
   });
@@ -25,24 +67,44 @@ export async function getModuleEvaluations(moduleId) {
   const result = await response.json();
 
   if (!response.ok || !result.sukses) {
-    throw new Error(result.pesan || result.message || "Gagal mengambil daftar evaluasi");
+    throw new Error(result.pesan || result.message || "Gagal mengambil daftar asesmen");
   }
 
-  return result.data;
+  return result.data ?? [];
+}
+
+// ----------------------------------------------------
+// FITUR EVALUASI HALAMAN GURU
+// ----------------------------------------------------
+
+/**
+ * Get daftar evaluasi berdasarkan ID Modul.
+ *
+ * Menggabungkan Pre-Test & Post-Test dari endpoint terpisah menjadi satu list
+ * (kontrak lama) agar consumer yang memfilter berdasarkan `tipe` tetap bekerja.
+ */
+export async function getModuleEvaluations(moduleId) {
+  const [preTests, postTests] = await Promise.all([
+    getAssessmentsByTipe(moduleId, PRE_TEST),
+    getAssessmentsByTipe(moduleId, POST_TEST),
+  ]);
+
+  return [...preTests, ...postTests];
 }
 
 /**
  * Get detail evaluasi & daftar soal
- * URL: GET /api/modules/:moduleId/evaluations/:evaluationId
+ * URL: GET /api/modules/:moduleId/pre-tests/:id  |  /post-tests/:id
+ *
+ * `tipe` opsional. Bila tidak diberikan, service menelusuri daftar untuk
+ * menentukan prefix endpoint yang benar.
  */
-export async function getEvaluationDetail(moduleId, evaluationId) {
-  const response = await fetchApi(
-    `${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}`,
-    {
-      method: "GET",
-      headers: getHeaders(),
-    }
-  );
+export async function getEvaluationDetail(moduleId, evaluationId, tipe) {
+  const resolvedTipe = await resolveTipe(moduleId, evaluationId, tipe);
+  const response = await fetchApi(`${getAssessmentBase(moduleId, resolvedTipe)}/${evaluationId}`, {
+    method: "GET",
+    headers: getHeaders(),
+  });
 
   const result = await response.json();
 
@@ -54,12 +116,13 @@ export async function getEvaluationDetail(moduleId, evaluationId) {
 }
 
 /**
- * Submit jawaban evaluasi modul
- * URL: POST /api/modules/:moduleId/evaluations/:evaluationId/submit
+ * Submit jawaban evaluasi modul (Guru)
+ * URL: POST /api/modules/:moduleId/pre-tests/:id/submit  |  /post-tests/:id/submit
  */
-export async function submitEvaluation(moduleId, evaluationId, jawaban) {
+export async function submitEvaluation(moduleId, evaluationId, jawaban, tipe) {
+  const resolvedTipe = await resolveTipe(moduleId, evaluationId, tipe);
   const response = await fetchApi(
-    `${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/submit`,
+    `${getAssessmentBase(moduleId, resolvedTipe)}/${evaluationId}/submit`,
     {
       method: "POST",
       headers: getHeaders(),
@@ -78,11 +141,12 @@ export async function submitEvaluation(moduleId, evaluationId, jawaban) {
 
 /**
  * Cek riwayat jawaban milik Guru pada satu evaluasi
- * URL: GET /api/modules/:moduleId/evaluations/:evaluationId/my-answers
+ * URL: GET /api/modules/:moduleId/pre-tests/:id/my-answers  |  /post-tests/:id/my-answers
  */
-export async function getMyAnswers(moduleId, evaluationId) {
+export async function getMyAnswers(moduleId, evaluationId, tipe) {
+  const resolvedTipe = await resolveTipe(moduleId, evaluationId, tipe);
   const response = await fetchApi(
-    `${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/my-answers`,
+    `${getAssessmentBase(moduleId, resolvedTipe)}/${evaluationId}/my-answers`,
     {
       method: "GET",
       headers: getHeaders(),
@@ -96,6 +160,29 @@ export async function getMyAnswers(moduleId, evaluationId) {
   }
 
   return result.data;
+}
+
+/**
+ * Get seluruh jawaban pada satu evaluasi (Admin)
+ * URL: GET /api/modules/:moduleId/pre-tests/:id/answers  |  /post-tests/:id/answers
+ */
+export async function getEvaluationAnswers(moduleId, evaluationId, tipe) {
+  const resolvedTipe = await resolveTipe(moduleId, evaluationId, tipe);
+  const response = await fetchApi(
+    `${getAssessmentBase(moduleId, resolvedTipe)}/${evaluationId}/answers`,
+    {
+      method: "GET",
+      headers: getHeaders(),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal mengambil jawaban evaluasi");
+  }
+
+  return result.data ?? [];
 }
 
 /**
@@ -143,13 +230,21 @@ export async function getAllFeedbacks() {
 // ----------------------------------------------------
 
 /**
- * Buat evaluasi baru di dalam modul
+ * Buat evaluasi baru di dalam modul.
+ * Mengarah ke endpoint Pre-Test HANYA untuk tipe `pre_test`, dan endpoint
+ * Post-Test HANYA untuk tipe `post_test` (tidak ada cross-call).
  */
 export async function createEvaluation(moduleId, { judul, tipe, passingScore, maxAttempts }) {
-  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations`, {
+  const normalizedTipe = normalizeTipe(tipe);
+  const body =
+    normalizedTipe === PRE_TEST
+      ? { judul }
+      : { judul, passingScore, maxAttempts };
+
+  const response = await fetchApi(getAssessmentBase(moduleId, normalizedTipe), {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ judul, tipe, passingScore, maxAttempts }),
+    body: JSON.stringify(body),
   });
 
   const result = await response.json();
@@ -161,8 +256,13 @@ export async function createEvaluation(moduleId, { judul, tipe, passingScore, ma
   return result.data;
 }
 
-export async function deleteEvaluation(moduleId, evaluationId) {
-  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}`, {
+/**
+ * Hapus Pre-Test/Post-Test sesuai tipe.
+ * URL: DELETE /api/modules/:moduleId/pre-tests/:id  |  /post-tests/:id
+ */
+export async function deleteEvaluation(moduleId, evaluationId, tipe) {
+  const resolvedTipe = await resolveTipe(moduleId, evaluationId, tipe);
+  const response = await fetchApi(`${getAssessmentBase(moduleId, resolvedTipe)}/${evaluationId}`, {
     method: "DELETE",
     headers: getHeaders(),
   });
@@ -185,12 +285,20 @@ export async function deleteEvaluation(moduleId, evaluationId) {
   return result;
 }
 
-export async function addQuestion(moduleId, evaluationId, questionData) {
-  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/${evaluationId}/questions`, {
-    method: "POST",
-    headers: getHeaders(),
-    body: JSON.stringify(questionData),
-  });
+/**
+ * Tambah soal ke Pre-Test/Post-Test.
+ * URL: POST /api/modules/:moduleId/pre-tests/:id/questions  |  /post-tests/:id/questions
+ */
+export async function addQuestion(moduleId, evaluationId, questionData, tipe) {
+  const resolvedTipe = await resolveTipe(moduleId, evaluationId, tipe);
+  const response = await fetchApi(
+    `${getAssessmentBase(moduleId, resolvedTipe)}/${evaluationId}/questions`,
+    {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(questionData),
+    }
+  );
 
   const result = await response.json();
 
@@ -201,42 +309,72 @@ export async function addQuestion(moduleId, evaluationId, questionData) {
   return result.data;
 }
 
-export async function updateQuestion(moduleId, questionId, questionData) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(questionData),
-  });
+/**
+ * Update soal.
+ * URL: PUT /api/modules/:moduleId/pre-tests/questions/:id  |  /post-tests/questions/:id
+ */
+export async function updateQuestion(moduleId, questionId, questionData, tipe) {
+  const headers = getHeaders();
+  const response = await fetchApi(
+    `${getAssessmentBase(moduleId, await resolveQuestionTipe(moduleId, questionId, tipe))}/questions/${questionId}`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(questionData),
+    }
+  );
 
   const result = await response.json();
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal memperbarui soal");
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal memperbarui soal");
   }
 
   return result.data;
 }
 
-export async function deleteQuestion(moduleId, questionId) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetchApi(`${API_URL}/api/modules/${moduleId}/evaluations/questions/${questionId}`, {
-    method: "DELETE",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-    },
-  });
+/**
+ * Hapus soal.
+ * URL: DELETE /api/modules/:moduleId/pre-tests/questions/:id  |  /post-tests/questions/:id
+ */
+export async function deleteQuestion(moduleId, questionId, tipe) {
+  const response = await fetchApi(
+    `${getAssessmentBase(moduleId, await resolveQuestionTipe(moduleId, questionId, tipe))}/questions/${questionId}`,
+    {
+      method: "DELETE",
+      headers: getHeaders(),
+    }
+  );
 
   const result = await response.json();
 
-  if (!result.sukses) {
-    throw new Error(result.pesan || "Gagal menghapus soal");
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal menghapus soal");
   }
 
   return result.data;
+}
+
+/**
+ * Tentukan tipe untuk operasi berbasis questionId. Karena endpoint soal
+ * ber-prefix per tahap, tipe perlu diketahui. Bila caller tidak menyediakannya,
+ * tipe ditelusuri dari daftar + detail Pre-Test/Post-Test modul.
+ */
+async function resolveQuestionTipe(moduleId, questionId, providedTipe) {
+  const normalized = normalizeTipe(providedTipe);
+  if (normalized) return normalized;
+
+  const assessments = await getModuleEvaluations(moduleId);
+  if (!Array.isArray(assessments)) return "";
+
+  for (const assessment of assessments) {
+    if (!assessment?.id) continue;
+    const detail = await getEvaluationDetail(moduleId, assessment.id, assessment.tipe);
+    const questions = Array.isArray(detail?.questions) ? detail.questions : [];
+    if (questions.some((question) => question?.id === questionId)) {
+      return normalizeTipe(assessment.tipe);
+    }
+  }
+
+  return "";
 }

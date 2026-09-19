@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCourses } from "@/services/course.service";
+import { canManageCourse, getCourseModulePermissions } from "@/lib/rbac";
 
 interface Course {
   id: string;
@@ -14,6 +15,9 @@ interface Course {
   lokasi?: string;
   tanggalMulai?: string;
   tanggalSelesai?: string;
+  createdBy?: string | null;
+  schoolId?: string | null;
+  isGlobal?: boolean;
 }
 
 function formatDate(value?: string) {
@@ -27,6 +31,7 @@ export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentUser, setCurrentUser] = useState<{ role?: string; id?: string }>({});
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -37,18 +42,24 @@ export default function AdminCoursesPage() {
       return;
     }
 
+    let parsedUser: { role?: string; id?: string } | null = null;
     try {
-      if (JSON.parse(userData)?.role !== "admin") {
-        router.push("/dashboard");
-        return;
-      }
+      parsedUser = JSON.parse(userData);
     } catch {
       router.push("/login");
       return;
     }
 
+    // Kelola Course memakai permission yang sama dengan Course/Module (BE):
+    // Admin & Pengajar boleh mengelola, Guru read-only diarahkan keluar.
+    if (!getCourseModulePermissions(parsedUser?.role).canEdit) {
+      router.push("/dashboard");
+      return;
+    }
+
     async function loadCourses() {
       try {
+        setCurrentUser(parsedUser ?? {});
         const data = await getCourses();
         setCourses(Array.isArray(data) ? (data as Course[]) : []);
       } catch (err) {
@@ -94,28 +105,52 @@ export default function AdminCoursesPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {courses.map((course) => (
-            <Link
-              key={course.id}
-              href={`/admin/courses/${course.id}`}
-              className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-5 transition hover:shadow-md"
-            >
-              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                <div className="min-w-0">
-                  <h2 className="truncate font-medium text-[var(--color-navy)]">{course.judul || "Tanpa judul"}</h2>
-                  <p className="mt-1 line-clamp-2 text-sm text-gray-500">{course.deskripsi || "Tidak ada deskripsi."}</p>
+          {courses.map((course) => {
+            // Action manage (buka detail) hanya untuk Course yang boleh dikelola
+            // user ini (Admin: semua; Pengajar: hanya miliknya). Course lain tetap
+            // ditampilkan sebagai informasi, tanpa aksi manage.
+            const manageable = canManageCourse(currentUser.role, currentUser.id, course);
+            const content = (
+              <>
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                  <div className="min-w-0">
+                    <h2 className="truncate font-medium text-[var(--color-navy)]">{course.judul || "Tanpa judul"}</h2>
+                    <p className="mt-1 line-clamp-2 text-sm text-gray-500">{course.deskripsi || "Tidak ada deskripsi."}</p>
+                  </div>
+                  <span className="w-fit rounded-full bg-slate-100 px-2.5 py-1 text-xs capitalize text-slate-600">
+                    {course.mode || "—"}
+                  </span>
                 </div>
-                <span className="w-fit rounded-full bg-slate-100 px-2.5 py-1 text-xs capitalize text-slate-600">
-                  {course.mode || "—"}
-                </span>
+                <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500">
+                  <span>{course.hasCertificate ? "Dengan sertifikat" : "Tanpa sertifikat"}</span>
+                  <span>Mulai: {formatDate(course.tanggalMulai)}</span>
+                  <span>Selesai: {formatDate(course.tanggalSelesai)}</span>
+                  {!manageable && (
+                    <span className="text-amber-600">
+                      {course.isGlobal || course.schoolId === null ? "Course Global" : "Course pengajar lain"}
+                    </span>
+                  )}
+                </div>
+              </>
+            );
+
+            return manageable ? (
+              <Link
+                key={course.id}
+                href={`/admin/courses/${course.id}`}
+                className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-5 transition hover:shadow-md"
+              >
+                {content}
+              </Link>
+            ) : (
+              <div
+                key={course.id}
+                className="rounded-2xl border border-[var(--color-border-soft)] bg-white/70 p-5"
+              >
+                {content}
               </div>
-              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500">
-                <span>{course.hasCertificate ? "Dengan sertifikat" : "Tanpa sertifikat"}</span>
-                <span>Mulai: {formatDate(course.tanggalMulai)}</span>
-                <span>Selesai: {formatDate(course.tanggalSelesai)}</span>
-              </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

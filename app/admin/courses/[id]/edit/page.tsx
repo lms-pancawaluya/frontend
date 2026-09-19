@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getCourseById, updateCourse } from "@/services/course.service";
+import { canManageCourse } from "@/lib/rbac";
 
 type CourseForm = {
   judul: string;
@@ -36,11 +37,27 @@ export default function EditCoursePage() {
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     async function loadCourse() {
+      // Guard ownership: Pengajar hanya boleh mengedit Course miliknya.
+      let currentUser: { role?: string; id?: string } = {};
+      try {
+        const raw = localStorage.getItem("user");
+        currentUser = raw ? JSON.parse(raw) : {};
+      } catch {
+        currentUser = {};
+      }
+
       try {
         const course = await getCourseById(id);
+
+        if (!canManageCourse(currentUser.role, currentUser.id, course)) {
+          setAccessDenied(true);
+          return;
+        }
+
         setFormData({
           judul: course?.judul || "",
           deskripsi: course?.deskripsi || "",
@@ -87,6 +104,23 @@ export default function EditCoursePage() {
 
   if (loadingData) {
     return <p className="mt-16 text-center text-gray-500">Memuat data course...</p>;
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="mx-auto mt-16 max-w-md p-6 text-center">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          Course ini bukan milik Anda, sehingga tidak dapat diedit. Hubungi Admin jika perlu.
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/admin/courses")}
+          className="mt-4 text-sm text-[var(--color-accent)] hover:underline"
+        >
+          ← Kembali ke daftar course
+        </button>
+      </div>
+    );
   }
 
   return (

@@ -55,3 +55,53 @@ export function useStoredPermissions(): CourseModulePermissions {
   const user = getStoredUser();
   return getCourseModulePermissions(user?.role as AppRole);
 }
+
+export interface CourseOwnershipShape {
+  createdBy?: string | null;
+  schoolId?: string | null;
+}
+
+/**
+ * Apakah user boleh MENGELOLA (edit/manage) sebuah Course.
+ *
+ * Mencerminkan scope ownership yang tetap ditegakkan BE:
+ *   - Admin   : semua Course.
+ *   - Pengajar: hanya Course yang dibuat sendiri (`createdBy === user.id`).
+ *               Global Course (`schoolId === null`) dan Course milik pengajar
+ *               lain TIDAK dapat dikelola.
+ *   - Guru    : tidak mengelola.
+ *
+ * Guna menentukan `userId`, gunakan id canonical dari response/localStorage
+ * (`user.id`), bukan nama/sekolah. BE tetap source of truth untuk authorization.
+ */
+export function canManageCourse(
+  role: AppRole | undefined,
+  userId: string | undefined,
+  course: CourseOwnershipShape | null | undefined
+): boolean {
+  const r = normalizeRole(role);
+  if (r === "admin") return true;
+  if (r !== "pengajar") return false;
+  if (!userId || !course?.createdBy) return false;
+  return course.createdBy === userId;
+}
+
+/**
+ * Kumpulan id Course yang dapat dikelola user (dipakai untuk Module yang
+ * mewarisi ownership dari parent Course). Admin dianggap mengelola semua.
+ */
+export function buildManageableCourseIdSet(
+  role: AppRole | undefined,
+  userId: string | undefined,
+  courses: Array<CourseOwnershipShape & { id: string }>
+): Set<string> {
+  const set = new Set<string>();
+  if (normalizeRole(role) === "admin") {
+    for (const course of courses) if (course?.id) set.add(course.id);
+    return set;
+  }
+  for (const course of courses) {
+    if (course?.id && canManageCourse(role, userId, course)) set.add(course.id);
+  }
+  return set;
+}

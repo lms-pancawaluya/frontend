@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { deleteCourse, getCourseById } from "@/services/course.service";
 import { createModule, deleteModule, getModules, updateModule } from "@/services/module.service";
+import { canManageCourse, getCourseModulePermissions } from "@/lib/rbac";
 
 interface CourseModule {
   id: string;
@@ -29,6 +30,9 @@ interface Course {
   lokasi?: string;
   tanggalMulai?: string;
   tanggalSelesai?: string;
+  createdBy?: string | null;
+  schoolId?: string | null;
+  isGlobal?: boolean;
   modules?: CourseModule[];
   [key: string]: unknown;
 }
@@ -52,6 +56,9 @@ export default function AdminCourseDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  // Guard ownership: Pengajar hanya boleh mengelola Course miliknya.
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [canDelete, setCanDelete] = useState(false);
   const [moduleForm, setModuleForm] = useState({
     judul: "",
     deskripsi: "",
@@ -191,9 +198,28 @@ export default function AdminCourseDetailPage() {
 
   useEffect(() => {
     async function loadCourse() {
+      // Tentukan ownership dari data user + response Course (BE source of truth).
+      let currentUser: { role?: string; id?: string } = {};
+      try {
+        const raw = localStorage.getItem("user");
+        currentUser = raw ? JSON.parse(raw) : {};
+      } catch {
+        currentUser = {};
+      }
+
       try {
         const [courseData, modulesData] = await Promise.all([getCourseById(id), getModules()]);
-        setCourse(courseData as Course);
+        const loadedCourse = courseData as Course;
+
+        // Pengajar tidak boleh mengelola Course milik pengajar lain / Global Course.
+        if (!canManageCourse(currentUser.role, currentUser.id, loadedCourse)) {
+          setAccessDenied(true);
+          setLoading(false);
+          return;
+        }
+
+        setCanDelete(getCourseModulePermissions(currentUser.role).canDelete);
+        setCourse(loadedCourse);
         setExistingModules(modulesData as CourseModule[]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Gagal memuat detail course.");
@@ -207,6 +233,23 @@ export default function AdminCourseDetailPage() {
 
   if (loading) {
     return <p className="mt-16 text-center text-gray-500">Memuat detail course...</p>;
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="mx-auto mt-16 max-w-md p-6 text-center">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          Course ini bukan milik Anda, sehingga tidak dapat dikelola. Hubungi Admin jika perlu.
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/admin/courses")}
+          className="mt-4 text-sm text-[var(--color-accent)] hover:underline"
+        >
+          ← Kembali ke daftar course
+        </button>
+      </div>
+    );
   }
 
   if (error || !course) {
@@ -233,14 +276,16 @@ export default function AdminCourseDetailPage() {
         >
           Edit Course
         </Link>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={deleting}
-          className="rounded-full border border-red-200 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:border-gray-200 disabled:text-gray-400"
-        >
-          {deleting ? "Menghapus..." : "Hapus Course"}
-        </button>
+        {canDelete && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="rounded-full border border-red-200 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:border-gray-200 disabled:text-gray-400"
+          >
+            {deleting ? "Menghapus..." : "Hapus Course"}
+          </button>
+        )}
       </div>
       {deleteError && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{deleteError}</div>}
 
