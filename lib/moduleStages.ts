@@ -40,7 +40,10 @@ export function readModuleStageProgress(source: unknown): ModuleStageProgress {
 
   const readFlag = (key: keyof ModuleStageProgress): boolean | undefined => {
     const value = record[key] ?? nested?.[key];
-    return typeof value === "boolean" ? value : undefined;
+    if (typeof value === "boolean") return value;
+    if (value === 1 || value === "1" || value === "true" || value === "completed") return true;
+    if (value === 0 || value === "0" || value === "false" || value === "incomplete") return false;
+    return undefined;
   };
 
   const progress: ModuleStageProgress = {};

@@ -68,6 +68,7 @@ function ModuleTextPageContent() {
   const [materialStatus, setMaterialStatus] = useState<Record<string, MaterialProgressEntry>>({});
   const [isCompleting, setIsCompleting] = useState(false);
   const [completeError, setCompleteError] = useState("");
+  const [courseId, setCourseId] = useState<string | null>(null);
 
   const refreshMaterialStatus = useCallback(async () => {
     const data = await getModuleProgress(moduleId);
@@ -89,9 +90,19 @@ function ModuleTextPageContent() {
           getModuleContents(moduleId),
           getModuleById(moduleId).catch(() => null),
         ]);
-        const ordered = sortMaterialsByUrutan(contents as ModuleContent[]);
+        const foundCourseId = moduleData?.courseId || moduleData?.course_id || null;
+        if (foundCourseId) {
+          setCourseId(foundCourseId);
+        }
+
+        const ordered = sortMaterialsByUrutan(contents as ModuleMaterial[]);
         setMaterials(ordered);
         void refreshMaterialStatus();
+
+        if (!ordered || ordered.length === 0) {
+          router.replace(foundCourseId ? `/modules/courses/${foundCourseId}` : "/modules");
+          return;
+        }
 
         const requestedIndex = Number(searchParams.get("i"));
         const index = Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < ordered.length ? requestedIndex : 0;
@@ -149,6 +160,7 @@ function ModuleTextPageContent() {
     try {
       await completeContent(material.id);
       await refreshMaterialStatus();
+      router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));
     } catch (err) {
       setCompleteError(err instanceof Error ? err.message : "Gagal menandai materi selesai.");
     } finally {
@@ -196,22 +208,18 @@ function ModuleTextPageContent() {
   const isText = isTextMaterial(tipe);
   const isPdf = tipe === "pdf";
   const isLink = tipe === "link";
-  const hasPrevious = currentIndex > 0;
-  const isLastMaterial = currentIndex + 1 >= materials.length;
   const currentStatus = material?.id ? materialStatus[material.id] : undefined;
   const isMaterialCompleted = isMaterialEntryCompleted(currentStatus);
+
+  const courseDetailUrl = courseId ? `/modules/courses/${courseId}` : "/modules";
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <button
-        onClick={() =>
-          hasPrevious
-            ? router.push(getMaterialRoute(moduleId, materials, currentIndex - 1))
-            : router.push(`/modules/${moduleId}`)
-        }
+        onClick={() => router.push(courseDetailUrl)}
         className="text-xs font-semibold text-slate-500 hover:underline"
       >
-        ← Materi Sebelumnya
+        ← Kembali ke Detail Course
       </button>
 
       {moduleDescription && (
@@ -347,7 +355,7 @@ function ModuleTextPageContent() {
           onClick={() => router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
           className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition"
         >
-          {isLastMaterial ? "Lanjut ke Post-Test →" : "Materi Berikutnya →"}
+          {currentIndex + 1 < materials.length ? "Materi Berikutnya" : "Kembali ke Detail Course"}
         </button>
       </div>
     </div>
