@@ -70,9 +70,12 @@ export async function getCourseComments(courseId) {
 // GET /api/comments/users/search?q=:keyword
 // Return user sesuai contract: id, nama, fotoProfil, role, gelar.
 // Tidak melakukan filtering lokal — BE adalah sumber hasil pencarian.
+//
+// Opsi B: query kosong (`q=`) juga dikirim ke BE, agar BE dapat mengembalikan
+// daftar user default saat user baru mengetik `@`. Bila BE menolak (non-2xx),
+// error dilempar seperti biasa dan ditangani pemanggil — FE tidak menebak.
 export async function searchCommentUsers(keyword) {
   const query = String(keyword ?? "").trim();
-  if (!query) return [];
 
   const response = await fetchApi(
     `${API_URL}/api/comments/users/search?q=${encodeURIComponent(query)}`,

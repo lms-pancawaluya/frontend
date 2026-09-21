@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getCourseById } from "@/services/course.service";
 import { getModuleById, getModuleContents, getModules } from "@/services/module.service";
 import { getModuleEvaluations } from "@/services/evaluation.service";
 import { getCourseComments, postComment } from "@/services/comment.service";
 import type { Comment as DiscussionComment, CommentUser } from "@/types/comment";
+import MentionTextarea, { type MentionSelection } from "@/app/components/common/MentionTextarea";
+import { renderCommentText } from "@/lib/mention";
 import {
   claimCertificate,
   getCertificateById,
@@ -93,7 +95,10 @@ function formatCommentDateTime(raw?: string): string {
 export default function GuruCourseDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+  // commentId dari notifikasi diskusi (linkUrl BE: /courses/:courseId?commentId=:commentId).
+  const focusedCommentId = searchParams.get("commentId") || "";
 
   const [course, setCourse] = useState<CourseWithModules | null>(null);
   const [modules, setModules] = useState<CourseModule[]>([]);
@@ -122,10 +127,12 @@ export default function GuruCourseDetailPage() {
   const [discussionLoading, setDiscussionLoading] = useState(true);
   const [discussionError, setDiscussionError] = useState("");
   const [newComment, setNewComment] = useState("");
+  const [newCommentMentions, setNewCommentMentions] = useState<MentionSelection[]>([]);
   const [postingComment, setPostingComment] = useState(false);
   const [commentPostError, setCommentPostError] = useState("");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [replyMentions, setReplyMentions] = useState<MentionSelection[]>([]);
   const [postingReply, setPostingReply] = useState(false);
   const [replyPostError, setReplyPostError] = useState("");
 
@@ -219,6 +226,47 @@ export default function GuruCourseDetailPage() {
   useEffect(() => {
     if (id) loadDiscussion(id);
   }, [id, loadDiscussion]);
+
+  // Buka/scroll ke komentar terkait saat datang dari notifikasi (?commentId=).
+  // Highlight sementara agar user mudah menemukan komentar. Tidak mengubah
+  // struktur data discussion. Retry singkat karena komentar bisa muncul setelah
+  // bagian course selesai dimuat.
+  const [highlightCommentId, setHighlightCommentId] = useState("");
+  useEffect(() => {
+    if (!focusedCommentId || discussionLoading || discussionError) return;
+
+    let rafId = 0;
+    let attempts = 0;
+    let highlightTimer: ReturnType<typeof setTimeout> | undefined;
+    let clearTimer: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
+
+    const tryScroll = () => {
+      if (cancelled) return;
+      const el = document.getElementById(`comment-${focusedCommentId}`);
+      if (!el) {
+        // Beri kesempatan render berikutnya (maks ~30 frame / 0.5s).
+        if (attempts++ < 30) {
+          rafId = requestAnimationFrame(tryScroll);
+        }
+        return;
+      }
+
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // setState dijadwalkan (bukan sinkron di body effect) untuk highlight sementara.
+      highlightTimer = setTimeout(() => setHighlightCommentId(focusedCommentId), 0);
+      clearTimer = setTimeout(() => setHighlightCommentId(""), 2500);
+    };
+
+    rafId = requestAnimationFrame(tryScroll);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      if (highlightTimer) clearTimeout(highlightTimer);
+      if (clearTimer) clearTimeout(clearTimer);
+    };
+  }, [focusedCommentId, discussionLoading, discussionError, discussion]);
 
   const loadModuleOverview = useCallback(async (moduleId: string) => {
     setModuleOverviewLoading((prev) => ({ ...prev, [moduleId]: true }));
@@ -322,8 +370,13 @@ export default function GuruCourseDetailPage() {
     setPostingComment(true);
     setCommentPostError("");
     try {
-      await postComment({ courseId: id, komentar: text });
+      await postComment({
+        courseId: id,
+        komentar: text,
+        mentionedUserIds: newCommentMentions.map((m) => m.id),
+      });
       setNewComment("");
+      setNewCommentMentions([]);
       await loadDiscussion(id);
     } catch (err) {
       setCommentPostError(err instanceof Error ? err.message : "Gagal mengirim komentar.");
@@ -341,8 +394,14 @@ export default function GuruCourseDetailPage() {
     setPostingReply(true);
     setReplyPostError("");
     try {
-      await postComment({ courseId: id, parentId, komentar: text });
+      await postComment({
+        courseId: id,
+        parentId,
+        komentar: text,
+        mentionedUserIds: replyMentions.map((m) => m.id),
+      });
       setReplyText("");
+      setReplyMentions([]);
       setReplyToId(null);
       await loadDiscussion(id);
     } catch (err) {
@@ -355,12 +414,14 @@ export default function GuruCourseDetailPage() {
   function startReply(commentId: string) {
     setReplyToId(commentId);
     setReplyText("");
+    setReplyMentions([]);
     setReplyPostError("");
   }
 
   function cancelReply() {
     setReplyToId(null);
     setReplyText("");
+    setReplyMentions([]);
     setReplyPostError("");
   }
 
@@ -813,12 +874,13 @@ export default function GuruCourseDetailPage() {
             {commentPostError && (
               <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{commentPostError}</p>
             )}
-            <textarea
+            <MentionTextarea
               id="new-course-comment"
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              onChange={setNewComment}
+              onMentionsChange={setNewCommentMentions}
               rows={3}
-              placeholder="Bagikan pertanyaan atau tanggapan untuk course ini..."
+              placeholder="Bagikan pertanyaan atau tanggapan untuk course ini... Ketik @ untuk menyebut pengguna"
               className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20"
             />
             <div className="flex justify-end">
@@ -855,7 +917,15 @@ export default function GuruCourseDetailPage() {
                 const replies = Array.isArray(comment.replies) ? comment.replies : [];
 
                 return (
-                  <li key={comment.id} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                  <li
+                    key={comment.id}
+                    id={`comment-${comment.id}`}
+                    className={`scroll-mt-24 rounded-2xl border bg-white p-4 shadow-sm transition ${
+                      highlightCommentId === comment.id
+                        ? "border-emerald-400 ring-2 ring-emerald-300"
+                        : "border-slate-200/80"
+                    }`}
+                  >
                     <div className="flex items-start gap-3">
                       {photo ? (
                         <Image
@@ -880,7 +950,7 @@ export default function GuruCourseDetailPage() {
                             <span className="text-[11px] text-slate-400">{formatCommentDateTime(comment.createdAt)}</span>
                           )}
                         </div>
-                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700">{text}</p>
+                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700">{renderCommentText(text, "font-semibold text-emerald-700")}</p>
 
                         <div className="mt-2">
                           <button
@@ -901,11 +971,12 @@ export default function GuruCourseDetailPage() {
                             {replyPostError && (
                               <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{replyPostError}</p>
                             )}
-                            <textarea
+                            <MentionTextarea
                               value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
+                              onChange={setReplyText}
+                              onMentionsChange={setReplyMentions}
                               rows={2}
-                              placeholder="Tulis balasan..."
+                              placeholder="Tulis balasan... Ketik @ untuk menyebut pengguna"
                               className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20"
                             />
                             <div className="flex justify-end">
@@ -930,7 +1001,15 @@ export default function GuruCourseDetailPage() {
                               const replyContent = reply.komentar || reply.isi || reply.pesan || "";
 
                               return (
-                                <li key={reply.id} className="rounded-xl bg-slate-50 p-3">
+                                <li
+                                  key={reply.id}
+                                  id={`comment-${reply.id}`}
+                                  className={`scroll-mt-24 rounded-xl p-3 transition ${
+                                    highlightCommentId === reply.id
+                                      ? "bg-emerald-50 ring-2 ring-emerald-300"
+                                      : "bg-slate-50"
+                                  }`}
+                                >
                                   <div className="flex items-start gap-2.5">
                                     {replyPhoto ? (
                                       <Image
@@ -955,7 +1034,7 @@ export default function GuruCourseDetailPage() {
                                           <span className="text-[11px] text-slate-400">{formatCommentDateTime(reply.createdAt)}</span>
                                         )}
                                       </div>
-                                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{replyContent}</p>
+                                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{renderCommentText(replyContent, "font-semibold text-emerald-700")}</p>
                                     </div>
                                   </div>
                                 </li>
