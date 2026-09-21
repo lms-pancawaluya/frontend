@@ -6,6 +6,24 @@ interface NotificationDestinationInput {
   role?: string | null;
 }
 
+/** Tipe notifikasi terkait Course Discussion. */
+const COMMENT_NOTIFICATION_TYPES = new Set([
+  "COMMENT_MENTION",
+  "COMMENT_REPLY",
+  "NEW_COMMENT",
+]);
+
+/**
+ * Halaman diskusi Course berbeda per role (pola yang sama dengan Helpdesk).
+ * `course` dipakai sebagai query param agar halaman memilih course yang benar.
+ */
+function resolveDiscussionPath(role: string | null): string | null {
+  if (role === "admin") return "/admin/diskusi";
+  if (role === "pengajar") return "/pengajar/diskusi";
+  if (role === "guru") return "/modules/courses";
+  return null;
+}
+
 function getCanonicalPath(linkUrl: string): string | null {
   const value = linkUrl.trim();
   if (!value || value.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(value)) return null;
@@ -56,6 +74,39 @@ export function resolveNotificationDestination({
     const destination = normalizedRole === "admin" ? "/admin/helpdesk" :
       normalizedRole === "guru" || normalizedRole === "pengajar" ? "/helpdesk" : null;
     return destination ? `${destination}?ticketId=${encodeURIComponent(ticketId)}` : null;
+  }
+
+  if (COMMENT_NOTIFICATION_TYPES.has(type)) {
+    // linkUrl adalah source of truth. Dua bentuk yang didukung:
+    //   /courses/:courseId[?commentId=:commentId]
+    //   /contents/:contentId
+    const commentId = url.searchParams.get("commentId");
+
+    if (url.pathname === "/contents" || url.pathname.startsWith("/contents/")) {
+      const contentId = getPathId(url.pathname, "contents");
+      return contentId ? `/pembelajaran/${encodeURIComponent(contentId)}` : null;
+    }
+
+    const courseId = getPathId(url.pathname, "courses");
+    if (courseId) {
+      const basePath = resolveDiscussionPath(normalizedRole);
+      if (!basePath) return null;
+
+      // Guru memakai route statis /modules/courses/:courseId; Admin/Pengajar
+      // memakai halaman diskusi dengan query `course`.
+      const target =
+        basePath === "/modules/courses"
+          ? `${basePath}/${encodeURIComponent(courseId)}`
+          : `${basePath}?course=${encodeURIComponent(courseId)}`;
+
+      const withComment = commentId
+        ? `${target}${target.includes("?") ? "&" : "?"}commentId=${encodeURIComponent(commentId)}`
+        : target;
+
+      return withComment;
+    }
+
+    return null;
   }
 
   return null;

@@ -9,6 +9,8 @@ import type {
   Comment as DiscussionComment,
   CommentUser,
 } from "@/types/comment";
+import MentionTextarea, { type MentionSelection } from "@/app/components/common/MentionTextarea";
+import { renderCommentText } from "@/lib/mention";
 
 interface CourseItem {
   id: string;
@@ -68,6 +70,8 @@ function AdminDiskusiContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseIdFromUrl = searchParams.get("courseId") || searchParams.get("course");
+  // commentId dari notifikasi diskusi untuk scroll/highlight komentar terkait.
+  const focusedCommentId = searchParams.get("commentId") || "";
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState(courseIdFromUrl || "");
   const [coursesLoading, setCoursesLoading] = useState(true);
@@ -77,11 +81,13 @@ function AdminDiskusiContent() {
   const [commentsError, setCommentsError] = useState("");
 
   const [newComment, setNewComment] = useState("");
+  const [newCommentMentions, setNewCommentMentions] = useState<MentionSelection[]>([]);
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState("");
 
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [replyMentions, setReplyMentions] = useState<MentionSelection[]>([]);
   const [postingReply, setPostingReply] = useState(false);
   const [replyError, setReplyError] = useState("");
 
@@ -152,14 +158,57 @@ function AdminDiskusiContent() {
     };
   }, [selectedCourseId]);
 
+  // Buka/scroll ke komentar terkait saat datang dari notifikasi (?commentId=).
+  // Retry singkat karena komentar bisa muncul setelah bagian awal dimuat.
+  const [highlightCommentId, setHighlightCommentId] = useState("");
+  useEffect(() => {
+    if (!focusedCommentId || commentsLoading || commentsError) return;
+
+    let rafId = 0;
+    let attempts = 0;
+    let highlightTimer: ReturnType<typeof setTimeout> | undefined;
+    let clearTimer: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
+
+    const tryScroll = () => {
+      if (cancelled) return;
+      const el = document.getElementById(`comment-${focusedCommentId}`);
+      if (!el) {
+        if (attempts++ < 30) {
+          rafId = requestAnimationFrame(tryScroll);
+        }
+        return;
+      }
+
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // setState dijadwalkan (bukan sinkron di body effect) untuk highlight sementara.
+      highlightTimer = setTimeout(() => setHighlightCommentId(focusedCommentId), 0);
+      clearTimer = setTimeout(() => setHighlightCommentId(""), 2500);
+    };
+
+    rafId = requestAnimationFrame(tryScroll);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      if (highlightTimer) clearTimeout(highlightTimer);
+      if (clearTimer) clearTimeout(clearTimer);
+    };
+  }, [focusedCommentId, commentsLoading, commentsError, comments]);
+
   async function handlePost(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment.trim() || !selectedCourseId) return;
     try {
       setPosting(true);
       setPostError("");
-      await postComment({ courseId: selectedCourseId, komentar: newComment.trim() });
+      await postComment({
+        courseId: selectedCourseId,
+        komentar: newComment.trim(),
+        mentionedUserIds: newCommentMentions.map((m) => m.id),
+      });
       setNewComment("");
+      setNewCommentMentions([]);
       await loadDiscussion(selectedCourseId);
     } catch (err) {
       setPostError(err instanceof Error ? err.message : "Gagal mengirim komentar.");
@@ -174,8 +223,14 @@ function AdminDiskusiContent() {
     try {
       setPostingReply(true);
       setReplyError("");
-      await postComment({ courseId: selectedCourseId, parentId, komentar: replyText.trim() });
+      await postComment({
+        courseId: selectedCourseId,
+        parentId,
+        komentar: replyText.trim(),
+        mentionedUserIds: replyMentions.map((m) => m.id),
+      });
       setReplyText("");
+      setReplyMentions([]);
       setReplyToId(null);
       await loadDiscussion(selectedCourseId);
     } catch (err) {
@@ -202,12 +257,14 @@ function AdminDiskusiContent() {
   function startReply(commentId: string) {
     setReplyToId(commentId);
     setReplyText("");
+    setReplyMentions([]);
     setReplyError("");
   }
 
   function cancelReply() {
     setReplyToId(null);
     setReplyText("");
+    setReplyMentions([]);
     setReplyError("");
   }
 
@@ -268,12 +325,13 @@ function AdminDiskusiContent() {
               Tulis Komentar
             </label>
             {postError && <p className="mb-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{postError}</p>}
-            <textarea
+            <MentionTextarea
               id="new-comment"
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              onChange={setNewComment}
+              onMentionsChange={setNewCommentMentions}
               rows={3}
-              placeholder="Bagikan tanggapan, arahan, atau jawaban untuk course ini..."
+              placeholder="Bagikan tanggapan, arahan, atau jawaban untuk course ini... Ketik @ untuk menyebut pengguna"
               className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15"
             />
             <div className="flex justify-end">
@@ -309,7 +367,7 @@ function AdminDiskusiContent() {
               const replies = Array.isArray(c.replies) ? c.replies : [];
 
               return (
-                <li key={c.id} className={`rounded-2xl border border-[var(--color-border-soft)] bg-white p-4 shadow-sm transition ${isDeleting ? "opacity-50" : ""}`}>
+                <li key={c.id} id={`comment-${c.id}`} className={`scroll-mt-24 rounded-2xl border bg-white p-4 shadow-sm transition ${isDeleting ? "opacity-50" : ""} ${highlightCommentId === c.id ? "border-emerald-400 ring-2 ring-emerald-300" : "border-[var(--color-border-soft)]"}`}>
                   {/* Root comment */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -334,7 +392,7 @@ function AdminDiskusiContent() {
                           </span>
                           {c.createdAt && <span className="text-[11px] text-gray-400">{formatDateTime(c.createdAt)}</span>}
                         </div>
-                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700">{commentText(c)}</p>
+                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700">{renderCommentText(commentText(c), "font-semibold text-[var(--color-navy)]")}</p>
                         <div className="mt-2">
                           <button
                             type="button"
@@ -352,11 +410,12 @@ function AdminDiskusiContent() {
                             className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2"
                           >
                             {replyError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{replyError}</p>}
-                            <textarea
+                            <MentionTextarea
                               value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
+                              onChange={setReplyText}
+                              onMentionsChange={setReplyMentions}
                               rows={2}
-                              placeholder="Tulis balasan..."
+                              placeholder="Tulis balasan... Ketik @ untuk menyebut pengguna"
                               className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15"
                             />
                             <div className="flex justify-end">
@@ -395,7 +454,7 @@ function AdminDiskusiContent() {
                         const isReplyDeleting = deletingId === reply.id;
 
                         return (
-                          <li key={reply.id} className={`rounded-xl bg-slate-50 p-3 transition ${isReplyDeleting ? "opacity-50" : ""}`}>
+                          <li key={reply.id} id={`comment-${reply.id}`} className={`scroll-mt-24 rounded-xl p-3 transition ${isReplyDeleting ? "opacity-50" : ""} ${highlightCommentId === reply.id ? "bg-emerald-50 ring-2 ring-emerald-300" : "bg-slate-50"}`}>
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex items-start gap-2.5 min-w-0 flex-1">
                                 {rfoto ? (
@@ -419,7 +478,7 @@ function AdminDiskusiContent() {
                                     </span>
                                     {reply.createdAt && <span className="text-[11px] text-gray-400">{formatDateTime(reply.createdAt)}</span>}
                                   </div>
-                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{commentText(reply)}</p>
+                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{renderCommentText(commentText(reply), "font-semibold text-[var(--color-navy)]")}</p>
                                 </div>
                               </div>
                               <button
