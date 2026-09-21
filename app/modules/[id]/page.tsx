@@ -133,8 +133,6 @@ function ModuleVideoPageContent() {
   const moduleId = params.id as string;
 
   const [videoContent, setVideoContent] = useState<ModuleContent | null>(null);
-  const [materials, setMaterials] = useState<ModuleMaterial[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [moduleDescription, setModuleDescription] = useState<string>("");
   const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
@@ -145,6 +143,7 @@ function ModuleVideoPageContent() {
   const [attemptResult, setAttemptResult] = useState<AttemptResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authToken] = useState(getStoredAuthToken);
+  const [courseId, setCourseId] = useState<string | null>(null);
 
   // Progress/status per material dari BE (single source of truth).
   const [materialStatus, setMaterialStatus] = useState<Record<string, MaterialProgressEntry>>({});
@@ -208,8 +207,12 @@ function ModuleVideoPageContent() {
           setModuleDescription(moduleRes.deskripsi);
         }
 
+        const foundCourseId = moduleRes?.courseId || moduleRes?.course_id || null;
+        if (foundCourseId) {
+          setCourseId(foundCourseId);
+        }
+
         const contents = sortMaterialsByUrutan(contentsRes as ModuleMaterial[]);
-        setMaterials(contents);
 
         // Muat status per-material dari progress BE (single source of truth).
         void refreshMaterialStatus();
@@ -220,7 +223,6 @@ function ModuleVideoPageContent() {
           // Tanpa index eksplisit, mulai dari material pertama (paling kecil
           // `urutan`-nya) — bukan dari tipe tertentu (mis. video).
           const targetIndex = hasRequestedIndex ? requestedIndex : 0;
-          setCurrentIndex(targetIndex);
 
           const target = contents[targetIndex];
           if (target && isVideoMaterial(target.tipe)) {
@@ -252,11 +254,11 @@ function ModuleVideoPageContent() {
             router.replace(getMaterialRoute(moduleId, contents, targetIndex));
           } else {
             setResolutionStatus("error");
-            router.replace(`/modules/${moduleId}/evaluations?stage=post`);
+            router.replace(foundCourseId ? `/modules/courses/${foundCourseId}` : "/modules");
           }
         } else {
           setResolutionStatus("error");
-          setErrorMessage(`Modul tidak ditemukan atau tidak memiliki konten.`);
+          router.replace(foundCourseId ? `/modules/courses/${foundCourseId}` : "/modules");
         }
       } catch (err) {
         console.error("Gagal memuat konten pembelajaran:", err);
@@ -284,8 +286,8 @@ function ModuleVideoPageContent() {
     maxWatchedTimeRef.current = 0;
   }, [videoContent]);
 
-  // Laporkan progress video ke BE. Throttle: kirim saat kenaikan >= 5% atau saat
-  // mencapai 100%. Video hanya di-`complete` saat progress benar-benar 100%.
+  // Laporkan progress video ke BE. Completion diproses terpisah setelah video
+  // mencapai 100% dan seluruh Mini Quiz dinyatakan lolos.
   const reportVideoProgress = useCallback((percent: number) => {
     const contentId = videoContentIdRef.current;
     if (!contentId) return;
@@ -297,27 +299,20 @@ function ModuleVideoPageContent() {
     if (clamped <= lastReported && clamped < 100) return;
 
     if (clamped >= 100) {
-      if (completionSentRef.current) return;
-      completionSentRef.current = true;
       lastReportedPercentRef.current = 100;
-
-      // Laporkan 100% lalu tandai selesai. BE yang menegakkan syarat Mini Quiz.
-      reportContentProgress(contentId, 100)
-        .then(() => completeContent(contentId))
-        .then(() => refreshMaterialStatus())
-        .catch((err) => console.warn("Gagal menyelesaikan materi video:", err));
+      reportContentProgress(contentId, 100).catch((err) =>
+        console.warn("Gagal mengirim progress video:", err)
+      );
       return;
     }
 
     if (clamped - lastReported < 5) return;
     lastReportedPercentRef.current = clamped;
 
-    // Hanya laporkan; status final diambil ulang saat completion (di bawah),
-    // sehingga tidak ada request GET berulang yang tidak perlu.
     reportContentProgress(contentId, clamped).catch((err) =>
       console.warn("Gagal mengirim progress video:", err)
     );
-  }, [refreshMaterialStatus]);
+  }, []);
 
   // Evaluasi waktu pemutaran video
   const checkTimeAndTriggers = useCallback((cTime: number, dur: number) => {
@@ -377,6 +372,22 @@ function ModuleVideoPageContent() {
       }
     }
   }, [reportVideoProgress]);
+
+  const completeVideoMaterial = useCallback(async () => {
+    const contentId = videoContentIdRef.current;
+    if (!contentId || completionSentRef.current) return false;
+
+    completionSentRef.current = true;
+    try {
+      await completeContent(contentId);
+      await refreshMaterialStatus();
+      return true;
+    } catch (err) {
+      completionSentRef.current = false;
+      console.warn("Gagal menyelesaikan materi video:", err);
+      return false;
+    }
+  }, [refreshMaterialStatus]);
 
   // Inisialisasi Pemutar YouTube Iframe API
   useEffect(() => {
@@ -489,7 +500,7 @@ function ModuleVideoPageContent() {
         timerIntervalRef.current = null;
       }
     };
-  }, [videoContent, checkTimeAndTriggers, reportVideoProgress]);
+  }, [videoContent, checkTimeAndTriggers, reportVideoProgress, completeVideoMaterial]);
 
   // Pengiriman jawaban kuis
   const handleSubmitQuiz = async (e: React.FormEvent) => {
@@ -596,7 +607,7 @@ function ModuleVideoPageContent() {
         {/* Bilah Navigasi dan Status */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <button
-            onClick={() => router.push(`/modules/${moduleId}`)}
+            onClick={() => router.push(courseId ? `/modules/courses/${courseId}` : "/modules")}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group"
           >
             <span className="p-1.5 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors">
@@ -604,7 +615,7 @@ function ModuleVideoPageContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </span>
-            Kembali ke Pengantar Modul
+            Kembali ke Detail Course
           </button>
 
           <div className="flex items-center gap-2">
@@ -854,7 +865,7 @@ function ModuleVideoPageContent() {
           </div>
 
           <button
-            onClick={() => isVideoFinished && router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
+            onClick={() => isVideoFinished && router.push(courseId ? `/modules/courses/${courseId}` : "/modules")}
             disabled={!isVideoFinished}
             className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-xs sm:text-sm rounded-2xl transition-all duration-200 ${
               isVideoFinished
@@ -862,7 +873,7 @@ function ModuleVideoPageContent() {
                 : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60 shadow-none"
             }`}
           >
-            <span>{currentIndex + 1 >= materials.length ? "Lanjut ke Post-Test" : "Lanjut ke Materi Berikutnya"}</span>
+            <span>Kembali ke Detail Course</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   getModuleEvaluations,
@@ -27,8 +27,10 @@ function getErrorMessage(error: unknown, fallback: string) {
 export default function EvaluationDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const moduleId = params.id as string;
+  const courseIdFromUrl = searchParams.get("courseId");
   const evaluationId = params.evaluationId as string;
 
   const [summary, setSummary] = useState<EvaluationSummary | null>(null);
@@ -39,6 +41,7 @@ export default function EvaluationDetailPage() {
   const [stageBlocked, setStageBlocked] = useState(false);
   // Status stage terbaru dari BE (source of truth), di-refresh setelah submit.
   const [moduleStage, setModuleStage] = useState<ModuleStageProgress>({});
+  const [courseId, setCourseId] = useState<string | null>(courseIdFromUrl);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -50,6 +53,9 @@ export default function EvaluationDetailPage() {
   const refreshStageProgress = useCallback(async (): Promise<ModuleStageProgress | null> => {
     const moduleData = await getModuleById(moduleId);
     if (!moduleData) return null;
+    if (moduleData.courseId || moduleData.course_id) {
+      setCourseId(moduleData.courseId || moduleData.course_id);
+    }
     const progress = readModuleStageProgress(moduleData);
     setModuleStage(progress);
     return progress;
@@ -61,12 +67,17 @@ export default function EvaluationDetailPage() {
       setLoadError(null);
       setStageBlocked(false);
       try {
-        // Ambil daftar evaluasi (untuk tahu `tipe`, passingScore, maxAttempts milik
-        // evaluationId ini) sekaligus detail soal-nya secara paralel.
-        const [list, detail] = await Promise.all([
+        // Ambil data module & daftar evaluasi & detail soal secara paralel.
+        const [moduleData, list, detail] = await Promise.all([
+          getModuleById(moduleId).catch(() => null),
           getModuleEvaluations(moduleId) as Promise<EvaluationSummary[]>,
           getEvaluationDetail(moduleId, evaluationId) as Promise<EvaluationDetailData>,
         ]);
+
+        const moduleCourseId = moduleData?.courseId || moduleData?.course_id || null;
+        if (moduleCourseId) {
+          setCourseId(moduleCourseId);
+        }
 
         const currentSummary = Array.isArray(list)
           ? list.find((e) => e.id === evaluationId) || null
@@ -76,7 +87,8 @@ export default function EvaluationDetailPage() {
         // Status diambil dari progress BE pada Module (single source of truth).
         const tipe = currentSummary?.tipe ?? detail?.tipe;
         if (isPostTest(tipe)) {
-          const progress = await refreshStageProgress();
+          const progress = moduleData ? readModuleStageProgress(moduleData) : await refreshStageProgress();
+          if (moduleData) setModuleStage(progress ?? {});
           if (!progress) {
             throw new Error("Gagal memuat status tahapan modul.");
           }
@@ -145,14 +157,13 @@ export default function EvaluationDetailPage() {
         tipe
       )) as SubmitEvaluationResult;
 
+      // Setelah submit, ambil ulang flag stage dari GET /api/modules/:id.
+      // Result evaluasi tidak dipakai untuk membuka stage.
+      const updatedStage = await refreshStageProgress();
+      if (!updatedStage) {
+        throw new Error("Gagal memuat status tahapan terbaru dari server.");
+      }
       setResult(submitResult);
-
-      // Setelah submit, ambil status stage terbaru dari BE agar Course Detail &
-      // stage gating (Pre-Test → Material → Post-Test) memakai status resmi BE.
-      // Tidak menyimpan completion state lokal.
-      await refreshStageProgress().catch((err) =>
-        console.warn("Gagal me-refresh status tahapan setelah submit:", err)
-      );
     } catch (err) {
       setSubmitError(getErrorMessage(err, "Gagal mengirim jawaban asesmen."));
     } finally {
@@ -190,6 +201,8 @@ export default function EvaluationDetailPage() {
     );
   }
 
+  const courseDetailUrl = courseId ? `/modules/courses/${courseId}` : `/modules?moduleId=${moduleId}`;
+
   if (stageBlocked) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
@@ -203,10 +216,10 @@ export default function EvaluationDetailPage() {
             mengerjakan Post-Test.
           </p>
           <button
-            onClick={() => router.push(`/modules/${moduleId}/evaluations`)}
+            onClick={() => router.push(courseDetailUrl)}
             className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-full transition"
           >
-            Kembali ke Modul
+            Kembali ke Detail Course
           </button>
         </div>
       </div>
@@ -218,13 +231,13 @@ export default function EvaluationDetailPage() {
       {/* Header Navigasi & Judul */}
       <div className="mb-8">
         <Link
-          href={`/modules/${moduleId}`}
+          href={courseDetailUrl}
           className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-accent)] hover:text-[var(--color-navy)] mb-4 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Kembali ke Modul
+          Kembali ke Detail Course
         </Link>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[var(--color-border-soft)] shadow-sm">
@@ -348,20 +361,20 @@ export default function EvaluationDetailPage() {
 
           {result.isLolos ? (
             <button
-              onClick={() => router.push(`/modules/${moduleId}`)}
+              onClick={() => router.push(courseDetailUrl)}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
             >
-              <span>{preTest ? "Lanjut ke Materi Pembelajaran" : "Kembali ke Daftar Modul"}</span>
+              <span>Kembali ke Detail Course</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </button>
           ) : result.mustRepeat ? (
             <button
-              onClick={() => router.push(`/modules/${moduleId}`)}
+              onClick={() => router.push(courseDetailUrl)}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
             >
-              Kembali ke Awal Modul
+              Kembali ke Detail Course
             </button>
           ) : (
             <button

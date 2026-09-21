@@ -5,9 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getCourseById } from "@/services/course.service";
-import { getModuleContents, getModules } from "@/services/module.service";
+import { getModuleById, getModuleContents, getModules } from "@/services/module.service";
 import { getModuleEvaluations } from "@/services/evaluation.service";
-import { getProgress } from "@/services/progress.service";
 import { getCourseComments, postComment } from "@/services/comment.service";
 import type { Comment as DiscussionComment, CommentUser } from "@/types/comment";
 import {
@@ -21,7 +20,6 @@ import {
   isMaterialLocked,
   isPostTestLocked,
   readModuleStageProgress,
-  readProgressModuleId,
   type ModuleStageProgress,
 } from "@/lib/moduleStages";
 import { isCourseCompletedByBackend } from "@/lib/certificate";
@@ -92,33 +90,6 @@ function formatCommentDateTime(raw?: string): string {
   });
 }
 
-/**
- * Memetakan per-stage completion flags dari BE, keyed by moduleId.
- * Sumber utama: GET /api/progress (list progress per module). Field stage yang
- * menempel pada Module entity (GET /api/modules/:id) melengkapi/menimpa.
- */
-function buildStageProgress(
-  modulesList: CourseModule[],
-  progressList: unknown[]
-): Record<string, ModuleStageProgress> {
-  const map: Record<string, ModuleStageProgress> = {};
-
-  if (Array.isArray(progressList)) {
-    progressList.forEach((item) => {
-      const moduleId = readProgressModuleId(item);
-      if (!moduleId) return;
-      map[moduleId] = { ...(map[moduleId] || {}), ...readModuleStageProgress(item) };
-    });
-  }
-
-  modulesList.forEach((module) => {
-    const fromModule = readModuleStageProgress(module);
-    map[module.id] = { ...(map[module.id] || {}), ...fromModule };
-  });
-
-  return map;
-}
-
 export default function GuruCourseDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -159,8 +130,19 @@ export default function GuruCourseDetailPage() {
   const [replyPostError, setReplyPostError] = useState("");
 
   const loadStageProgress = useCallback(async (modulesList: CourseModule[]) => {
-    const progressList = await getProgress();
-    setStageProgress(buildStageProgress(modulesList, Array.isArray(progressList) ? progressList : []));
+    // GET /api/modules/:id adalah contract stage completion BE. Jangan gunakan
+    // /api/progress karena endpoint tersebut sedang gagal 500 dan bukan sumber
+    // yang diperlukan untuk gating Course Detail.
+    const moduleDetails = await Promise.all(
+      modulesList.map((module) => getModuleById(module.id).catch(() => null))
+    );
+
+    const progressMap: Record<string, ModuleStageProgress> = {};
+    modulesList.forEach((module, index) => {
+      const detail = moduleDetails[index];
+      progressMap[module.id] = readModuleStageProgress(detail || module);
+    });
+    setStageProgress(progressMap);
   }, []);
 
   // Baca sertifikat milik user untuk course ini langsung dari BE.
@@ -579,6 +561,7 @@ export default function GuruCourseDetailPage() {
                 const preTestCompleted = progress.preTestCompleted === true;
                 const materialCompleted = progress.materialCompleted === true;
                 const postTestCompleted = progress.postTestCompleted === true;
+                const isModuleCompleted = preTestCompleted && materialCompleted && postTestCompleted;
                 const materialLocked = isMaterialLocked(progress);
                 const postTestLocked = isPostTestLocked(progress);
 
@@ -606,11 +589,15 @@ export default function GuruCourseDetailPage() {
                               Terkunci
                             </span>
                           )}
-                          {typeof module.progressPercentage === "number" && (
+                          {isModuleCompleted ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Selesai
+                            </span>
+                          ) : typeof module.progressPercentage === "number" ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               {module.progressPercentage}%
                             </span>
-                          )}
+                          ) : null}
                         </div>
                         <p className="text-sm font-semibold text-slate-800 truncate">
                           {getModuleTitle(module)}
@@ -674,7 +661,7 @@ export default function GuruCourseDetailPage() {
                               </div>
                               {overview?.preTestId ? (
                                 <Link
-                                  href={`/modules/${module.id}/evaluations/${overview.preTestId}`}
+                                  href={`/modules/${module.id}/evaluations/${overview.preTestId}?courseId=${id}`}
                                   className={`mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-white text-xs font-semibold rounded-full transition ${
                                     preTestCompleted
                                       ? "bg-sky-600 hover:bg-sky-700"
@@ -730,7 +717,7 @@ export default function GuruCourseDetailPage() {
                                 </span>
                               ) : overview?.hasMaterials ? (
                                 <Link
-                                  href={`/modules/${module.id}`}
+                                  href={`/modules/${module.id}?courseId=${id}`}
                                   className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-700 text-white text-xs font-semibold rounded-full hover:bg-emerald-800 transition"
                                 >
                                   {materialCompleted ? "Lanjutkan Belajar" : "Mulai Belajar"}
@@ -782,7 +769,7 @@ export default function GuruCourseDetailPage() {
                                 </span>
                               ) : overview?.postTestId ? (
                                 <Link
-                                  href={`/modules/${module.id}/evaluations/${overview.postTestId}`}
+                                  href={`/modules/${module.id}/evaluations/${overview.postTestId}?courseId=${id}`}
                                   className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-700 text-white text-xs font-semibold rounded-full hover:bg-purple-800 transition"
                                 >
                                   {postTestCompleted ? "Lanjutkan Post-Test" : "Mulai Post-Test"}

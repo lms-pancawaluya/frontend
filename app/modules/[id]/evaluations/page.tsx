@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getModuleEvaluations } from "@/services/evaluation.service";
+import { getModuleById } from "@/services/module.service";
 import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -19,16 +20,20 @@ export default function ModuleEvaluationsIndexPage() {
   useEffect(() => {
     async function redirectToTarget() {
       try {
-        const evaluations = (await getModuleEvaluations(moduleId)) as EvaluationSummary[];
+        const [moduleData, evaluationsRes] = await Promise.all([
+          getModuleById(moduleId).catch(() => null),
+          getModuleEvaluations(moduleId).catch(() => []),
+        ]);
+
+        const courseId = moduleData?.courseId || moduleData?.course_id;
+        const courseDetailUrl = courseId ? `/modules/courses/${courseId}` : "/modules";
+        const evaluations = Array.isArray(evaluationsRes) ? (evaluationsRes as EvaluationSummary[]) : [];
 
         if (!evaluations || evaluations.length === 0) {
-          setError("Belum ada Pre-Test atau Post-Test yang dibuat untuk modul ini.");
+          router.replace(courseDetailUrl);
           return;
         }
 
-        // Sequencing: Pre-Test → Learning Material → Post-Test.
-        // `?stage=post` dipakai setelah seluruh material selesai agar langsung
-        // menuju Post-Test; default (masuk dari awal modul) menuju Pre-Test.
         const preTest = evaluations.find((e) => isPreTest(e.tipe));
         const postTest = evaluations.find((e) => isPostTest(e.tipe));
         const wantsPostStage = searchParams.get("stage") === "post";
@@ -36,6 +41,11 @@ export default function ModuleEvaluationsIndexPage() {
         const target = wantsPostStage
           ? postTest || preTest || evaluations[0]
           : preTest || postTest || evaluations[0];
+
+        if (!target) {
+          router.replace(courseDetailUrl);
+          return;
+        }
 
         router.replace(`/modules/${moduleId}/evaluations/${target.id}`);
       } catch (err: unknown) {
