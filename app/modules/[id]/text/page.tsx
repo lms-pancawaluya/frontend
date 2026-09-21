@@ -13,6 +13,7 @@ import {
   isTextMaterial,
   isVideoMaterial,
   sortMaterialsByUrutan,
+  type ModuleMaterial,
 } from "@/lib/materials";
 
 interface ModuleContent {
@@ -49,6 +50,8 @@ function ModuleTextPageContent() {
   const moduleId = params.id as string;
 
   const [material, setMaterial] = useState<ModuleContent | null>(null);
+  const [materials, setMaterials] = useState<ModuleMaterial[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [moduleDescription, setModuleDescription] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -92,7 +95,8 @@ function ModuleTextPageContent() {
           setCourseId(foundCourseId);
         }
 
-        const ordered = sortMaterialsByUrutan(contents as ModuleContent[]);
+        const ordered = sortMaterialsByUrutan(contents as ModuleMaterial[]);
+        setMaterials(ordered);
         void refreshMaterialStatus();
 
         if (!ordered || ordered.length === 0) {
@@ -102,6 +106,7 @@ function ModuleTextPageContent() {
 
         const requestedIndex = Number(searchParams.get("i"));
         const index = Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < ordered.length ? requestedIndex : 0;
+        setCurrentIndex(index);
 
         const active = ordered[index];
         if (active && isVideoMaterial(active.tipe)) {
@@ -155,8 +160,7 @@ function ModuleTextPageContent() {
     try {
       await completeContent(material.id);
       await refreshMaterialStatus();
-      const courseDetailUrl = courseId ? `/modules/courses/${courseId}` : "/modules";
-      router.push(courseDetailUrl);
+      router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));
     } catch (err) {
       setCompleteError(err instanceof Error ? err.message : "Gagal menandai materi selesai.");
     } finally {
@@ -348,10 +352,10 @@ function ModuleTextPageContent() {
         </div>
 
         <button
-          onClick={() => router.push(courseDetailUrl)}
+          onClick={() => router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
           className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition"
         >
-          Kembali ke Detail Course
+          {currentIndex + 1 < materials.length ? "Materi Berikutnya" : "Kembali ke Detail Course"}
         </button>
       </div>
     </div>

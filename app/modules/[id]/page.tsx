@@ -133,6 +133,8 @@ function ModuleVideoPageContent() {
   const moduleId = params.id as string;
 
   const [videoContent, setVideoContent] = useState<ModuleContent | null>(null);
+  const [materials, setMaterials] = useState<ModuleMaterial[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [moduleDescription, setModuleDescription] = useState<string>("");
   const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
@@ -213,6 +215,7 @@ function ModuleVideoPageContent() {
         }
 
         const contents = sortMaterialsByUrutan(contentsRes as ModuleMaterial[]);
+        setMaterials(contents);
 
         // Muat status per-material dari progress BE (single source of truth).
         void refreshMaterialStatus();
@@ -223,6 +226,7 @@ function ModuleVideoPageContent() {
           // Tanpa index eksplisit, mulai dari material pertama (paling kecil
           // `urutan`-nya) — bukan dari tipe tertentu (mis. video).
           const targetIndex = hasRequestedIndex ? requestedIndex : 0;
+          setCurrentIndex(targetIndex);
 
           const target = contents[targetIndex];
           if (target && isVideoMaterial(target.tipe)) {
@@ -389,6 +393,10 @@ function ModuleVideoPageContent() {
     }
   }, [refreshMaterialStatus]);
 
+  const goToNextMaterial = useCallback(() => {
+    router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));
+  }, [currentIndex, materials, moduleId, router]);
+
   // Inisialisasi Pemutar YouTube Iframe API
   useEffect(() => {
     if (!videoContent) return;
@@ -500,7 +508,7 @@ function ModuleVideoPageContent() {
         timerIntervalRef.current = null;
       }
     };
-  }, [videoContent, checkTimeAndTriggers, reportVideoProgress, completeVideoMaterial]);
+  }, [videoContent, checkTimeAndTriggers, reportVideoProgress]);
 
   // Pengiriman jawaban kuis
   const handleSubmitQuiz = async (e: React.FormEvent) => {
@@ -865,7 +873,10 @@ function ModuleVideoPageContent() {
           </div>
 
           <button
-            onClick={() => isVideoFinished && router.push(courseId ? `/modules/courses/${courseId}` : "/modules")}
+            onClick={async () => {
+              if (!isVideoFinished) return;
+              if (await completeVideoMaterial()) goToNextMaterial();
+            }}
             disabled={!isVideoFinished}
             className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-xs sm:text-sm rounded-2xl transition-all duration-200 ${
               isVideoFinished
@@ -873,7 +884,7 @@ function ModuleVideoPageContent() {
                 : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60 shadow-none"
             }`}
           >
-            <span>Kembali ke Detail Course</span>
+            <span>{currentIndex + 1 < materials.length ? "Materi Berikutnya" : "Kembali ke Detail Course"}</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
