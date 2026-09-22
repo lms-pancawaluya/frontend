@@ -7,7 +7,10 @@ import {
   createTicket,
   getTicketDetail,
   replyToTicket,
+  getTicketCategories,
 } from "@/services/helpdesk.service";
+import { getCourses } from "@/services/course.service";
+import CourseFeedbackForm from "@/app/components/common/CourseFeedbackForm";
 
 // Bentuk tiket dari backend belum dikonfirmasi sepenuhnya, jadi seluruh
 // field bersifat opsional dan dirender secara defensif (pola fallback nama
@@ -141,22 +144,32 @@ function isTicketClosed(status?: string): boolean {
 }
 
 /**
- * Batas 2 pesan berturut-turut dari guru sebelum admin/pengajar membalas.
+ * Role yang bertindak sebagai requester pada Helpdesk (membuat & membalas
+ * tiket mereka sendiri): Guru dan Pengajar. Admin bersifat ticket manager.
+ */
+function isRequesterRole(role?: string): boolean {
+  const r = String(role || "").toLowerCase();
+  return r === "guru" || r === "pengajar";
+}
+
+/**
+ * Batas 2 pesan berturut-turut dari requester (Guru/Pengajar) sebelum
+ * admin/pengajar membalas. Berlaku sama untuk Guru dan Pengajar.
  * ponytail: frontend-only enforcement — upgrade ketika BE mengonfirmasi server-side.
  */
-const GURU_CONSECUTIVE_LIMIT = 2;
+const REQUESTER_CONSECUTIVE_LIMIT = 2;
 
-function isGuruReplyBlocked(replies: Reply[]): boolean {
+function isRequesterReplyBlocked(replies: Reply[]): boolean {
   if (replies.length === 0) return false;
   let consecutive = 0;
   // Hitung dari pesan terakhir ke belakang.
   for (let i = replies.length - 1; i >= 0; i--) {
-    const role = String(replies[i].sender?.role || "").toLowerCase();
-    if (role === "guru") {
+    const role = replies[i].sender?.role;
+    if (isRequesterRole(role)) {
       consecutive++;
-      if (consecutive >= GURU_CONSECUTIVE_LIMIT) return true;
+      if (consecutive >= REQUESTER_CONSECUTIVE_LIMIT) return true;
     } else {
-      break; // pesan non-guru ditemukan, hentikan hitungan
+      break; // pesan dari sisi lain (admin) ditemukan, hentikan hitungan
     }
   }
   return false;
@@ -170,15 +183,19 @@ const TUTORIAL_ITEMS: { title: string; body: string }[] = [
   },
   {
     title: "Cara melihat dan membalas tiket",
-    body: "Klik salah satu tiket pada daftar untuk membuka detail tiket. Di dalam pop-up, Anda dapat melihat informasi tiket, membaca percakapan, dan mengirim balasan. Anda dapat mengirim maksimal 2 pesan berturut-turut — setelah itu, tunggu balasan dari admin/pengajar sebelum mengirim pesan berikutnya.",
+    body: "Klik salah satu tiket pada daftar untuk membuka detail tiket. Di dalam pop-up, Anda dapat melihat informasi tiket, membaca percakapan, dan mengirim balasan. Anda dapat mengirim maksimal 2 pesan berturut-turut pada satu tiket. Setelah mengirim 2 pesan berturut-turut, Anda perlu menunggu balasan dari Admin terlebih dahulu sebelum dapat mengirim pesan berikutnya.",
   },
   {
     title: "Arti status tiket",
     body: "Open (biru): tiket baru diterima dan belum diproses. In Progress (kuning): tiket sedang ditangani oleh tim/fasilitator. Resolved (hijau): kendala sudah ditangani. Closed (hijau): tiket ditutup. Status di luar itu ditampilkan netral (abu-abu). Guru tidak dapat mengubah status tiket.",
   },
   {
+    title: "Saran & Masukan",
+    body: "Gunakan fitur Saran & Masukan untuk menyampaikan masukan atau saran perbaikan terhadap sebuah Course — bukan untuk kendala teknis (gunakan tiket bantuan untuk itu). Batasnya berlaku per Course: untuk setiap Course, Anda hanya dapat mengirim 1 kali saran & masukan dalam periode 7×24 jam (7 hari) untuk mencegah spam. Jika masih dalam periode tersebut, Anda perlu menunggu sampai masa tunggu selesai sebelum dapat mengirim saran & masukan lagi untuk Course yang sama. Anda tetap dapat mengirim saran & masukan untuk Course lain.",
+  },
+  {
     title: "Kapan sebaiknya membuat tiket",
-    body: "Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan Pre-Test atau Post-Test, atau masalah pada akun. Untuk masukan atau saran umum terhadap modul, gunakan fitur Saran & Kritik, bukan tiket bantuan.",
+    body: "Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan Pre-Test atau Post-Test, atau masalah pada akun. Untuk masukan atau saran umum terhadap sebuah Course, gunakan fitur Saran & Masukan, bukan tiket bantuan.",
   },
 ];
 
@@ -207,6 +224,11 @@ function HelpdeskContent() {
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Master kategori tiket dari BE (single source of truth, tanpa hardcode).
+  const [ticketCategories, setTicketCategories] = useState<{ value: string; label: string }[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesError, setCategoriesError] = useState("");
+
   // State modal detail tiket
   const [detailTicketId, setDetailTicketId] = useState<string | null>(null);
   const [detailTicket, setDetailTicket] = useState<TicketDetail | null>(null);
@@ -219,6 +241,12 @@ function HelpdeskContent() {
 
   // Quick Tutorial: indeks item yang sedang terbuka (bisa lebih dari satu).
   const [openTutorials, setOpenTutorials] = useState<number[]>([]);
+
+  // Saran & Masukan: daftar course guru (untuk konteks Course) + pilihan aktif.
+  const [courses, setCourses] = useState<{ id: string; judul?: string }[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const [coursesError, setCoursesError] = useState("");
+  const [selectedCourseId, setSelectedCourseId] = useState("");
 
   function toggleTutorial(index: number) {
     setOpenTutorials((prev) =>
@@ -252,6 +280,65 @@ function HelpdeskContent() {
     };
   }, [refreshKey]);
 
+  // ---------- Fetch daftar course (konteks Saran & Masukan) ----------
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchCourses() {
+      try {
+        setCoursesLoading(true);
+        setCoursesError("");
+        const data = await getCourses();
+        if (!active) return;
+        const list: Array<{ id?: string; judul?: string }> = Array.isArray(data) ? data : [];
+        const mapped = list
+          .filter((c) => Boolean(c && c.id))
+          .map((c) => ({ id: String(c.id), judul: c.judul }));
+        setCourses(mapped);
+        if (mapped.length > 0) setSelectedCourseId(mapped[0].id);
+      } catch (err) {
+        if (!active) return;
+        setCoursesError(err instanceof Error ? err.message : "Gagal memuat daftar course.");
+      } finally {
+        if (active) setCoursesLoading(false);
+      }
+    }
+
+    fetchCourses();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // ---------- Fetch master kategori tiket ----------
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchCategories() {
+      try {
+        setCategoriesLoading(true);
+        setCategoriesError("");
+        const data = await getTicketCategories();
+        if (!active) return;
+        setTicketCategories(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!active) return;
+        setCategoriesError(
+          err instanceof Error ? err.message : "Gagal memuat kategori tiket."
+        );
+      } finally {
+        if (active) setCategoriesLoading(false);
+      }
+    }
+
+    fetchCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // ---------- Modal Buat Tiket ----------
 
   function handleOpenCreateModal() {
@@ -270,8 +357,21 @@ function HelpdeskContent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    // Kategori wajib dipilih dari master BE. Jika kategori gagal dimuat,
+    // jangan submit dengan kategori yang tidak valid.
+    if (categoriesError) {
+      setFormError("Kategori tiket gagal dimuat. Muat ulang halaman untuk mencoba lagi.");
+      return;
+    }
+
     if (!subject.trim() || !category.trim() || !description.trim()) {
       setFormError("Subjek, kategori, dan deskripsi wajib diisi.");
+      return;
+    }
+
+    const isValidCategory = ticketCategories.some((c) => c.value === category);
+    if (!isValidCategory) {
+      setFormError("Silakan pilih kategori tiket yang valid.");
       return;
     }
 
@@ -326,6 +426,14 @@ function HelpdeskContent() {
     return () => window.clearTimeout(timeoutId);
   }, [handleOpenDetailModal, searchParams]);
 
+  // Buka modal Buat Tiket dari URL parameter (mis. dari submenu Sidebar).
+  useEffect(() => {
+    if (searchParams.get("create") !== "1") return;
+
+    const timeoutId = window.setTimeout(() => handleOpenCreateModal(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchParams]);
+
   function handleCloseDetailModal() {
     if (replySending) return;
     setDetailTicketId(null);
@@ -367,7 +475,7 @@ function HelpdeskContent() {
   const detailBadge = detailTicket ? getStatusBadge(detailTicket.status) : null;
   const detailDescription = detailTicket ? getDescription(detailTicket) : "";
   const ticketIsClosed = detailTicket ? isTicketClosed(detailTicket.status) : false;
-  const guruBlocked = isGuruReplyBlocked(detailReplies);
+  const requesterBlocked = isRequesterReplyBlocked(detailReplies);
 
   return (
     <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden">
@@ -383,28 +491,40 @@ function HelpdeskContent() {
         <div className="bg-gradient-to-r from-[#0047A5] via-[#0052C2] to-[#109B51] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="max-w-2xl space-y-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md text-amber-300 border border-white/20">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                Pusat Bantuan Guru
-              </span>
-              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Bantuan / Tiket</h1>
-              <p className="text-slate-100 text-xs sm:text-sm leading-relaxed opacity-90">
-                Ajukan kendala teknis atau pertanyaan seputar pembelajaran. Pantau status tiket yang
-                telah Anda buat di bawah ini.
-              </p>
-            </div>
-
-            <button
-              onClick={handleOpenCreateModal}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#F3BF10] hover:bg-amber-400 text-[#0047A5] text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-amber-400/20 transition-all duration-200 self-start shrink-0"
+          <div className="relative z-10 space-y-4">
+            <a
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span>Buat Tiket</span>
-            </button>
+              <span>Kembali ke Dashboard</span>
+            </a>
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="max-w-2xl space-y-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md text-amber-300 border border-white/20">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  Pusat Bantuan Guru
+                </span>
+                <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Bantuan / Tiket</h1>
+                <p className="text-slate-100 text-xs sm:text-sm leading-relaxed opacity-90">
+                  Ajukan kendala teknis atau pertanyaan seputar pembelajaran. Pantau status tiket yang
+                  telah Anda buat di bawah ini.
+                </p>
+              </div>
+
+              <button
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#F3BF10] hover:bg-amber-400 text-[#0047A5] text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-amber-400/20 transition-all duration-200 self-start shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Buat Tiket</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -525,6 +645,76 @@ function HelpdeskContent() {
           </div>
         )}
 
+        {/* ================= SARAN & MASUKAN (Course-level) ================= */}
+        <section aria-labelledby="saran-masukan-heading" className="space-y-3">
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-4 h-4 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M7 8h10M7 12h6m-1 9l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v9a2 2 0 01-2 2h-6l-4 4z"
+              />
+            </svg>
+            <h2 id="saran-masukan-heading" className="text-sm font-bold text-slate-700">
+              Saran &amp; Masukan
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 space-y-4">
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Sampaikan saran dan masukan untuk sebuah course. Untuk kendala teknis, gunakan
+              fitur tiket bantuan di atas.
+            </p>
+
+            {coursesLoading ? (
+              <p className="text-xs text-slate-400">Memuat daftar course...</p>
+            ) : coursesError ? (
+              <p className="text-xs text-rose-500">{coursesError}</p>
+            ) : courses.length === 0 ? (
+              <p className="text-xs italic text-slate-400">
+                Belum ada course yang tersedia untuk diberi saran &amp; masukan.
+              </p>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="saran-course-select"
+                    className="text-xs font-semibold text-slate-600"
+                  >
+                    Pilih Course <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="saran-course-select"
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
+                  >
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.judul || c.id}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedCourseId && (
+                  <CourseFeedbackForm
+                    key={selectedCourseId}
+                    courseId={selectedCourseId}
+                    courseTitle={courses.find((c) => c.id === selectedCourseId)?.judul}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </section>
+
         {/* ================= QUICK TUTORIAL (statis) ================= */}
         <section aria-labelledby="tutorial-heading" className="space-y-3">
           <div className="flex items-center gap-2">
@@ -595,15 +785,6 @@ function HelpdeskContent() {
             })}
           </div>
         </section>
-
-        <div className="text-center">
-          <a
-            href="/dashboard"
-            className="text-xs font-semibold text-slate-500 hover:text-[#0047A5] transition-colors"
-          >
-            ← Kembali ke Dashboard
-          </a>
-        </div>
       </div>
 
       {/* ================= MODAL BUAT TIKET ================= */}
@@ -652,15 +833,36 @@ function HelpdeskContent() {
                 <label htmlFor="create-category" className="text-xs font-semibold text-slate-600">
                   Kategori <span className="text-red-500">*</span>
                 </label>
-                <input
-                  id="create-category"
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="mis. Materi & Video, Akun, Pre-Test/Post-Test"
-                  className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
-                  required
-                />
+                {categoriesLoading ? (
+                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                    Memuat kategori...
+                  </p>
+                ) : categoriesError ? (
+                  <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5">
+                    {categoriesError}
+                  </p>
+                ) : ticketCategories.length === 0 ? (
+                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                    Kategori tiket belum tersedia.
+                  </p>
+                ) : (
+                  <select
+                    id="create-category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
+                    required
+                  >
+                    <option value="" disabled>
+                      Pilih kategori
+                    </option>
+                    {ticketCategories.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -809,15 +1011,15 @@ function HelpdeskContent() {
                     ) : (
                       <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                         {detailReplies.map((r, idx) => {
-                          const isGuru = String(r.sender?.role || "").toLowerCase() === "guru";
+                          const isRequester = isRequesterRole(r.sender?.role);
                           return (
                             <div
                               key={r.id || idx}
-                              className={`flex ${isGuru ? "justify-end" : "justify-start"}`}
+                              className={`flex ${isRequester ? "justify-end" : "justify-start"}`}
                             >
                               <div
                                 className={`max-w-[85%] rounded-2xl border px-4 py-3 shadow-sm ${
-                                  isGuru
+                                  isRequester
                                     ? "bg-[#419AD6]/10 border-[#419AD6]/30"
                                     : "bg-white border-slate-200/80"
                                 }`}
@@ -828,7 +1030,7 @@ function HelpdeskContent() {
                                   </span>
                                   <span
                                     className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                                      isGuru
+                                      isRequester
                                         ? "bg-blue-100 text-blue-700"
                                         : "bg-purple-100 text-purple-700"
                                     }`}
@@ -856,7 +1058,7 @@ function HelpdeskContent() {
                     <div className="text-center py-3 text-sm text-slate-400 font-medium bg-slate-50/60 rounded-2xl border border-slate-100">
                       Tiket sudah ditutup. Tidak dapat mengirim balasan.
                     </div>
-                  ) : guruBlocked ? (
+                  ) : requesterBlocked ? (
                     <div className="text-center py-3 text-sm text-amber-700 font-medium bg-amber-50 rounded-2xl border border-amber-200">
                       Anda sudah mengirim 2 pesan. Silakan tunggu balasan admin.
                     </div>

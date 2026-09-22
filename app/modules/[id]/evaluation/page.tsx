@@ -15,7 +15,6 @@ export default function ModuleEvaluationPage() {
   const moduleId = params.id as string;
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [feedback, setFeedback] = useState({ kritik: "", saran: "" });
   const [submitted, setSubmitted] = useState(false);
   const [scoreResult, setScoreResult] = useState<ScoreResult | null>(null);
 
@@ -98,33 +97,6 @@ export default function ModuleEvaluationPage() {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Form Kritik dan Saran */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <h2 className="text-sm font-bold text-slate-900">Kritik & Saran</h2>
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-600 mb-1 font-medium">Kritik untuk modul ini:</label>
-                <textarea
-                  rows={2}
-                  value={feedback.kritik}
-                  onChange={(e) => setFeedback((p) => ({ ...p, kritik: e.target.value }))}
-                  placeholder="Tulis kritik terkait penyampaian materi..."
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-400"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-600 mb-1 font-medium">Saran pengembangan:</label>
-                <textarea
-                  rows={2}
-                  value={feedback.saran}
-                  onChange={(e) => setFeedback((p) => ({ ...p, saran: e.target.value }))}
-                  placeholder="Tulis saran perbaikan untuk pengembangan selanjutnya..."
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-400"
-                />
-              </div>
             </div>
           </div>
 

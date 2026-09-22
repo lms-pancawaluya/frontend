@@ -43,7 +43,7 @@ export default function ProfilePage() {
 }
 
 // Membaca ?tab= dan menjadikannya bagian dari `key`, supaya setiap kali menu Sidebar
-// (Data Pribadi & Instansi / Progres Modul / Keamanan Akun) diklik, GuruProfileView
+// (Data Pribadi & Instansi / Progress Pembelajaran / Keamanan Akun) diklik, GuruProfileView
 // remount dengan tab aktif yang benar — tanpa useEffect+setState tambahan.
 function ProfilePageWithTab() {
   const searchParams = useSearchParams();
@@ -127,7 +127,12 @@ function ProfilePageContent({ initialTab }: { initialTab: GuruProfileTab }) {
       {profile.role === "admin" ? (
         <AdminProfileView profile={profile} onRefresh={fetchProfile} />
       ) : (
-        <GuruProfileView profile={profile} onRefresh={fetchProfile} initialTab={initialTab} />
+        <GuruProfileView
+          profile={profile}
+          onRefresh={fetchProfile}
+          initialTab={profile.role === "pengajar" ? "profil" : initialTab}
+          hideProgress={profile.role === "pengajar"}
+        />
       )}
     </div>
   );

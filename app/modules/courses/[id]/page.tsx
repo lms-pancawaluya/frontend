@@ -10,6 +10,7 @@ import { getModuleEvaluations } from "@/services/evaluation.service";
 import { getCourseComments, postComment } from "@/services/comment.service";
 import type { Comment as DiscussionComment, CommentUser } from "@/types/comment";
 import MentionTextarea, { type MentionSelection } from "@/app/components/common/MentionTextarea";
+import CourseFeedbackForm from "@/app/components/common/CourseFeedbackForm";
 import { renderCommentText } from "@/lib/mention";
 import {
   claimCertificate,
@@ -1049,6 +1050,11 @@ export default function GuruCourseDetailPage() {
               })}
             </ul>
           )}
+        </section>
+
+        {/* Saran & Masukan (course-level) — courseId dari route */}
+        <section className="space-y-3">
+          <CourseFeedbackForm courseId={id} courseTitle={course.judul} />
         </section>
       </div>
     </div>

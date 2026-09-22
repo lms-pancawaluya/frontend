@@ -10,23 +10,75 @@ Frontend web untuk platform pembelajaran **LMS Pancawaluya**, ditujukan bagi Gur
 | **Pinter** | Tertib dan taat pada norma |
 | **Singer** | Responsif dan memiliki jiwa kepemimpinan |
 
-Aplikasi mengenal tiga peran pengguna (field `role` pada data user, disimpan lowercase):
+> Ini adalah **frontend saja**. Seluruh data berasal dari backend API eksternal; frontend tidak berisi logika server/basis data. Otorisasi/scope data ditegakkan backend; FE hanya melakukan proteksi navigasi di sisi klien.
 
-- **`guru`** — mengakses modul pembelajaran (video + mini-quiz, materi teks, evaluasi), mengelola profil, dan melihat progres belajar.
-- **`pengajar`** — akun staf pengajar yang ikut dikelola di area admin; diperlakukan sebagai staf pengajar pada daftar akun guru.
-- **`admin`** — mengelola modul, konten, evaluasi, mini-quiz, akun guru/pengajar, item checklist, serta memantau progres & hasil evaluasi guru.
+---
 
-> Ini adalah **frontend saja**. Seluruh data berasal dari backend API eksternal; frontend tidak berisi logika server/basis data.
+## Overview
 
-> **Helpdesk V1:** Sudah diimplementasikan penuh. Sisi guru: daftar tiket + buat tiket + detail modal + balas + batas 2 pesan berturut-turut + rute lama redirect. Sisi admin/pengajar: daftar/filter tiket + detail modal + balas + PATCH status. Lihat `handoff.md` untuk detail. Jangan menyalahartikan fitur feedback (Saran & Kritik) sebagai helpdesk.
+Aplikasi mengenal tiga peran pengguna (field `role` pada data user, disimpan lowercase): **Guru**, **Pengajar**, dan **Admin**. Guru mengikuti **Course** yang berisi **Module** dengan alur bertahap **Pre-Test → Learning Material → Post-Test**, ditambah diskusi Course (dengan balasan & `@mention`), sertifikat Course, dan fitur user-facing lain (profil, pengaturan, bantuan). Pengajar adalah mentor/pembina Guru dalam satu sekolah (bukan "Admin Lite"). Admin melakukan administrasi global.
 
-> **Header responsif & Notifikasi Global:** header bersama (floating header yang sama untuk Guru, Pengajar, dan Admin) kini menampilkan Notifikasi Global (baru/unread, tiket, komentar, via `NotificationDropdown.tsx` dan `notification.service.js`). Navigasi `NEW_MODULE` dan Helpdesk (`NEW_HELPDESK_TICKET`/`HELPDESK_REPLY`) di-resolve FE ke route existing dan state/modal tiket; navigasi komentar masih menunggu klarifikasi kontrak BE. Di landing, header memakai hamburger menu pada lebar `<=800px` dan navigasi auth/role yang sama (guest, guru, pengajar, admin); tampilan desktop di atas `800px` tetap tidak berubah. Pada dashboard role, floating header **selalu tampil (sticky)** pada seluruh lebar viewport; pada `≤800px` teks nama/role profil disembunyikan hanya menampilkan avatar/icon (search, notifikasi, settings tetap tersedia). Sidebar tetap menjadi navigasi utama halaman internal.
+Dokumen ini merangkum kondisi implementasi aktual. `handoff.md` menyimpan referensi historis yang lebih mendalam (sebagian sudah tertinggal); bila terjadi perbedaan, **kode & README ini lebih diutamakan**.
 
-> **Arsitektur navigasi global (Sidebar bersama):** seluruh halaman aplikasi terautentikasi (Guru, Pengajar, Admin) memakai **Sidebar bersama** (`app/components/common/Sidebar.tsx`) sebagai navigasi utama — bukan lagi header aplikasi. Shell dipilih per-rute oleh `app/components/common/Layout.tsx`: Landing → Header + Footer; halaman auth (`/login`, `/register`, `/otp`, `/forgot-password`) → standalone; sisanya → Sidebar + konten. Sidebar menampilkan navigasi sesuai `role` pengguna dan hanya menautkan rute yang sudah ada (Admin: Dashboard/Modul/Akun Guru/Item Checklist/Monitoring/RTL/Diskusi Modul/Helpdesk/Profil — dikelompokkan Manajemen Sistem, Pemantauan & Pembinaan, Layanan, Akun; Pengajar: Dashboard/Kelola Guru/Monitoring/RTL/Diskusi Modul/Profil; Guru: Dashboard/Modul/Bantuan/Profil), menyorot rute aktif termasuk rute bersarang, serta memuat aksi Logout. Desktop (`>800px`): sidebar menetap tanpa header aplikasi. Mobile (`<=800px`): sidebar disembunyikan dan dibuka lewat **satu** tombol menu (drawer/overlay, backdrop + Escape + kunci scroll), tanpa header lama, tanpa kontrol menu ganda, tanpa overflow horizontal. Logika auth/role, seluruh rute & kontrak API, serta hero banner Admin/identitas visual Guru tetap dipertahankan.
+---
 
-> **Dashboard Admin (`/admin`):** halaman ringkasan mengikuti mockup — hero banner lama (gradien biru → hijau) dipertahankan, lalu kartu KPI (Total Modul, Total Guru, Checklist Template, Tiket Bantuan, Rata-rata Progress), seksi Monitoring Pengerjaan Modul Guru (donut CSS conic-gradient), Aktivitas Terbaru, dan kartu Menu Cepat. Semua angka berasal dari service yang ada (`getModules`, `getUsers`, `getUsersProgressAll`, `getChecklistItems`, `getAllTickets`); ringkasan/donut monitoring dihitung dari **satu** request bulk `GET /api/admin-monitoring/users/progress/all` (bukan lagi loop per-guru `/progress`). Request ini toleran terhadap respons bentuk snake_case maupun camelCase, dan direct array maupun terbungkus `data`. Tidak ada data fiktif — nilai/aktivitas yang tak tersedia tampil sebagai `—`/empty state. Pada `<=800px` header global disembunyikan di area Admin sehingga drawer sidebar menjadi satu-satunya navigasi (tanpa dua kontrol menu).
+## Features
 
-> **Panel Pengajar (`/pengajar/*`):** Pengajar adalah mentor/pembina Guru dalam satu sekolah (bukan "Admin Lite"). Enam area: Dashboard, Kelola Guru, Monitoring Pengerjaan Modul, Hasil Evaluasi (menyatu di Monitoring), RTL, dan Diskusi/Komentar Modul — memakai bahasa desain yang sama dengan Dashboard Admin. Data mengikuti scope backend: `GET /api/users` otomatis hanya mengembalikan `guru` sesekolah (FE **tidak** menambah `?sekolah` dan **tidak** memfilter global secara client-side; panggilan `getUsers` memakai `cache: "no-store"` agar respons global admin yang ter-cache tidak bocor ke request Pengajar yang ber-scope); `PUT /api/users/:id` hanya untuk guru sesekolah (403 bila melanggar). Monitoring memakai `/api/admin-monitoring/users/:id/progress` & `/api/admin-monitoring/users/:id/evaluations` (halaman detail monitoring); ringkasan progress pada **Dashboard** memakai satu request bulk `GET /api/admin-monitoring/users/progress/all` (bukan loop per-guru). RTL memakai `/api/rtl/submissions`, `/api/rtl/:id`, `PATCH /api/rtl/:id/review` (tanpa hapus — hapus khusus Admin). Diskusi memakai `GET /api/comments/module/:moduleId` & `POST /api/comments` (tanpa kontrol hapus/moderasi — `DELETE /api/comments/:id` tetap khusus Admin). Helpdesk kini menjadi menu Pengajar (grup **Layanan** → "Bantuan"), memakai halaman `/helpdesk` yang sama dengan Guru untuk membuat tiket (kendala sendiri atau atas nama guru sekolahnya, lewat deskripsi) via `POST /api/helpdesk/tickets` — tanpa manajemen/daftar seluruh tiket; izin pembuatan ditegakkan backend. Semua data nyata dari API; kondisi kosong memakai empty state. Otorisasi ditegakkan backend, tidak diduplikasi di FE.
+### Guru (learning / user-facing)
+
+- **Dashboard** (`/dashboard`) — ringkasan progres belajar + akses cepat.
+- **Katalog Course** (`/modules`) — daftar Course; filter Semua / Sedang Dipelajari / Selesai.
+- **Detail Course** (`/modules/courses/[id]`) — informasi Course, daftar Module (accordion), penanda tahapan Pre-Test → Material → Post-Test, tombol Sertifikat, section **Saran & Masukan** (Course-level), dan **Diskusi Course** (komentar, balasan, `@mention`).
+- **Alur pembelajaran per Module:**
+  - **Video** (`/modules/[id]/video`) — YouTube via IFrame API dengan **mini-quiz pop-up** pada `timestampSeconds`; anti fast-forward; mini-quiz interaktif.
+  - **Materi teks** (`/modules/[id]/text`) — konten bertipe `teks`.
+  - **Evaluasi Pre-Test/Post-Test** (`/modules/[id]/evaluations`, `/modules/[id]/evaluations/[evaluationId]`) — menampilkan soal dari API dan **mengirim jawaban** ke backend (`submitEvaluation`); status tahapan di-refresh dari BE setelah submit.
+- **Profil** (`/profile`) — tab: Data Pribadi & Instansi, Progress Pembelajaran, Keamanan Akun. Termasuk edit data, upload foto profil, dan ganti password. (Label "Progress Modul" → "Progress Pembelajaran"; angka dalam kurung dihilangkan.)
+- **Pengaturan** (`/settings`) — tab: **Preferences** (tema & bahasa) dan **Notifications**.
+- **Bantuan / Helpdesk** (`/helpdesk`) — daftar tiket milik pengirim, buat tiket, detail tiket via modal (percakapan + balasan), plus **Panduan Singkat** (accordion statis). Batas **2 pesan berturut-turut** sebelum menunggu balasan Admin. Submenu Sidebar: **Buat Tiket** & **Saran & Masukan**.
+- **Saran & Masukan (Course-level feedback)** (`/helpdesk` & `/modules/courses/[id]`) — form Masukan (opsional) + Saran (wajib) per **Course**. Dikirim via `POST /api/feedbacks/course/:courseId`. Cooldown **1 feedback per Course dalam 7×24 jam** ditegakkan server (HTTP 429 + `nextAllowedAt`); FE menampilkan state cooldown & mengunci form saat aktif.
+
+### Pengajar (school-scoped management / monitoring)
+
+Panel di `/pengajar/*`. Semua data dibatasi scope backend (guru dalam sekolah pengajar).
+
+- **Dashboard** (`/pengajar`) — KPI + ringkasan monitoring + akses cepat.
+- **Kelola Guru** (`/pengajar/guru`, `/pengajar/guru/[id]`) — daftar & detail/edit guru sesekolah (email/sekolah/kota/daerah/status).
+- **Kelola Course & Module** — Pengajar dapat mengakses halaman kelola Course (`/admin/courses`) dan Module (`/admin/modules`) sesuai permission role (GET/POST/PUT tanpa DELETE; lihat `lib/rbac.ts`).
+- **Monitoring Pembelajaran** (`/pengajar/monitoring`) — hierarchy **Guru → Course → Module → Activity** (Pre-Test / Learning Material / Post-Test), memakai `GET /api/admin-monitoring/users/progress/all`.
+- **Diskusi/Komentar Modul** (`/pengajar/diskusi`) — pantau & balas diskusi Course dengan `@mention`.
+- **Bantuan / Helpdesk** — memakai halaman `/helpdesk` yang sama dengan Guru (requester).
+
+### Admin (management / global administration)
+
+Panel di `/admin/*`.
+
+- **Dashboard** (`/admin`) — hero banner (gradien Disdik biru→hijau), KPI, ringkasan monitoring, aktivitas, dan menu cepat. Angka dari service existing (termasuk bulk `GET /api/admin-monitoring/users/progress/all`).
+- **Kelola Course** (`/admin/courses`, `/admin/courses/new`, `/admin/courses/[id]`, `/admin/courses/[id]/edit`) — CRUD Course (judul, deskripsi, mode online/offline, sertifikat, periode, lokasi).
+- **Kelola Modul** (`/admin/modules` …) — CRUD Module (judul, deskripsi, `aspekPancawaluya`, `urutan`).
+- **Kelola Konten Modul** — tambah/edit/hapus konten bertipe `teks` atau `video` (termasuk upload PDF untuk konten materi).
+- **Kelola Evaluasi** (`/admin/modules/[id]/evaluations`, `/[evalId]`) — buat evaluasi Pre-Test/Post-Test; tambah/hapus soal pilihan ganda & esai (edit hanya pilihan ganda).
+- **Kelola Mini-Quiz** (`/admin/modules/[id]/quiz/[contentId]`) — CRUD mini-quiz per konten video + soal pilihan ganda.
+- **Kelola Akun Guru** (`/admin/users`, `/admin/users/[id]`) — daftar guru + pengajar (admin disembunyikan), pencarian global & filter server-side (sekolah/kota/daerah/status), edit, reset password, hapus.
+- **Manajemen Sertifikat** (`/admin/certificates`) — pilih Course, unggah/ganti template sertifikat (PDF), lihat template existing.
+- **Monitoring Pembelajaran** (`/admin/checklist/report`) — hierarchy **Guru → Course → Module → Activity** (Pre-Test / Learning Material / Post-Test); endpoint `GET /api/admin-monitoring/users/progress/all`.
+- **Diskusi/Komentar Modul** (`/admin/diskusi`) — pantau utas diskusi, balas, dan moderasi (hapus komentar).
+- **Helpdesk** (`/admin/helpdesk`) — kelola tiket: daftar + filter (status/kategori), detail modal, balas, dan ubah status (PATCH). Tiket Pembuat Pengajar diberi badge "Pengajar".
+
+> **RTL (Rencana Tindak Lanjut):** implementasi masih ada di codebase (`/admin/rtl`, `/pengajar/rtl`, `services/rtl.service.js`) namun **sengaja disembunyikan** dari seluruh entry point UI (Sidebar, dashboard, quick-search) karena **business flow final belum ditetapkan**. Dokumen ini tidak mengklaim RTL sebagai fitur user-facing aktif. Rute dapat diakses langsung via URL. **RTL belum dihapus dari codebase.**
+
+---
+
+## Roles & Access
+
+| Role | Cakupan | Ringkasan akses |
+|---|---|---|
+| **Admin** | Global (seluruh sekolah) | Administrasi penuh: Course/Module/Content/Evaluasi/Mini-Quiz CRUD, akun guru/pengajar, sertifikat, monitoring lintas sekolah, moderasi diskusi, kelola Helpdesk, Preferensi & Profil. |
+| **Pengajar** | Sekolah sendiri (scope BE) | Mentor/pembina guru: kelola guru sesekolah, kelola Course/Module (GET/POST/PUT sesuai `lib/rbac.ts`), monitoring pembelajaran, diskusi, Helpdesk sebagai requester, Preferensi & Profil. |
+| **Guru** | Peserta pembelajaran | Mengikuti Course & Module (video/materi/evaluasi), diskusi Course (+`@mention`), sertifikat, Saran & Masukan, Helpdesk sebagai requester, Preferensi & Profil. |
+
+- Aturan permission Course & Module diringkas di `lib/rbac.ts` (Guru: GET; Pengajar: GET/POST/PUT; Admin: GET/POST/PUT/DELETE). Backend tetap penegak utama.
+- Scope data (mis. Pengajar hanya guru sesekolah) **ditentukan backend**; FE tidak menambah filter sekolah client-side untuk itu.
 
 ---
 
@@ -35,153 +87,181 @@ Aplikasi mengenal tiga peran pengguna (field `role` pada data user, disimpan low
 | Kategori | Teknologi |
 |---|---|
 | Framework | Next.js `16.3.0` (App Router, Turbopack) |
-| Bahasa | TypeScript `^5` (sebagian service ditulis dalam JavaScript) |
+| Bahasa | TypeScript `^5` (sebagian besar service ditulis dalam JavaScript) |
 | UI / Styling | Tailwind CSS `v4` via `@tailwindcss/postcss` |
 | Library React | `react` / `react-dom` `19.2.8` |
-| HTTP | `fetch` native (browser) |
+| Ikon | `lucide-react` |
+| Form | `react-hook-form` (dipakai pada form registrasi guru) |
+| HTTP | `fetch` native (browser) + `fetchApi` wrapper (`lib/api.ts`, menyisipkan header `ngrok-skip-browser-warning`) |
 | Linting | ESLint `^9` + `eslint-config-next` `16.3.0` |
-| Runtime | Node.js `>=20.9.0` (persyaratan `next@16.3.0`) |
+| Runtime | Node.js `>=20.9.0` |
 
-**Font**: `Fraunces` (display/heading) dan `Inter` (body), dimuat via `next/font/google` di `app/layout.tsx`.
+**Font**: `Fraunces` (display/heading) dan `Inter` (body), dimuat via `next/font/google`.
 
-**Dependency `axios` (`^1.19.0`)**: terpasang di `package.json` dan hanya diimpor oleh `lib/api.ts`. File `lib/api.ts` sendiri **tidak diimpor di mana pun** — instance Axios tidak dipakai. Semua request aktif menggunakan `fetch`.
+**Dependency `axios` (`^1.20.0`)**: instance di `lib/api.ts` **tidak diimpor di mana pun**. `axios` **dipakai** oleh `services/registration.service.ts` (instance sendiri) untuk cek NIP & cari sekolah. Semua request data utama lainnya memakai `fetch`/`fetchApi`.
 
 ---
 
-## Fitur
+## Project Structure
 
-### Fitur Guru
+```
+app/
+├─ admin/                     # Panel Admin
+│  ├─ page.tsx                # Dashboard admin
+│  ├─ courses/                # Kelola Course (+ [id], new, [id]/edit)
+│  ├─ modules/                # Kelola Module, Konten, Evaluasi, Mini-Quiz
+│  ├─ users/                  # Kelola akun guru/pengajar
+│  ├─ certificates/           # Manajemen template sertifikat
+│  ├─ checklist/              # Item checklist + report/ (Monitoring Pembelajaran)
+│  ├─ helpdesk/               # Kelola tiket (Helpdesk)
+│  ├─ diskusi/                # Moderasi diskusi
+│  └─ rtl/                    # RTL (disembunyikan dari UI)
+├─ pengajar/                  # Panel Pengajar
+│  ├─ page.tsx                # Dashboard pengajar
+│  ├─ guru/                   # Kelola Guru (+ [id])
+│  ├─ monitoring/             # Monitoring Pembelajaran
+│  ├─ diskusi/                # Diskusi
+│  └─ rtl/                    # RTL (disembunyikan dari UI)
+├─ dashboard/                 # Dashboard Guru
+├─ modules/                   # Katalog + alur belajar
+│  ├─ page.tsx                # Katalog Course
+│  ├─ courses/[id]/           # Detail Course (diskusi, sertifikat, feedback)
+│  └─ [id]/                   # Module: video/ , text/ , evaluations/ , evaluation/ (mock)
+├─ helpdesk/                  # Bantuan/Tiket guru & pengajar (+ [ticketId] redirect)
+├─ profile/                   # Profil (GuruProfileView / AdminProfileView)
+├─ settings/                  # Preferensi (tema/bahasa) & Notifikasi
+├─ components/
+│  ├─ common/                 # Layout, Sidebar, Header, Footer, NotificationDropdown,
+│  │                          # CourseFeedbackForm, MentionTextarea, ModuleStageGuard, dll.
+│  ├─ auth/                   # LoginForm, RegisterForm
+│  └─ mini-quiz/              # VideoPlayerWithQuiz, VideoInteractiveQuiz, ContentLockGuard
+├─ context/                   # AppContext (tema & bahasa)
+├─ login/ register/ register-guru/ otp/ forgot-password/
+└─ globals.css, layout.tsx
 
-- **Dashboard** (`/dashboard`) — ringkasan progres: jumlah modul selesai vs total modul, progress bar, dan info akun.
-- **Katalog modul** (`/modules`) — daftar modul dengan badge "Selesai" berdasarkan progres (`status === "selesai"`).
-- **Alur pembelajaran per modul** (rute yang tertaut dari UI):
-  1. **Video** (`/modules/[id]/video`) — YouTube via IFrame API, dengan **mini-quiz pop-up** yang terpicu pada `timestampSeconds` tertentu. Video tidak dapat di-fast-forward melewati bagian yang belum ditonton; navigasi ke materi teks terbuka setelah video selesai.
-  2. **Materi teks** (`/modules/[id]/text`) — menampilkan konten bertipe `teks`/`text`.
-  3. **Evaluasi** (`/modules/[id]/evaluation`) — soal pilihan ganda, skor dihitung lokal (lulus jika ≥ 80%); jika lulus memanggil `completeModule`.
-- **Profil guru** (`/profile`) — edit nama, gelar, email, asal sekolah (dropdown data sekolah Jawa Barat atau input manual) + alamat, no. HP; upload foto profil (maks. 5MB); ganti password; melihat daftar modul selesai. NIP **read-only**.
-- **Bantuan / Tiket** (`/helpdesk`) — melihat daftar tiket milik guru (nomor, subjek, kategori, status, tanggal dibuat) + membuat tiket baru via modal (subjek, kategori, deskripsi). Setiap tiket dapat diklik untuk membuka **modal detail tiket** (tanpa navigasi ke rute baru): menampilkan informasi tiket read-only (nomor, subjek, kategori, deskripsi, status, tanggal), percakapan (balasan beserta nama & peran pengirim, pesan, waktu), dan **form balasan** (POST balasan lalu memuat ulang percakapan tanpa refresh). **Batas 2 pesan berturut-turut** dari guru — jika guru sudah mengirim 2 pesan tanpa balasan admin/pengajar, form balasan diganti peringatan (enforcement sisi frontend saja). Tiket berstatus `resolved`/`closed` tidak dapat dibalas. Status tiket hanya **ditampilkan** (guru tidak mengubah status; backend yang mengatur). Dilengkapi **Panduan Singkat** (Quick Tutorial): accordion statis berisi 4 topik — tanpa API. Rute lama `/helpdesk/[ticketId]` redirect ke `/helpdesk`. Bagian dari **Helpdesk V1** (sisi guru).
-- **Lupa password** (`/forgot-password`) — alur 3 langkah: kirim email → verifikasi OTP → password baru.
+services/                     # Lapisan API (mayoritas .js)
+├─ auth, course, module, content, evaluation, miniQuiz, progress,
+│  user, notification, comment, certificate, helpdesk, rtl, search (.js)
+└─ registration.service.ts    # cek NIP & cari sekolah (axios)
 
-### Fitur Admin
+lib/                          # Utilitas lintas fitur
+├─ api.ts                     # fetchApi wrapper + API_URL
+├─ rbac.ts                    # Permission Course/Module per role
+├─ moduleStages.ts, materials.ts, contentProgress.ts, certificate.ts
+├─ mention.ts, notification-navigation.ts, pageRegistry.ts
+├─ formatNip.ts, link.ts, pdf.ts
 
-Panel admin berada di `/admin/*`.
+types/                        # Tipe bersama: comment.ts, course.ts, evaluation.ts, miniQuiz.ts
 
-- **Dashboard admin** (`/admin`) — menu navigasi ke manajemen modul, akun guru, item checklist, tiket bantuan (helpdesk), dan halaman monitoring. Hero banner menggunakan gradien Disdik biru→hijau (`#0047A5` → `#109B51`) dengan badge pill translusen, tombol CTA kuning, dan dekorasi geometris — konsisten visual dengan hero banner Guru dashboard sebagai identitas visual LMS Panca Waluya.
-- **Kelola tiket bantuan (Helpdesk)** (`/admin/helpdesk`) — melihat seluruh tiket guru, menggunakan server-side filters untuk status (open, in_progress, resolved, closed) & kategori, meninjau detail tiket (informasi tiket, info guru pengirim, percakapan lengkap), membalas tiket (mengubah status otomatis ke `in_progress` jika dibalas), dan mengubah status tiket secara manual via dropdown PATCH status. Tiket yang dibuat Pengajar (dikenali dari requester `role` pada respons API) diberi sorot **badge "Pengajar"** + baris ber-highlight dan diurutkan di atas; tiket Guru tetap tampil normal.
-- **Kelola modul** (`/admin/modules`, `/admin/modules/new`, `/admin/modules/[id]`, `/admin/modules/[id]/edit`) — CRUD modul (judul, deskripsi, `aspekPancawaluya`, `urutan`).
-- **Kelola konten modul** — tambah (`/admin/modules/[id]/contents/new`) & edit/hapus konten (inline pada halaman edit modul); tipe konten `teks` atau `video`.
-- **Kelola evaluasi** (`/admin/modules/[id]/evaluations`, `/admin/modules/[id]/evaluations/[evalId]`) — buat evaluasi (judul), tambah/hapus soal **pilihan ganda & esai**; **edit hanya untuk pilihan ganda** (UI menolak edit soal esai dengan pesan eksplisit). Soal pilihan ganda: 2–6 opsi, tepat 1 jawaban benar.
-- **Kelola mini-quiz** (`/admin/modules/[id]/quiz/[contentId]`) — CRUD mini-quiz per konten video (judul, `timestampSeconds`, `passingScore` default 80, `maxAttempts` default 3) dan soal **pilihan ganda** (2–6 opsi, 1 benar).
-- **Kelola akun guru** (`/admin/users`, `/admin/users/[id]`) — daftar guru dengan pencarian global (`?search=...`) dan filter server-side untuk sekolah (`?sekolah=...`), kota (`?kota=...`), daerah (`?daerah=...`), serta status (`?status=...`). Mendukung kombinasi pencarian + filter dan aksi reset total. Edit (email, sekolah, status: `aktif`/`nonaktif`/`pensiun`/`wafat`), reset password, hapus.
-- **Kelola item checklist** (`/admin/checklist`) — CRUD item template daily checklist per 5 aspek Pancawaluya + toggle aktif/nonaktif.
-- **Monitoring guru** (`/admin/checklist/report`) — tabel progres modul tiap guru + skor hasil evaluasi (progress bar berwarna per persentase). Lihat catatan di [Status Proyek](#status-proyek) mengenai label menu.
-- **RTL** (`/admin/rtl`) — tinjau dan nilai pengajuan Rencana Tindak Lanjut (RTL) dari seluruh guru (semua sekolah). Filter status (API), filter sekolah dan pencarian nama guru (client-side). Detail modal + review (setujui/tolak + catatan). Memakai endpoint yang sama dengan Pengajar RTL (`/api/rtl/submissions`, `/api/rtl/:id`, `PATCH /api/rtl/:id/review`); backend menentukan scope data sesuai role.
-- **Diskusi/Komentar Modul** (`/admin/diskusi`) — pantau utas diskusi seluruh modul, ikut membalas komentar, dan lakukan moderasi (hapus komentar). Memakai `GET /api/comments/module/:moduleId`, `POST /api/comments`, dan `DELETE /api/comments/:id`.
+handoff.md                    # Referensi historis pengembangan (tidak runtime)
+repomix-output.xml            # Snapshot repo (tidak runtime)
+```
 
 ---
 
 ## Routing
 
-Semua route berupa App Router. Sebagian besar halaman adalah **client component** (`"use client"`); pengecualian server component: `/login`, `/register`, `Footer`, `Logo`.
+Semua route memakai App Router. Sebagian besar halaman adalah **client component** (`"use client"`).
 
-### Rute Publik / Autentikasi
+### Publik / Autentikasi
 
 | Rute | Fungsi |
 |---|---|
 | `/` | Landing page — hero + 5 nilai Pancawaluya |
-| `/login` | Form login (Email/NIP + password) |
-| `/register` | Registrasi guru (nama, NIP, email, password) |
+| `/login` | Form login |
+| `/register` | Registrasi umum (nama, email, password) |
+| `/register-guru` | Registrasi guru (cek NIP + autocomplete sekolah) |
 | `/otp?email=` | Verifikasi OTP 6 digit + resend (cooldown 60 dtk) |
 | `/forgot-password` | Reset password 3 langkah |
 
-### Rute Guru
+### Guru
 
 | Rute | Fungsi |
 |---|---|
-| `/dashboard` | Ringkasan progres (redirect admin → `/admin`) |
-| `/modules` | Katalog modul |
-| `/modules/[id]` | Detail modul |
-| `/modules/[id]/video` | Video + mini-quiz |
-| `/modules/[id]/text` | Materi teks |
-| `/modules/[id]/evaluation` | Evaluasi (soal statis, skor lokal) — **rute yang tertaut dari alur** |
-| `/helpdesk` | Bantuan/Tiket guru — daftar tiket + buat tiket + detail modal + Panduan Singkat (Helpdesk V1) |
-| `/helpdesk/[ticketId]` | Deprecated — redirect ke `/helpdesk` (Helpdesk V1) |
-| `/profile` | Profil (view guru/admin sesuai `role`) |
+| `/dashboard` | Dashboard guru (admin → `/admin`, pengajar → `/pengajar`) |
+| `/modules` | Katalog Course |
+| `/modules/courses/[id]` | Detail Course (Module accordion, diskusi, sertifikat, Saran & Masukan) |
+| `/modules/[id]`, `/[id]/video`, `/[id]/text` | Detail Module, video + mini-quiz, materi teks |
+| `/modules/[id]/evaluations`, `/[id]/evaluations/[evaluationId]` | Pre-Test/Post-Test (API, submit aktif) |
+| `/modules/[id]/evaluation` | Halaman evaluasi mock (soal statis; di luar alur utama) |
+| `/profile` | Profil |
+| `/settings` | Preferensi & Notifikasi |
+| `/helpdesk` | Bantuan/Tiket (+ `/helpdesk/[ticketId]` → redirect) |
 
-### Rute Admin
+### Pengajar
+
+| Rute | Fungsi |
+|---|---|
+| `/pengajar` | Dashboard pengajar |
+| `/pengajar/guru`, `/pengajar/guru/[id]` | Kelola Guru |
+| `/pengajar/monitoring` | Monitoring Pembelajaran |
+| `/pengajar/diskusi` | Diskusi/Komentar Course |
+| `/admin/courses`, `/admin/modules` | Kelola Course/Module (permission via `lib/rbac.ts`) |
+| `/profile`, `/settings`, `/helpdesk` | Profil, Preferensi, Bantuan |
+
+### Admin
 
 | Rute | Fungsi |
 |---|---|
 | `/admin` | Dashboard admin |
-| `/admin/modules` | Daftar modul + hapus |
-| `/admin/modules/new` | Tambah modul |
-| `/admin/modules/[id]` | Detail modul + daftar konten |
-| `/admin/modules/[id]/edit` | Edit modul + kelola konten inline |
-| `/admin/modules/[id]/contents/new` | Tambah konten |
-| `/admin/modules/[id]/evaluations` | Daftar & buat evaluasi |
-| `/admin/modules/[id]/evaluations/[evalId]` | Kelola soal evaluasi |
-| `/admin/modules/[id]/quiz/[contentId]` | Kelola mini-quiz konten video |
-| `/admin/users` | Daftar akun guru/pengajar |
-| `/admin/users/[id]` | Edit akun guru/pengajar + reset password |
-| `/helpdesk` | Bantuan/tiket guru (modal detail) |
-| `/helpdesk/[ticketId]` | Redirect ke `/helpdesk` |
-| `/admin/helpdesk` | Kelola tiket bantuan (Helpdesk) |
+| `/admin/courses`, `/admin/courses/new`, `/admin/courses/[id]`, `/admin/courses/[id]/edit` | Kelola Course |
+| `/admin/modules`, `/admin/modules/new`, `/admin/modules/[id]`, `/[id]/edit`, `/[id]/contents/new` | Kelola Module & Konten |
+| `/admin/modules/[id]/evaluations`, `/[evalId]` | Kelola Evaluasi & Soal |
+| `/admin/modules/[id]/quiz/[contentId]` | Kelola Mini-Quiz |
+| `/admin/users`, `/admin/users/[id]` | Kelola akun guru/pengajar |
+| `/admin/certificates` | Manajemen Sertifikat |
 | `/admin/checklist` | Kelola item checklist |
-| `/admin/rtl` | Tinjau & nilai RTL dari seluruh guru |
-| `/admin/diskusi` | Moderasi & pantau diskusi seluruh modul |
-| `/admin/checklist/report` | Monitoring progres & evaluasi guru |
+| `/admin/checklist/report` | Monitoring Pembelajaran |
+| `/admin/helpdesk` | Kelola tiket Helpdesk |
+| `/admin/diskusi` | Moderasi diskusi |
+| `/admin/rtl` | RTL (disembunyikan dari UI) |
+| `/profile`, `/settings` | Profil admin / Preferensi |
 
 ### Rute yang ada namun tidak tertaut dari UI
 
 | Rute / File | Catatan |
 |---|---|
-| `/guru` | Duplikat `DashboardPage` guru; tidak ada tautan navigasi |
-| `/pembelajaran/[contentId]` | Halaman video alternatif (`VideoPlayerWithQuiz` + `ContentLockGuard`); tidak tertaut |
-| `/modules/[id]/evaluations` & `/[evaluationId]` | Hanya tercapai via URL langsung; submit jawaban belum terhubung (lihat Status Proyek) |
+| `/guru` | Duplikat dashboard guru; tanpa tautan navigasi |
+| `/pembelajaran/[contentId]` | Halaman video alternatif; tidak tertaut |
+| `/admin/rtl`, `/pengajar/rtl` | RTL — sengaja disembunyikan dari navigasi |
+| `/modules/[id]/evaluation` | Halaman evaluasi mock; tidak ditautkan dari alur utama |
 
 ---
 
-## Autentikasi & Otorisasi
+## Authentication & Authorization
 
-Autentikasi berbasis **JWT** yang divalidasi backend. Frontend hanya melakukan proteksi di sisi klien.
+Autentikasi berbasis **JWT** yang divalidasi backend. FE hanya melakukan proteksi di sisi klien.
 
 ### Sesi
 
-- **Login** (`app/components/auth/LoginForm.tsx`) — POST `/api/auth/login` (fetch langsung). Token disimpan ke `localStorage` (`token`) dan objek user ke `localStorage` (`user`). Token juga ditulis ke cookie `token` (`path=/; max-age=86400; SameSite=Lax`). Redirect berdasarkan `role` (case-insensitive): `ADMIN` → `/admin`, `GURU`/`PENGAJAR` → `/dashboard`, lain-lain → `/dashboard`.
-- **Registrasi** (`RegisterForm.tsx`) — POST `/api/auth/register` (nama, nip, email, password), lalu redirect ke `/otp?email=`.
-- **Logout** (`logoutUser` di `auth.service.js`) — menghapus `token` & `user` dari `localStorage` dan `dispatch` event `"authChange"`.
-- **Sinkronisasi Header** — `Header.tsx` membaca `localStorage` dan mendengarkan event `"authChange"` untuk memperbarui navigasi tanpa reload.
+- **Login** (`app/components/auth/LoginForm.tsx`) — POST `/api/auth/login`. Token disimpan ke `localStorage` (`token`) + objek user (`user`); token juga ditulis ke cookie `token` (`path=/; max-age=86400; SameSite=Lax`). Redirect berbasis `role` (case-insensitive): `ADMIN` → `/admin`, `GURU`/`PENGAJAR` → `/dashboard`, lain-lain → `/dashboard`.
+- **Registrasi** (`RegisterForm`) — POST `/api/auth/register` → redirect ke `/otp?email=`. Registrasi guru (`/register-guru`) memakai `services/registration.service.ts` (cek NIP `GET /api/guru/cek-nip/:nip`, cari sekolah `GET /api/guru/cari-sekolah`); submit form masih `console.log` (belum terhubung endpoint pendaftaran).
+- **Logout** (`logoutUser`) — menghapus `token` & `user` dari `localStorage` + dispatch event `"authChange"`.
+- **Sinkronisasi** — `Header`/`Sidebar` membaca `localStorage` dan mendengarkan `"authChange"`.
 
-> Cookie `token` di-set saat login namun **tidak dibaca** oleh kode frontend, dan **tidak ada** `middleware.ts`. Seluruh proteksi murni client-side.
+> Cookie `token` di-set saat login namun **tidak dibaca** FE, dan **tidak ada** `middleware.ts`. Proteksi murni client-side; backend menegakkan otorisasi sesungguhnya.
 
 ### Proteksi halaman (client-side)
 
-- **Halaman admin yang memeriksa role**: memeriksa `localStorage` `user` (sebagian juga `token`) di `useEffect`; jika `role !== "admin"` → redirect `/dashboard`; jika data tidak ada → `/login`. Diterapkan pada: `/admin`, `/admin/modules`, `/admin/modules/[id]/evaluations`, `/admin/modules/[id]/evaluations/[evalId]`, `/admin/users`, `/admin/users/[id]`, `/admin/checklist`, `/admin/checklist/report`.
-  - `/admin/users` menampilkan hanya staf pengajar: role `guru` dan `pengajar`. Filter role di halaman itu: `Semua`, `Guru`, `Pengajar`.
-  - Role `admin` tidak ditampilkan di tabel manajemen akun.
-- **Halaman guru / pengajar**: `/dashboard` & `/guru` mengarahkan admin ke `/admin`; login `PENGAJAR` diperlakukan sama dengan guru saat redirect.
-- **Halaman admin tanpa guard eksplisit**: `/admin/modules/new`, `/admin/modules/[id]`, `/admin/modules/[id]/edit`, `/admin/modules/[id]/contents/new`, `/admin/modules/[id]/quiz/[contentId]` tidak melakukan cek role di file halaman.
-- **Halaman guru** (`/modules*`, dsb.) tidak melakukan redirect guard; request API akan gagal bila token tidak ada. `/dashboard` & `/guru` mengarahkan user `admin` ke `/admin`.
+- Halaman Admin & Pengajar memeriksa `localStorage` `user` di `useEffect` dan redirect bila role tidak sesuai.
+- `lib/rbac.ts` mengatur tampil/sembunyi aksi Course/Module per role.
 
 ---
 
-## Integrasi API
+## Backend/API Integration
 
 ### Pola service
 
-Sebagian besar request melewati fungsi di `services/*.js` menggunakan `fetch` dengan header `Authorization: Bearer <token>` (token dari `localStorage`). Pola umum:
+Mayoritas request melewati fungsi di `services/*` memakai `fetchApi` dengan header `Authorization: Bearer <token>`:
 
 ```js
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getModules() {
   const token = localStorage.getItem("token");
-  const response = await fetch(`${API_URL}/api/modules`, {
+  const response = await fetchApi(`${API_URL}/api/modules`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
   });
   const result = await response.json();
   if (!result.sukses) throw new Error(result.pesan || "Gagal mengambil data modul");
@@ -197,47 +277,35 @@ Konsisten dalam Bahasa Indonesia:
 { "sukses": true, "pesan": "opsional", "data": {} }
 ```
 
-### Grup endpoint yang direferensikan frontend
+### Grup endpoint utama yang direferensikan frontend
 
-| Grup | Endpoint | Method |
+| Grup | Endpoint (contoh) | Method |
 |---|---|---|
-| **Auth** | `/api/auth/register`, `/api/auth/login`, `/api/auth/me` | POST / POST / GET |
-| | `/api/auth/verify-otp`, `/api/auth/resend-otp` | POST |
-| | `/api/auth/forgot-password`, `/api/auth/verify-reset-otp`, `/api/auth/reset-password` | POST |
-| **Modul** | `/api/modules`, `/api/modules/:id` | GET, POST / GET, PUT, DELETE |
-| | `/api/modules/:id/contents` | GET |
-| **Konten** | `/api/modules/:moduleId/contents` | POST |
-| | `/api/contents/:id` | PUT, DELETE |
-| **Evaluasi** | `/api/modules/:moduleId/evaluations` | GET, POST |
-| | `/api/modules/:moduleId/evaluations/:evaluationId` | GET |
-| | `/api/modules/:moduleId/evaluations/:evaluationId/questions` | POST |
-| | `/api/modules/:moduleId/evaluations/questions/:questionId` | PUT, DELETE |
-| **Mini-quiz** | `/api/mini-quizzes/content/:contentId` | GET, POST |
-| | `/api/mini-quizzes/content/:contentId/check-lock` | GET |
-| | `/api/mini-quizzes/:quizId` | PUT, DELETE |
-| | `/api/mini-quizzes/:quizId/questions` | POST |
-| | `/api/mini-quizzes/questions/:questionId` | PUT, DELETE |
-| | `/api/mini-quizzes/:quizId/attempt`, `/api/mini-quizzes/:quizId/my-attempts` | POST / GET |
-| **Konten (langsung)** | `/api/contents/:contentId` | GET |
-| **Progress** | `/api/progress`, `/api/progress/:moduleId/complete` | GET / POST |
-| **User** | `/api/users`, `/api/users/:id` | GET / GET, PUT, DELETE |
-| | `/api/users/:id/reset-password` | PUT |
-| | `/api/users/profile/me`, `/api/users/profile/me/password` | GET, PUT / PUT |
-| | `/api/upload/foto-profil` | POST |
-| **Monitoring admin** | `/api/admin/users/:userId/progress`, `/api/admin/users/:userId/evaluations` | GET |
-| **Checklist (admin)** | `/api/checklist/items`, `/api/checklist/items/:id` | GET, POST / PUT, DELETE |
-| **Helpdesk (guru)** | `/api/helpdesk/tickets`, `/api/helpdesk/tickets/my`, `/api/helpdesk/tickets/:id`, `/api/helpdesk/tickets/:id/replies` | POST / GET / GET / POST |
+| **Auth** | `/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/verify-otp`, `/api/auth/resend-otp`, `/api/auth/forgot-password`, `/api/auth/verify-reset-otp`, `/api/auth/reset-password` | POST/GET |
+| **Registrasi guru** | `/api/guru/cek-nip/:nip`, `/api/guru/cari-sekolah` | GET |
+| **Course** | `/api/courses`, `/api/courses/:id` | GET, POST / GET, PUT, DELETE |
+| **Modul** | `/api/modules`, `/api/modules/:id`, `/api/modules/:id/contents` | GET, POST / GET, PUT, DELETE / GET, POST |
+| **Konten** | `/api/contents/:id`, `/api/upload/pdf` | PUT, DELETE / POST |
+| **Evaluasi** | `/api/modules/:mid/evaluations`, `/:eid`, `/:eid/questions`, `/questions/:qid`, `/:eid/submit` | GET/POST/PUT/DELETE |
+| **Mini-quiz** | `/api/mini-quizzes/content/:cid`, `/:qid`, `/:qid/questions`, `/:qid/attempt`, `/:qid/my-attempts`, `/content/:cid/check-lock` | GET/POST/PUT/DELETE |
+| **Progress** | `/api/progress`, `/api/progress/:mid/start`, `/:mid/complete`, `/api/progress/contents/:cid/progress`, `/complete` | GET/POST |
+| **User** | `/api/users`, `/api/users/:id`, `/:id/reset-password`, `/api/users/profile/me`, `/me/password`, `/api/upload/foto-profil` | GET/POST/PUT/DELETE |
+| **Monitoring** | `/api/admin-monitoring/users/progress/all`, `/api/admin-monitoring/users/:uid/progress`, `/:uid/evaluations` | GET |
+| **Feedback** | `/api/feedbacks` (GET), `/api/feedbacks/course/:courseId` (POST) | GET/POST |
+| **Diskusi** | `/api/comments/course/:courseId`, `/api/comments/module/:moduleId`, `/api/comments`, `/api/comments/:id`, `/api/comments/users/search?q=` | GET/POST/DELETE |
+| **Sertifikat** | `/api/certificates`, `/api/certificates/:courseId/template` (GET/POST), `/api/certificates/:id`, `/api/certificates/:courseId/claim` | GET/POST |
+| **Notifikasi** | `/api/notifications`, `/api/notifications/unread-count`, `/:id/read`, `/read-all` | GET/PATCH |
+| **Helpdesk** | `/api/helpdesk/tickets`, `/my`, `/:id`, `/:id/replies`, `/:id/status`, `/tickets/categories` | GET/POST/PATCH |
+| **Checklist** | `/api/checklist/items`, `/items/:id`, `/today`, `/history`, `/report` | GET/POST/PUT/DELETE |
+| **RTL** | `/api/rtl/submissions`, `/api/rtl/:id`, `/api/rtl/:id/review` | GET/PATCH |
+| **Pencarian global** | `/api/search?q=` | GET |
 
-> Beberapa fungsi service **terdefinisi namun belum dipanggil UI** (lihat Status Proyek): `submitEvaluation` (`/api/modules/:moduleId/evaluations/:evaluationId/submit`), `sendModuleFeedback` (`/api/feedbacks/module/:moduleId`), `startModule` (`/api/progress/:moduleId/start`), serta seluruh checklist harian guru (`/api/checklist/today`, `/api/checklist/history`, `/api/upload/foto-bukti`) dan `/api/checklist/report`.
+> Hanya dipakai untuk memverifikasi ulang detail teknis jika diperlukan; jangan menganggapnya sebagai kontrak lengkap yang final. Beberapa fungsi service mungkin masih terdefinisi namun belum/tidak lagi dipanggil UI.
 
-### Base URL yang di-hardcode
+### Base URL & hardcoding (technical debt)
 
-Sebagian kode memuat base URL backend `https://backend-production-72a3.up.railway.app`, bukan sepenuhnya dari environment:
-
-- **Mengabaikan `NEXT_PUBLIC_API_URL` sepenuhnya** (konstanta `API_BASE_URL` hardcode): `app/modules/[id]/video/page.tsx`, `app/pembelajaran/[contentId]/page.tsx`, `app/components/mini-quiz/VideoPlayerWithQuiz.tsx`, `app/components/mini-quiz/VideoInteractiveQuiz.tsx`, `app/components/mini-quiz/ContentLockGuard.tsx`.
-- **Menggunakan env dengan fallback hardcode** (`process.env.NEXT_PUBLIC_API_URL || "…railway.app"`): `LoginForm.tsx`, `RegisterForm.tsx`, `app/otp/page.tsx`, `services/evaluation.service.js`, `services/miniQuiz.service.js`.
-
-Service lain (`auth`, `module`, `content`, `progress`, `user`) memakai `process.env.NEXT_PUBLIC_API_URL` tanpa fallback (`checklist.service.js` fallback ke string kosong).
+- Beberapa berkas meng-hardcode base URL Railway atau memakai `NEXT_PUBLIC_API_URL || "…railway.app"` (mis. `LoginForm`, `RegisterForm`, `otp`, sebagian service). Mengubah `NEXT_PUBLIC_API_URL` **tidak** otomatis mengubah berkas yang mengabaikan env.
+- Preferensi ke depan: sentralisasi base URL pada satu sumber (mis. `lib/api.ts`).
 
 ---
 
@@ -249,20 +317,18 @@ Satu variabel environment publik dibutuhkan:
 |---|---|
 | `NEXT_PUBLIC_API_URL` | Base URL backend API |
 
-File `.env*` **tidak di-commit** (`.gitignore`), sehingga `.env.local` harus dibuat manual saat setup:
+File `.env*` **tidak di-commit** (`.gitignore`); buat `.env.local` manual:
 
 ```env
 # .env.local
 NEXT_PUBLIC_API_URL=https://your-backend-host.example.com
 ```
 
-> Karena beberapa berkas meng-hardcode base URL (lihat bagian API), mengubah `NEXT_PUBLIC_API_URL` **tidak** akan memengaruhi request pada berkas yang mengabaikan env tersebut. Untuk mengganti backend sepenuhnya, base URL hardcode juga perlu disesuaikan di kode.
-
-`next.config.ts` mengizinkan `next/image` memuat gambar remote dari host: `ftmqfmyaspfmqvzmugkk.supabase.co` (path storage publik) dan `disdik.jabarprov.go.id`.
+`next.config.ts` mengizinkan `next/image` memuat gambar remote dari `ftmqfmyaspfmqvzmugkk.supabase.co` (storage publik) dan `disdik.jabarprov.go.id`.
 
 ---
 
-## Instalasi & Pengembangan
+## Getting Started
 
 ### Prasyarat
 
@@ -283,54 +349,58 @@ npm run dev
 # buka http://localhost:3001
 ```
 
+---
+
+## Development
+
 ### Skrip npm
 
 | Perintah | Fungsi |
 |---|---|
 | `npm run dev` | Development server, port `3001`, Turbopack |
 | `npm run build` | Build produksi (Turbopack) |
-| `npm start` | Menjalankan server produksi (`next start`, port default 3000) |
+| `npm start` | Menjalankan server produksi (`next start`) |
 | `npm run lint` | ESLint |
 
-**CI**: `.github/workflows/ci.yml` menjalankan `npm ci`, `npm run lint`, `npm test --if-present` (belum ada test), dan `npm run build` pada Node 20 untuk push/PR ke `main`.
-
----
-
-## Development Notes
+### Konvensi
 
 - **Bahasa field API konsisten Bahasa Indonesia**: `sukses`, `pesan`, `data`; entitas memakai `judul`, `deskripsi`, `aspekPancawaluya`, `urutan`, `tipe` (`teks`/`video`), `skor`, `isLolos`, `passingScore`, `maxAttempts`, `timestampSeconds`, dll.
 - **Pola halaman**: `useState` + `useEffect` untuk fetch, dengan state `loading`/`error`.
 - **Error handling**: `catch (err)` bertipe `unknown`, dicek `err instanceof Error` sebelum akses `err.message`.
-- **Konfirmasi hapus**: memakai `window.confirm()` / `alert()` bawaan browser.
-- **YouTube**: video di-embed via IFrame API; ID diekstrak dengan regex sederhana.
-- **NIP**: `lib/formatNip.ts` memformat NIP ke pola `YYYY-MM-DD-YYYY-MM-X-NNN` (maks. 18 digit); NIP read-only pada profil.
-- **Data sekolah**: daftar sekolah Jawa Barat di-hardcode dalam `app/profile/GuruProfileView.tsx`.
-- **Tema**: warna tema didefinisikan sebagai CSS variables di `app/globals.css` (`--color-navy`, `--color-accent`, `--color-pale`, `--color-border-soft`, `--color-biru-muda`) plus util `.btn-primary`, `.btn-secondary`, `.alert-error`.
-- **Keamanan**: JWT disimpan di `localStorage` (rentan XSS); proteksi route hanya client-side. Validasi keamanan sesungguhnya menjadi tanggung jawab backend.
-- **Aturan dokumentasi (wajib)**: setiap perubahan fitur/bug fix/UI/integrasi API **wajib** memperbarui `README.md` **dan** `handoff.md` di task yang sama.
-- **Artefak repo**: `handoff.md` (referensi mendalam untuk agen/developer) dan `repomix-output.xml` (snapshot repo) merupakan catatan pengembangan, bukan bagian runtime aplikasi.
+- **Konfirmasi hapus**: `window.confirm()` / `alert()` bawaan browser.
+- **Tema**: warna didefinisikan sebagai CSS variables di `app/globals.css` (`--color-navy`, `--color-accent`, `--color-pale`, `--color-border-soft`, `--color-biru-muda`) plus util `.btn-primary`, `.btn-secondary`, `.alert-error`. Palet Disdik (`--disdik-blue`, `--disdik-sky`, `--disdik-yellow`, `--disdik-green`) teregistrasi sebagai utilitas Tailwind.
+- **NIP**: `lib/formatNip.ts` memformat NIP ke pola `YYYY-MM-DD-YYYY-MM-X-NNN`; NIP read-only pada profil.
+- **Dua dialek visual**: (1) auth/landing/learning — latar pale-blue, kartu rounded-2xl putih; (2) panel Admin/Pengajar — palet slate + aksen emerald, kartu rounded-3xl, dengan hero banner gradien Disdik biru→hijau sebagai identitas visual.
+- **Struktur bersama**: `Layout.tsx` memilih chrome per-rute (Landing → Header+Footer; halaman auth → standalone; lainnya → Sidebar + konten). `Sidebar.tsx` menampilkan navigasi sesuai role, mobile memakai satu drawer.
+
+### CI
+
+`.github/workflows/ci.yml` menjalankan `npm ci`, `npm run lint`, `npm test --if-present` (belum ada test), dan `npm run build` pada Node 20 untuk push/PR ke `main`.
 
 ---
 
-## Status Proyek
+## Current Status / Notes
 
-Ringkasan; detail lengkap ada di `handoff.md`.
+**Berjalan baik:** auth (login/register/OTP/reset), sinkronisasi header/sidebar, dashboard Guru/Pengajar/Admin, katalog & detail Course, alur belajar per Module (video + mini-quiz, materi teks, Pre-Test/Post-Test dengan submit aktif), profil & pengaturan, sertifikat (lihat/claim + manajemen template), diskusi Course dengan balasan & `@mention`, notifikasi global (badge unread di Header), Helpdesk (requester & Admin), Saran & Masukan Course-level (dengan cooldown 7×24 jam dari BE), monitoring Guru → Course → Module → Activity.
 
-**Sudah berjalan:** auth (login/register/OTP/reset password), sinkronisasi header, dashboard guru & admin, katalog modul, CRUD admin (modul, konten, evaluasi, mini-quiz, akun guru, item checklist), manajemen profil, monitoring admin (progres + hasil evaluasi + baca feedback), dan mini-quiz interaktif pada video (gating + anti fast-forward).
+**Catatan / keterbatasan:**
 
-**Sebagian / catatan penting:**
+- **RTL** — implementasi masih ada, namun **disembunyikan** dari seluruh entry point UI (Sidebar/dashboard/quick-search) sampai business flow final ditetapkan. Rute tetap ada; belum dihapus.
+- **`/modules/[id]/evaluation`** — halaman evaluasi mock (soal statis, skor lokal), tidak ditautkan dari alur utama; alur resmi memakai `/modules/[id]/evaluations/[evaluationId]`.
+- **Notifikasi (Pengaturan) — toggle belum tersedia.** Belum ada endpoint/service *notification preference* yang terkonfirmasi; toggle ditampilkan **disabled** dengan keterangan "Pengaturan notifikasi belum tersedia" (tanpa mock/localStorage). Sistem notifikasi delivery/read/unread yang berjalan **tidak diubah**. *(Blocker: perlu kontrak BE untuk preference notifikasi.)*
+- **Kategori tiket Helpdesk** kini diambil dinamis dari `GET /api/helpdesk/tickets/categories` (dropdown Guru/Pengajar + filter Admin), bukan free-text.
+- **Registrasi guru** (`/register-guru`) — helper cek NIP & cari sekolah aktif; submit form belum terhubung endpoint pendaftaran.
+- **Base URL** sebagian di-hardcode (lihat Backend/API Integration) — technical debt.
+- **Ketergantungan backend**: seluruh data monitoring, progress, mini-quiz attempt, upload, sertifikat, diskusi, notifikasi bergantung pada kontrak API live.
+- **`handoff.md`** & **`repomix-output.xml`** adalah artefak catatan pengembangan, bukan bagian runtime.
 
-- **Evaluasi guru belum tersambung penuh.** `/modules/[id]/evaluation` memakai soal **mock hardcode** dengan skor lokal; `/modules/[id]/evaluations/[evaluationId]` menampilkan soal dari API tetapi **submit hanya `console.log` + alert** (belum memanggil `submitEvaluation`).
-- **Edit soal evaluasi** hanya untuk tipe `pilihan_ganda`; soal `esai` belum bisa diedit (tombol dinonaktifkan).
-- **Mini-quiz video default LULUS saat API gagal** (`{ skor:100, isLolos:true }`) — perlu diperbaiki.
-- **Feedback (Saran & Kritik):** `ModuleFeedbackForm` + `sendModuleFeedback` sudah dibuat tetapi **belum dipasang** di alur guru (admin tetap bisa membaca feedback lama).
-- **Label menu monitoring:** halaman berada di `/admin/checklist/report` namun isinya monitoring modul/evaluasi (bukan data checklist); `getChecklistReport` di service **tidak dipakai**.
+---
 
-**Belum ada UI / dead code:** checklist harian guru (service ada, tanpa halaman), `startModule` (tidak dipanggil), sertifikat ("Belum Tersedia"), `lib/api.ts` (axios tak terpakai).
+## Contribution
 
-**Direncanakan:** Helpdesk V1 — sisi guru **sudah** ada: daftar tiket + buat tiket (`/helpdesk`), serta detail tiket + balasan (kini menggunakan modal/pop-up langsung pada `/helpdesk` tanpa navigasi, rute lama `/helpdesk/[ticketId]` melakukan redirect). Terpasang batas 2 pesan beruntun dari guru sebagai frontend guard. Sisi admin/pengajar **sudah** ada: manajemen tiket oleh admin/pengajar (`/admin/helpdesk`) untuk daftar tiket dengan filter status/kategori, kirim balasan, dan pengelolaan status (PATCH). Field tiket dirender secara defensif mengikuti pola repo.
-
-**Validasi terakhir:** `npx tsc --noEmit` lolos; `npx eslint` lolos.
+- **Aturan dokumentasi**: setiap perubahan fitur/bugfix/UI/integrasi API sebaiknya memperbarui `README.md` (dan `handoff.md` bila relevan) pada task yang sama.
+- Jalankan `npm run lint` dan `npm run build` (dan `npx tsc --noEmit` bila menyentuh TypeScript) sebelum mengajukan perubahan.
+- Ikuti konvensi yang sudah berjalan (struktur service, pola fetch, palet & dialek visual per area) alih-alih memperkenalkan pola baru.
 
 ---
 

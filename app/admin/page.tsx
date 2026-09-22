@@ -330,8 +330,8 @@ export default function AdminDashboardPage() {
       arrow: "bg-red-50 text-red-600",
     },
     {
-      title: "Monitoring Pengerjaan Modul Guru",
-          desc: "Pantau progres pengerjaan modul dan hasil Pre-Test/Post-Test tiap guru.",
+      title: "Monitoring Pembelajaran",
+          desc: "Pantau progres pembelajaran (course) tiap guru: Pre-Test, materi, dan Post-Test.",
       href: "/admin/checklist/report",
       icon: ICONS.monitoring,
       iconWrap: "bg-amber-100 text-amber-600",
@@ -403,12 +403,12 @@ export default function AdminDashboardPage() {
 
       {/* Monitoring + Aktivitas */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Monitoring Pengerjaan Modul Guru */}
+        {/* Monitoring Pembelajaran */}
         <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between gap-3">
             <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">
               <span className="text-[var(--color-accent)]">{ICONS.monitoring}</span>
-              Monitoring Pengerjaan Modul Guru
+              Monitoring Pembelajaran
             </h2>
             <Link
               href="/admin/checklist/report"

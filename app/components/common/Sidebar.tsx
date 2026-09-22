@@ -158,20 +158,28 @@ const ICONS = {
 };
 
 function getSettingsSubItems(t: (id: string, en: string) => string): SubNavItem[] {
+  // "General Information" & "Security/Change Password" sudah tersedia di
+  // halaman Profile, jadi tidak diduplikasi di Settings.
   return [
-    { label: t("General Information", "General Information"), href: "/settings?tab=general", icon: ICONS.general },
     { label: t("Preferences", "Preferences"), href: "/settings?tab=preferences", icon: ICONS.preferences },
-    { label: t("Security", "Security"), href: "/settings?tab=security", icon: ICONS.security },
     { label: t("Notifications", "Notifications"), href: "/settings?tab=notifications", icon: ICONS.notifications },
   ];
 }
 
-function getProfileSubItems(t: (id: string, en: string) => string): SubNavItem[] {
-  return [
+function getProfileSubItems(t: (id: string, en: string) => string, role?: string): SubNavItem[] {
+  const items: SubNavItem[] = [
     { label: t("Data Pribadi & Instansi", "Personal Data & Institution"), href: "/profile?tab=personal", icon: ICONS.general },
-    { label: t("Progres Modul (1)", "Module Progress (1)"), href: "/profile?tab=progress", icon: ICONS.progress },
-    { label: t("Keamanan Akun", "Account Security"), href: "/profile?tab=security", icon: ICONS.security },
   ];
+
+  // Pengajar tidak menampilkan section "Progress Pembelajaran", jadi
+  // submenu-nya juga tidak ditampilkan.
+  if (role !== "pengajar") {
+    items.push({ label: t("Progress Pembelajaran", "Learning Progress"), href: "/profile?tab=progress", icon: ICONS.progress });
+  }
+
+  items.push({ label: t("Keamanan Akun", "Account Security"), href: "/profile?tab=security", icon: ICONS.security });
+
+  return items;
 }
 
 function getModulesSubItems(t: (id: string, en: string) => string): SubNavItem[] {
@@ -184,10 +192,8 @@ function getModulesSubItems(t: (id: string, en: string) => string): SubNavItem[]
 
 function getHelpdeskSubItems(t: (id: string, en: string) => string): SubNavItem[] {
   return [
-    { label: t("Cara membuat tiket", "How to create a ticket"), href: "/helpdesk#create-ticket", icon: ICONS.plusCircle },
-    { label: t("Cara melihat dan membalas tiket", "How to view and reply to tickets"), href: "/helpdesk#view-ticket", icon: ICONS.reply },
-    { label: t("Arti status tiket", "Ticket status meanings"), href: "/helpdesk#ticket-status", icon: ICONS.info },
-    { label: t("Kapan sebaiknya membuat tiket", "When to create a ticket"), href: "/helpdesk#when-to-create", icon: ICONS.help },
+    { label: t("Buat Tiket", "Create Ticket"), href: "/helpdesk?create=1", icon: ICONS.plusCircle },
+    { label: t("Saran & Masukan", "Feedback & Suggestions"), href: "/helpdesk#saran-masukan-heading", icon: ICONS.reply },
   ];
 }
 
@@ -195,6 +201,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
   const settingsItem: NavItem = {
     id: "settings",
     label: t("Pengaturan", "Settings"),
+    href: "/settings",
     icon: ICONS.settings,
     subItems: getSettingsSubItems(t),
   };
@@ -202,13 +209,15 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
   const profileItem: NavItem = {
     id: "profile",
     label: t("Profil", "Profile"),
+    href: "/profile",
     icon: ICONS.profile,
-    subItems: getProfileSubItems(t),
+    subItems: getProfileSubItems(t, role),
   };
 
   const modulesItem: NavItem = {
     id: "modules",
     label: t("Modul Pembelajaran", "Learning Modules"),
+    href: "/modules",
     icon: ICONS.modules,
     subItems: getModulesSubItems(t),
   };
@@ -216,8 +225,18 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
   const helpdeskItem: NavItem = {
     id: "helpdesk",
     label: t("Bantuan", "Help Center"),
+    href: "/helpdesk",
     icon: ICONS.helpdesk,
     subItems: getHelpdeskSubItems(t),
+  };
+
+  // Admin mengelola Helpdesk (management), bukan user-facing Help Center.
+  // Tanpa subItems agar tidak membuka panduan tiket untuk requester.
+  const adminHelpdeskItem: NavItem = {
+    id: "admin-helpdesk",
+    label: t("Helpdesk", "Helpdesk"),
+    href: "/admin/helpdesk",
+    icon: ICONS.helpdesk,
   };
 
   if (role === "admin") {
@@ -235,15 +254,14 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
       {
         title: t("Pemantauan & Pembinaan", "Monitoring & Mentoring"),
         items: [
-          { label: t("Monitoring Pengerjaan", "Progress Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring, id: "admin-monitoring" },
-          { label: t("RTL", "Action Plan (RTL)"), href: "/admin/rtl", icon: ICONS.document, id: "admin-rtl" },
+          { label: t("Monitoring Pembelajaran", "Learning Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring, id: "admin-monitoring" },
           { label: t("Diskusi/Komentar Modul", "Module Discussions"), href: "/admin/diskusi", icon: ICONS.chat, id: "admin-diskusi" },
         ],
       },
       {
         title: t("Layanan", "Services"),
         items: [
-          { ...helpdeskItem, href: "/admin/helpdesk", badge: t("Baru V1", "New V1") },
+          adminHelpdeskItem,
         ],
       },
       {
@@ -265,8 +283,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
           { label: t("Kelola Course", "Manage Courses"), href: "/admin/courses", icon: ICONS.modules, id: "pengajar-courses" },
           { label: t("Kelola Modul Pembelajaran", "Manage Learning Modules"), href: "/admin/modules", icon: ICONS.modules, id: "pengajar-modules" },
           { label: t("Kelola Guru", "Manage Teachers"), href: "/pengajar/guru", icon: ICONS.users, id: "pengajar-guru" },
-          { label: t("Monitoring Pengerjaan Modul", "Module Progress Monitoring"), href: "/pengajar/monitoring", icon: ICONS.monitoring, id: "pengajar-monitoring" },
-          { label: t("RTL", "Action Plan (RTL)"), href: "/pengajar/rtl", icon: ICONS.document, id: "pengajar-rtl" },
+          { label: t("Monitoring Pembelajaran", "Learning Monitoring"), href: "/pengajar/monitoring", icon: ICONS.monitoring, id: "pengajar-monitoring" },
           { label: t("Diskusi/Komentar Modul", "Module Discussions"), href: "/pengajar/diskusi", icon: ICONS.chat, id: "pengajar-diskusi" },
         ],
       },
@@ -348,8 +365,9 @@ export default function Sidebar({
   const [user, setUser] = useState<StoredUser | null>(null);
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
 
-  const toggleDropdown = (id: string) => {
-    setOpenDropdowns((prev) => ({ ...prev, [id]: !prev[id] }));
+  // Hanya satu parent dropdown yang boleh terbuka pada satu waktu.
+  const openOnlyDropdown = (id: string) => {
+    setOpenDropdowns({ [id]: true });
   };
 
   useEffect(() => {
@@ -393,11 +411,15 @@ export default function Sidebar({
 
   useEffect(() => {
     if (!pathname) return;
+    // Auto-buka HANYA parent yang sesuai current route; parent lain tertutup.
+    let activeParent: string | null = null;
+    if (pathname.startsWith("/settings")) activeParent = "settings";
+    else if (pathname.startsWith("/profile")) activeParent = "profile";
+    else if (pathname.startsWith("/modules")) activeParent = "modules";
+    else if (pathname.startsWith("/helpdesk")) activeParent = "helpdesk";
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (pathname.startsWith("/settings")) setOpenDropdowns((p) => ({ ...p, settings: true }));
-    if (pathname.startsWith("/profile")) setOpenDropdowns((p) => ({ ...p, profile: true }));
-    if (pathname.startsWith("/modules")) setOpenDropdowns((p) => ({ ...p, modules: true }));
-    if (pathname.startsWith("/helpdesk")) setOpenDropdowns((p) => ({ ...p, helpdesk: true }));
+    setOpenDropdowns(activeParent ? { [activeParent]: true } : {});
   }, [pathname]);
 
   const sections = getNavSections(user?.role ?? "", t);
@@ -435,15 +457,25 @@ export default function Sidebar({
     if (item.subItems) {
       const isAnySubActive = item.subItems.some((sub) => {
         const currentTab = searchParams.get("tab");
-        const defaultActiveTab = sub.href === "/settings?tab=general" && pathname === "/settings" && !currentTab;
+        const defaultActiveTab = sub.href === "/settings?tab=preferences" && pathname === "/settings" && !currentTab;
         return sub.href === activeHref || defaultActiveTab;
       });
+
+      // Klik parent: buka HANYA submenu ini + navigasi ke route utama parent.
+      const handleParentClick = () => {
+        openOnlyDropdown(item.id);
+        if (item.href) {
+          onNavigate?.();
+          router.push(item.href);
+        }
+      };
 
       return (
         <li key={item.id} className="space-y-1">
           <button
             type="button"
-            onClick={() => toggleDropdown(item.id)}
+            onClick={handleParentClick}
+            aria-expanded={isOpen}
             title={collapsed ? item.label : undefined}
             className={`group flex w-full items-center rounded-xl text-sm transition-all ${
               collapsed ? "justify-center px-2 py-2.5" : "justify-between px-3 py-2.5"
@@ -492,7 +524,7 @@ export default function Sidebar({
             <ul className="ml-3 space-y-1 border-l-2 border-slate-100 dark:border-slate-800 pl-2 mt-1">
               {item.subItems.map((sub) => {
                 const currentTab = searchParams.get("tab");
-                const defaultActiveTab = sub.href === "/settings?tab=general" && pathname === "/settings" && !currentTab;
+                const defaultActiveTab = sub.href === "/settings?tab=preferences" && pathname === "/settings" && !currentTab;
                 const isSubActive = sub.href === activeHref || defaultActiveTab;
 
                 return (

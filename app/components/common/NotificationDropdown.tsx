@@ -56,7 +56,12 @@ export default function NotificationDropdown() {
   async function fetchUnreadCount() {
     try {
       const count = await getUnreadNotificationCount();
-      setUnreadCount(count);
+      // Hanya perbarui bila terbaca sebagai number. Bila `null` (shape tak
+      // dikenal) atau gagal, pertahankan state sebelumnya — jangan reset ke 0
+      // dan jangan mengasumsikan tidak ada notifikasi.
+      if (typeof count === "number" && Number.isFinite(count)) {
+        setUnreadCount(count);
+      }
     } catch (err) {
       console.warn("Failed to fetch unread count:", err);
     }
@@ -67,9 +72,15 @@ export default function NotificationDropdown() {
     setError(null);
     try {
       const data = await getNotifications();
-      setNotifications(data);
-      // Update unread count based on actual data
-      setUnreadCount(data.filter((n: NotificationItem) => !n.isRead).length);
+      const list: NotificationItem[] = Array.isArray(data) ? data : [];
+      setNotifications(list);
+      // Sinkronkan unread count dari data list hanya bila item memang
+      // membawa info `isRead`. Jika tidak, pertahankan count dari endpoint
+      // unread-count agar badge tidak keliru menjadi 0.
+      const hasReadFlag = list.some((n) => typeof n.isRead === "boolean");
+      if (hasReadFlag) {
+        setUnreadCount(list.filter((n) => !n.isRead).length);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal memuat notifikasi");
     } finally {
@@ -108,8 +119,9 @@ export default function NotificationDropdown() {
       }
     } catch (err) {
       console.warn("Failed to mark as read:", err);
-      // Revert on error
+      // Revert on error: muat ulang list & sinkronkan count dari BE.
       fetchNotifications();
+      fetchUnreadCount();
     }
   };
 
@@ -123,6 +135,7 @@ export default function NotificationDropdown() {
     } catch (err) {
       console.warn("Failed to mark all as read:", err);
       fetchNotifications();
+      fetchUnreadCount();
     }
   };
 

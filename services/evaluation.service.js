@@ -186,29 +186,64 @@ export async function getEvaluationAnswers(moduleId, evaluationId, tipe) {
 }
 
 /**
- * Kirim saran & kritik per modul oleh Guru
- * URL: POST /api/feedbacks/module/:moduleId
+ * Error khusus saat BE menolak submit feedback karena masih dalam cooldown
+ * (HTTP 429). Membawa `nextAllowedAt` (ISO) dari response BE bila tersedia.
  */
-export async function sendModuleFeedback(moduleId, payload) {
-  const response = await fetchApi(`${API_URL}/api/feedbacks/module/${moduleId}`, {
+export class FeedbackCooldownError extends Error {
+  constructor(message, nextAllowedAt) {
+    super(message);
+    this.name = "FeedbackCooldownError";
+    this.nextAllowedAt = nextAllowedAt || null;
+  }
+}
+
+/**
+ * Kirim Saran & Masukan per Course oleh Guru.
+ * URL: POST /api/feedbacks/course/:courseId
+ * Body: { masukan, saran } — `saran` required sesuai contract BE.
+ *
+ * Cooldown 1 feedback / 7×24 jam ditegakkan BE (per-user per-course). Saat
+ * masih cooldown, BE merespons HTTP 429; FE melempar FeedbackCooldownError.
+ */
+export async function sendCourseFeedback(courseId, payload) {
+  const response = await fetchApi(`${API_URL}/api/feedbacks/course/${courseId}`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify(payload),
   });
 
-  const result = await response.json();
+  // Response BE dapat berupa non-JSON (mis. error HTML 404/500). Parsing
+  // defensif agar tidak melempar raw `JSON.parse` error ke UI.
+  let result = null;
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
 
-  if (!response.ok || !result.sukses) {
-    throw new Error(result.pesan || result.message || "Gagal mengirim saran dan kritik");
+  // 429 = masih dalam cooldown (BE source of truth).
+  if (response.status === 429) {
+    throw new FeedbackCooldownError(
+      result?.pesan || result?.message || "Anda hanya dapat mengirim saran dan masukan 1 kali dalam 7 hari.",
+      result?.data?.nextAllowedAt || null
+    );
+  }
+
+  if (!response.ok || !result?.sukses) {
+    throw new Error(
+      result?.pesan || result?.message || "Gagal mengirim saran dan masukan"
+    );
   }
 
   return result.data;
 }
 
 /**
- * Get seluruh saran & kritik guru (untuk monitoring admin)
+ * Get seluruh Saran & Masukan guru (untuk monitoring admin)
  * URL: GET /api/feedbacks
- * Backend menjamin satu feedback per guru per modul.
+ * Endpoint GET/list tetap sesuai contract BE yang tersedia (tidak diubah).
+ * Response dapat memuat field `masukan` dan relasi `course`; konsumen
+ * dirender defensif agar toleran terhadap response transisional.
  */
 export async function getAllFeedbacks() {
   const response = await fetchApi(`${API_URL}/api/feedbacks`, {
@@ -219,7 +254,7 @@ export async function getAllFeedbacks() {
   const result = await response.json();
 
   if (!response.ok) {
-    throw new Error(result.pesan || result.message || "Gagal mengambil data saran & kritik");
+    throw new Error(result.pesan || result.message || "Gagal mengambil data saran & masukan");
   }
 
   return result.data ?? [];

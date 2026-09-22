@@ -31,7 +31,6 @@ export const PAGE_REGISTRY: SearchablePage[] = [
   { label: "Dashboard Pengajar", href: "/pengajar", keywords: ["beranda", "home"], roles: ["pengajar"] },
   { label: "Monitoring", href: "/pengajar/monitoring", keywords: ["pemantauan", "progres guru"], roles: ["pengajar"] },
   { label: "Diskusi", href: "/pengajar/diskusi", keywords: ["forum", "tanya jawab"], roles: ["pengajar"] },
-  { label: "RTL", href: "/pengajar/rtl", keywords: ["rencana tindak lanjut"], roles: ["pengajar"] },
   { label: "Data Guru", href: "/pengajar/guru", keywords: ["guru", "peserta"], roles: ["pengajar"] },
 
   // ===== Admin =====
@@ -42,7 +41,6 @@ export const PAGE_REGISTRY: SearchablePage[] = [
   { label: "Manajemen Sertifikat", href: "/admin/certificates", keywords: ["sertifikat", "certificate", "template"], roles: ["admin"] },
   { label: "Diskusi", href: "/admin/diskusi", keywords: ["forum", "tanya jawab"], roles: ["admin"] },
   { label: "Helpdesk", href: "/admin/helpdesk", keywords: ["bantuan", "tiket", "keluhan", "support"], roles: ["admin"] },
-  { label: "RTL", href: "/admin/rtl", keywords: ["rencana tindak lanjut"], roles: ["admin"] },
 ];
 
 /** Ambil daftar halaman yang boleh dilihat oleh sebuah role. */

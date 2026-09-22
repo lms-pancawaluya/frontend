@@ -75,6 +75,29 @@ export async function getTicketDetail(ticketId) {
 }
 
 /**
+ * Ambil master kategori tiket dari BE (single source of truth).
+ * GET /api/helpdesk/tickets/categories
+ * Response: { sukses, data: [{ value, label }] }
+ */
+export async function getTicketCategories() {
+  const token = getAuthToken();
+
+  const response = await fetchApi(`${API_URL}/api/helpdesk/tickets/categories`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok || !result.sukses) {
+    throw new Error(result.pesan || result.message || "Gagal mengambil kategori tiket");
+  }
+  return Array.isArray(result.data) ? result.data : [];
+}
+
+/**
  * Kirim balasan pada tiket.
  * POST /api/helpdesk/tickets/:ticketId/replies
  * Body: { message }
