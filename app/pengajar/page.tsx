@@ -227,8 +227,8 @@ export default function PengajarDashboardPage() {
       arrow: "bg-emerald-50 text-emerald-600",
     },
     {
-      title: "Monitoring Pengerjaan Modul",
-      desc: "Pantau progres pengerjaan modul tiap guru binaan.",
+      title: "Monitoring Pembelajaran",
+      desc: "Pantau progres pembelajaran (course) tiap guru binaan.",
       href: "/pengajar/monitoring",
       icon: ICONS.monitoring,
       iconWrap: "bg-amber-100 text-amber-600",
@@ -304,7 +304,7 @@ export default function PengajarDashboardPage() {
           <div className="mb-6 flex items-center justify-between gap-3">
             <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">
               <span className="text-[var(--color-accent)]">{ICONS.monitoring}</span>
-              Monitoring Pengerjaan Modul
+              Monitoring Pembelajaran
             </h2>
             <Link
               href="/pengajar/monitoring"
