@@ -8,6 +8,7 @@ import {
   getTicketDetail,
   replyToTicket,
   updateTicketStatus,
+  getTicketCategories,
 } from "@/services/helpdesk.service";
 import { getAllFeedbacks } from "@/services/evaluation.service";
 import { getUsers } from "@/services/user.service";
@@ -232,6 +233,10 @@ function AdminHelpdeskContent() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
 
+  // Master kategori tiket dari BE (single source of truth, tanpa hardcode).
+  const [ticketCategories, setTicketCategories] = useState<{ value: string; label: string }[]>([]);
+  const [categoriesError, setCategoriesError] = useState("");
+
   // State modal detail
   const [detailTicketId, setDetailTicketId] = useState<string | null>(null);
   const [detailTicket, setDetailTicket] = useState<TicketDetail | null>(null);
@@ -290,6 +295,30 @@ function AdminHelpdeskContent() {
       active = false;
     };
   }, [refreshKey, filterStatus, filterCategory]);
+
+  // Fetch master kategori tiket (dipakai filter kategori).
+  useEffect(() => {
+    let active = true;
+
+    async function fetchCategories() {
+      try {
+        setCategoriesError("");
+        const data = await getTicketCategories();
+        if (!active) return;
+        setTicketCategories(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!active) return;
+        setCategoriesError(
+          err instanceof Error ? err.message : "Gagal memuat kategori tiket."
+        );
+      }
+    }
+
+    fetchCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Fetch Saran & Masukan + data sekolah/kota pengirim saat tab dibuka.
   // Admin bersifat global: GET /api/feedbacks & GET /api/users mengembalikan
@@ -562,14 +591,23 @@ function AdminHelpdeskContent() {
           <label htmlFor="filter-category" className="text-xs font-bold text-slate-600">
             Filter Kategori
           </label>
-          <input
+          <select
             id="filter-category"
-            type="text"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            placeholder="mis. Materi & Video, Akun, Pre-Test/Post-Test"
-            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
-          />
+            disabled={!!categoriesError}
+            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all disabled:opacity-60"
+          >
+            <option value="">Semua Kategori</option>
+            {ticketCategories.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          {categoriesError && (
+            <p className="text-[11px] text-rose-600">{categoriesError}</p>
+          )}
         </div>
 
         {(filterStatus || filterCategory) && (

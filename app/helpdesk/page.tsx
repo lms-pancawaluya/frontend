@@ -7,6 +7,7 @@ import {
   createTicket,
   getTicketDetail,
   replyToTicket,
+  getTicketCategories,
 } from "@/services/helpdesk.service";
 import { getCourses } from "@/services/course.service";
 import CourseFeedbackForm from "@/app/components/common/CourseFeedbackForm";
@@ -213,6 +214,11 @@ function HelpdeskContent() {
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Master kategori tiket dari BE (single source of truth, tanpa hardcode).
+  const [ticketCategories, setTicketCategories] = useState<{ value: string; label: string }[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesError, setCategoriesError] = useState("");
+
   // State modal detail tiket
   const [detailTicketId, setDetailTicketId] = useState<string | null>(null);
   const [detailTicket, setDetailTicket] = useState<TicketDetail | null>(null);
@@ -295,6 +301,34 @@ function HelpdeskContent() {
     };
   }, []);
 
+  // ---------- Fetch master kategori tiket ----------
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchCategories() {
+      try {
+        setCategoriesLoading(true);
+        setCategoriesError("");
+        const data = await getTicketCategories();
+        if (!active) return;
+        setTicketCategories(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!active) return;
+        setCategoriesError(
+          err instanceof Error ? err.message : "Gagal memuat kategori tiket."
+        );
+      } finally {
+        if (active) setCategoriesLoading(false);
+      }
+    }
+
+    fetchCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // ---------- Modal Buat Tiket ----------
 
   function handleOpenCreateModal() {
@@ -313,8 +347,21 @@ function HelpdeskContent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    // Kategori wajib dipilih dari master BE. Jika kategori gagal dimuat,
+    // jangan submit dengan kategori yang tidak valid.
+    if (categoriesError) {
+      setFormError("Kategori tiket gagal dimuat. Muat ulang halaman untuk mencoba lagi.");
+      return;
+    }
+
     if (!subject.trim() || !category.trim() || !description.trim()) {
       setFormError("Subjek, kategori, dan deskripsi wajib diisi.");
+      return;
+    }
+
+    const isValidCategory = ticketCategories.some((c) => c.value === category);
+    if (!isValidCategory) {
+      setFormError("Silakan pilih kategori tiket yang valid.");
       return;
     }
 
@@ -776,15 +823,36 @@ function HelpdeskContent() {
                 <label htmlFor="create-category" className="text-xs font-semibold text-slate-600">
                   Kategori <span className="text-red-500">*</span>
                 </label>
-                <input
-                  id="create-category"
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="mis. Materi & Video, Akun, Pre-Test/Post-Test"
-                  className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
-                  required
-                />
+                {categoriesLoading ? (
+                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                    Memuat kategori...
+                  </p>
+                ) : categoriesError ? (
+                  <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5">
+                    {categoriesError}
+                  </p>
+                ) : ticketCategories.length === 0 ? (
+                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                    Kategori tiket belum tersedia.
+                  </p>
+                ) : (
+                  <select
+                    id="create-category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
+                    required
+                  >
+                    <option value="" disabled>
+                      Pilih kategori
+                    </option>
+                    {ticketCategories.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="space-y-1.5">
