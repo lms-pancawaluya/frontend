@@ -186,9 +186,24 @@ export async function getEvaluationAnswers(moduleId, evaluationId, tipe) {
 }
 
 /**
+ * Error khusus saat BE menolak submit feedback karena masih dalam cooldown
+ * (HTTP 429). Membawa `nextAllowedAt` (ISO) dari response BE bila tersedia.
+ */
+export class FeedbackCooldownError extends Error {
+  constructor(message, nextAllowedAt) {
+    super(message);
+    this.name = "FeedbackCooldownError";
+    this.nextAllowedAt = nextAllowedAt || null;
+  }
+}
+
+/**
  * Kirim Saran & Masukan per Course oleh Guru.
  * URL: POST /api/feedbacks/course/:courseId
  * Body: { masukan, saran } — `saran` required sesuai contract BE.
+ *
+ * Cooldown 1 feedback / 7×24 jam ditegakkan BE (per-user per-course). Saat
+ * masih cooldown, BE merespons HTTP 429; FE melempar FeedbackCooldownError.
  */
 export async function sendCourseFeedback(courseId, payload) {
   const response = await fetchApi(`${API_URL}/api/feedbacks/course/${courseId}`, {
@@ -204,6 +219,14 @@ export async function sendCourseFeedback(courseId, payload) {
     result = await response.json();
   } catch {
     result = null;
+  }
+
+  // 429 = masih dalam cooldown (BE source of truth).
+  if (response.status === 429) {
+    throw new FeedbackCooldownError(
+      result?.pesan || result?.message || "Anda hanya dapat mengirim saran dan masukan 1 kali dalam 7 hari.",
+      result?.data?.nextAllowedAt || null
+    );
   }
 
   if (!response.ok || !result?.sukses) {
