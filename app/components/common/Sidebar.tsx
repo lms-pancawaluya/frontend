@@ -158,10 +158,10 @@ const ICONS = {
 };
 
 function getSettingsSubItems(t: (id: string, en: string) => string): SubNavItem[] {
+  // "General Information" & "Security/Change Password" sudah tersedia di
+  // halaman Profile, jadi tidak diduplikasi di Settings.
   return [
-    { label: t("General Information", "General Information"), href: "/settings?tab=general", icon: ICONS.general },
     { label: t("Preferences", "Preferences"), href: "/settings?tab=preferences", icon: ICONS.preferences },
-    { label: t("Security", "Security"), href: "/settings?tab=security", icon: ICONS.security },
     { label: t("Notifications", "Notifications"), href: "/settings?tab=notifications", icon: ICONS.notifications },
   ];
 }
@@ -457,7 +457,7 @@ export default function Sidebar({
     if (item.subItems) {
       const isAnySubActive = item.subItems.some((sub) => {
         const currentTab = searchParams.get("tab");
-        const defaultActiveTab = sub.href === "/settings?tab=general" && pathname === "/settings" && !currentTab;
+        const defaultActiveTab = sub.href === "/settings?tab=preferences" && pathname === "/settings" && !currentTab;
         return sub.href === activeHref || defaultActiveTab;
       });
 
@@ -524,7 +524,7 @@ export default function Sidebar({
             <ul className="ml-3 space-y-1 border-l-2 border-slate-100 dark:border-slate-800 pl-2 mt-1">
               {item.subItems.map((sub) => {
                 const currentTab = searchParams.get("tab");
-                const defaultActiveTab = sub.href === "/settings?tab=general" && pathname === "/settings" && !currentTab;
+                const defaultActiveTab = sub.href === "/settings?tab=preferences" && pathname === "/settings" && !currentTab;
                 const isSubActive = sub.href === activeHref || defaultActiveTab;
 
                 return (
