@@ -369,6 +369,14 @@ function HelpdeskContent() {
     return () => window.clearTimeout(timeoutId);
   }, [handleOpenDetailModal, searchParams]);
 
+  // Buka modal Buat Tiket dari URL parameter (mis. dari submenu Sidebar).
+  useEffect(() => {
+    if (searchParams.get("create") !== "1") return;
+
+    const timeoutId = window.setTimeout(() => handleOpenCreateModal(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchParams]);
+
   function handleCloseDetailModal() {
     if (replySending) return;
     setDetailTicketId(null);

@@ -184,10 +184,8 @@ function getModulesSubItems(t: (id: string, en: string) => string): SubNavItem[]
 
 function getHelpdeskSubItems(t: (id: string, en: string) => string): SubNavItem[] {
   return [
-    { label: t("Cara membuat tiket", "How to create a ticket"), href: "/helpdesk#create-ticket", icon: ICONS.plusCircle },
-    { label: t("Cara melihat dan membalas tiket", "How to view and reply to tickets"), href: "/helpdesk#view-ticket", icon: ICONS.reply },
-    { label: t("Arti status tiket", "Ticket status meanings"), href: "/helpdesk#ticket-status", icon: ICONS.info },
-    { label: t("Kapan sebaiknya membuat tiket", "When to create a ticket"), href: "/helpdesk#when-to-create", icon: ICONS.help },
+    { label: t("Buat Tiket", "Create Ticket"), href: "/helpdesk?create=1", icon: ICONS.plusCircle },
+    { label: t("Saran & Masukan", "Feedback & Suggestions"), href: "/helpdesk#saran-masukan-heading", icon: ICONS.reply },
   ];
 }
 
