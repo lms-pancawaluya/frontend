@@ -220,6 +220,16 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
     subItems: getHelpdeskSubItems(t),
   };
 
+  // Admin mengelola Helpdesk (management), bukan user-facing Help Center.
+  // Tanpa subItems agar tidak membuka panduan tiket untuk requester.
+  const adminHelpdeskItem: NavItem = {
+    id: "admin-helpdesk",
+    label: t("Helpdesk", "Helpdesk"),
+    href: "/admin/helpdesk",
+    icon: ICONS.helpdesk,
+    badge: t("Baru V1", "New V1"),
+  };
+
   if (role === "admin") {
     return [
       { items: [{ id: "dashboard", label: t("Dashboard", "Dashboard"), href: "/admin", icon: ICONS.dashboard }] },
@@ -243,7 +253,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
       {
         title: t("Layanan", "Services"),
         items: [
-          { ...helpdeskItem, href: "/admin/helpdesk", badge: t("Baru V1", "New V1") },
+          adminHelpdeskItem,
         ],
       },
       {
