@@ -195,6 +195,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
   const settingsItem: NavItem = {
     id: "settings",
     label: t("Pengaturan", "Settings"),
+    href: "/settings",
     icon: ICONS.settings,
     subItems: getSettingsSubItems(t),
   };
@@ -202,6 +203,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
   const profileItem: NavItem = {
     id: "profile",
     label: t("Profil", "Profile"),
+    href: "/profile",
     icon: ICONS.profile,
     subItems: getProfileSubItems(t),
   };
@@ -209,6 +211,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
   const modulesItem: NavItem = {
     id: "modules",
     label: t("Modul Pembelajaran", "Learning Modules"),
+    href: "/modules",
     icon: ICONS.modules,
     subItems: getModulesSubItems(t),
   };
@@ -216,6 +219,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
   const helpdeskItem: NavItem = {
     id: "helpdesk",
     label: t("Bantuan", "Help Center"),
+    href: "/helpdesk",
     icon: ICONS.helpdesk,
     subItems: getHelpdeskSubItems(t),
   };
@@ -355,8 +359,9 @@ export default function Sidebar({
   const [user, setUser] = useState<StoredUser | null>(null);
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
 
-  const toggleDropdown = (id: string) => {
-    setOpenDropdowns((prev) => ({ ...prev, [id]: !prev[id] }));
+  // Hanya satu parent dropdown yang boleh terbuka pada satu waktu.
+  const openOnlyDropdown = (id: string) => {
+    setOpenDropdowns({ [id]: true });
   };
 
   useEffect(() => {
@@ -400,11 +405,15 @@ export default function Sidebar({
 
   useEffect(() => {
     if (!pathname) return;
+    // Auto-buka HANYA parent yang sesuai current route; parent lain tertutup.
+    let activeParent: string | null = null;
+    if (pathname.startsWith("/settings")) activeParent = "settings";
+    else if (pathname.startsWith("/profile")) activeParent = "profile";
+    else if (pathname.startsWith("/modules")) activeParent = "modules";
+    else if (pathname.startsWith("/helpdesk")) activeParent = "helpdesk";
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (pathname.startsWith("/settings")) setOpenDropdowns((p) => ({ ...p, settings: true }));
-    if (pathname.startsWith("/profile")) setOpenDropdowns((p) => ({ ...p, profile: true }));
-    if (pathname.startsWith("/modules")) setOpenDropdowns((p) => ({ ...p, modules: true }));
-    if (pathname.startsWith("/helpdesk")) setOpenDropdowns((p) => ({ ...p, helpdesk: true }));
+    setOpenDropdowns(activeParent ? { [activeParent]: true } : {});
   }, [pathname]);
 
   const sections = getNavSections(user?.role ?? "", t);
@@ -446,11 +455,21 @@ export default function Sidebar({
         return sub.href === activeHref || defaultActiveTab;
       });
 
+      // Klik parent: buka HANYA submenu ini + navigasi ke route utama parent.
+      const handleParentClick = () => {
+        openOnlyDropdown(item.id);
+        if (item.href) {
+          onNavigate?.();
+          router.push(item.href);
+        }
+      };
+
       return (
         <li key={item.id} className="space-y-1">
           <button
             type="button"
-            onClick={() => toggleDropdown(item.id)}
+            onClick={handleParentClick}
+            aria-expanded={isOpen}
             title={collapsed ? item.label : undefined}
             className={`group flex w-full items-center rounded-xl text-sm transition-all ${
               collapsed ? "justify-center px-2 py-2.5" : "justify-between px-3 py-2.5"
