@@ -169,7 +169,7 @@ function getSettingsSubItems(t: (id: string, en: string) => string): SubNavItem[
 function getProfileSubItems(t: (id: string, en: string) => string): SubNavItem[] {
   return [
     { label: t("Data Pribadi & Instansi", "Personal Data & Institution"), href: "/profile?tab=personal", icon: ICONS.general },
-    { label: t("Progres Modul (1)", "Module Progress (1)"), href: "/profile?tab=progress", icon: ICONS.progress },
+    { label: t("Progress Pembelajaran", "Learning Progress"), href: "/profile?tab=progress", icon: ICONS.progress },
     { label: t("Keamanan Akun", "Account Security"), href: "/profile?tab=security", icon: ICONS.security },
   ];
 }

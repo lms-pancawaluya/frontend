@@ -32,7 +32,7 @@ interface GuruProfileProps {
   /**
    * Tab yang aktif saat komponen pertama kali dirender, dikirim dari
    * app/profile/page.tsx berdasarkan query param `?tab=` di URL (diklik dari
-   * menu Sidebar: Data Pribadi & Instansi / Progres Modul / Keamanan Akun).
+   * menu Sidebar: Data Pribadi & Instansi / Progress Pembelajaran / Keamanan Akun).
    * Kalau tidak dikirim, default ke tab "profil".
    */
   initialTab?: "profil" | "progres" | "keamanan";
@@ -562,7 +562,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab }: GuruProfileP
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          Progres Modul ({totalModul})
+          Progress Pembelajaran
         </button>
 
         <button
