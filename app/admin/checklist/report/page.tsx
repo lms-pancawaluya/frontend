@@ -42,17 +42,36 @@ interface UserEvaluations {
 interface FeedbackItem {
   id: string;
   saran: string;
-  kritik: string;
+  /** Field utama contract baru. */
+  masukan?: string;
+  /** Field legacy (transisional) — dibaca defensif bila `masukan` absen. */
+  kritik?: string;
   createdAt: string;
   user: {
     id: string;
     nama: string;
     email: string;
   };
-  module: {
+  /** Relasi Course sesuai contract baru. */
+  course?: {
+    id: string;
+    judul?: string;
+  };
+  /** Relasi legacy (transisional). */
+  module?: {
     id: string;
     judul: string;
   };
+}
+
+/** Ambil teks masukan secara defensif (masukan baru → fallback kritik legacy). */
+function getFeedbackMasukan(fb: FeedbackItem): string {
+  return fb.masukan ?? fb.kritik ?? "";
+}
+
+/** Ambil courseId secara defensif (relasi course baru → fallback module legacy). */
+function getFeedbackCourseId(fb: FeedbackItem): string | undefined {
+  return fb.course?.id ?? fb.module?.id;
 }
 
 export default function AdminMonitoringPage() {
@@ -137,7 +156,7 @@ export default function AdminMonitoringPage() {
         setFeedbacks((data as FeedbackItem[]) ?? []);
       } catch (err) {
         setFeedbackError(
-          err instanceof Error ? err.message : "Gagal memuat saran & kritik."
+          err instanceof Error ? err.message : "Gagal memuat saran & masukan."
         );
       } finally {
         setFeedbackLoading(false);
@@ -398,8 +417,13 @@ export default function AdminMonitoringPage() {
                                     {evaluations.map((ev) => {
                                       const feedbackKey = `${guru.id}:${ev.moduleId}`;
                                       const isFeedbackExpanded = expandedFeedbackKeys.has(feedbackKey);
+                                      // Feedback kini level Course. Cocokkan bila
+                                      // courseId feedback sama dengan moduleId baris
+                                      // (transisional), atau relasi module legacy.
                                       const moduleFeedback = feedbacks.find(
-                                        (fb) => fb.user?.id === guru.id && fb.module?.id === ev.moduleId
+                                        (fb) =>
+                                          fb.user?.id === guru.id &&
+                                          getFeedbackCourseId(fb) === ev.moduleId
                                       );
 
                                       return (
@@ -451,13 +475,13 @@ export default function AdminMonitoringPage() {
                                               >
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                               </svg>
-                                              Saran &amp; Kritik
+                                              Saran &amp; Masukan
                                             </button>
 
                                             {isFeedbackExpanded && (
                                               <div className="mt-3">
                                                 {feedbackLoading ? (
-                                                  <p className="text-xs text-slate-400">Memuat saran &amp; kritik...</p>
+                                                  <p className="text-xs text-slate-400">Memuat saran &amp; masukan...</p>
                                                 ) : feedbackError ? (
                                                   <p className="text-xs text-rose-500">{feedbackError}</p>
                                                 ) : moduleFeedback ? (
@@ -469,14 +493,14 @@ export default function AdminMonitoringPage() {
                                                       </p>
                                                     </div>
                                                     <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-                                                      <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Kritik</p>
+                                                      <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Masukan</p>
                                                       <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
-                                                        {moduleFeedback.kritik || "—"}
+                                                        {getFeedbackMasukan(moduleFeedback) || "—"}
                                                       </p>
                                                     </div>
                                                   </div>
                                                 ) : (
-                                                  <p className="text-xs italic text-slate-400">Belum ada saran &amp; kritik</p>
+                                                  <p className="text-xs italic text-slate-400">Belum ada saran &amp; masukan</p>
                                                 )}
                                               </div>
                                             )}

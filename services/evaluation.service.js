@@ -186,11 +186,12 @@ export async function getEvaluationAnswers(moduleId, evaluationId, tipe) {
 }
 
 /**
- * Kirim saran & kritik per modul oleh Guru
- * URL: POST /api/feedbacks/module/:moduleId
+ * Kirim Saran & Masukan per Course oleh Guru.
+ * URL: POST /api/feedback/course/:courseId
+ * Body: { masukan, saran } — `saran` required sesuai contract BE.
  */
-export async function sendModuleFeedback(moduleId, payload) {
-  const response = await fetchApi(`${API_URL}/api/feedbacks/module/${moduleId}`, {
+export async function sendCourseFeedback(courseId, payload) {
+  const response = await fetchApi(`${API_URL}/api/feedback/course/${courseId}`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify(payload),
@@ -199,16 +200,18 @@ export async function sendModuleFeedback(moduleId, payload) {
   const result = await response.json();
 
   if (!response.ok || !result.sukses) {
-    throw new Error(result.pesan || result.message || "Gagal mengirim saran dan kritik");
+    throw new Error(result.pesan || result.message || "Gagal mengirim saran dan masukan");
   }
 
   return result.data;
 }
 
 /**
- * Get seluruh saran & kritik guru (untuk monitoring admin)
+ * Get seluruh Saran & Masukan guru (untuk monitoring admin)
  * URL: GET /api/feedbacks
- * Backend menjamin satu feedback per guru per modul.
+ * Endpoint GET/list tetap sesuai contract BE yang tersedia (tidak diubah).
+ * Response dapat memuat field `masukan` dan relasi `course`; konsumen
+ * dirender defensif agar toleran terhadap response transisional.
  */
 export async function getAllFeedbacks() {
   const response = await fetchApi(`${API_URL}/api/feedbacks`, {
@@ -219,7 +222,7 @@ export async function getAllFeedbacks() {
   const result = await response.json();
 
   if (!response.ok) {
-    throw new Error(result.pesan || result.message || "Gagal mengambil data saran & kritik");
+    throw new Error(result.pesan || result.message || "Gagal mengambil data saran & masukan");
   }
 
   return result.data ?? [];
