@@ -172,15 +172,19 @@ const TUTORIAL_ITEMS: { title: string; body: string }[] = [
   },
   {
     title: "Cara melihat dan membalas tiket",
-    body: "Klik salah satu tiket pada daftar untuk membuka detail tiket. Di dalam pop-up, Anda dapat melihat informasi tiket, membaca percakapan, dan mengirim balasan. Anda dapat mengirim maksimal 2 pesan berturut-turut — setelah itu, tunggu balasan dari admin/pengajar sebelum mengirim pesan berikutnya.",
+    body: "Klik salah satu tiket pada daftar untuk membuka detail tiket. Di dalam pop-up, Anda dapat melihat informasi tiket, membaca percakapan, dan mengirim balasan. Anda dapat mengirim maksimal 2 pesan berturut-turut pada satu tiket. Setelah mengirim 2 pesan berturut-turut, Anda perlu menunggu balasan dari Admin terlebih dahulu sebelum dapat mengirim pesan berikutnya.",
   },
   {
     title: "Arti status tiket",
     body: "Open (biru): tiket baru diterima dan belum diproses. In Progress (kuning): tiket sedang ditangani oleh tim/fasilitator. Resolved (hijau): kendala sudah ditangani. Closed (hijau): tiket ditutup. Status di luar itu ditampilkan netral (abu-abu). Guru tidak dapat mengubah status tiket.",
   },
   {
+    title: "Saran & Masukan",
+    body: "Gunakan fitur Saran & Masukan untuk menyampaikan masukan atau saran perbaikan terhadap sebuah Course — bukan untuk kendala teknis (gunakan tiket bantuan untuk itu). Batasnya berlaku per Course: untuk setiap Course, Anda hanya dapat mengirim 1 kali saran & masukan dalam periode 7×24 jam (7 hari) untuk mencegah spam. Jika masih dalam periode tersebut, Anda perlu menunggu sampai masa tunggu selesai sebelum dapat mengirim saran & masukan lagi untuk Course yang sama. Anda tetap dapat mengirim saran & masukan untuk Course lain.",
+  },
+  {
     title: "Kapan sebaiknya membuat tiket",
-    body: "Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan Pre-Test atau Post-Test, atau masalah pada akun. Untuk masukan atau saran umum terhadap modul, gunakan fitur Saran & Kritik, bukan tiket bantuan.",
+    body: "Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan Pre-Test atau Post-Test, atau masalah pada akun. Untuk masukan atau saran umum terhadap sebuah Course, gunakan fitur Saran & Masukan, bukan tiket bantuan.",
   },
 ];
 
@@ -422,28 +426,40 @@ function HelpdeskContent() {
         <div className="bg-gradient-to-r from-[#0047A5] via-[#0052C2] to-[#109B51] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="max-w-2xl space-y-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md text-amber-300 border border-white/20">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                Pusat Bantuan Guru
-              </span>
-              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Bantuan / Tiket</h1>
-              <p className="text-slate-100 text-xs sm:text-sm leading-relaxed opacity-90">
-                Ajukan kendala teknis atau pertanyaan seputar pembelajaran. Pantau status tiket yang
-                telah Anda buat di bawah ini.
-              </p>
-            </div>
-
-            <button
-              onClick={handleOpenCreateModal}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#F3BF10] hover:bg-amber-400 text-[#0047A5] text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-amber-400/20 transition-all duration-200 self-start shrink-0"
+          <div className="relative z-10 space-y-4">
+            <a
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span>Buat Tiket</span>
-            </button>
+              <span>Kembali ke Dashboard</span>
+            </a>
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="max-w-2xl space-y-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md text-amber-300 border border-white/20">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  Pusat Bantuan Guru
+                </span>
+                <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Bantuan / Tiket</h1>
+                <p className="text-slate-100 text-xs sm:text-sm leading-relaxed opacity-90">
+                  Ajukan kendala teknis atau pertanyaan seputar pembelajaran. Pantau status tiket yang
+                  telah Anda buat di bawah ini.
+                </p>
+              </div>
+
+              <button
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#F3BF10] hover:bg-amber-400 text-[#0047A5] text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-amber-400/20 transition-all duration-200 self-start shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Buat Tiket</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -704,15 +720,6 @@ function HelpdeskContent() {
             })}
           </div>
         </section>
-
-        <div className="text-center">
-          <a
-            href="/dashboard"
-            className="text-xs font-semibold text-slate-500 hover:text-[#0047A5] transition-colors"
-          >
-            ← Kembali ke Dashboard
-          </a>
-        </div>
       </div>
 
       {/* ================= MODAL BUAT TIKET ================= */}
