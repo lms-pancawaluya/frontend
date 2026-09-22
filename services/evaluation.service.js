@@ -187,20 +187,29 @@ export async function getEvaluationAnswers(moduleId, evaluationId, tipe) {
 
 /**
  * Kirim Saran & Masukan per Course oleh Guru.
- * URL: POST /api/feedback/course/:courseId
+ * URL: POST /api/feedbacks/course/:courseId
  * Body: { masukan, saran } — `saran` required sesuai contract BE.
  */
 export async function sendCourseFeedback(courseId, payload) {
-  const response = await fetchApi(`${API_URL}/api/feedback/course/${courseId}`, {
+  const response = await fetchApi(`${API_URL}/api/feedbacks/course/${courseId}`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify(payload),
   });
 
-  const result = await response.json();
+  // Response BE dapat berupa non-JSON (mis. error HTML 404/500). Parsing
+  // defensif agar tidak melempar raw `JSON.parse` error ke UI.
+  let result = null;
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
 
-  if (!response.ok || !result.sukses) {
-    throw new Error(result.pesan || result.message || "Gagal mengirim saran dan masukan");
+  if (!response.ok || !result?.sukses) {
+    throw new Error(
+      result?.pesan || result?.message || "Gagal mengirim saran dan masukan"
+    );
   }
 
   return result.data;
