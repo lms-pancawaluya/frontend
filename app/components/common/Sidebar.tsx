@@ -166,12 +166,20 @@ function getSettingsSubItems(t: (id: string, en: string) => string): SubNavItem[
   ];
 }
 
-function getProfileSubItems(t: (id: string, en: string) => string): SubNavItem[] {
-  return [
+function getProfileSubItems(t: (id: string, en: string) => string, role?: string): SubNavItem[] {
+  const items: SubNavItem[] = [
     { label: t("Data Pribadi & Instansi", "Personal Data & Institution"), href: "/profile?tab=personal", icon: ICONS.general },
-    { label: t("Progress Pembelajaran", "Learning Progress"), href: "/profile?tab=progress", icon: ICONS.progress },
-    { label: t("Keamanan Akun", "Account Security"), href: "/profile?tab=security", icon: ICONS.security },
   ];
+
+  // Pengajar tidak menampilkan section "Progress Pembelajaran", jadi
+  // submenu-nya juga tidak ditampilkan.
+  if (role !== "pengajar") {
+    items.push({ label: t("Progress Pembelajaran", "Learning Progress"), href: "/profile?tab=progress", icon: ICONS.progress });
+  }
+
+  items.push({ label: t("Keamanan Akun", "Account Security"), href: "/profile?tab=security", icon: ICONS.security });
+
+  return items;
 }
 
 function getModulesSubItems(t: (id: string, en: string) => string): SubNavItem[] {
@@ -203,7 +211,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
     label: t("Profil", "Profile"),
     href: "/profile",
     icon: ICONS.profile,
-    subItems: getProfileSubItems(t),
+    subItems: getProfileSubItems(t, role),
   };
 
   const modulesItem: NavItem = {

@@ -36,6 +36,12 @@ interface GuruProfileProps {
    * Kalau tidak dikirim, default ke tab "profil".
    */
   initialTab?: "profil" | "progres" | "keamanan";
+  /**
+   * Sembunyikan tab & section "Progress Pembelajaran" (dipakai untuk role
+   * Pengajar yang profile-nya tidak menampilkan progress pembelajaran).
+   * Default: false — perilaku Guru tetap sama.
+   */
+  hideProgress?: boolean;
 }
 
 interface SekolahData {
@@ -236,7 +242,7 @@ export default function GuruProfileView(props: GuruProfileProps) {
   return <GuruProfileViewContent key={getProfileStateKey(props.profile)} {...props} />;
 }
 
-function GuruProfileViewContent({ profile, onRefresh, initialTab }: GuruProfileProps) {
+function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress = false }: GuruProfileProps) {
   const getToken = () => localStorage.getItem("token") || "";
 
   const [initialProfileState] = useState(() => getInitialProfileState(profile));
@@ -554,16 +560,18 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab }: GuruProfileP
           Data Pribadi & Instansi
         </button>
 
-        <button
-          onClick={() => setActiveTab("progres")}
-          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            activeTab === "progres"
-              ? "bg-white text-slate-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          Progress Pembelajaran
-        </button>
+        {!hideProgress && (
+          <button
+            onClick={() => setActiveTab("progres")}
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+              activeTab === "progres"
+                ? "bg-white text-slate-900 shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Progress Pembelajaran
+          </button>
+        )}
 
         <button
           onClick={() => setActiveTab("keamanan")}
@@ -754,7 +762,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab }: GuruProfileP
       )}
 
       {/* TAB 2: PROGRES MODUL */}
-      {activeTab === "progres" && (
+      {!hideProgress && activeTab === "progres" && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
           <div>
             <h2 className="text-lg font-bold text-slate-800">Progres Pembelajaran Panca Waluya</h2>
