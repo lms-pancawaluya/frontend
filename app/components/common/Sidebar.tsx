@@ -254,7 +254,7 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
       {
         title: t("Pemantauan & Pembinaan", "Monitoring & Mentoring"),
         items: [
-          { label: t("Monitoring Pengerjaan", "Progress Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring, id: "admin-monitoring" },
+          { label: t("Monitoring Pembelajaran", "Learning Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring, id: "admin-monitoring" },
           { label: t("Diskusi/Komentar Modul", "Module Discussions"), href: "/admin/diskusi", icon: ICONS.chat, id: "admin-diskusi" },
         ],
       },

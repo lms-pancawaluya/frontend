@@ -5,15 +5,16 @@ import { useRouter } from "next/navigation";
 import { getUsersProgressAll } from "@/services/user.service";
 
 // ---------------------------------------------------------------------------
-// Tipe data — mengikuti struktur nested dari GET /api/admin-monitoring/users/progress/all
-// (User → Course → Module → Content/Assessment). Semua field opsional agar
-// defensif terhadap partial/null data.
+// Monitoring Pembelajaran — struktur nested dari
+// GET /api/admin-monitoring/users/progress/all (User → Course → Module → Activity).
+// Semua field opsional agar defensif terhadap partial/null data.
 // ---------------------------------------------------------------------------
 
 interface ContentItem {
   id?: string;
   judul?: string;
   tipe?: string;
+  urutan?: number;
   progressPercent?: number;
   isCompleted?: boolean;
 }
@@ -129,7 +130,7 @@ function contentTypeLabel(tipe?: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-komponen
+// Sub-komponen Monitoring
 // ---------------------------------------------------------------------------
 
 function ProgressBar({ pct }: { pct: number }) {
@@ -138,7 +139,7 @@ function ProgressBar({ pct }: { pct: number }) {
       <div className="h-2.5 flex-1 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
         <div className={`h-full rounded-full ${progressColor(pct)} transition-all duration-500`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="w-10 shrink-0 text-right text-xs font-bold text-gray-700">{pct}%</span>
+      <span className="w-10 shrink-0 text-right text-xs font-bold text-slate-700">{pct}%</span>
     </div>
   );
 }
@@ -151,7 +152,7 @@ function AssessmentStageCard({ title, stage }: { title: string; stage?: Assessme
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold text-[var(--color-navy)]">{title}</span>
+        <span className="text-xs font-bold text-slate-900">{title}</span>
         {exists ? (
           <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone.className}`}>
             {tone.label}
@@ -163,7 +164,7 @@ function AssessmentStageCard({ title, stage }: { title: string; stage?: Assessme
         )}
       </div>
       {exists && nilai !== null && (
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-slate-600">
           Nilai: <span className="font-bold text-slate-800">{nilai}</span>
         </p>
       )}
@@ -179,7 +180,7 @@ function LearningMaterialBlock({ material }: { material?: LearningMaterial | nul
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold text-[var(--color-navy)]">Learning Material</span>
+        <span className="text-xs font-bold text-slate-900">Learning Material</span>
         <span
           className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
             material?.isCompleted
@@ -200,9 +201,14 @@ function LearningMaterialBlock({ material }: { material?: LearningMaterial | nul
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold text-slate-800">{content.judul || "Materi tanpa judul"}</p>
-                    <span className="mt-0.5 inline-block rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 border border-slate-200">
-                      {contentTypeLabel(content.tipe)}
-                    </span>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                      <span className="inline-block rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 border border-slate-200">
+                        {contentTypeLabel(content.tipe)}
+                      </span>
+                      {content.urutan !== undefined && content.urutan !== null && (
+                        <span className="text-[10px] text-slate-400">Urutan #{content.urutan}</span>
+                      )}
+                    </div>
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -252,7 +258,7 @@ function LearningMaterialBlock({ material }: { material?: LearningMaterial | nul
 
 function ModuleRow({ module, index }: { module: ModuleItem; index: number }) {
   const [open, setOpen] = useState(false);
-  const panelId = `module-panel-${module.id ?? index}`;
+  const panelId = `pengajar-module-panel-${module.id ?? index}`;
 
   return (
     <li className="rounded-xl border border-slate-200 overflow-hidden">
@@ -261,7 +267,7 @@ function ModuleRow({ module, index }: { module: ModuleItem; index: number }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="flex w-full items-center justify-between gap-3 bg-white px-3.5 py-2.5 text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-navy)]/30"
+        className="flex w-full items-center justify-between gap-3 bg-white px-3.5 py-2.5 text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
       >
         <span className="flex items-center gap-2 min-w-0">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-[11px] font-bold text-slate-600">
@@ -296,7 +302,7 @@ function CourseCard({ course }: { course: CourseItem }) {
   const pct = clampPercent(course.progressPercent);
   const tone = statusTone(course.statusCourse);
   const completed = fmtDate(course.completedAt);
-  const panelId = `course-panel-${course.id ?? getCourseTitle(course)}`;
+  const panelId = `pengajar-course-panel-${course.id ?? getCourseTitle(course)}`;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -305,7 +311,7 @@ function CourseCard({ course }: { course: CourseItem }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="flex w-full flex-col gap-3 p-4 text-left transition hover:bg-slate-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-navy)]/30 sm:flex-row sm:items-center sm:justify-between"
+        className="flex w-full flex-col gap-3 p-4 text-left transition hover:bg-slate-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 sm:flex-row sm:items-center sm:justify-between"
       >
         <div className="min-w-0 space-y-2 sm:max-w-[55%]">
           <div className="flex flex-wrap items-center gap-2">
@@ -353,23 +359,23 @@ function GuruCard({ guru, fallbackName }: { guru: UserProgressItem; fallbackName
   const courses = guru.courses ?? [];
   const nama = getGuruName(guru, fallbackName);
   const email = getGuruEmail(guru);
-  const panelId = `guru-panel-${guru.userId ?? guru.id ?? nama}`;
+  const panelId = `pengajar-guru-panel-${guru.userId ?? guru.id ?? nama}`;
 
   return (
-    <div className="rounded-3xl border border-[var(--color-border-soft)] bg-white shadow-sm overflow-hidden">
+    <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="flex w-full items-center justify-between gap-4 p-4 text-left transition hover:bg-slate-50/70 sm:p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-navy)]/30"
+        className="flex w-full items-center justify-between gap-4 p-4 text-left transition hover:bg-slate-50/70 sm:p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
       >
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-navy)] text-sm font-bold text-white">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white">
             {nama.charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-[var(--color-navy)]">{nama}</p>
+            <p className="truncate text-sm font-bold text-slate-900">{nama}</p>
             {email && <p className="truncate text-[11px] text-slate-400">{email}</p>}
           </div>
         </div>
@@ -432,8 +438,7 @@ export default function PengajarMonitoringPage() {
         setError("");
         const data = await getUsersProgressAll();
         if (!active) return;
-        const list: UserProgressItem[] = Array.isArray(data) ? (data as UserProgressItem[]) : [];
-        setUsers(list);
+        setUsers(Array.isArray(data) ? (data as UserProgressItem[]) : []);
       } catch (err) {
         if (!active) return;
         setError(err instanceof Error ? err.message : "Gagal memuat data monitoring.");
@@ -455,35 +460,69 @@ export default function PengajarMonitoringPage() {
   }, [users, normalizedQuery]);
 
   if (loading) {
-    return <p className="text-center mt-16 text-gray-500">Memuat data monitoring...</p>;
+    return (
+      <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6">
+        <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
+          <svg className="w-5 h-5 animate-spin text-emerald-700" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          Memuat data monitoring...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)]">
-          Monitoring Pembelajaran
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Pantau progres pembelajaran (course) tiap guru binaan: Pre-Test, materi, dan Post-Test.
-        </p>
-      </div>
+    <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
+        {/* Tombol Navigasi Kembali */}
+        <div>
+          <button
+            onClick={() => router.push("/pengajar")}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm"
+          >
+            <span className="p-1 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </span>
+            Kembali ke Dashboard Pengajar
+          </button>
+        </div>
 
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
-      )}
+        {/* Judul Halaman */}
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            Monitoring Pembelajaran
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Pantau progres pembelajaran (course) tiap guru binaan: Pre-Test, materi, dan Post-Test.
+          </p>
+        </div>
 
-      {!error && (
-        <>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1 rounded-2xl border border-[var(--color-border-soft)] bg-white px-6 py-4 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Guru</span>
-              <div className="text-2xl font-bold text-[var(--color-navy)]">{users.length} Guru</div>
+        {error && (
+          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
+            {error}
+          </div>
+        )}
+
+        {/* ================= MONITORING PEMBELAJARAN ================= */}
+        {!error && (
+          <>
+            <div className="space-y-1 rounded-3xl bg-white p-6 border border-slate-200/80 shadow-sm">
+              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Guru</span>
+              <div className="text-2xl font-bold text-slate-900">{users.length} Guru</div>
             </div>
 
+            {/* Pencarian Guru */}
             <div className="relative w-full sm:max-w-sm">
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
                 </svg>
               </span>
@@ -493,26 +532,38 @@ export default function PengajarMonitoringPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari nama guru..."
                 aria-label="Cari nama guru"
-                className="w-full rounded-xl border border-[var(--color-border-soft)] bg-white py-2.5 pl-10 pr-4 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Bersihkan pencarian"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
-          </div>
 
-          {filteredUsers.length > 0 ? (
-            <div className="space-y-4">
-              {filteredUsers.map((guru, idx) => (
-                <GuruCard key={guru.userId ?? guru.id ?? idx} guru={guru} fallbackName={`Guru ${idx + 1}`} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-8 text-center shadow-sm">
-              <p className="text-sm text-gray-500">
-                {users.length === 0 ? "Belum ada guru dalam lingkup Anda." : "Guru tidak ditemukan."}
-              </p>
-            </div>
-          )}
-        </>
-      )}
+            {filteredUsers.length > 0 ? (
+              <div className="space-y-4">
+                {filteredUsers.map((guru, idx) => (
+                  <GuruCard key={guru.userId ?? guru.id ?? idx} guru={guru} fallbackName={`Guru ${idx + 1}`} />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 text-center shadow-sm">
+                <p className="text-sm text-slate-500">
+                  {users.length === 0 ? "Belum ada guru dalam lingkup Anda." : "Guru tidak ditemukan."}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
