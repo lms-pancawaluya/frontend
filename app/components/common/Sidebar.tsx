@@ -227,7 +227,6 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
     label: t("Helpdesk", "Helpdesk"),
     href: "/admin/helpdesk",
     icon: ICONS.helpdesk,
-    badge: t("Baru V1", "New V1"),
   };
 
   if (role === "admin") {

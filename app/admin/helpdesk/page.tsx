@@ -9,6 +9,8 @@ import {
   replyToTicket,
   updateTicketStatus,
 } from "@/services/helpdesk.service";
+import { getAllFeedbacks } from "@/services/evaluation.service";
+import { getUsers } from "@/services/user.service";
 
 interface Ticket {
   id?: string;
@@ -51,6 +53,59 @@ interface Reply {
 
 interface TicketDetail extends Ticket {
   replies?: Reply[];
+}
+
+// --- Saran & Masukan (course-level feedback) ---
+
+interface FeedbackItem {
+  id?: string;
+  saran?: string;
+  /** Field utama contract baru. */
+  masukan?: string;
+  /** Field legacy (transisional) bila BE belum sepenuhnya migrasi. */
+  kritik?: string;
+  createdAt?: string;
+  created_at?: string;
+  createdDate?: string;
+  tanggal?: string;
+  user?: {
+    id?: string;
+    nama?: string;
+    email?: string;
+    role?: string;
+    sekolah?: string;
+    kotaKab?: string;
+  };
+  /** Relasi Course sesuai contract baru. */
+  course?: {
+    id?: string;
+    judul?: string;
+  };
+  /** Relasi legacy (transisional). */
+  module?: {
+    id?: string;
+    judul?: string;
+  };
+}
+
+/** Info sekolah/kota per user (dari GET /api/users) untuk filter. */
+interface UserSchoolInfo {
+  id?: string;
+  sekolah?: string;
+  kotaKab?: string;
+  role?: string;
+}
+
+function getFeedbackMasukan(fb: FeedbackItem): string {
+  return fb.masukan ?? fb.kritik ?? "";
+}
+
+function getFeedbackCourseLabel(fb: FeedbackItem): string {
+  return fb.course?.judul || fb.module?.judul || fb.course?.id || fb.module?.id || "—";
+}
+
+function getFeedbackCreatedRaw(fb: FeedbackItem): string | undefined {
+  return fb.createdAt || fb.created_at || fb.createdDate || fb.tanggal;
 }
 
 // --- Helper render defensif (sejajar dengan konvensi halaman daftar tiket) ---
@@ -161,6 +216,18 @@ function AdminHelpdeskContent() {
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Tab aktif: Tiket Bantuan | Saran & Masukan
+  const [activeTab, setActiveTab] = useState<"tickets" | "feedback">("tickets");
+
+  // State Saran & Masukan
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
+  // Peta userId -> { sekolah, kotaKab } dari GET /api/users (admin: global).
+  const [userSchoolMap, setUserSchoolMap] = useState<Record<string, UserSchoolInfo>>({});
+  const [filterKota, setFilterKota] = useState("");
+  const [filterSekolah, setFilterSekolah] = useState("");
+
   // State Filter (server-side)
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -223,6 +290,81 @@ function AdminHelpdeskContent() {
       active = false;
     };
   }, [refreshKey, filterStatus, filterCategory]);
+
+  // Fetch Saran & Masukan + data sekolah/kota pengirim saat tab dibuka.
+  // Admin bersifat global: GET /api/feedbacks & GET /api/users mengembalikan
+  // data lintas sekolah (scope ditegakkan BE, bukan FE).
+  useEffect(() => {
+    if (activeTab !== "feedback") return;
+
+    let active = true;
+
+    async function fetchFeedbackData() {
+      try {
+        setFeedbackLoading(true);
+        setFeedbackError("");
+
+        const [feedbackData, usersData] = await Promise.all([
+          getAllFeedbacks(),
+          getUsers(),
+        ]);
+        if (!active) return;
+
+        setFeedbacks(Array.isArray(feedbackData) ? feedbackData : []);
+
+        const map: Record<string, UserSchoolInfo> = {};
+        if (Array.isArray(usersData)) {
+          usersData.forEach((u: UserSchoolInfo) => {
+            if (u && u.id) map[String(u.id)] = u;
+          });
+        }
+        setUserSchoolMap(map);
+      } catch (err) {
+        if (!active) return;
+        setFeedbackError(err instanceof Error ? err.message : "Gagal memuat saran & masukan.");
+      } finally {
+        if (active) setFeedbackLoading(false);
+      }
+    }
+
+    fetchFeedbackData();
+    return () => {
+      active = false;
+    };
+  }, [activeTab]);
+
+  // Nilai unik Kota/Sekolah dari data pengirim feedback (tanpa menebak BE).
+  // Hanya ditawarkan bila memang tersedia dari GET /api/users.
+  const feedbackSekolahOptions = Array.from(
+    new Set(
+      feedbacks
+        .map((fb) => {
+          const id = fb.user?.id ? String(fb.user.id) : "";
+          return (id && userSchoolMap[id]?.sekolah) || fb.user?.sekolah || "";
+        })
+        .filter(Boolean)
+    )
+  ).sort() as string[];
+
+  const feedbackKotaOptions = Array.from(
+    new Set(
+      feedbacks
+        .map((fb) => {
+          const id = fb.user?.id ? String(fb.user.id) : "";
+          return (id && userSchoolMap[id]?.kotaKab) || fb.user?.kotaKab || "";
+        })
+        .filter(Boolean)
+    )
+  ).sort() as string[];
+
+  const filteredFeedbacks = feedbacks.filter((fb) => {
+    const id = fb.user?.id ? String(fb.user.id) : "";
+    const sekolah = (id && userSchoolMap[id]?.sekolah) || fb.user?.sekolah || "";
+    const kota = (id && userSchoolMap[id]?.kotaKab) || fb.user?.kotaKab || "";
+    if (filterSekolah && sekolah !== filterSekolah) return false;
+    if (filterKota && kota !== filterKota) return false;
+    return true;
+  });
 
   // Fetch detail tiket
   async function fetchTicketDetail(ticketId: string) {
@@ -329,6 +471,19 @@ function AdminHelpdeskContent() {
     detailTicket?.status === "closed" ||
     detailTicket?.status === "tutup";
 
+  // Resolusi info pengirim Saran & Masukan (sekolah/kota) secara defensif.
+  function resolveFeedbackSender(fb: FeedbackItem) {
+    const id = fb.user?.id ? String(fb.user.id) : "";
+    const info = id ? userSchoolMap[id] : undefined;
+    return {
+      nama: fb.user?.nama || "-",
+      email: fb.user?.email || "",
+      role: fb.user?.role || info?.role || "",
+      sekolah: info?.sekolah || fb.user?.sekolah || "",
+      kota: info?.kotaKab || fb.user?.kotaKab || "",
+    };
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* HEADER BANNER */}
@@ -342,6 +497,7 @@ function AdminHelpdeskContent() {
           </h1>
           <p className="text-sm text-slate-400 mt-1">
             Pantau kendala teknis dari Guru, berikan jawaban/balasan, dan perbarui status tiket.
+            Tinjau juga Saran &amp; Masukan lintas sekolah.
           </p>
         </div>
         <Link
@@ -352,6 +508,36 @@ function AdminHelpdeskContent() {
         </Link>
       </div>
 
+      {/* TAB NAVIGASI */}
+      <div className="flex gap-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={() => setActiveTab("tickets")}
+          aria-pressed={activeTab === "tickets"}
+          className={`px-4 py-2.5 text-sm font-bold -mb-px border-b-2 transition-colors ${
+            activeTab === "tickets"
+              ? "border-emerald-500 text-emerald-700"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Tiket Bantuan
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("feedback")}
+          aria-pressed={activeTab === "feedback"}
+          className={`px-4 py-2.5 text-sm font-bold -mb-px border-b-2 transition-colors ${
+            activeTab === "feedback"
+              ? "border-emerald-500 text-emerald-700"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Saran &amp; Masukan
+        </button>
+      </div>
+
+      {activeTab === "tickets" && (
+        <>
       {/* FILTER PANEL */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col sm:flex-row gap-4 items-end">
         <div className="flex-1 space-y-1.5 w-full">
@@ -506,6 +692,160 @@ function AdminHelpdeskContent() {
           </div>
         )}
       </div>
+        </>
+      )}
+
+      {/* ================= SARAN & MASUKAN ================= */}
+      {activeTab === "feedback" && (
+        <>
+          {/* FILTER SARAN & MASUKAN (Kota / Sekolah) */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 space-y-1.5 w-full">
+              <label htmlFor="feedback-filter-kota" className="text-xs font-bold text-slate-600">
+                Filter Kota
+              </label>
+              <select
+                id="feedback-filter-kota"
+                value={filterKota}
+                onChange={(e) => setFilterKota(e.target.value)}
+                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
+              >
+                <option value="">Semua Kota</option>
+                {feedbackKotaOptions.map((kota) => (
+                  <option key={kota} value={kota}>
+                    {kota}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1 space-y-1.5 w-full">
+              <label htmlFor="feedback-filter-sekolah" className="text-xs font-bold text-slate-600">
+                Filter Sekolah
+              </label>
+              <select
+                id="feedback-filter-sekolah"
+                value={filterSekolah}
+                onChange={(e) => setFilterSekolah(e.target.value)}
+                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
+              >
+                <option value="">Semua Sekolah</option>
+                {feedbackSekolahOptions.map((sekolah) => (
+                  <option key={sekolah} value={sekolah}>
+                    {sekolah}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {(filterKota || filterSekolah) && (
+              <button
+                onClick={() => {
+                  setFilterKota("");
+                  setFilterSekolah("");
+                }}
+                className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors h-10 px-4 flex items-center justify-center border border-slate-200 rounded-xl hover:bg-slate-50 shrink-0 w-full sm:w-auto"
+              >
+                Bersihkan Filter
+              </button>
+            )}
+          </div>
+
+          {/* DAFTAR SARAN & MASUKAN */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+            {feedbackLoading ? (
+              <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-20">
+                <svg className="w-5 h-5 animate-spin text-emerald-600" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Memuat saran &amp; masukan...
+              </div>
+            ) : feedbackError ? (
+              <div className="text-center py-16 space-y-3">
+                <p className="alert-error inline-block">{feedbackError}</p>
+                <div>
+                  <button
+                    onClick={() => setActiveTab("tickets")}
+                    className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                  >
+                    Ke Tiket Bantuan
+                  </button>
+                </div>
+              </div>
+            ) : filteredFeedbacks.length === 0 ? (
+              <div className="text-center py-20 space-y-2">
+                <svg className="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M7 8h10M7 12h6m-1 9l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v9a2 2 0 01-2 2h-6l-4 4z" />
+                </svg>
+                <p className="text-slate-600 text-sm font-semibold">
+                  {feedbacks.length === 0
+                    ? "Belum ada saran & masukan."
+                    : "Tidak ada saran & masukan sesuai filter."}
+                </p>
+                {feedbacks.length > 0 && (
+                  <p className="text-slate-400 text-xs">
+                    Coba sesuaikan filter Kota atau Sekolah.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {filteredFeedbacks.map((fb, idx) => {
+                  const sender = resolveFeedbackSender(fb);
+                  const createdAt = getFeedbackCreatedRaw(fb);
+                  return (
+                    <li key={fb.id ?? idx} className="p-5 sm:p-6 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-slate-800">{sender.nama}</span>
+                            {sender.role && (
+                              <span className="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                {getSenderRoleLabel(sender.role)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400">{sender.email}</div>
+                          <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                            <span>Sekolah: {sender.sekolah || "—"}</span>
+                            <span>Kota: {sender.kota || "—"}</span>
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-400 shrink-0 sm:text-right">
+                          <div className="font-semibold text-slate-500">
+                            Course: {getFeedbackCourseLabel(fb)}
+                          </div>
+                          {createdAt && <div className="mt-0.5">{formatDateTime(createdAt)}</div>}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2.5 sm:grid-cols-2">
+                        <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                            Masukan
+                          </p>
+                          <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
+                            {getFeedbackMasukan(fb) || "—"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                            Saran
+                          </p>
+                          <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
+                            {fb.saran || "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </>
+      )}
 
       {/* ================= MODAL DETAIL TIKET (ADMIN) ================= */}
       {detailTicketId && (
