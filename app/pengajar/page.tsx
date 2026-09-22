@@ -6,7 +6,6 @@ import Link from "next/link";
 import { getProfile } from "@/services/auth.service";
 import Header from "@/app/components/common/Header";
 import { getUsers, getUsersProgressAll } from "@/services/user.service";
-import { getRtlSubmissions } from "@/services/rtl.service";
 
 interface User {
   id: string;
@@ -28,19 +27,10 @@ interface ProgressData {
   persentase: number;
 }
 
-interface RtlItem {
-  id: string;
-  status?: string;
-  user?: { nama?: string };
-  module?: { judul?: string };
-}
-
 interface Stats {
   guruCount: number;
   avgProgress: number | null;
   distribusi: { selesai: number; progres: number; belum: number; total: number };
-  rtlPending: number;
-  rtlTotal: number;
   evaluasiSelesai: number;
 }
 
@@ -80,8 +70,6 @@ const ICONS = {
   ),
 };
 
-const PENDING = new Set(["pending", "menunggu", "diajukan"]);
-
 export default function PengajarDashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -120,9 +108,8 @@ export default function PengajarDashboardPage() {
     async function loadStats() {
       setStatsLoading(true);
       try {
-        const [users, rtl, progressAll] = await Promise.all([
+        const [users, progressAll] = await Promise.all([
           getUsers().catch(() => []),
-          getRtlSubmissions().catch(() => [] as RtlItem[]),
           getUsersProgressAll().catch(() => [] as ProgressData[]),
         ]);
 
@@ -152,16 +139,11 @@ export default function PengajarDashboardPage() {
         const progres = withProg.length - selesai - belum;
         const avgProgress = withProg.length ? Math.round(sum / withProg.length) : null;
 
-        const rtlList = rtl as RtlItem[];
-        const rtlPending = rtlList.filter((r) => PENDING.has(String(r.status || "").toLowerCase())).length;
-
         if (!active) return;
         setStats({
           guruCount: guru.length,
           avgProgress,
           distribusi: { selesai, progres, belum, total: withProg.length },
-          rtlPending,
-          rtlTotal: rtlList.length,
           evaluasiSelesai,
         });
       } finally {
@@ -214,20 +196,6 @@ export default function PengajarDashboardPage() {
       iconWrap: "bg-blue-100 text-blue-600",
       card: "border-blue-100 bg-blue-50/40",
     },
-    {
-      label: "RTL Perlu Ditinjau",
-      value: stats?.rtlPending ?? 0,
-      sub:
-        stats && stats.rtlPending > 0
-          ? `dari ${stats.rtlTotal} pengajuan`
-          : stats && stats.rtlTotal > 0
-            ? `${stats.rtlTotal} pengajuan`
-            : "belum ada pengajuan",
-      subClass: stats && stats.rtlPending > 0 ? "text-red-500 font-medium" : "text-gray-400",
-      icon: ICONS.document,
-      iconWrap: "bg-purple-100 text-purple-600",
-      card: "border-purple-100 bg-purple-50/40",
-    },
   ];
 
   const dist = stats?.distribusi ?? { selesai: 0, progres: 0, belum: 0, total: 0 };
@@ -267,14 +235,6 @@ export default function PengajarDashboardPage() {
       arrow: "bg-amber-50 text-amber-600",
     },
     {
-      title: "RTL",
-      desc: "Tinjau dan nilai Rencana Tindak Lanjut yang diajukan guru.",
-      href: "/pengajar/rtl",
-      icon: ICONS.document,
-      iconWrap: "bg-purple-100 text-purple-600",
-      arrow: "bg-purple-50 text-purple-600",
-    },
-    {
       title: "Diskusi/Komentar Modul",
       desc: "Ikuti diskusi modul dan berikan tanggapan untuk guru.",
       href: "/pengajar/diskusi",
@@ -301,7 +261,7 @@ export default function PengajarDashboardPage() {
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Selamat datang, {user?.nama ?? "Pengajar"}.</h1>
             <p className="text-xs leading-relaxed text-slate-100/90 sm:text-sm">
-              Bina dan pantau perkembangan guru{user?.sekolah ? ` di ${user.sekolah}` : ""}: progres modul, hasil Pre-Test/Post-Test, RTL, dan diskusi.
+              Bina dan pantau perkembangan guru{user?.sekolah ? ` di ${user.sekolah}` : ""}: progres modul, hasil Pre-Test/Post-Test, dan diskusi.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3 self-start md:self-auto">

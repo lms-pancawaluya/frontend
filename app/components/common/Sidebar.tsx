@@ -245,7 +245,6 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
         title: t("Pemantauan & Pembinaan", "Monitoring & Mentoring"),
         items: [
           { label: t("Monitoring Pengerjaan", "Progress Monitoring"), href: "/admin/checklist/report", icon: ICONS.monitoring, id: "admin-monitoring" },
-          { label: t("RTL", "Action Plan (RTL)"), href: "/admin/rtl", icon: ICONS.document, id: "admin-rtl" },
           { label: t("Diskusi/Komentar Modul", "Module Discussions"), href: "/admin/diskusi", icon: ICONS.chat, id: "admin-diskusi" },
         ],
       },
@@ -275,7 +274,6 @@ function getNavSections(role: string, t: (id: string, en: string) => string): Na
           { label: t("Kelola Modul Pembelajaran", "Manage Learning Modules"), href: "/admin/modules", icon: ICONS.modules, id: "pengajar-modules" },
           { label: t("Kelola Guru", "Manage Teachers"), href: "/pengajar/guru", icon: ICONS.users, id: "pengajar-guru" },
           { label: t("Monitoring Pengerjaan Modul", "Module Progress Monitoring"), href: "/pengajar/monitoring", icon: ICONS.monitoring, id: "pengajar-monitoring" },
-          { label: t("RTL", "Action Plan (RTL)"), href: "/pengajar/rtl", icon: ICONS.document, id: "pengajar-rtl" },
           { label: t("Diskusi/Komentar Modul", "Module Discussions"), href: "/pengajar/diskusi", icon: ICONS.chat, id: "pengajar-diskusi" },
         ],
       },
