@@ -144,22 +144,32 @@ function isTicketClosed(status?: string): boolean {
 }
 
 /**
- * Batas 2 pesan berturut-turut dari guru sebelum admin/pengajar membalas.
+ * Role yang bertindak sebagai requester pada Helpdesk (membuat & membalas
+ * tiket mereka sendiri): Guru dan Pengajar. Admin bersifat ticket manager.
+ */
+function isRequesterRole(role?: string): boolean {
+  const r = String(role || "").toLowerCase();
+  return r === "guru" || r === "pengajar";
+}
+
+/**
+ * Batas 2 pesan berturut-turut dari requester (Guru/Pengajar) sebelum
+ * admin/pengajar membalas. Berlaku sama untuk Guru dan Pengajar.
  * ponytail: frontend-only enforcement — upgrade ketika BE mengonfirmasi server-side.
  */
-const GURU_CONSECUTIVE_LIMIT = 2;
+const REQUESTER_CONSECUTIVE_LIMIT = 2;
 
-function isGuruReplyBlocked(replies: Reply[]): boolean {
+function isRequesterReplyBlocked(replies: Reply[]): boolean {
   if (replies.length === 0) return false;
   let consecutive = 0;
   // Hitung dari pesan terakhir ke belakang.
   for (let i = replies.length - 1; i >= 0; i--) {
-    const role = String(replies[i].sender?.role || "").toLowerCase();
-    if (role === "guru") {
+    const role = replies[i].sender?.role;
+    if (isRequesterRole(role)) {
       consecutive++;
-      if (consecutive >= GURU_CONSECUTIVE_LIMIT) return true;
+      if (consecutive >= REQUESTER_CONSECUTIVE_LIMIT) return true;
     } else {
-      break; // pesan non-guru ditemukan, hentikan hitungan
+      break; // pesan dari sisi lain (admin) ditemukan, hentikan hitungan
     }
   }
   return false;
@@ -465,7 +475,7 @@ function HelpdeskContent() {
   const detailBadge = detailTicket ? getStatusBadge(detailTicket.status) : null;
   const detailDescription = detailTicket ? getDescription(detailTicket) : "";
   const ticketIsClosed = detailTicket ? isTicketClosed(detailTicket.status) : false;
-  const guruBlocked = isGuruReplyBlocked(detailReplies);
+  const requesterBlocked = isRequesterReplyBlocked(detailReplies);
 
   return (
     <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden">
@@ -1001,15 +1011,15 @@ function HelpdeskContent() {
                     ) : (
                       <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                         {detailReplies.map((r, idx) => {
-                          const isGuru = String(r.sender?.role || "").toLowerCase() === "guru";
+                          const isRequester = isRequesterRole(r.sender?.role);
                           return (
                             <div
                               key={r.id || idx}
-                              className={`flex ${isGuru ? "justify-end" : "justify-start"}`}
+                              className={`flex ${isRequester ? "justify-end" : "justify-start"}`}
                             >
                               <div
                                 className={`max-w-[85%] rounded-2xl border px-4 py-3 shadow-sm ${
-                                  isGuru
+                                  isRequester
                                     ? "bg-[#419AD6]/10 border-[#419AD6]/30"
                                     : "bg-white border-slate-200/80"
                                 }`}
@@ -1020,7 +1030,7 @@ function HelpdeskContent() {
                                   </span>
                                   <span
                                     className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                                      isGuru
+                                      isRequester
                                         ? "bg-blue-100 text-blue-700"
                                         : "bg-purple-100 text-purple-700"
                                     }`}
@@ -1048,7 +1058,7 @@ function HelpdeskContent() {
                     <div className="text-center py-3 text-sm text-slate-400 font-medium bg-slate-50/60 rounded-2xl border border-slate-100">
                       Tiket sudah ditutup. Tidak dapat mengirim balasan.
                     </div>
-                  ) : guruBlocked ? (
+                  ) : requesterBlocked ? (
                     <div className="text-center py-3 text-sm text-amber-700 font-medium bg-amber-50 rounded-2xl border border-amber-200">
                       Anda sudah mengirim 2 pesan. Silakan tunggu balasan admin.
                     </div>
