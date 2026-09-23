@@ -81,7 +81,7 @@ export default function HeroCta() {
       </Link>
       <Link
         href="/login"
-        className="bg-white text-[var(--color-navy)] border border-[var(--color-border-soft)] px-6 py-3 rounded-full font-medium hover:bg-[var(--color-pale)] transition"
+        className="bg-white text-[var(--color-navy)] border border-[var(--color-border-soft)] px-6 py-3 rounded-full font-medium hover:bg-[var(--color-pale)] transition dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
       >
         Saya sudah punya akun
       </Link>

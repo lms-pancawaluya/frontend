@@ -530,8 +530,8 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
         <div
           className={`p-4 rounded-2xl text-sm font-medium border flex items-center gap-3 transition-all ${
             message.type === "success" 
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200 shadow-xs" 
-              : "bg-rose-50 text-rose-800 border-rose-200 shadow-xs"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200 shadow-xs dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border-rose-200 shadow-xs dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
           }`}
         >
           {message.type === "success" ? (
@@ -548,13 +548,13 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
       )}
 
       {/* TAB NAVIGATION PILL STYLE */}
-      <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex gap-1 text-xs font-semibold">
+      <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex gap-1 text-xs font-semibold dark:bg-slate-800/80">
         <button
           onClick={() => setActiveTab("profil")}
           className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
             activeTab === "profil"
-              ? "bg-white text-slate-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-slate-900 shadow-xs font-bold dark:bg-slate-700 dark:text-slate-100"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           }`}
         >
           Data Pribadi & Instansi
@@ -565,8 +565,8 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
             onClick={() => setActiveTab("progres")}
             className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
               activeTab === "progres"
-                ? "bg-white text-slate-900 shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white text-slate-900 shadow-xs font-bold dark:bg-slate-700 dark:text-slate-100"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             }`}
           >
             Progress Pembelajaran
@@ -577,8 +577,8 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
           onClick={() => setActiveTab("keamanan")}
           className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
             activeTab === "keamanan"
-              ? "bg-white text-slate-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-slate-900 shadow-xs font-bold dark:bg-slate-700 dark:text-slate-100"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           }`}
         >
           Keamanan Akun
@@ -587,57 +587,57 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
       {/* TAB 1: DATA PRIBADI & INSTANSI */}
       {activeTab === "profil" && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Informasi Profil Pendidik</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Kelola data personal dan instansi pendidikan di Jawa Barat.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Informasi Profil Pendidik</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Kelola data personal dan instansi pendidikan di Jawa Barat.</p>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-5">
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Nama Lengkap</label>
                 <input
                   type="text"
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   required
                   placeholder="Masukkan Nama Lengkap"
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 />
               </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Email Resmi (@gmail.com)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Email Resmi (@gmail.com)</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="contoh@gmail.com"
                   required
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">NIP (Nomor Induk Pegawai)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">NIP (Nomor Induk Pegawai)</label>
                 <input
                   type="text"
                   value={formatNipDisplay(formData.nip)}
                   disabled
                   readOnly
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none font-mono"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none font-mono dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">NIP terverifikasi secara resmi.</p>
+                <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">NIP terverifikasi secara resmi.</p>
               </div>
             </div>
 
             {/* BOX PILIH SEKOLAH & WILAYAH DISDIK JABAR */}
-            <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-4">
+            <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-4 dark:bg-slate-800/80 dark:border-slate-700">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-bold text-slate-800 flex items-center gap-2">
+                <label className="block text-xs font-bold text-slate-800 flex items-center gap-2 dark:text-slate-100">
                   <svg className="w-4 h-4 text-[#0047A5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
                   </svg>
@@ -660,11 +660,11 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                 <div className="space-y-3">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Kabupaten / Kota</label>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Kabupaten / Kota</label>
                       <select
                         value={selectedDaerah}
                         onChange={handleDaerahChange}
-                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700"
+                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                       >
                         <option value="">-- Pilih Kab/Kota --</option>
                         {Object.keys(DATA_SEKOLAH_JABAR).map((kota, idx) => (
@@ -676,12 +676,12 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Nama Sekolah</label>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Nama Sekolah</label>
                       <select
                         value={formData.sekolah}
                         disabled={!selectedDaerah}
                         onChange={handleSekolahSelect}
-                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:disabled:bg-slate-900"
                       >
                         <option value="">-- Pilih Sekolah --</option>
                         {selectedDaerah &&
@@ -696,12 +696,12 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
                   {formData.alamatSekolah && (
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Alamat Sekolah</label>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Alamat Sekolah</label>
                       <textarea
                         value={formData.alamatSekolah}
                         readOnly
                         rows={2}
-                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-600 outline-none resize-none cursor-not-allowed"
+                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-600 outline-none resize-none cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                       />
                     </div>
                   )}
@@ -709,24 +709,24 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               ) : (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Nama Sekolah</label>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Nama Sekolah</label>
                     <input
                       type="text"
                       value={formData.sekolah}
                       onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
                       placeholder="Contoh: SMA Negeri 1 Bandung"
                       required
-                      className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white"
+                      className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Alamat Sekolah</label>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Alamat Sekolah</label>
                     <input
                       type="text"
                       value={formData.alamatSekolah}
                       onChange={(e) => setFormData({ ...formData, alamatSekolah: e.target.value })}
                       placeholder="Masukkan jalan, kecamatan, kabupaten/kota"
-                      className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white"
+                      className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     />
                   </div>
                 </div>
@@ -734,7 +734,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Nomor WhatsApp/HP Aktif</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Nomor WhatsApp/HP Aktif</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -743,7 +743,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                 onChange={handleNoHpChange}
                 placeholder="081234567890"
                 required
-                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
@@ -763,22 +763,22 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
       {/* TAB 2: PROGRES MODUL */}
       {!hideProgress && activeTab === "progres" && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Progres Pembelajaran Panca Waluya</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Sertifikasi & kelengkapan modul karakter Sunda.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Progres Pembelajaran Panca Waluya</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Sertifikasi & kelengkapan modul karakter Sunda.</p>
           </div>
 
           {profile.progress && profile.progress.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {profile.progress.map((item, idx) => (
-                <div key={idx} className="p-5 rounded-2xl border border-slate-200/90 bg-white hover:shadow-md transition-all space-y-4">
+                <div key={idx} className="p-5 rounded-2xl border border-slate-200/90 bg-white hover:shadow-md transition-all space-y-4 dark:bg-slate-900 dark:border-slate-800">
                   <div className="flex justify-between items-start gap-2">
                     <div>
                       <span className="text-[10px] bg-[#109B51]/10 text-[#109B51] font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-[#109B51]/20">
                         {item.module.aspekPancawaluya || "Panca Waluya"}
                       </span>
-                      <h3 className="text-sm font-bold text-slate-800 mt-1 line-clamp-1">
+                      <h3 className="text-sm font-bold text-slate-800 mt-1 line-clamp-1 dark:text-slate-100">
                         {item.module.judul}
                       </h3>
                     </div>
@@ -788,17 +788,17 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px] font-medium text-slate-500">
+                    <div className="flex justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
                       <span>Progres Kelulusan</span>
                       <span className="font-bold text-[#109B51]">100%</span>
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden dark:bg-slate-800">
                       <div className="bg-[#109B51] h-full w-full rounded-full" />
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-1 border-t border-slate-100">
-                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-1 border-t border-slate-100 dark:text-slate-500 dark:border-slate-800">
+                    <svg className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Selesai: {item.completedAt ? new Date(item.completedAt).toLocaleDateString("id-ID") : "-"}
@@ -807,12 +807,12 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
-              <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl dark:border-slate-700">
+              <svg className="w-12 h-12 text-slate-300 mx-auto mb-3 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
-              <p className="text-sm font-semibold text-slate-600">Belum ada modul yang diselesaikan</p>
-              <p className="text-xs text-slate-400 mt-1">Selesaikan modul pelatihan Anda untuk memperbarui progres di sini.</p>
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Belum ada modul yang diselesaikan</p>
+              <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">Selesaikan modul pelatihan Anda untuk memperbarui progres di sini.</p>
             </div>
           )}
         </div>
@@ -820,34 +820,34 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
       {/* TAB 3: KEAMANAN AKUN */}
       {activeTab === "keamanan" && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Keamanan & Kata Sandi</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Keamanan & Kata Sandi</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.</p>
           </div>
 
           <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-xl">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Password Saat Ini</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Password Saat Ini</label>
               <input
                 type="password"
                 value={passwordData.passwordLama}
                 onChange={(e) => setPasswordData({ ...passwordData, passwordLama: e.target.value })}
                 required
                 placeholder="••••••••"
-                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Password Baru</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Password Baru</label>
               <input
                 type="password"
                 value={passwordData.passwordBaru}
                 onChange={(e) => setPasswordData({ ...passwordData, passwordBaru: e.target.value })}
                 required
                 placeholder="••••••••"
-                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
@@ -855,7 +855,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               <button
                 type="submit"
                 disabled={savingPassword}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60"
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
               >
                 {savingPassword ? "Memperbarui..." : "Update Password Akun"}
               </button>

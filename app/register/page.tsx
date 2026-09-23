@@ -59,21 +59,21 @@ export default function RegisterPage() {
       </div>
 
       {/* ================= CARD UTAMA REGISTER ================= */}
-      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20 dark:bg-slate-900/95">
         <div className="text-center mb-6">
 
-          <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight">
+          <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight dark:text-slate-100">
             Daftar Akun Guru
           </h1>
 
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mt-1 dark:text-slate-400">
             Buat akun untuk mulai belajar Pancawaluya
           </p>
         </div>
 
         <RegisterForm />
 
-        <p className="text-sm text-gray-500 text-center mt-6">
+        <p className="text-sm text-gray-500 text-center mt-6 dark:text-slate-400">
           Sudah punya akun?{" "}
           <Link href="/login" className="text-[var(--color-accent)] font-medium hover:underline">
             Login di sini

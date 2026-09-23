@@ -120,24 +120,24 @@ function OtpContent() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20">
+    <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20 dark:bg-slate-900/95">
       <div className="text-center mb-6">
         <div className="inline-block bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-3 py-1 rounded-full mb-3 border border-[var(--color-border-soft)]">
           Pancawaluya
         </div>
 
-        <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight">
+        <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight dark:text-slate-100">
           Verifikasi Kode OTP
         </h1>
 
-        <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+        <p className="text-sm text-gray-500 mt-1 leading-relaxed dark:text-slate-400">
           Masukkan 6 digit kode verifikasi yang telah dikirim ke email{" "}
-          <span className="font-semibold text-slate-800 break-all">{email || "Anda"}</span>
+          <span className="font-semibold text-slate-800 break-all dark:text-slate-200">{email || "Anda"}</span>
         </p>
       </div>
 
       {error && (
-        <div className="p-3 mb-4 bg-rose-50 text-rose-700 border border-rose-200 text-xs rounded-xl font-medium flex items-center gap-2">
+        <div className="p-3 mb-4 bg-rose-50 text-rose-700 border border-rose-200 text-xs rounded-xl font-medium flex items-center gap-2 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
           <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -158,7 +158,7 @@ function OtpContent() {
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}
-              className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all text-slate-800 font-mono"
+              className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all text-slate-800 font-mono dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
             />
           ))}
         </div>
@@ -198,7 +198,7 @@ function OtpContent() {
         </button>
       </form>
 
-      <div className="text-center space-y-2 pt-5 border-t border-slate-100 mt-6 text-xs text-gray-500">
+      <div className="text-center space-y-2 pt-5 border-t border-slate-100 mt-6 text-xs text-gray-500 dark:border-slate-800 dark:text-slate-400">
         <p>
           Tidak menerima kode?{" "}
           {canResend ? (
@@ -210,13 +210,13 @@ function OtpContent() {
               Kirim Ulang OTP
             </button>
           ) : (
-            <span className="text-gray-400">
-              Kirim ulang dalam <strong className="text-slate-700">{timer} detik</strong>
+            <span className="text-gray-400 dark:text-slate-500">
+              Kirim ulang dalam <strong className="text-slate-700 dark:text-slate-300">{timer} detik</strong>
             </span>
           )}
         </p>
         <div>
-          <Link href="/login" className="text-gray-400 hover:text-gray-600 text-xs font-medium transition">
+          <Link href="/login" className="text-gray-400 hover:text-gray-600 text-xs font-medium transition dark:text-slate-500 dark:hover:text-slate-300">
             ← Kembali ke Login
           </Link>
         </div>
@@ -270,7 +270,7 @@ export default function OtpPage() {
       </div>
 
       {/* CARD UTAMA OTP */}
-      <Suspense fallback={<p className="text-sm text-slate-500 z-20">Memuat halaman OTP...</p>}>
+      <Suspense fallback={<p className="text-sm text-slate-500 z-20 dark:text-slate-400">Memuat halaman OTP...</p>}>
         <OtpContent />
       </Suspense>
     </div>

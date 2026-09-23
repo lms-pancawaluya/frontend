@@ -128,16 +128,16 @@ export default function RegisterGuruForm() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-6">
-      <h2 className="text-lg font-bold text-slate-800">Registrasi Data Guru</h2>
+    <div className="max-w-xl mx-auto p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
+      <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Registrasi Data Guru</h2>
 
       {/* Toast Notification Alert */}
       {toastMessage && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl flex items-start justify-between gap-2">
+        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl flex items-start justify-between gap-2 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
           <span>{toastMessage}</span>
           <button
             onClick={() => setToastMessage(null)}
-            className="font-bold text-amber-600 hover:text-amber-900"
+            className="font-bold text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-200"
           >
             ✕
           </button>
@@ -147,14 +147,14 @@ export default function RegisterGuruForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-xs">
         {/* NIP Input */}
         <div>
-          <label className="block font-semibold text-slate-700 mb-1">NIP</label>
+          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">NIP</label>
           <div className="flex gap-2">
             <input
               {...register("nip")}
               type="text"
               placeholder="Masukkan NIP"
               onBlur={handleCekNip}
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5]"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
             />
             <button
               type="button"
@@ -169,49 +169,49 @@ export default function RegisterGuruForm() {
 
         {/* Nama Guru */}
         <div>
-          <label className="block font-semibold text-slate-700 mb-1">Nama Guru</label>
+          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Nama Guru</label>
           <input
             {...register("namaGuru")}
             type="text"
             disabled={isNipFound}
             placeholder="Nama lengkap guru"
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 disabled:bg-slate-100 disabled:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5]"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 disabled:bg-slate-100 disabled:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:disabled:bg-slate-900 dark:disabled:text-slate-400"
           />
         </div>
 
         {/* Pencarian Sekolah (Autocomplete UI) - Hanya aktif jika NIP tidak ditemukan */}
         {!isNipFound ? (
           <div className="relative">
-            <label className="block font-semibold text-slate-700 mb-1">Cari Sekolah</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Cari Sekolah</label>
             <input
               type="text"
               value={schoolSearchQuery}
               onChange={(e) => setSchoolSearchQuery(e.target.value)}
               placeholder="Ketik minimal 3 karakter nama sekolah..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
             />
 
             {/* Dropdown Options */}
             {showDropdown && (
-              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-56 overflow-y-auto py-1">
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-56 overflow-y-auto py-1 dark:bg-slate-800 dark:border-slate-700">
                 {isSearchingSchool ? (
-                  <p className="p-3 text-slate-400 text-center">Mencari sekolah...</p>
+                  <p className="p-3 text-slate-400 text-center dark:text-slate-500">Mencari sekolah...</p>
                 ) : schoolOptions.length > 0 ? (
                   schoolOptions.map((sekolah) => (
                     <button
                       type="button"
                       key={sekolah.id}
                       onClick={() => handleSelectSekolah(sekolah)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors"
+                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors dark:hover:bg-slate-700/60 dark:border-slate-700"
                     >
-                      <p className="font-bold text-slate-800">{sekolah.nama}</p>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="font-bold text-slate-800 dark:text-slate-100">{sekolah.nama}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
                         NPSN: {sekolah.npsn} | {sekolah.kecamatan}, {sekolah.kotaKab}
                       </p>
                     </button>
                   ))
                 ) : (
-                  <p className="p-3 text-slate-400 text-center">Sekolah tidak ditemukan</p>
+                  <p className="p-3 text-slate-400 text-center dark:text-slate-500">Sekolah tidak ditemukan</p>
                 )}
               </div>
             )}
@@ -221,42 +221,42 @@ export default function RegisterGuruForm() {
         {/* Detail Sekolah (Readonly Fields) */}
         <div className="grid grid-cols-2 gap-3 pt-2">
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">NPSN Sekolah</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">NPSN Sekolah</label>
             <input
               {...register("npsnSekolah")}
               type="text"
               disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed"
+              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Nama Sekolah</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Nama Sekolah</label>
             <input
               {...register("namaSekolah")}
               type="text"
               disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed"
+              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Kota / Kabupaten</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Kota / Kabupaten</label>
             <input
               {...register("kotaKab")}
               type="text"
               disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed"
+              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Kecamatan</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Kecamatan</label>
             <input
               {...register("kecamatan")}
               type="text"
               disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed"
+              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
             />
           </div>
         </div>

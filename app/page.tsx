@@ -60,7 +60,7 @@ const pancawaluya = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen relative bg-white overflow-hidden">
+    <div className="min-h-screen relative bg-white overflow-hidden dark:bg-slate-900">
       {/* Hero Section */}
       <section className="relative overflow-hidden px-6 py-20">
         
@@ -96,11 +96,11 @@ export default function HomePage() {
         <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Kolom kiri: teks */}
           <div className="animate-fade-in">
-            <span className="inline-flex items-center gap-2 bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-[var(--color-border-soft)]">
+            <span className="inline-flex items-center gap-2 bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-[var(--color-border-soft)] dark:text-slate-200">
               Untuk Guru SMA
             </span>
 
-            <h1 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-medium text-[var(--color-navy)] leading-[1.15] mb-6">
+            <h1 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-medium text-[var(--color-navy)] leading-[1.15] mb-6 dark:text-slate-100">
               Belajar &amp; terapkan{" "}
               <span className="italic text-[var(--color-accent)] font-semibold">
                 nilai Pancawaluya
@@ -108,7 +108,7 @@ export default function HomePage() {
               di ruang kelas.
             </h1>
 
-            <p className="text-gray-600 mb-8 max-w-md leading-relaxed">
+            <p className="text-gray-600 mb-8 max-w-md leading-relaxed dark:text-slate-300">
               Platform pembelajaran yang membantu guru memahami dan menerapkan
               lima nilai Pancawaluya untuk membentuk karakter dan kompetensi
               siswa.
@@ -152,14 +152,14 @@ export default function HomePage() {
           <div className="w-5 h-5 bg-sky-500 rounded-md"></div>
         </div>
 
-        <h2 className="font-[family-name:var(--font-display)] text-3xl font-medium text-center text-[var(--color-navy)] mb-3 animate-fade-in">
+        <h2 className="font-[family-name:var(--font-display)] text-3xl font-medium text-center text-[var(--color-navy)] mb-3 animate-fade-in dark:text-slate-100">
           5 Nilai Pancawaluya
         </h2>
 
         {/* Bar Gradient Warna Identitas Disdik Jabar (Biru-Hijau-Kuning) */}
         <div className="w-16 h-1 bg-gradient-to-r from-blue-600 via-emerald-500 to-amber-400 rounded-full mx-auto mb-4" />
 
-        <p className="text-gray-500 text-center mb-12 max-w-2xl mx-auto animate-fade-in-delay-1">
+        <p className="text-gray-500 text-center mb-12 max-w-2xl mx-auto animate-fade-in-delay-1 dark:text-slate-400">
           Fondasi karakter yang dikembangkan melalui platform ini.
         </p>
 
@@ -167,7 +167,7 @@ export default function HomePage() {
           {pancawaluya.map((item) => (
             <div
               key={item.title}
-              className="rounded-2xl p-6 text-center border border-[var(--color-border-soft)] bg-white shadow-sm hover:shadow-md transition"
+              className="rounded-2xl p-6 text-center border border-[var(--color-border-soft)] bg-white shadow-sm hover:shadow-md transition dark:bg-slate-800"
             >
               <div
                 className={`w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center ${item.color}`}
@@ -182,10 +182,10 @@ export default function HomePage() {
                   {item.icon}
                 </svg>
               </div>
-              <h3 className="font-[family-name:var(--font-display)] font-medium text-[var(--color-navy)] mb-1">
+              <h3 className="font-[family-name:var(--font-display)] font-medium text-[var(--color-navy)] mb-1 dark:text-slate-100">
                 {item.title}
               </h3>
-              <p className="text-sm text-gray-500">{item.desc}</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -202,10 +202,10 @@ export default function HomePage() {
         <div className="absolute -bottom-12 -left-12 w-48 h-48 border-[16px] border-sky-400/20 rounded-full pointer-events-none" />
 
         <div className="max-w-3xl mx-auto text-center animate-fade-in relative z-10">
-          <h3 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-4">
+          <h3 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-4 dark:text-slate-100">
             Apa itu Pancawaluya?
           </h3>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-gray-600 leading-relaxed dark:text-slate-300">
             Pancawaluya adalah kerangka nilai yang terdiri dari lima prinsip:
             Cageur, Bageur, Bener, Pinter, dan Singer — bertujuan membentuk
             karakter siswa melalui kebiasaan sehat, sopan santun, integritas,

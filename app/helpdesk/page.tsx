@@ -111,19 +111,19 @@ function getStatusBadge(status?: string): { label: string; className: string } {
   const s = String(status || "").toLowerCase();
 
   if (["open", "terbuka", "baru", "new"].some((k) => s.includes(k))) {
-    return { label: status || "Terbuka", className: "bg-blue-100 text-blue-800 border-blue-200" };
+    return { label: status || "Terbuka", className: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800" };
   }
   if (
     ["progress", "proses", "diproses", "pending", "menunggu"].some((k) => s.includes(k))
   ) {
-    return { label: status || "Diproses", className: "bg-amber-100 text-amber-800 border-amber-200" };
+    return { label: status || "Diproses", className: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800" };
   }
   if (["resolved", "selesai", "closed", "tutup", "done"].some((k) => s.includes(k))) {
-    return { label: status || "Selesai", className: "bg-emerald-100 text-emerald-800 border-emerald-200" };
+    return { label: status || "Selesai", className: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" };
   }
   return {
     label: status || "Tidak diketahui",
-    className: "bg-slate-100 text-slate-600 border-slate-200",
+    className: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
   };
 }
 
@@ -478,7 +478,7 @@ function HelpdeskContent() {
   const requesterBlocked = isRequesterReplyBlocked(detailReplies);
 
   return (
-    <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden dark:bg-slate-900/80">
       {/* ================= BACKGROUND DEKORATIF DISDIK JABAR ================= */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-20 -left-20 w-96 h-96 bg-[#0047A5]/10 rounded-full blur-3xl" />
@@ -530,7 +530,7 @@ function HelpdeskContent() {
 
         {/* Pesan sukses */}
         {successMsg && (
-          <div className="flex items-center justify-between gap-3 bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-xl border border-emerald-200 animate-fade-in">
+          <div className="flex items-center justify-between gap-3 bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-xl border border-emerald-200 animate-fade-in dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
             <span className="flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -539,7 +539,7 @@ function HelpdeskContent() {
             </span>
             <button
               onClick={() => setSuccessMsg("")}
-              className="text-emerald-500 hover:text-emerald-700"
+              className="text-emerald-500 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
               aria-label="Tutup notifikasi"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -551,7 +551,7 @@ function HelpdeskContent() {
 
         {/* DAFTAR TIKET */}
         {loading ? (
-          <div className="flex items-center gap-3 text-slate-500 font-medium text-sm bg-white rounded-3xl border border-slate-200/80 p-8 justify-center">
+          <div className="flex items-center gap-3 text-slate-500 font-medium text-sm bg-white rounded-3xl border border-slate-200/80 p-8 justify-center dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400">
             <svg className="w-5 h-5 animate-spin text-[#109B51]" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -559,27 +559,27 @@ function HelpdeskContent() {
             Memuat daftar tiket...
           </div>
         ) : error ? (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-8 space-y-4 text-center">
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-8 space-y-4 text-center dark:bg-slate-900 dark:border-slate-800">
             <p className="alert-error inline-block">{error}</p>
             <div>
               <button
                 onClick={() => setRefreshKey((k) => k + 1)}
-                className="text-xs font-semibold text-[#0047A5] hover:text-[#109B51] transition-colors"
+                className="text-xs font-semibold text-[#0047A5] hover:text-[#109B51] transition-colors dark:text-blue-400 dark:hover:text-emerald-400"
               >
                 Coba lagi
               </button>
             </div>
           </div>
         ) : tickets.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8 space-y-3">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
+          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8 space-y-3 dark:bg-slate-900 dark:border-slate-800">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center dark:bg-slate-800 dark:text-slate-500">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <p className="text-slate-600 text-sm font-semibold">Belum ada tiket.</p>
-            <p className="text-slate-400 text-xs">
-              Klik <span className="font-semibold text-slate-500">Buat Tiket</span> untuk mengajukan
+            <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">Belum ada tiket.</p>
+            <p className="text-slate-400 text-xs dark:text-slate-500">
+              Klik <span className="font-semibold text-slate-500 dark:text-slate-400">Buat Tiket</span> untuk mengajukan
               bantuan pertama Anda.
             </p>
           </div>
@@ -591,17 +591,17 @@ function HelpdeskContent() {
                 <>
                   <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                      <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md dark:bg-slate-800 dark:text-slate-500">
                         {getTicketNumber(t)}
                       </span>
                       <span className="text-[11px] font-semibold text-[#0047A5] bg-[#419AD6]/10 border border-[#419AD6]/20 px-2 py-0.5 rounded-md">
                         {getCategory(t)}
                       </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 leading-snug truncate">
+                    <h3 className="text-sm font-bold text-slate-900 leading-snug truncate dark:text-slate-100">
                       {getSubject(t)}
                     </h3>
-                    <p className="text-xs text-slate-400">Dibuat {getCreatedDate(t)}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Dibuat {getCreatedDate(t)}</p>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
@@ -612,7 +612,7 @@ function HelpdeskContent() {
                     </span>
                     {t.id && (
                       <svg
-                        className="w-4 h-4 text-slate-300"
+                        className="w-4 h-4 text-slate-300 dark:text-slate-600"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -625,7 +625,7 @@ function HelpdeskContent() {
               );
 
               const rowClass =
-                "bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200";
+                "bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200 dark:bg-slate-900 dark:border-slate-800";
 
               return t.id ? (
                 <button
@@ -637,7 +637,7 @@ function HelpdeskContent() {
                   {rowInner}
                 </button>
               ) : (
-                <div key={idx} className={`${rowClass} hover:border-slate-300`}>
+                <div key={idx} className={`${rowClass} hover:border-slate-300 dark:hover:border-slate-600`}>
                   {rowInner}
                 </div>
               );
@@ -649,7 +649,7 @@ function HelpdeskContent() {
         <section aria-labelledby="saran-masukan-heading" className="space-y-3">
           <div className="flex items-center gap-2">
             <svg
-              className="w-4 h-4 text-slate-400"
+              className="w-4 h-4 text-slate-400 dark:text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -661,23 +661,23 @@ function HelpdeskContent() {
                 d="M7 8h10M7 12h6m-1 9l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v9a2 2 0 01-2 2h-6l-4 4z"
               />
             </svg>
-            <h2 id="saran-masukan-heading" className="text-sm font-bold text-slate-700">
+            <h2 id="saran-masukan-heading" className="text-sm font-bold text-slate-700 dark:text-slate-200">
               Saran &amp; Masukan
             </h2>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 space-y-4">
-            <p className="text-xs text-slate-500 leading-relaxed">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 space-y-4 dark:bg-slate-900 dark:border-slate-800">
+            <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
               Sampaikan saran dan masukan untuk sebuah course. Untuk kendala teknis, gunakan
               fitur tiket bantuan di atas.
             </p>
 
             {coursesLoading ? (
-              <p className="text-xs text-slate-400">Memuat daftar course...</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">Memuat daftar course...</p>
             ) : coursesError ? (
-              <p className="text-xs text-rose-500">{coursesError}</p>
+              <p className="text-xs text-rose-500 dark:text-rose-400">{coursesError}</p>
             ) : courses.length === 0 ? (
-              <p className="text-xs italic text-slate-400">
+              <p className="text-xs italic text-slate-400 dark:text-slate-500">
                 Belum ada course yang tersedia untuk diberi saran &amp; masukan.
               </p>
             ) : (
@@ -685,7 +685,7 @@ function HelpdeskContent() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="saran-course-select"
-                    className="text-xs font-semibold text-slate-600"
+                    className="text-xs font-semibold text-slate-600 dark:text-slate-300"
                   >
                     Pilih Course <span className="text-red-500">*</span>
                   </label>
@@ -693,7 +693,7 @@ function HelpdeskContent() {
                     id="saran-course-select"
                     value={selectedCourseId}
                     onChange={(e) => setSelectedCourseId(e.target.value)}
-                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
+                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                   >
                     {courses.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -719,7 +719,7 @@ function HelpdeskContent() {
         <section aria-labelledby="tutorial-heading" className="space-y-3">
           <div className="flex items-center gap-2">
             <svg
-              className="w-4 h-4 text-slate-400"
+              className="w-4 h-4 text-slate-400 dark:text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -731,12 +731,12 @@ function HelpdeskContent() {
                 d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <h2 id="tutorial-heading" className="text-sm font-bold text-slate-700">
+            <h2 id="tutorial-heading" className="text-sm font-bold text-slate-700 dark:text-slate-200">
               Panduan Singkat
             </h2>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden dark:bg-slate-900 dark:border-slate-800 dark:divide-slate-800">
             {TUTORIAL_ITEMS.map((item, idx) => {
               const isOpen = openTutorials.includes(idx);
               const panelId = `tutorial-panel-${idx}`;
@@ -750,11 +750,11 @@ function HelpdeskContent() {
                       onClick={() => toggleTutorial(idx)}
                       aria-expanded={isOpen}
                       aria-controls={panelId}
-                      className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition-colors"
+                      className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/60"
                     >
-                      <span className="text-sm font-semibold text-slate-800">{item.title}</span>
+                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{item.title}</span>
                       <svg
-                        className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                        className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 dark:text-slate-500 ${
                           isOpen ? "rotate-180" : ""
                         }`}
                         fill="none"
@@ -775,7 +775,7 @@ function HelpdeskContent() {
                       id={panelId}
                       role="region"
                       aria-labelledby={btnId}
-                      className="px-5 pb-4 -mt-1 text-xs text-slate-500 leading-relaxed"
+                      className="px-5 pb-4 -mt-1 text-xs text-slate-500 leading-relaxed dark:text-slate-400"
                     >
                       {item.body}
                     </div>
@@ -794,15 +794,15 @@ function HelpdeskContent() {
           onClick={handleCloseCreateModal}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto dark:bg-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-900">Buat Tiket Baru</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Buat Tiket Baru</h2>
               <button
                 onClick={handleCloseCreateModal}
                 disabled={submitting}
-                className="text-slate-400 hover:text-slate-600 disabled:opacity-50"
+                className="text-slate-400 hover:text-slate-600 disabled:opacity-50 dark:hover:text-slate-200"
                 aria-label="Tutup"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -815,7 +815,7 @@ function HelpdeskContent() {
               {formError && <p className="alert-error">{formError}</p>}
 
               <div className="space-y-1.5">
-                <label htmlFor="create-subject" className="text-xs font-semibold text-slate-600">
+                <label htmlFor="create-subject" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                   Subjek <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -824,25 +824,25 @@ function HelpdeskContent() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Ringkasan singkat kendala Anda"
-                  className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
+                  className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="create-category" className="text-xs font-semibold text-slate-600">
+                <label htmlFor="create-category" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                   Kategori <span className="text-red-500">*</span>
                 </label>
                 {categoriesLoading ? (
-                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700">
                     Memuat kategori...
                   </p>
                 ) : categoriesError ? (
-                  <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5">
+                  <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
                     {categoriesError}
                   </p>
                 ) : ticketCategories.length === 0 ? (
-                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700">
                     Kategori tiket belum tersedia.
                   </p>
                 ) : (
@@ -850,7 +850,7 @@ function HelpdeskContent() {
                     id="create-category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all"
+                    className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                     required
                   >
                     <option value="" disabled>
@@ -866,7 +866,7 @@ function HelpdeskContent() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="create-description" className="text-xs font-semibold text-slate-600">
+                <label htmlFor="create-description" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                   Deskripsi <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -875,7 +875,7 @@ function HelpdeskContent() {
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
                   placeholder="Jelaskan kendala Anda selengkap mungkin..."
-                  className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all resize-y"
+                  className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all resize-y dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                   required
                 />
               </div>
@@ -885,7 +885,7 @@ function HelpdeskContent() {
                   type="button"
                   onClick={handleCloseCreateModal}
                   disabled={submitting}
-                  className="text-sm text-slate-600 hover:text-slate-800 font-medium px-4 py-2.5 rounded-xl disabled:opacity-50"
+                  className="text-sm text-slate-600 hover:text-slate-800 font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 dark:text-slate-300 dark:hover:text-slate-100"
                 >
                   Batal
                 </button>
@@ -909,16 +909,16 @@ function HelpdeskContent() {
           onClick={handleCloseDetailModal}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden dark:bg-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
-              <h2 className="text-base font-bold text-slate-900">Detail Tiket</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0 dark:border-slate-800">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Detail Tiket</h2>
               <button
                 onClick={handleCloseDetailModal}
                 disabled={replySending}
-                className="text-slate-400 hover:text-slate-600 disabled:opacity-50"
+                className="text-slate-400 hover:text-slate-600 disabled:opacity-50 dark:hover:text-slate-200"
                 aria-label="Tutup"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -930,7 +930,7 @@ function HelpdeskContent() {
             {/* Modal Body (scrollable) */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
               {detailLoading ? (
-                <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-12">
+                <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-12 dark:text-slate-400">
                   <svg className="w-5 h-5 animate-spin text-[#109B51]" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -943,7 +943,7 @@ function HelpdeskContent() {
                   <div>
                     <button
                       onClick={() => fetchTicketDetail(detailTicketId)}
-                      className="text-xs font-semibold text-[#0047A5] hover:text-[#109B51] transition-colors"
+                      className="text-xs font-semibold text-[#0047A5] hover:text-[#109B51] transition-colors dark:text-blue-400 dark:hover:text-emerald-400"
                     >
                       Coba lagi
                     </button>
@@ -951,15 +951,15 @@ function HelpdeskContent() {
                 </div>
               ) : !detailTicket ? (
                 <div className="text-center py-8">
-                  <p className="text-slate-600 text-sm font-semibold">Tiket tidak ditemukan.</p>
+                  <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">Tiket tidak ditemukan.</p>
                 </div>
               ) : (
                 <>
                   {/* Informasi Tiket (read-only) */}
-                  <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5 space-y-3">
+                  <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5 space-y-3 dark:bg-slate-800/80 dark:border-slate-700">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md dark:bg-slate-800 dark:text-slate-500">
                           {getTicketNumber(detailTicket)}
                         </span>
                         {detailCategory && detailCategory !== "-" && (
@@ -977,17 +977,17 @@ function HelpdeskContent() {
                       )}
                     </div>
 
-                    <h3 className="text-base font-extrabold text-slate-900 leading-snug">
+                    <h3 className="text-base font-extrabold text-slate-900 leading-snug dark:text-slate-100">
                       {getSubject(detailTicket)}
                     </h3>
 
                     {detailDescription && (
-                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap break-words">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap break-words dark:text-slate-300">
                         {detailDescription}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                    <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap dark:text-slate-500">
                       {detailTicket.user?.nama && (
                         <span>Dibuat oleh {detailTicket.user.nama}</span>
                       )}
@@ -999,12 +999,12 @@ function HelpdeskContent() {
 
                   {/* Percakapan */}
                   <div className="space-y-3">
-                    <h3 className="text-sm font-bold text-slate-700">Percakapan</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Percakapan</h3>
 
                     {detailReplies.length === 0 ? (
-                      <div className="text-center py-8 bg-slate-50/60 rounded-2xl border border-slate-100">
-                        <p className="text-slate-500 text-sm font-medium">Belum ada balasan pada tiket ini.</p>
-                        <p className="text-slate-400 text-xs mt-1">
+                      <div className="text-center py-8 bg-slate-50/60 rounded-2xl border border-slate-100 dark:bg-slate-800/60 dark:border-slate-700">
+                        <p className="text-slate-500 text-sm font-medium dark:text-slate-400">Belum ada balasan pada tiket ini.</p>
+                        <p className="text-slate-400 text-xs mt-1 dark:text-slate-500">
                           Tulis pesan di bawah untuk memulai percakapan.
                         </p>
                       </div>
@@ -1020,28 +1020,28 @@ function HelpdeskContent() {
                               <div
                                 className={`max-w-[85%] rounded-2xl border px-4 py-3 shadow-sm ${
                                   isRequester
-                                    ? "bg-[#419AD6]/10 border-[#419AD6]/30"
-                                    : "bg-white border-slate-200/80"
+                                    ? "bg-[#419AD6]/10 border-[#419AD6]/30 dark:bg-sky-950/30 dark:border-sky-800"
+                                    : "bg-white border-slate-200/80 dark:bg-slate-900 dark:border-slate-700"
                                 }`}
                               >
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="text-xs font-bold text-slate-800">
+                                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
                                     {r.sender?.nama || "Pengguna"}
                                   </span>
                                   <span
                                     className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
                                       isRequester
-                                        ? "bg-blue-100 text-blue-700"
-                                        : "bg-purple-100 text-purple-700"
+                                        ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                                        : "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
                                     }`}
                                   >
                                     {getSenderRoleLabel(r.sender?.role)}
                                   </span>
                                 </div>
-                                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+                                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words dark:text-slate-300">
                                   {r.message || r.pesan || ""}
                                 </p>
-                                <p className="text-[10px] text-slate-400 mt-1.5">
+                                <p className="text-[10px] text-slate-400 mt-1.5 dark:text-slate-500">
                                   {formatDateTime(r.createdAt || r.created_at)}
                                 </p>
                               </div>
@@ -1055,16 +1055,16 @@ function HelpdeskContent() {
 
                   {/* Form Balasan */}
                   {ticketIsClosed ? (
-                    <div className="text-center py-3 text-sm text-slate-400 font-medium bg-slate-50/60 rounded-2xl border border-slate-100">
+                    <div className="text-center py-3 text-sm text-slate-400 font-medium bg-slate-50/60 rounded-2xl border border-slate-100 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-500">
                       Tiket sudah ditutup. Tidak dapat mengirim balasan.
                     </div>
                   ) : requesterBlocked ? (
-                    <div className="text-center py-3 text-sm text-amber-700 font-medium bg-amber-50 rounded-2xl border border-amber-200">
+                    <div className="text-center py-3 text-sm text-amber-700 font-medium bg-amber-50 rounded-2xl border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
                       Anda sudah mengirim 2 pesan. Silakan tunggu balasan admin.
                     </div>
                   ) : (
                     <form onSubmit={handleReply} className="space-y-3">
-                      <label htmlFor="detail-reply" className="text-xs font-semibold text-slate-600">
+                      <label htmlFor="detail-reply" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                         Tulis Balasan
                       </label>
                       {replyError && <p className="alert-error">{replyError}</p>}
@@ -1074,7 +1074,7 @@ function HelpdeskContent() {
                         onChange={(e) => setReplyMessage(e.target.value)}
                         rows={3}
                         placeholder="Ketik pesan balasan Anda..."
-                        className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all resize-y"
+                        className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all resize-y dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                         required
                       />
                       <div className="flex justify-end">

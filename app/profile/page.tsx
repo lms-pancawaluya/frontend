@@ -105,7 +105,7 @@ function ProfilePageContent({ initialTab }: { initialTab: GuruProfileTab }) {
   if (error) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-[var(--color-pale)] p-4">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-md">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-md dark:bg-slate-900 dark:border-red-800">
           <p className="text-red-600 font-medium text-sm mb-4">{error}</p>
           <a
             href="/login"

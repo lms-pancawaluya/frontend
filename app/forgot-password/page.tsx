@@ -151,14 +151,14 @@ export default function ForgotPasswordPage() {
       </div>
 
       {/* ================= CARD UTAMA RESET PASSWORD ================= */}
-      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20 space-y-6">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20 space-y-6 dark:bg-slate-900/95">
         
         {/* Header Title */}
         <div className="text-center space-y-1">
-          <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight">
+          <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight dark:text-slate-100">
             Lupa Password
           </h1>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-slate-400">
             {step === 1 && "Langkah 1: Masukkan email terdaftar Anda"}
             {step === 2 && "Langkah 2: Masukkan kode OTP 6 digit dari email"}
             {step === 3 && "Langkah 3: Buat password baru untuk akun Anda"}
@@ -169,23 +169,23 @@ export default function ForgotPasswordPage() {
         <div className="flex items-center justify-center gap-2 px-4">
           <span
             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-              step >= 1 ? "bg-[var(--color-navy)] text-white" : "bg-slate-100 text-slate-400"
+              step >= 1 ? "bg-[var(--color-navy)] text-white" : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
             }`}
           >
             1
           </span>
-          <div className={`h-1 w-12 rounded transition-all ${step >= 2 ? "bg-[var(--color-navy)]" : "bg-slate-200"}`} />
+          <div className={`h-1 w-12 rounded transition-all ${step >= 2 ? "bg-[var(--color-navy)]" : "bg-slate-200 dark:bg-slate-700"}`} />
           <span
             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-              step >= 2 ? "bg-[var(--color-navy)] text-white" : "bg-slate-100 text-slate-400"
+              step >= 2 ? "bg-[var(--color-navy)] text-white" : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
             }`}
           >
             2
           </span>
-          <div className={`h-1 w-12 rounded transition-all ${step >= 3 ? "bg-[var(--color-navy)]" : "bg-slate-200"}`} />
+          <div className={`h-1 w-12 rounded transition-all ${step >= 3 ? "bg-[var(--color-navy)]" : "bg-slate-200 dark:bg-slate-700"}`} />
           <span
             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-              step === 3 ? "bg-[var(--color-navy)] text-white" : "bg-slate-100 text-slate-400"
+              step === 3 ? "bg-[var(--color-navy)] text-white" : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
             }`}
           >
             3
@@ -197,8 +197,8 @@ export default function ForgotPasswordPage() {
           <div
             className={`p-3 text-xs font-semibold rounded-xl text-center flex items-center justify-center gap-2 ${
               message.type === "success"
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                : "bg-rose-50 text-rose-700 border border-rose-200"
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
             }`}
           >
             <span>{message.text}</span>
@@ -209,9 +209,9 @@ export default function ForgotPasswordPage() {
         {step === 1 && (
           <form onSubmit={handleStep1Submit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">Email Terdaftar</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Email Terdaftar</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                   </svg>
@@ -222,7 +222,7 @@ export default function ForgotPasswordPage() {
                   placeholder="Masukkan email terdaftar"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full text-xs pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800"
+                  className="w-full text-xs pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                 />
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function ForgotPasswordPage() {
         {step === 2 && (
           <form onSubmit={handleStep2Submit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">Kode OTP (6 Digit)</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Kode OTP (6 Digit)</label>
               <input
                 type="text"
                 maxLength={6}
@@ -249,7 +249,7 @@ export default function ForgotPasswordPage() {
                 placeholder="123456"
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ""))}
-                className="w-full text-center tracking-[0.5em] text-lg font-mono font-bold py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800"
+                className="w-full text-center tracking-[0.5em] text-lg font-mono font-bold py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
               />
             </div>
 
@@ -264,7 +264,7 @@ export default function ForgotPasswordPage() {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="w-full text-xs text-gray-500 hover:text-slate-800 font-medium transition-colors"
+              className="w-full text-xs text-gray-500 hover:text-slate-800 font-medium transition-colors dark:text-slate-400 dark:hover:text-slate-200"
             >
               Ubah Email
             </button>
@@ -275,9 +275,9 @@ export default function ForgotPasswordPage() {
         {step === 3 && (
           <form onSubmit={handleStep3Submit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">Password Baru</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Password Baru</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
@@ -288,12 +288,12 @@ export default function ForgotPasswordPage() {
                   placeholder="Masukkan password baru"
                   value={passwordBaru}
                   onChange={(e) => setPasswordBaru(e.target.value)}
-                  className="w-full text-xs pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800"
+                  className="w-full text-xs pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-gray-500 hover:text-gray-800 transition-colors dark:text-slate-400 dark:hover:text-slate-200"
                 >
                   {showPassword ? "Sembunyi" : "Lihat"}
                 </button>
@@ -301,9 +301,9 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">Konfirmasi Password Baru</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Konfirmasi Password Baru</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
@@ -314,7 +314,7 @@ export default function ForgotPasswordPage() {
                   placeholder="Ulangi password baru"
                   value={konfirmasiPassword}
                   onChange={(e) => setKonfirmasiPassword(e.target.value)}
-                  className="w-full text-xs pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800"
+                  className="w-full text-xs pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                 />
               </div>
             </div>
@@ -330,7 +330,7 @@ export default function ForgotPasswordPage() {
         )}
 
         {/* Footer Back Link */}
-        <p className="text-sm text-gray-500 text-center pt-2">
+        <p className="text-sm text-gray-500 text-center pt-2 dark:text-slate-400">
           Kembali ke{" "}
           <Link
             href="/login"

@@ -48,7 +48,7 @@ export default function PembelajaranPage() {
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-slate-500">
+      <div className="p-12 text-center text-slate-500 dark:text-slate-400">
         Memuat materi pembelajaran...
       </div>
     );
@@ -56,7 +56,7 @@ export default function PembelajaranPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Materi Pembelajaran</h1>
+      <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Materi Pembelajaran</h1>
 
       <ContentLockGuard contentId={contentId} authToken={authToken}>
         <VideoPlayerWithQuiz

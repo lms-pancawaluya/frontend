@@ -214,8 +214,8 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
         <div
           className={`p-4 rounded-2xl text-sm font-medium border flex items-center gap-3 transition-all ${
             message.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-              : "bg-rose-50 text-rose-800 border-rose-200"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
           }`}
         >
           {message.type === "success" ? (
@@ -232,13 +232,13 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
       )}
 
       {/* TAB NAVIGATION PILL STYLE */}
-      <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex gap-1 text-xs font-semibold">
+      <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex gap-1 text-xs font-semibold dark:bg-slate-800/80">
         <button
           onClick={() => setActiveTab("akun")}
           className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
             activeTab === "akun"
-              ? "bg-white text-slate-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-slate-900 shadow-xs font-bold dark:bg-slate-700 dark:text-slate-100"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           }`}
         >
           Data Akun
@@ -248,8 +248,8 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
           onClick={() => setActiveTab("keamanan")}
           className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
             activeTab === "keamanan"
-              ? "bg-white text-slate-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-slate-900 shadow-xs font-bold dark:bg-slate-700 dark:text-slate-100"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           }`}
         >
           Keamanan Akun
@@ -258,33 +258,33 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
 
       {/* TAB 1: DATA AKUN */}
       {activeTab === "akun" && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Informasi Akun Administrator</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Kelola data akun administrator sistem LMS.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Informasi Akun Administrator</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Kelola data akun administrator sistem LMS.</p>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-5">
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Administrator</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Nama Administrator</label>
                 <input
                   type="text"
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   required
                   placeholder="Masukkan Nama Administrator"
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Email</label>
                 <input
                   type="email"
                   value={profile.email}
                   disabled
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
               </div>
             </div>
@@ -293,7 +293,7 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60"
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
               >
                 {savingProfile ? "Menyimpan..." : "Simpan Perubahan"}
               </button>
@@ -304,34 +304,34 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
 
       {/* TAB 2: KEAMANAN AKUN */}
       {activeTab === "keamanan" && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Keamanan & Kata Sandi</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Keamanan & Kata Sandi</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.</p>
           </div>
 
           <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-xl">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Password Saat Ini</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Password Saat Ini</label>
               <input
                 type="password"
                 value={passwordData.passwordLama}
                 onChange={(e) => setPasswordData({ ...passwordData, passwordLama: e.target.value })}
                 required
                 placeholder="••••••••"
-                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Password Baru</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Password Baru</label>
               <input
                 type="password"
                 value={passwordData.passwordBaru}
                 onChange={(e) => setPasswordData({ ...passwordData, passwordBaru: e.target.value })}
                 required
                 placeholder="••••••••"
-                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
@@ -339,7 +339,7 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
               <button
                 type="submit"
                 disabled={savingPassword}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60"
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
               >
                 {savingPassword ? "Memperbarui..." : "Update Password Akun"}
               </button>
