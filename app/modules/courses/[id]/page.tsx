@@ -74,10 +74,10 @@ function roleLabel(role?: string): string {
 
 function roleBadgeClass(role?: string): string {
   const r = String(role || "").toLowerCase();
-  if (r === "admin") return "bg-purple-100 text-purple-700";
-  if (r === "pengajar") return "bg-amber-100 text-amber-700";
-  if (r === "guru") return "bg-sky-100 text-sky-700";
-  return "bg-slate-100 text-slate-600";
+  if (r === "admin") return "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300";
+  if (r === "pengajar") return "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300";
+  if (r === "guru") return "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300";
+  return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
 }
 
 function formatCommentDateTime(raw?: string): string {
@@ -445,8 +445,8 @@ export default function GuruCourseDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50/80 flex items-center justify-center p-6">
-        <div className="flex flex-col items-center gap-3 text-slate-500">
+      <div className="min-h-screen bg-slate-50/80 flex items-center justify-center p-6 dark:bg-slate-900/80">
+        <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
           <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-medium">Memuat detail course...</p>
         </div>
@@ -457,13 +457,13 @@ export default function GuruCourseDetailPage() {
   if (error || !course) {
     return (
       <div className="mx-auto mt-16 max-w-md p-4">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
           {error || "Course tidak ditemukan."}
         </div>
         <button
           type="button"
           onClick={() => router.push("/modules")}
-          className="mt-4 text-sm text-emerald-700 hover:underline"
+          className="mt-4 text-sm text-emerald-700 hover:underline dark:text-emerald-400"
         >
           ← Kembali ke daftar course
         </button>
@@ -482,7 +482,7 @@ export default function GuruCourseDetailPage() {
   const certificateEnabled = hasCertificateRecord || certificateEligible;
 
   return (
-    <div className="min-h-screen bg-slate-50/80 pb-20 pt-6 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50/80 pb-20 pt-6 relative overflow-hidden dark:bg-slate-900/80">
       {/* BACKGROUND DEKORATIF DISDIK JABAR */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-20 -left-20 w-96 h-96 bg-[#0047A5]/10 rounded-full blur-3xl" />
@@ -495,9 +495,9 @@ export default function GuruCourseDetailPage() {
         <button
           type="button"
           onClick={() => router.push("/modules")}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:text-emerald-400"
         >
-          <span className="p-1 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors">
+          <span className="p-1 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors dark:bg-slate-700 dark:group-hover:bg-emerald-950/40 dark:text-slate-400 dark:group-hover:text-emerald-400">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -589,24 +589,24 @@ export default function GuruCourseDetailPage() {
         </div>
 
         {/* Tentang Course */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-3">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight">Tentang Course</h2>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">
+        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-3 dark:bg-slate-900 dark:border-slate-800">
+          <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Tentang Course</h2>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-300">
             {course.deskripsi || "Tidak ada deskripsi."}
           </p>
         </section>
 
         {/* Daftar Module — accordion overview */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
+        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4 dark:bg-slate-900 dark:border-slate-800">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-bold text-slate-900 tracking-tight">Modul dalam Course</h2>
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Modul dalam Course</h2>
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full dark:bg-slate-800 dark:text-slate-400">
               {modules.length} modul
             </span>
           </div>
 
           {modules.length === 0 ? (
-            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 text-center">
+            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 text-center dark:text-slate-400 dark:border-slate-700">
               Belum ada modul pada course ini.
             </p>
           ) : (
@@ -628,7 +628,7 @@ export default function GuruCourseDetailPage() {
                 const postTestLocked = isPostTestLocked(progress);
 
                 return (
-                  <li key={module.id} className="rounded-2xl border border-slate-200/80 overflow-hidden">
+                  <li key={module.id} className="rounded-2xl border border-slate-200/80 overflow-hidden dark:border-slate-800">
                     {/* Header (selalu tampil) */}
                     <button
                       type="button"
@@ -636,40 +636,40 @@ export default function GuruCourseDetailPage() {
                       onClick={() => toggleModule(module.id)}
                       aria-expanded={isOpen}
                       aria-controls={panelId}
-                      className="w-full flex items-center justify-between gap-3 p-4 text-left bg-white hover:bg-slate-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+                      className="w-full flex items-center justify-between gap-3 p-4 text-left bg-white hover:bg-slate-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:bg-slate-900 dark:hover:bg-slate-800"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-slate-400">#{module.urutan ?? index + 1}</span>
+                          <span className="text-xs font-bold text-slate-400 dark:text-slate-500">#{module.urutan ?? index + 1}</span>
                           {module.aspekPancawaluya && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
                               {module.aspekPancawaluya}
                             </span>
                           )}
                           {module.isLocked && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
                               Terkunci
                             </span>
                           )}
                           {isModuleCompleted ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                               Selesai
                             </span>
                           ) : typeof module.progressPercentage === "number" ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                               {module.progressPercentage}%
                             </span>
                           ) : null}
                         </div>
-                        <p className="text-sm font-semibold text-slate-800 truncate">
+                        <p className="text-sm font-semibold text-slate-800 truncate dark:text-slate-100">
                           {getModuleTitle(module)}
                         </p>
                         {module.deskripsi && (
-                          <p className="text-xs text-slate-500 mt-1 line-clamp-1">{module.deskripsi}</p>
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-1 dark:text-slate-400">{module.deskripsi}</p>
                         )}
                       </div>
                       <svg
-                        className={`w-5 h-5 shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                        className={`w-5 h-5 shrink-0 text-slate-400 transition-transform dark:text-slate-500 ${isOpen ? "rotate-180" : ""}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -681,39 +681,39 @@ export default function GuruCourseDetailPage() {
 
                     {/* Panel (overview aktivitas saat dibuka) */}
                     {isOpen && (
-                      <div id={panelId} role="region" aria-labelledby={buttonId} className="border-t border-slate-100 p-4 space-y-5 bg-slate-50/50">
+                      <div id={panelId} role="region" aria-labelledby={buttonId} className="border-t border-slate-100 p-4 space-y-5 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/50">
                         {/* Informasi Module */}
                         <div className="space-y-2">
-                          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Deskripsi Module</h4>
-                          <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Deskripsi Module</h4>
+                          <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line dark:text-slate-300">
                             {module.deskripsi || "Belum ada deskripsi untuk module ini."}
                           </p>
                         </div>
 
                         {isLoadingOverview ? (
-                          <p className="text-xs text-slate-500">Memuat aktivitas modul...</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Memuat aktivitas modul...</p>
                         ) : overviewError ? (
-                          <p className="text-xs text-red-600">{overviewError}</p>
+                          <p className="text-xs text-red-600 dark:text-red-400">{overviewError}</p>
                         ) : (
                           <div className="grid gap-3 sm:grid-cols-3">
                             {/* 1. Pre-Test */}
                             <div
-                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 ${
-                                preTestCompleted ? "border-sky-200" : "border-sky-100"
+                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 dark:bg-slate-900 ${
+                                preTestCompleted ? "border-sky-200 dark:border-sky-800" : "border-sky-100 dark:border-sky-900"
                               }`}
                             >
                               <div className="space-y-1">
                                 <div className="flex items-center justify-between gap-2">
-                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-sky-700">
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-400">
                                     Pre-Test
                                   </span>
                                   {preTestCompleted && (
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                                       Selesai
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs text-slate-500 leading-relaxed">
+                                <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
                                   {overview?.preTestId
                                     ? preTestCompleted
                                       ? "Pre-Test telah Anda selesaikan."
@@ -733,7 +733,7 @@ export default function GuruCourseDetailPage() {
                                   {preTestCompleted ? "Lanjutkan Pre-Test" : "Mulai Pre-Test"}
                                 </Link>
                               ) : (
-                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
                                   Belum tersedia
                                 </span>
                               )}
@@ -741,29 +741,29 @@ export default function GuruCourseDetailPage() {
 
                             {/* 2. Learning Material */}
                             <div
-                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 ${
-                                materialLocked ? "border-slate-200 bg-slate-50/60" : "border-emerald-100"
+                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 dark:bg-slate-900 ${
+                                materialLocked ? "border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-800/60" : "border-emerald-100 dark:border-emerald-900"
                               }`}
                             >
                               <div className="space-y-1">
                                 <div className="flex items-center justify-between gap-2">
-                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-700">
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
                                     Learning Material
                                   </span>
                                   {materialLocked ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                       </svg>
                                       Terkunci
                                     </span>
                                   ) : materialCompleted ? (
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                                       Selesai
                                     </span>
                                   ) : null}
                                 </div>
-                                <p className="text-xs text-slate-500 leading-relaxed">
+                                <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
                                   {materialLocked
                                     ? "Selesaikan Pre-Test terlebih dahulu untuk membuka materi."
                                     : overview?.hasMaterials
@@ -774,7 +774,7 @@ export default function GuruCourseDetailPage() {
                                 </p>
                               </div>
                               {materialLocked ? (
-                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
                                   Terkunci
                                 </span>
                               ) : overview?.hasMaterials ? (
@@ -785,7 +785,7 @@ export default function GuruCourseDetailPage() {
                                   {materialCompleted ? "Lanjutkan Belajar" : "Mulai Belajar"}
                                 </Link>
                               ) : (
-                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
                                   Belum tersedia
                                 </span>
                               )}
@@ -793,29 +793,29 @@ export default function GuruCourseDetailPage() {
 
                             {/* 3. Post-Test */}
                             <div
-                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 ${
-                                postTestLocked ? "border-slate-200 bg-slate-50/60" : "border-purple-100"
+                              className={`flex flex-col rounded-2xl border bg-white p-4 space-y-3 dark:bg-slate-900 ${
+                                postTestLocked ? "border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-800/60" : "border-purple-100 dark:border-purple-900"
                               }`}
                             >
                               <div className="space-y-1">
                                 <div className="flex items-center justify-between gap-2">
-                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-purple-700">
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-purple-700 dark:text-purple-400">
                                     Post-Test
                                   </span>
                                   {postTestLocked ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                       </svg>
                                       Terkunci
                                     </span>
                                   ) : postTestCompleted ? (
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                                       Selesai
                                     </span>
                                   ) : null}
                                 </div>
-                                <p className="text-xs text-slate-500 leading-relaxed">
+                                <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
                                   {postTestLocked
                                     ? "Selesaikan seluruh materi pembelajaran untuk membuka Post-Test."
                                     : overview?.postTestId
@@ -826,7 +826,7 @@ export default function GuruCourseDetailPage() {
                                 </p>
                               </div>
                               {postTestLocked ? (
-                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
                                   Terkunci
                                 </span>
                               ) : overview?.postTestId ? (
@@ -837,7 +837,7 @@ export default function GuruCourseDetailPage() {
                                   {postTestCompleted ? "Lanjutkan Post-Test" : "Mulai Post-Test"}
                                 </Link>
                               ) : (
-                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed">
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
                                   Belum tersedia
                                 </span>
                               )}
@@ -854,26 +854,26 @@ export default function GuruCourseDetailPage() {
         </section>
 
         {/* Diskusi Course */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
+        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5 dark:bg-slate-900 dark:border-slate-800">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="w-5 h-5 text-emerald-700 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z" />
               </svg>
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">Diskusi Course</h2>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Diskusi Course</h2>
             </div>
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full dark:bg-slate-800 dark:text-slate-400">
               {discussion.length} diskusi
             </span>
           </div>
 
           {/* Form komentar utama */}
-          <form onSubmit={handlePostComment} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-            <label htmlFor="new-course-comment" className="block text-xs font-bold text-slate-600">
+          <form onSubmit={handlePostComment} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <label htmlFor="new-course-comment" className="block text-xs font-bold text-slate-600 dark:text-slate-300">
               Tulis Komentar
             </label>
             {commentPostError && (
-              <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{commentPostError}</p>
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">{commentPostError}</p>
             )}
             <MentionTextarea
               id="new-course-comment"
@@ -882,7 +882,7 @@ export default function GuruCourseDetailPage() {
               onMentionsChange={setNewCommentMentions}
               rows={3}
               placeholder="Bagikan pertanyaan atau tanggapan untuk course ini... Ketik @ untuk menyebut pengguna"
-              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20"
+              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             />
             <div className="flex justify-end">
               <button
@@ -897,15 +897,15 @@ export default function GuruCourseDetailPage() {
 
           {/* Daftar diskusi (nested) */}
           {discussionLoading ? (
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-center text-sm text-slate-500">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-center text-sm text-slate-500 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400">
               Memuat diskusi...
             </div>
           ) : discussionError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
               {discussionError}
             </div>
           ) : discussion.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
               Belum ada diskusi pada course ini.
             </div>
           ) : (
@@ -921,10 +921,10 @@ export default function GuruCourseDetailPage() {
                   <li
                     key={comment.id}
                     id={`comment-${comment.id}`}
-                    className={`scroll-mt-24 rounded-2xl border bg-white p-4 shadow-sm transition ${
+                    className={`scroll-mt-24 rounded-2xl border bg-white p-4 shadow-sm transition dark:bg-slate-900 ${
                       highlightCommentId === comment.id
                         ? "border-emerald-400 ring-2 ring-emerald-300"
-                        : "border-slate-200/80"
+                        : "border-slate-200/80 dark:border-slate-800"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -934,7 +934,7 @@ export default function GuruCourseDetailPage() {
                           alt={name}
                           width={40}
                           height={40}
-                          className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover"
+                          className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
                         />
                       ) : (
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold uppercase text-white">
@@ -943,21 +943,21 @@ export default function GuruCourseDetailPage() {
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-bold text-slate-900">{name}</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{name}</span>
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(user?.role)}`}>
                             {roleLabel(user?.role)}
                           </span>
                           {comment.createdAt && (
-                            <span className="text-[11px] text-slate-400">{formatCommentDateTime(comment.createdAt)}</span>
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatCommentDateTime(comment.createdAt)}</span>
                           )}
                         </div>
-                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700">{renderCommentText(text, "font-semibold text-emerald-700")}</p>
+                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">{renderCommentText(text, "font-semibold text-emerald-700 dark:text-emerald-400")}</p>
 
                         <div className="mt-2">
                           <button
                             type="button"
                             onClick={() => (replyToId === comment.id ? cancelReply() : startReply(comment.id))}
-                            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
                           >
                             {replyToId === comment.id ? "Batal" : "Balas"}
                           </button>
@@ -967,10 +967,10 @@ export default function GuruCourseDetailPage() {
                         {replyToId === comment.id && (
                           <form
                             onSubmit={(e) => handlePostReply(e, comment.id)}
-                            className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2"
+                            className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2 dark:border-slate-700 dark:bg-slate-800/60"
                           >
                             {replyPostError && (
-                              <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{replyPostError}</p>
+                              <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">{replyPostError}</p>
                             )}
                             <MentionTextarea
                               value={replyText}
@@ -978,7 +978,7 @@ export default function GuruCourseDetailPage() {
                               onMentionsChange={setReplyMentions}
                               rows={2}
                               placeholder="Tulis balasan... Ketik @ untuk menyebut pengguna"
-                              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20"
+                              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                             />
                             <div className="flex justify-end">
                               <button
@@ -994,7 +994,7 @@ export default function GuruCourseDetailPage() {
 
                         {/* Balasan nested (struktur langsung dari BE) */}
                         {replies.length > 0 && (
-                          <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4">
+                          <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4 dark:border-slate-800">
                             {replies.map((reply) => {
                               const replyUser = reply.user || reply.author || reply.pengirim;
                               const replyPhoto = getCommentUserPhoto(replyUser);
@@ -1007,8 +1007,8 @@ export default function GuruCourseDetailPage() {
                                   id={`comment-${reply.id}`}
                                   className={`scroll-mt-24 rounded-xl p-3 transition ${
                                     highlightCommentId === reply.id
-                                      ? "bg-emerald-50 ring-2 ring-emerald-300"
-                                      : "bg-slate-50"
+                                      ? "bg-emerald-50 ring-2 ring-emerald-300 dark:bg-emerald-950/30"
+                                      : "bg-slate-50 dark:bg-slate-800/60"
                                   }`}
                                 >
                                   <div className="flex items-start gap-2.5">
@@ -1018,7 +1018,7 @@ export default function GuruCourseDetailPage() {
                                         alt={replyName}
                                         width={32}
                                         height={32}
-                                        className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover"
+                                        className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
                                       />
                                     ) : (
                                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-500 text-xs font-bold uppercase text-white">
@@ -1027,15 +1027,15 @@ export default function GuruCourseDetailPage() {
                                     )}
                                     <div className="min-w-0 flex-1">
                                       <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-xs font-bold text-slate-800">{replyName}</span>
+                                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{replyName}</span>
                                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(replyUser?.role)}`}>
                                           {roleLabel(replyUser?.role)}
                                         </span>
                                         {reply.createdAt && (
-                                          <span className="text-[11px] text-slate-400">{formatCommentDateTime(reply.createdAt)}</span>
+                                          <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatCommentDateTime(reply.createdAt)}</span>
                                         )}
                                       </div>
-                                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{renderCommentText(replyContent, "font-semibold text-emerald-700")}</p>
+                                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">{renderCommentText(replyContent, "font-semibold text-emerald-700 dark:text-emerald-400")}</p>
                                     </div>
                                   </div>
                                 </li>

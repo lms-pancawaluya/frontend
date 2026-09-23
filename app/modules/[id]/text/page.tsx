@@ -26,7 +26,7 @@ interface ModuleContent {
 
 export default function ModuleTextPage() {
   return (
-    <Suspense fallback={<div className="text-center py-20 text-xs text-slate-500">Memuat materi...</div>}>
+    <Suspense fallback={<div className="text-center py-20 text-xs text-slate-500 dark:text-slate-400">Memuat materi...</div>}>
       <ModuleStageGuardWrapper />
     </Suspense>
   );
@@ -202,7 +202,7 @@ function ModuleTextPageContent() {
     }
   }
 
-  if (loading) return <div className="text-center py-20 text-xs text-slate-500">Memuat materi...</div>;
+  if (loading) return <div className="text-center py-20 text-xs text-slate-500 dark:text-slate-400">Memuat materi...</div>;
 
   const tipe = material?.tipe;
   const isText = isTextMaterial(tipe);
@@ -217,52 +217,52 @@ function ModuleTextPageContent() {
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <button
         onClick={() => router.push(courseDetailUrl)}
-        className="text-xs font-semibold text-slate-500 hover:underline"
+        className="text-xs font-semibold text-slate-500 hover:underline dark:text-slate-400"
       >
         ← Kembali ke Detail Course
       </button>
 
       {moduleDescription && (
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-          <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+          <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line dark:text-slate-300">
             {moduleDescription}
           </p>
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             {material?.judul || (isPdf ? "Materi PDF" : isLink ? "Tautan Materi" : "Materi Bacaan")}
           </h1>
           <MaterialStatusBadge entry={currentStatus} />
         </div>
 
         {!material ? (
-          <p className="text-sm text-slate-500">Belum ada materi yang dapat ditampilkan untuk modul ini.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada materi yang dapat ditampilkan untuk modul ini.</p>
         ) : isText ? (
-          <div className="text-slate-600 text-sm leading-relaxed whitespace-pre-line space-y-4">
+          <div className="text-slate-600 text-sm leading-relaxed whitespace-pre-line space-y-4 dark:text-slate-300">
             {material.konten || "Konten bacaan tidak ditemukan."}
           </div>
         ) : isPdf ? (
           <div className="space-y-3">
             {!material.konten && (
-              <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+              <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
                 File PDF belum tersedia untuk materi ini.
               </p>
             )}
             {material.konten && previewOpen && (
-              <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+              <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
                 {previewLoading ? (
-                  <div className="flex h-[480px] items-center justify-center text-sm text-slate-500">Memuat pratinjau PDF...</div>
+                  <div className="flex h-[480px] items-center justify-center text-sm text-slate-500 dark:text-slate-400">Memuat pratinjau PDF...</div>
                 ) : previewError ? (
                   <div className="flex h-[480px] flex-col items-center justify-center gap-3 p-6 text-center">
-                    <p className="text-sm text-red-600">{previewError}</p>
+                    <p className="text-sm text-red-600 dark:text-red-400">{previewError}</p>
                     <a
                       href={material.konten}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
                       Buka PDF di tab baru
                     </a>
@@ -281,7 +281,7 @@ function ModuleTextPageContent() {
                 type="button"
                 onClick={handleDownload}
                 disabled={!material.konten || downloading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition disabled:opacity-60 disabled:cursor-not-allowed dark:bg-slate-700 dark:hover:bg-slate-600"
               >
                 {downloading ? "Mengunduh..." : "Download PDF"}
               </button>
@@ -291,23 +291,23 @@ function ModuleTextPageContent() {
                   onClick={handleTogglePreview}
                   disabled={previewLoading && previewOpen}
                   aria-expanded={previewOpen}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   {previewOpen ? "Tutup Preview" : previewLoading ? "Memuat..." : "Preview PDF"}
                 </button>
               )}
             </div>
-            {downloadError && <p className="text-xs text-red-600">{downloadError}</p>}
+            {downloadError && <p className="text-xs text-red-600 dark:text-red-400">{downloadError}</p>}
           </div>
         ) : isLink ? (
           <div className="space-y-3">
             {material.konten ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tautan Eksternal</p>
-                <p className="mt-1 text-sm text-slate-700 break-all">{material.konten}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Tautan Eksternal</p>
+                <p className="mt-1 text-sm text-slate-700 break-all dark:text-slate-300">{material.konten}</p>
               </div>
             ) : (
-              <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+              <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
                 URL link belum tersedia untuk materi ini.
               </p>
             )}
@@ -317,7 +317,7 @@ function ModuleTextPageContent() {
                   href={material.konten}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition dark:bg-slate-700 dark:hover:bg-slate-600"
                 >
                   Buka Link
                 </a>
@@ -325,7 +325,7 @@ function ModuleTextPageContent() {
             )}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">Belum ada materi yang dapat ditampilkan untuk modul ini.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada materi yang dapat ditampilkan untuk modul ini.</p>
         )}
       </div>
 
@@ -335,25 +335,25 @@ function ModuleTextPageContent() {
             <button
               onClick={handleComplete}
               disabled={isCompleting}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-bold rounded-xl shadow-md transition disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-bold rounded-xl shadow-md transition disabled:cursor-not-allowed dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
             >
               {isCompleting ? "Menyimpan..." : "Tandai Materi Selesai"}
             </button>
           )}
           {isMaterialCompleted && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
               </svg>
               Materi ini sudah selesai
             </span>
           )}
-          {completeError && <p className="text-xs text-red-600">{completeError}</p>}
+          {completeError && <p className="text-xs text-red-600 dark:text-red-400">{completeError}</p>}
         </div>
 
         <button
           onClick={() => router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
-          className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition"
+          className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition dark:bg-slate-700 dark:hover:bg-slate-600"
         >
           {currentIndex + 1 < materials.length ? "Materi Berikutnya" : "Kembali ke Detail Course"}
         </button>

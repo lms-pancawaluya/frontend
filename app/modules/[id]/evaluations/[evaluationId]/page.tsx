@@ -186,7 +186,7 @@ export default function EvaluationDetailPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[60vh] gap-3">
         <div className="w-10 h-10 border-4 border-[var(--color-biru-muda)] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[var(--color-navy)] font-medium text-sm">Memuat soal asesmen...</p>
+        <p className="text-[var(--color-navy)] font-medium text-sm dark:text-slate-200">Memuat soal asesmen...</p>
       </div>
     );
   }
@@ -194,7 +194,7 @@ export default function EvaluationDetailPage() {
   if (loadError) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm inline-block">
+        <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm inline-block dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {loadError}
         </div>
       </div>
@@ -206,18 +206,18 @@ export default function EvaluationDetailPage() {
   if (stageBlocked) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-8 space-y-3">
-          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-xl">
+        <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-8 space-y-3 dark:border-amber-800 dark:bg-amber-950/40">
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-xl dark:bg-amber-950/40 dark:text-amber-400">
             🔒
           </div>
-          <h2 className="text-base font-bold text-slate-800">Post-Test Terkunci</h2>
-          <p className="text-xs text-slate-600 leading-relaxed">
+          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Post-Test Terkunci</h2>
+          <p className="text-xs text-slate-600 leading-relaxed dark:text-slate-300">
             Selesaikan seluruh materi pembelajaran modul ini terlebih dahulu sebelum
             mengerjakan Post-Test.
           </p>
           <button
             onClick={() => router.push(courseDetailUrl)}
-            className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-full transition"
+            className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-full transition dark:bg-slate-700 dark:hover:bg-slate-600"
           >
             Kembali ke Detail Course
           </button>
@@ -240,24 +240,24 @@ export default function EvaluationDetailPage() {
           Kembali ke Detail Course
         </Link>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[var(--color-border-soft)] shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[var(--color-border-soft)] shadow-sm dark:bg-slate-900">
           <div>
             <span
               className={`inline-block px-3 py-1 text-xs font-semibold rounded-full mb-2 ${
                 preTest
-                  ? "bg-sky-50 text-sky-700"
+                  ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
                   : postTest
-                  ? "bg-amber-50 text-amber-700"
+                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
                   : "bg-[var(--color-pale)] text-[var(--color-accent)]"
               }`}
             >
               {getStageLabel(tipe)}
             </span>
-            <h1 className="text-2xl font-bold text-[var(--color-navy)]">
+            <h1 className="text-2xl font-bold text-[var(--color-navy)] dark:text-slate-100">
               {evaluation?.judul || summary?.judul || getStageLabel(tipe)}
             </h1>
             {postTest && passingScore > 0 && (
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
                 Nilai minimal kelulusan: <span className="font-semibold">{passingScore}%</span>
                 {summary?.maxAttempts ? ` · Maks. ${summary.maxAttempts}x percobaan` : ""}
               </p>
@@ -270,7 +270,7 @@ export default function EvaluationDetailPage() {
                 <span>Progres Pengerjaan</span>
                 <span>{progressPercentage}%</span>
               </div>
-              <div className="w-full bg-white h-2 rounded-full overflow-hidden border border-[var(--color-border-soft)]">
+              <div className="w-full bg-white h-2 rounded-full overflow-hidden border border-[var(--color-border-soft)] dark:bg-slate-800">
                 <div
                   className="bg-[var(--color-biru-muda)] h-full transition-all duration-300"
                   style={{ width: `${progressPercentage}%` }}
@@ -286,12 +286,12 @@ export default function EvaluationDetailPage() {
 
       {/* Hasil Evaluasi (setelah submit) */}
       {result ? (
-        <div className="p-8 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm text-center space-y-5">
+        <div className="p-8 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm text-center space-y-5 dark:bg-slate-900">
           <div
             className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border ${
               result.isLolos
-                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                : "bg-rose-50 border-rose-200 text-rose-700"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300"
+                : "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300"
             }`}
           >
             {result.isLolos ? (
@@ -306,20 +306,20 @@ export default function EvaluationDetailPage() {
           </div>
 
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">
               Hasil {getStageLabel(tipe)}
             </span>
-            <h2 className="text-2xl font-bold text-slate-900">Capaian Skor: {result.skor}%</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Capaian Skor: {result.skor}%</h2>
 
             {preTest && (
-              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1 dark:text-slate-300">
                 Pre-Test tidak memiliki nilai gugur — materi pembelajaran modul ini sekarang
                 sudah terbuka untuk Anda pelajari.
               </p>
             )}
 
             {preTest && moduleStage.preTestCompleted && (
-              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
@@ -328,14 +328,14 @@ export default function EvaluationDetailPage() {
             )}
 
             {postTest && result.isLolos && (
-              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1 dark:text-slate-300">
                 Selamat! Anda telah memenuhi nilai minimal kelulusan ({result.passingScore ?? passingScore}%).
                 Modul ini kini berstatus <span className="font-semibold">selesai</span>.
               </p>
             )}
 
             {postTest && moduleStage.postTestCompleted && (
-              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
@@ -344,14 +344,14 @@ export default function EvaluationDetailPage() {
             )}
 
             {postTest && !result.isLolos && !result.mustRepeat && (
-              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1 dark:text-slate-300">
                 Skor Anda belum mencapai nilai minimal kelulusan ({result.passingScore ?? passingScore}%).
                 Silakan pelajari kembali materi lalu coba lagi.
               </p>
             )}
 
             {postTest && !result.isLolos && result.mustRepeat && (
-              <p className="text-xs sm:text-sm text-rose-600 max-w-md mx-auto leading-relaxed pt-1 font-medium">
+              <p className="text-xs sm:text-sm text-rose-600 max-w-md mx-auto leading-relaxed pt-1 font-medium dark:text-rose-400">
                 Anda sudah gagal 3 kali percobaan Post-Test. Status modul ini direset ke
                 &quot;belum dimulai&quot; — Anda perlu mengulang modul ini dari awal (termasuk
                 Pre-Test dan materi pembelajaran).
@@ -379,7 +379,7 @@ export default function EvaluationDetailPage() {
           ) : (
             <button
               onClick={handleRetry}
-              className="w-full sm:w-auto px-8 py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
+              className="w-full sm:w-auto px-8 py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200 dark:bg-slate-700 dark:hover:bg-slate-600"
             >
               Coba Lagi Post-Test
             </button>
@@ -388,7 +388,7 @@ export default function EvaluationDetailPage() {
       ) : questionsList.length > 0 ? (
         <div className="space-y-6">
           {submitError && (
-            <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm">
+            <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
               {submitError}
             </div>
           )}
@@ -396,7 +396,7 @@ export default function EvaluationDetailPage() {
           {questionsList.map((q, index) => (
             <div
               key={q.id}
-              className="p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm"
+              className="p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm dark:bg-slate-900"
             >
               <div className="flex items-start gap-3 mb-5">
                 <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--color-pale)] text-[var(--color-navy)] font-bold text-sm border border-[var(--color-border-soft)]">
@@ -419,7 +419,7 @@ export default function EvaluationDetailPage() {
                       className={`group flex items-center gap-3.5 p-4 rounded-xl border cursor-pointer select-none transition-all ${
                         isSelected
                           ? "bg-[var(--color-pale)] border-[var(--color-accent)] text-[var(--color-navy)] shadow-sm ring-1 ring-[var(--color-accent)]"
-                          : "bg-white border-[var(--color-border-soft)] hover:border-[var(--color-accent)] hover:bg-[var(--color-pale)]/30 text-slate-700"
+                          : "bg-white border-[var(--color-border-soft)] hover:border-[var(--color-accent)] hover:bg-[var(--color-pale)]/30 text-slate-700 dark:bg-slate-900 dark:text-slate-300"
                       }`}
                     >
                       <div
@@ -436,7 +436,7 @@ export default function EvaluationDetailPage() {
                         className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                           isSelected
                             ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white"
-                            : "border-[var(--color-border-soft)] bg-white"
+                            : "border-[var(--color-border-soft)] bg-white dark:bg-slate-800"
                         }`}
                       >
                         {isSelected && (
@@ -452,7 +452,7 @@ export default function EvaluationDetailPage() {
             </div>
           ))}
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm mt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm mt-8 dark:bg-slate-900">
             <p className="text-xs text-[var(--color-accent)] text-center sm:text-left font-medium">
               Pastikan seluruh soal telah terjawab sebelum mengirim asesmen.
             </p>
@@ -473,7 +473,7 @@ export default function EvaluationDetailPage() {
           </div>
         </div>
       ) : (
-        <div className="text-center py-16 bg-white rounded-2xl border border-[var(--color-border-soft)] text-[var(--color-navy)]">
+        <div className="text-center py-16 bg-white rounded-2xl border border-[var(--color-border-soft)] text-[var(--color-navy)] dark:bg-slate-900 dark:text-slate-200">
           Belum ada soal yang tersedia pada asesmen ini.
         </div>
       )}

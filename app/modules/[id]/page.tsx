@@ -109,7 +109,7 @@ const getYoutubeId = (url?: string): string => {
 
 export default function ModuleVideoPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 text-xs text-slate-500">Memuat materi...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 text-xs text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">Memuat materi...</div>}>
       <ModuleStageGuardWrapper />
     </Suspense>
   );
@@ -556,18 +556,18 @@ function ModuleVideoPageContent() {
   if (resolutionStatus !== "video" || !videoContent) {
     const isError = resolutionStatus === "error";
     return (
-      <div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 dark:bg-slate-900/70">
         {isError ? (
           <div className="max-w-md text-center space-y-2">
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {displayErrorMessage || "Materi tidak dapat ditampilkan."}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.
             </p>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 text-slate-500">
+          <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
             <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-xs font-medium">Memuat materi pembelajaran...</p>
           </div>
@@ -577,7 +577,7 @@ function ModuleVideoPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/70 pb-16 pt-6 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50/70 pb-16 pt-6 relative overflow-hidden dark:bg-slate-900/70">
       {/* ================= BACKGROUND DEKORATIF DISDIK JABAR ================= */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#0047A5]/10 rounded-full blur-3xl" />
@@ -613,12 +613,12 @@ function ModuleVideoPageContent() {
       {/* ================= KONTEN UTAMA ================= */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
         {/* Bilah Navigasi dan Status */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 shadow-sm dark:bg-slate-900/90 dark:border-slate-800">
           <button
             onClick={() => router.push(courseId ? `/modules/courses/${courseId}` : "/modules")}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group dark:text-slate-300 dark:hover:text-emerald-400"
           >
-            <span className="p-1.5 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors">
+            <span className="p-1.5 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors dark:bg-slate-800 dark:group-hover:bg-emerald-950/40 dark:text-slate-400 dark:group-hover:text-emerald-400">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
@@ -627,7 +627,7 @@ function ModuleVideoPageContent() {
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-2 text-xs font-medium text-amber-800 bg-amber-50/90 border border-amber-200/80 px-3 py-1.5 rounded-xl">
+            <span className="inline-flex items-center gap-2 text-xs font-medium text-amber-800 bg-amber-50/90 border border-amber-200/80 px-3 py-1.5 rounded-xl dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
               <svg className="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
@@ -638,7 +638,7 @@ function ModuleVideoPageContent() {
 
         {moduleDescription && (
           <div className="prose prose-slate prose-sm max-w-none">
-            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line dark:text-slate-300">
               {moduleDescription}
             </p>
           </div>
@@ -646,14 +646,14 @@ function ModuleVideoPageContent() {
 
         {/* Informasi Utama Modul */}
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/60 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50/90 px-2.5 py-1 rounded-md border border-emerald-200/60 backdrop-blur-sm dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
             <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
             Materi Pembelajaran Video
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight dark:text-slate-100">
               {videoContent?.judul || "Materi Video Utama"}
             </h1>
             <MaterialStatusBadge
@@ -685,22 +685,22 @@ function ModuleVideoPageContent() {
           {/* Modal Pop-up Mini Quiz */}
           {activeQuiz && (
             <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-              <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-100 relative my-auto">
+              <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-100 relative my-auto dark:bg-slate-900 dark:border-slate-800">
                 {!attemptResult ? (
                   <form onSubmit={handleSubmitQuiz} className="space-y-5">
-                    <div className="border-b border-slate-100 pb-4">
+                    <div className="border-b border-slate-100 pb-4 dark:border-slate-800">
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                           <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           Kuis Interaktif
                         </span>
-                        <span className="text-xs text-slate-400 font-medium">
+                        <span className="text-xs text-slate-400 font-medium dark:text-slate-500">
                           Batas Kelulusan: {activeQuiz.passingScore}%
                         </span>
                       </div>
-                      <h3 className="font-bold text-slate-800 text-base leading-snug">
+                      <h3 className="font-bold text-slate-800 text-base leading-snug dark:text-slate-100">
                         {activeQuiz.judul}
                       </h3>
                     </div>
@@ -709,8 +709,8 @@ function ModuleVideoPageContent() {
                       {activeQuiz.questions && activeQuiz.questions.length > 0 ? (
                         activeQuiz.questions.map((q, idx) => (
                           <div key={q.id} className="space-y-3">
-                            <p className="font-semibold text-slate-800 text-sm leading-relaxed">
-                              <span className="text-emerald-700 font-bold">{idx + 1}.</span>{" "}
+                            <p className="font-semibold text-slate-800 text-sm leading-relaxed dark:text-slate-200">
+                              <span className="text-emerald-700 font-bold dark:text-emerald-400">{idx + 1}.</span>{" "}
                               {q.pertanyaan}
                             </p>
                             <div className="space-y-2">
@@ -722,15 +722,15 @@ function ModuleVideoPageContent() {
                                     key={opt.id}
                                     className={`flex items-start gap-3 p-3.5 rounded-2xl border text-xs sm:text-sm cursor-pointer transition-all duration-200 ${
                                       isSelected
-                                        ? "bg-emerald-50/80 border-emerald-500 text-emerald-950 font-medium shadow-sm ring-1 ring-emerald-400"
-                                        : "bg-slate-50/80 border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                                        ? "bg-emerald-50/80 border-emerald-500 text-emerald-950 font-medium shadow-sm ring-1 ring-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-600 dark:text-emerald-200"
+                                        : "bg-slate-50/80 border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:border-slate-600"
                                     }`}
                                   >
                                     <div
                                       className={`flex-shrink-0 w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
                                         isSelected
                                           ? "bg-emerald-700 text-white"
-                                          : "bg-slate-200 text-slate-600"
+                                          : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                                       }`}
                                     >
                                       {optionLabels[optIdx] || optIdx + 1}
@@ -752,7 +752,7 @@ function ModuleVideoPageContent() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-xs text-slate-400 text-center py-4">
+                        <p className="text-xs text-slate-400 text-center py-4 dark:text-slate-500">
                           Kuis ini belum memiliki soal.
                         </p>
                       )}
@@ -766,7 +766,7 @@ function ModuleVideoPageContent() {
                         activeQuiz.questions.length === 0 ||
                         Object.keys(userAnswers).length < activeQuiz.questions.length
                       }
-                      className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
+                      className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer disabled:cursor-not-allowed dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
                     >
                       {isSubmitting ? "Memproses Jawaban..." : "Kirim Jawaban Kuis"}
                     </button>
@@ -777,8 +777,8 @@ function ModuleVideoPageContent() {
                     <div
                       className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border ${
                         attemptResult.isLolos
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                          : "bg-rose-50 border-rose-200 text-rose-700"
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300"
+                          : "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300"
                       }`}
                     >
                       {attemptResult.isLolos ? (
@@ -793,13 +793,13 @@ function ModuleVideoPageContent() {
                     </div>
 
                     <div className="space-y-1">
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">
                         Hasil Kuis Interaktif
                       </span>
-                      <h4 className="text-2xl font-bold text-slate-900">
+                      <h4 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                         Capaian Skor: {attemptResult.skor}%
                       </h4>
-                      <p className="text-xs sm:text-sm text-slate-600 max-w-xs mx-auto leading-relaxed pt-1">
+                      <p className="text-xs sm:text-sm text-slate-600 max-w-xs mx-auto leading-relaxed pt-1 dark:text-slate-300">
                         {attemptResult.isLolos
                           ? "Anda telah memenuhi batas kriteria ketuntasan minimal. Silakan melanjutkan pemutaran video."
                           : "Skor belum mencapai batas kriteria ketuntasan minimal (80%). Silakan lakukan pemahaman ulang."}
@@ -845,7 +845,7 @@ function ModuleVideoPageContent() {
                           setAttemptResult(null);
                           setUserAnswers({});
                         }}
-                        className="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
+                        className="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200 dark:bg-slate-700 dark:hover:bg-slate-600"
                       >
                         Coba Kembali Kuis
                       </button>
@@ -858,14 +858,14 @@ function ModuleVideoPageContent() {
         </div>
 
         {/* Panel Langkah Selanjutnya */}
-        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 dark:bg-slate-900/90 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div
               className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                 isVideoFinished ? "bg-emerald-600" : "bg-amber-500"
               }`}
             />
-            <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed dark:text-slate-300">
               {!isVideoFinished
                 ? "Selesaikan penayangan video dan kuis interaktif untuk melanjutkan ke materi berikutnya."
                 : "Seluruh tahapan pembelajaran video dan kuis interaktif telah diselesaikan."}
@@ -881,7 +881,7 @@ function ModuleVideoPageContent() {
             className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-xs sm:text-sm rounded-2xl transition-all duration-200 ${
               isVideoFinished
                 ? "bg-emerald-700 hover:bg-emerald-800 text-white cursor-pointer shadow-md shadow-emerald-700/10"
-                : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60 shadow-none"
+                : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60 shadow-none dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700"
             }`}
           >
             <span>{currentIndex + 1 < materials.length ? "Materi Berikutnya" : "Kembali ke Detail Course"}</span>

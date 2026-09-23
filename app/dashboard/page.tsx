@@ -42,7 +42,7 @@ function CircularProgress({
         stroke="currentColor"
         strokeWidth={stroke}
         fill="none"
-        className="text-slate-100"
+        className="text-slate-100 dark:text-slate-700"
       />
       <circle
         cx={size / 2}
@@ -167,8 +167,8 @@ export default function DashboardPage() {
 
   if (!mounted || !user) {
     return (
-      <div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6">
-        <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
+      <div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 dark:bg-slate-900/70">
+        <div className="flex items-center gap-3 text-slate-500 font-medium text-sm dark:text-slate-400">
           <svg className="w-5 h-5 animate-spin text-[#109B51]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -196,7 +196,7 @@ export default function DashboardPage() {
     totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-800 flex flex-col justify-between leading-normal relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50/70 text-slate-800 flex flex-col justify-between leading-normal relative overflow-hidden dark:bg-slate-900/70 dark:text-slate-200">
       
       {/* Background Dekoratif Ornamen Disdik Jabar */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
@@ -270,28 +270,28 @@ export default function DashboardPage() {
 
         {/* Quick Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300">
+          <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300 dark:bg-slate-900/90 dark:border-slate-800 dark:hover:border-slate-700">
             <div className="space-y-1">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Modul Selesai</p>
-              <p className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider dark:text-slate-500">Modul Selesai</p>
+              <p className="text-2xl font-extrabold text-slate-900 tracking-tight dark:text-slate-100">
                 {loadingProgress ? "..." : completedCount}{" "}
-                <span className="text-xs font-semibold text-slate-400">/ {totalModules} Modul</span>
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">/ {totalModules} Modul</span>
               </p>
             </div>
             <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
               <CircularProgress percent={progressPercent} />
-              <span className="absolute text-[11px] font-bold text-slate-800">
+              <span className="absolute text-[11px] font-bold text-slate-800 dark:text-slate-200">
                 {progressPercent}%
               </span>
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300">
+          <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300 dark:bg-slate-900/90 dark:border-slate-800 dark:hover:border-slate-700">
             <div className="space-y-1">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Modul Tersedia</p>
-              <p className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider dark:text-slate-500">Total Modul Tersedia</p>
+              <p className="text-2xl font-extrabold text-slate-900 tracking-tight dark:text-slate-100">
                 {loadingProgress ? "..." : totalModules}{" "}
-                <span className="text-xs font-semibold text-slate-400">Modul</span>
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Modul</span>
               </p>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-[#419AD6]/10 text-[#0047A5] flex items-center justify-center border border-[#419AD6]/20 shrink-0">
@@ -301,11 +301,11 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300">
+          <div className="bg-white/90 backdrop-blur-md p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all duration-300 dark:bg-slate-900/90 dark:border-slate-800 dark:hover:border-slate-700">
             <div className="space-y-1">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status Pembelajaran</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider dark:text-slate-500">Status Pembelajaran</p>
               <div className="flex items-center gap-2">
-                <p className="text-lg font-bold text-slate-900">
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
                   {progressPercent === 100 ? "Lengkap" : "Aktif Belajar"}
                 </p>
                 {progressPercent === 100 && (
@@ -327,15 +327,15 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             
-            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5 dark:bg-slate-900/90 dark:border-slate-800">
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-slate-100 text-[#0047A5]">
+                  <div className="p-2 rounded-xl bg-slate-100 text-[#0047A5] dark:bg-slate-800 dark:text-blue-400">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                  <h2 className="text-sm font-bold text-slate-900 tracking-tight dark:text-slate-100">
                     Progres Pembelajaran Keseluruhan
                   </h2>
                 </div>
@@ -345,7 +345,7 @@ export default function DashboardPage() {
               </div>
 
               {loadingProgress ? (
-                <div className="flex items-center gap-2 text-xs text-slate-400">
+                <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
                   <svg className="w-4 h-4 animate-spin text-[#109B51]" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -354,11 +354,11 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-2.5">
-                  <div className="flex justify-between text-xs text-slate-500 font-medium">
+                  <div className="flex justify-between text-xs text-slate-500 font-medium dark:text-slate-400">
                     <span>Capaian Seluruh Modul</span>
-                    <span className="font-semibold text-slate-800">{completedCount} dari {totalModules} Modul</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{completedCount} dari {totalModules} Modul</span>
                   </div>
-                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200/50">
+                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:bg-slate-800 dark:border-slate-700">
                     <div
                       className="bg-gradient-to-r from-[#0047A5] to-[#109B51] h-full rounded-full transition-all duration-700 ease-out"
                       style={{ width: `${progressPercent}%` }}
@@ -368,13 +368,13 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5 dark:bg-slate-900/90 dark:border-slate-800">
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                  <h2 className="text-sm font-bold text-slate-900 tracking-tight dark:text-slate-100">
                     Modul Pembelajaran Utama
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Akses cepat materi, Pre-Test, dan Post-Test</p>
+                  <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Akses cepat materi, Pre-Test, dan Post-Test</p>
                 </div>
                 <Link
                   href="/modules"
@@ -387,23 +387,23 @@ export default function DashboardPage() {
                 </Link>
               </div>
 
-              <div className="p-5 rounded-2xl border border-slate-200/80 bg-slate-50/50 space-y-4 hover:border-[#109B51]/50 transition-all duration-300">
+              <div className="p-5 rounded-2xl border border-slate-200/80 bg-slate-50/50 space-y-4 hover:border-[#109B51]/50 transition-all duration-300 dark:border-slate-700 dark:bg-slate-800/50">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="space-y-2">
                     <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider text-[#109B51] bg-[#109B51]/10 px-2.5 py-0.5 rounded-md border border-[#109B51]/20">
                       Pancawaluya
                     </span>
-                    <h3 className="text-sm font-bold text-slate-900 leading-snug">
+                    <h3 className="text-sm font-bold text-slate-900 leading-snug dark:text-slate-100">
                       Penerapan 5 Nilai Pancawaluya dalam Pembelajaran
                     </h3>
-                    <p className="text-xs text-slate-500 leading-relaxed">
+                    <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
                       Cageur, Bageur, Bener, Pinter, Singer untuk Guru SMA
                     </p>
                   </div>
 
                   <Link
                     href="/modules"
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-[#109B51] text-slate-700 hover:text-white border border-slate-200/80 hover:border-[#109B51] text-xs font-semibold rounded-xl shadow-sm transition-all duration-200 shrink-0 self-start sm:self-auto"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-[#109B51] text-slate-700 hover:text-white border border-slate-200/80 hover:border-[#109B51] text-xs font-semibold rounded-xl shadow-sm transition-all duration-200 shrink-0 self-start sm:self-auto dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
                   >
                     <span>Buka Modul</span>
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -412,9 +412,9 @@ export default function DashboardPage() {
                   </Link>
                 </div>
 
-                <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
                   <span>Progres Pembelajaran</span>
-                  <span className="font-bold text-slate-800">{progressPercent}%</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{progressPercent}%</span>
                 </div>
               </div>
             </div>
@@ -424,8 +424,8 @@ export default function DashboardPage() {
           {/* Kolom Kanan */}
           <div className="space-y-6">
             
-            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
-              <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100">
+            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5 dark:bg-slate-900/90 dark:border-slate-800">
+              <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100 dark:border-slate-800">
                 {fotoUrl && !imgError ? (
                   <Image
                     src={fotoUrl}
@@ -433,7 +433,7 @@ export default function DashboardPage() {
                     width={48}
                     height={48}
                     onError={() => setImgError(true)}
-                    className="w-12 h-12 rounded-2xl object-cover border border-slate-200/80 shadow-sm shrink-0"
+                    className="w-12 h-12 rounded-2xl object-cover border border-slate-200/80 shadow-sm shrink-0 dark:border-slate-700"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-2xl bg-[#0047A5] text-white font-extrabold flex items-center justify-center text-base shadow-sm shrink-0">
@@ -441,18 +441,18 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-bold text-slate-900 truncate">{namaBerGelar}</h3>
-                  <p className="text-xs text-slate-500 capitalize">{user.role} LMS</p>
+                  <h3 className="text-sm font-bold text-slate-900 truncate dark:text-slate-100">{namaBerGelar}</h3>
+                  <p className="text-xs text-slate-500 capitalize dark:text-slate-400">{user.role} LMS</p>
                 </div>
               </div>
 
               <div className="text-xs space-y-3.5">
                 <div>
-                  <p className="text-slate-400 font-medium">Alamat Email</p>
-                  <p className="text-slate-700 font-semibold mt-0.5 truncate">{user.email}</p>
+                  <p className="text-slate-400 font-medium dark:text-slate-500">Alamat Email</p>
+                  <p className="text-slate-700 font-semibold mt-0.5 truncate dark:text-slate-300">{user.email}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 font-medium">Status Akun</p>
+                  <p className="text-slate-400 font-medium dark:text-slate-500">Status Akun</p>
                   <span className="inline-flex items-center gap-1.5 mt-1 text-[10px] text-[#109B51] bg-[#109B51]/10 border border-[#109B51]/20 font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#109B51]"></span>
                     {user.role} AKTIF
@@ -463,9 +463,9 @@ export default function DashboardPage() {
               <div className="pt-1">
                 <Link
                   href="/profile"
-                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 text-xs font-semibold rounded-xl transition-colors duration-200"
+                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 text-xs font-semibold rounded-xl transition-colors duration-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border-slate-700"
                 >
-                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   <span>Lihat Profil Lengkap</span>

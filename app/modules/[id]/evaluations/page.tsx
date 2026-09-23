@@ -61,7 +61,7 @@ export default function ModuleEvaluationsIndexPage() {
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm">
+        <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       </div>
@@ -70,7 +70,7 @@ export default function ModuleEvaluationsIndexPage() {
 
   return (
     <div className="flex justify-center items-center min-h-[50vh]">
-      <div className="text-slate-500 text-sm animate-pulse">
+      <div className="text-slate-500 text-sm animate-pulse dark:text-slate-400">
         Memuat asesmen modul...
       </div>
     </div>
