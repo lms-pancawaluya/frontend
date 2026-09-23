@@ -180,10 +180,10 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
       {/* Pop-up Modal Kuis */}
       {activeQuiz && (
         <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full shadow-xl border border-slate-200 text-slate-800">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">{activeQuiz.judul}</h3>
-              <span className="text-xs bg-sky-100 text-sky-800 px-2.5 py-1 rounded-full font-medium">
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full shadow-xl border border-slate-200 text-slate-800 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{activeQuiz.judul}</h3>
+              <span className="text-xs bg-sky-100 text-sky-800 px-2.5 py-1 rounded-full font-medium dark:bg-sky-950/40 dark:text-sky-300">
                 Passing Grade: {activeQuiz.passingScore}%
               </span>
             </div>
@@ -206,8 +206,8 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                       </svg>
                     </div>
                     <h4 className="text-lg font-bold text-emerald-600">Selamat! Kamu Lolos</h4>
-                    <p className="text-sm text-slate-600">
-                      Nilai: <span className="font-bold text-slate-900">{attemptResult.skor}</span> ({attemptResult.benar} dari {attemptResult.totalSoal} benar)
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      Nilai: <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> ({attemptResult.benar} dari {attemptResult.totalSoal} benar)
                     </p>
                     <button
                       onClick={handleContinueVideo}
@@ -227,8 +227,8 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                       </svg>
                     </div>
                     <h4 className="text-lg font-bold text-amber-600">Belum Mencapai Passing Grade</h4>
-                    <p className="text-sm text-slate-600">
-                      Nilai: <span className="font-bold text-slate-900">{attemptResult.skor}</span> | Sisa Percobaan: <span className="font-bold text-amber-600">{attemptResult.sisaPercobaan}x</span>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      Nilai: <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> | Sisa Percobaan: <span className="font-bold text-amber-600">{attemptResult.sisaPercobaan}x</span>
                     </p>
                     <button
                       onClick={handleRetryQuiz}
@@ -248,7 +248,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                       </svg>
                     </div>
                     <h4 className="text-lg font-bold text-rose-600">Kesempatan Habis</h4>
-                    <p className="text-sm text-slate-600 leading-relaxed">
+                    <p className="text-sm text-slate-600 leading-relaxed dark:text-slate-300">
                       Kamu gagal 3 kali berturut-turut. Silakan tonton ulang materi video dari awal untuk mengulang kuis.
                     </p>
                     <button
@@ -265,7 +265,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
               <form onSubmit={handleSubmitQuiz} className="space-y-4">
                 {activeQuiz.questions.map((q, idx) => (
                   <div key={q.id} className="space-y-2">
-                    <p className="text-sm font-semibold text-slate-800">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                       {idx + 1}. {q.pertanyaan}
                     </p>
                     <div className="space-y-1.5">
@@ -276,8 +276,8 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                             key={opt.id}
                             className={`flex items-center p-3 rounded-lg border text-sm cursor-pointer transition-all ${
                               isChecked
-                                ? "bg-sky-50 border-sky-500 text-sky-900 font-medium"
-                                : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700"
+                                ? "bg-sky-50 border-sky-500 text-sky-900 font-medium dark:bg-sky-950/40 dark:border-sky-600 dark:text-sky-200"
+                                : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300"
                             }`}
                           >
                             <input

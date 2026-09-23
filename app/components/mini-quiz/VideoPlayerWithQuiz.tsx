@@ -286,25 +286,25 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
       {/* POP-UP MODAL KUIS */}
       {activeQuiz && (
         <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-200 dark:bg-slate-900 dark:border-slate-700">
             
             {!attemptResult ? (
               /* FORM PERTANYAAN */
               <form onSubmit={handleSubmitQuiz} className="space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
+                <div className="border-b border-slate-100 pb-3 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded dark:bg-emerald-950/40 dark:text-emerald-300">
                     Mini Quiz Pop-Up
                   </span>
-                  <h3 className="text-lg font-bold text-slate-800 mt-1">{activeQuiz.judul}</h3>
-                  <p className="text-xs text-slate-500">
+                  <h3 className="text-lg font-bold text-slate-800 mt-1 dark:text-slate-100">{activeQuiz.judul}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Batas Lulus: {activeQuiz.passingScore}% | Maksimal Percobaan: {activeQuiz.maxAttempts}x
                   </p>
                 </div>
 
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
                   {activeQuiz.questions.map((q, idx) => (
-                    <div key={q.id} className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                      <p className="text-sm font-semibold text-slate-800">
+                    <div key={q.id} className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                         {idx + 1}. {q.pertanyaan}
                       </p>
                       <div className="space-y-1.5 pt-1">
@@ -313,8 +313,8 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                             key={opt.id}
                             className={`flex items-start gap-3 p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
                               userAnswers[q.id] === opt.id
-                                ? "bg-emerald-50 border-emerald-500 text-emerald-900 font-medium"
-                                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                                ? "bg-emerald-50 border-emerald-500 text-emerald-900 font-medium dark:bg-emerald-950/40 dark:border-emerald-600 dark:text-emerald-200"
+                                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600"
                             }`}
                           >
                             <input
@@ -351,11 +351,11 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                       ✓
                     </div>
                     <div>
-                      <span className="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                      <span className="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-emerald-950/40 dark:text-emerald-300">
                         Lulus
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
-                      <p className="text-xs text-slate-600 mt-2">
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Skor: {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2 dark:text-slate-300">
                         Selamat! Kamu telah berhasil melampaui passing grade ({attemptResult.passingScore}%).
                       </p>
                     </div>
@@ -375,11 +375,11 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                       !
                     </div>
                     <div>
-                      <span className="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                      <span className="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-amber-950/40 dark:text-amber-300">
                         Belum Lulus
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
-                      <p className="text-xs text-slate-600 mt-2">
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Skor: {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2 dark:text-slate-300">
                         Skor minimal lulus adalah {attemptResult.passingScore}%. Sisa kesempatan kamu:{" "}
                         <span className="font-bold text-amber-600">{attemptResult.sisaPercobaan} kali</span>.
                       </p>
@@ -400,11 +400,11 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                       ✕
                     </div>
                     <div>
-                      <span className="inline-block bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                      <span className="inline-block bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-rose-950/40 dark:text-rose-300">
                         Kesempatan Habis
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
-                      <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Skor: {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2 leading-relaxed dark:text-slate-300">
                         Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal.
                       </p>
                     </div>

@@ -47,7 +47,7 @@ export const ContentLockGuard: React.FC<ContentLockGuardProps> = ({
 
   if (checking) {
     return (
-      <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500 font-medium">
+      <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
         Memeriksa akses materi...
       </div>
     );

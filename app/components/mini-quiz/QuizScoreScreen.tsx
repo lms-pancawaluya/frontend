@@ -39,8 +39,8 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
           <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-semibold rounded-full uppercase tracking-wider">
             Kesempatan Habis
           </span>
-          <h3 className="text-3xl font-extrabold text-slate-900 mt-3">
-            {skor} <span className="text-sm font-normal text-slate-500">/ 100</span>
+          <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
+            {skor} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
           </h3>
           <p className="text-xs text-rose-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed">
             {pesan ||
@@ -72,8 +72,8 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
           <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full uppercase tracking-wider">
             Lulus
           </span>
-          <h3 className="text-3xl font-extrabold text-slate-900 mt-3">
-            {skor} <span className="text-sm font-normal text-slate-500">/ 100</span>
+          <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
+            {skor} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
           </h3>
           <p className="text-xs text-emerald-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed">
             {pesan || "Selamat! Kamu lulus mini kuis ini. Lanjut ke materi berikutnya!"}
@@ -103,10 +103,10 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
         <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full uppercase tracking-wider">
           Belum Lulus
         </span>
-        <h3 className="text-3xl font-extrabold text-slate-900 mt-3">
-          {skor} <span className="text-sm font-normal text-slate-500">/ 100</span>
+        <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
+          {skor} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
         </h3>
-        <p className="text-xs text-slate-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed">
+        <p className="text-xs text-slate-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed dark:text-slate-300">
           Skor minimal lulus adalah {passingScore || 80}. Sisa kesempatan kamu:{" "}
           <span className="font-bold text-amber-600">{sisaPercobaan} kali</span>.
         </p>
