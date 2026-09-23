@@ -279,7 +279,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
   };
 
   return (
-    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-md border border-slate-200">
+    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-md border border-slate-200 dark:border-slate-800">
       {/* Video Container */}
       <div id={`yt-player-${contentId}`} className="w-full h-full" ref={iframeContainerRef} />
 
@@ -347,7 +347,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                 {/* KONDISI A: LULUS */}
                 {attemptResult.isLolos && (
                   <>
-                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black dark:bg-emerald-950/40 dark:text-emerald-400">
                       ✓
                     </div>
                     <div>
@@ -371,7 +371,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                 {/* KONDISI B: GAGAL MASIH ADA KESEMPATAN */}
                 {!attemptResult.isLolos && !attemptResult.mustRepeat && (
                   <>
-                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black dark:bg-amber-950/40 dark:text-amber-400">
                       !
                     </div>
                     <div>
@@ -381,7 +381,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                       <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Skor: {attemptResult.skor}</h4>
                       <p className="text-xs text-slate-600 mt-2 dark:text-slate-300">
                         Skor minimal lulus adalah {attemptResult.passingScore}%. Sisa kesempatan kamu:{" "}
-                        <span className="font-bold text-amber-600">{attemptResult.sisaPercobaan} kali</span>.
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{attemptResult.sisaPercobaan} kali</span>.
                       </p>
                     </div>
                     <button
@@ -396,7 +396,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                 {/* KONDISI C: GAGAL 3X (KESEMPATAN HABIS) */}
                 {!attemptResult.isLolos && attemptResult.mustRepeat && (
                   <>
-                    <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                    <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black dark:bg-rose-950/40 dark:text-rose-400">
                       ✕
                     </div>
                     <div>

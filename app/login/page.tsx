@@ -64,7 +64,7 @@ export default function LoginPage() {
 
         <p className="text-sm text-gray-500 text-center mt-6 dark:text-slate-400">
           Belum punya akun?{" "}
-          <Link href="/register" className="text-[var(--color-accent)] font-medium hover:underline">
+          <Link href="/register" className="text-[var(--color-accent)] font-medium hover:underline dark:text-blue-400">
             Daftar di sini
           </Link>
         </p>

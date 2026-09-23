@@ -250,7 +250,7 @@ export default function AdminDashboardPage() {
       sub: "modul pembelajaran",
       subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.modules,
-      iconWrap: "bg-blue-100 text-blue-600",
+      iconWrap: "bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
       card: "border-blue-100 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20",
     },
     {
@@ -259,7 +259,7 @@ export default function AdminDashboardPage() {
       sub: "guru terdaftar",
       subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.users,
-      iconWrap: "bg-emerald-100 text-emerald-600",
+      iconWrap: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
       card: "border-emerald-100 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20",
     },
     {
@@ -271,7 +271,7 @@ export default function AdminDashboardPage() {
           : "tidak ada antrean",
       subClass: stats && stats.ticketPerluTindak > 0 ? "text-red-500 font-medium dark:text-red-400" : "text-gray-400 dark:text-slate-500",
       icon: ICONS.helpdesk,
-      iconWrap: "bg-red-100 text-red-600",
+      iconWrap: "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400",
       card: "border-red-100 bg-red-50/40 dark:border-red-900 dark:bg-red-950/20",
     },
     {
@@ -280,7 +280,7 @@ export default function AdminDashboardPage() {
       sub: "seluruh guru",
       subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.monitoring,
-      iconWrap: "bg-amber-100 text-amber-600",
+      iconWrap: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
       card: "border-amber-100 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20",
     },
   ];
@@ -310,7 +310,7 @@ export default function AdminDashboardPage() {
       desc: "Buat, ubah, dan susun modul, materi teks, serta video pembelajaran.",
       href: "/admin/modules",
       icon: ICONS.modules,
-      iconWrap: "bg-blue-100 text-blue-600",
+      iconWrap: "bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
       arrow: "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
     },
     {
@@ -318,7 +318,7 @@ export default function AdminDashboardPage() {
       desc: "Lihat daftar guru terdaftar dan pantau progres pengerjaan modul mereka.",
       href: "/admin/users",
       icon: ICONS.users,
-      iconWrap: "bg-emerald-100 text-emerald-600",
+      iconWrap: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
       arrow: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400",
     },
     {
@@ -326,7 +326,7 @@ export default function AdminDashboardPage() {
       desc: "Tinjau kendala teknis dari Guru, kirim tanggapan balasan, dan kelola status tiket.",
       href: "/admin/helpdesk",
       icon: ICONS.helpdesk,
-      iconWrap: "bg-red-100 text-red-600",
+      iconWrap: "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400",
       arrow: "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
     },
     {
@@ -334,7 +334,7 @@ export default function AdminDashboardPage() {
           desc: "Pantau progres pembelajaran (course) tiap guru: Pre-Test, materi, dan Post-Test.",
       href: "/admin/checklist/report",
       icon: ICONS.monitoring,
-      iconWrap: "bg-amber-100 text-amber-600",
+      iconWrap: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
       arrow: "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400",
     },
   ];
@@ -407,7 +407,7 @@ export default function AdminDashboardPage() {
         <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm dark:bg-slate-900">
           <div className="mb-6 flex items-center justify-between gap-3">
             <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">
-              <span className="text-[var(--color-accent)]">{ICONS.monitoring}</span>
+              <span className="text-[var(--color-accent)] dark:text-blue-400">{ICONS.monitoring}</span>
               Monitoring Pembelajaran
             </h2>
             <Link

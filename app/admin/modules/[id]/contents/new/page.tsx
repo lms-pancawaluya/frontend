@@ -105,44 +105,44 @@ export default function NewContentPage() {
   <div className="max-w-xl mx-auto p-6">
     <button
       onClick={() => router.push(`/admin/modules/${moduleId}`)}
-      className="text-sm text-[var(--color-accent)] hover:underline mb-6"
+      className="text-sm text-[var(--color-accent)] hover:underline mb-6 dark:text-blue-400"
     >
       ← Kembali ke edit modul
     </button>
 
-    <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-6">
+    <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-6 dark:text-slate-100">
       Tambah Konten Baru
     </h1>
 
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       )}
 
       <div>
-        <label htmlFor="judul" className="block text-sm font-medium text-[var(--color-navy)] mb-1">Judul Konten</label>
+        <label htmlFor="judul" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Judul Konten</label>
         <input
           id="judul"
           type="text"
           name="judul"
           value={formData.judul}
           onChange={handleChange}
-          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
           placeholder="Pengantar Konsep Bageur"
           required
         />
       </div>
 
       <div>
-        <label htmlFor="tipe" className="block text-sm font-medium text-[var(--color-navy)] mb-1">Tipe Konten</label>
+        <label htmlFor="tipe" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Tipe Konten</label>
         <select
           id="tipe"
           name="tipe"
           value={formData.tipe}
           onChange={handleChange}
-          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
         >
           <option value="teks">Teks</option>
           <option value="video">Video (YouTube)</option>
@@ -153,7 +153,7 @@ export default function NewContentPage() {
 
       {formData.tipe === "link" ? (
         <div>
-          <label htmlFor="konten" className="block text-sm font-medium text-[var(--color-navy)] mb-1">
+          <label htmlFor="konten" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">
             URL Link
           </label>
           <input
@@ -162,7 +162,7 @@ export default function NewContentPage() {
             name="konten"
             value={formData.konten}
             onChange={handleChange}
-            className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+            className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
             placeholder="https://contoh.com/materi"
             aria-describedby="konten-link-help"
             required
@@ -173,7 +173,7 @@ export default function NewContentPage() {
         </div>
       ) : formData.tipe === "pdf" ? (
         <div>
-          <label htmlFor="file-pdf" className="block text-sm font-medium text-[var(--color-navy)] mb-1">File PDF</label>
+          <label htmlFor="file-pdf" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">File PDF</label>
           <input
             id="file-pdf"
             type="file"
@@ -185,16 +185,16 @@ export default function NewContentPage() {
           />
           <p id="file-pdf-help" className="mt-1 text-xs text-gray-500 dark:text-slate-400">Format PDF, maksimal 10MB.</p>
           {uploadingPdf && <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Mengunggah file PDF...</p>}
-          {pdfError && <p className="mt-1 text-xs text-red-600">{pdfError}</p>}
+          {pdfError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{pdfError}</p>}
           {!uploadingPdf && !pdfError && formData.konten && (
-            <p className="mt-1 text-xs text-emerald-700">
+            <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
               {pdfFileName ? `${pdfFileName} — ` : ""}File PDF berhasil diunggah.
             </p>
           )}
         </div>
       ) : (
         <div>
-          <label htmlFor="konten" className="block text-sm font-medium text-[var(--color-navy)] mb-1">
+          <label htmlFor="konten" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">
             {formData.tipe === "video" ? "Link Video YouTube" : "Isi Konten"}
           </label>
           <textarea
@@ -202,7 +202,7 @@ export default function NewContentPage() {
             name="konten"
             value={formData.konten}
             onChange={handleChange}
-            className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+            className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
             rows={formData.tipe === "video" ? 2 : 6}
             placeholder={
               formData.tipe === "video"
@@ -215,14 +215,14 @@ export default function NewContentPage() {
       )}
 
       <div>
-        <label htmlFor="urutan" className="block text-sm font-medium text-[var(--color-navy)] mb-1">Urutan</label>
+        <label htmlFor="urutan" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Urutan</label>
         <input
           id="urutan"
           type="number"
           name="urutan"
           value={formData.urutan}
           onChange={handleChange}
-          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
           min={1}
           required
         />

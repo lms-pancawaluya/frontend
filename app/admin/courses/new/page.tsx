@@ -60,31 +60,31 @@ export default function NewCoursePage() {
       <button
         type="button"
         onClick={() => router.push("/admin/courses")}
-        className="mb-6 text-sm text-[var(--color-accent)] hover:underline"
+        className="mb-6 text-sm text-[var(--color-accent)] hover:underline dark:text-blue-400"
       >
         ← Kembali ke daftar course
       </button>
 
-      <h1 className="mb-6 font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)]">
+      <h1 className="mb-6 font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] dark:text-slate-100">
         Tambah Course Baru
       </h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>}
+        {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
         <div>
-          <label htmlFor="judul" className="mb-1 block text-sm font-medium text-[var(--color-navy)]">Judul</label>
-          <input id="judul" name="judul" value={formData.judul} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30" />
+          <label htmlFor="judul" className="mb-1 block text-sm font-medium text-[var(--color-navy)] dark:text-slate-200">Judul</label>
+          <input id="judul" name="judul" value={formData.judul} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200" />
         </div>
 
         <div>
-          <label htmlFor="deskripsi" className="mb-1 block text-sm font-medium text-[var(--color-navy)]">Deskripsi</label>
-          <textarea id="deskripsi" name="deskripsi" value={formData.deskripsi} onChange={handleChange} required rows={4} className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30" />
+          <label htmlFor="deskripsi" className="mb-1 block text-sm font-medium text-[var(--color-navy)] dark:text-slate-200">Deskripsi</label>
+          <textarea id="deskripsi" name="deskripsi" value={formData.deskripsi} onChange={handleChange} required rows={4} className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200" />
         </div>
 
         <div>
-          <label htmlFor="mode" className="mb-1 block text-sm font-medium text-[var(--color-navy)]">Mode</label>
-          <select id="mode" name="mode" value={formData.mode} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 capitalize focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30">
+          <label htmlFor="mode" className="mb-1 block text-sm font-medium text-[var(--color-navy)] dark:text-slate-200">Mode</label>
+          <select id="mode" name="mode" value={formData.mode} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 capitalize focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200">
             <option value="online">Online</option>
             <option value="offline">Offline</option>
           </select>
@@ -92,24 +92,24 @@ export default function NewCoursePage() {
 
         {formData.mode === "offline" && (
           <div>
-            <label htmlFor="lokasi" className="mb-1 block text-sm font-medium text-[var(--color-navy)]">Lokasi</label>
-            <input id="lokasi" name="lokasi" value={formData.lokasi} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30" />
+            <label htmlFor="lokasi" className="mb-1 block text-sm font-medium text-[var(--color-navy)] dark:text-slate-200">Lokasi</label>
+            <input id="lokasi" name="lokasi" value={formData.lokasi} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200" />
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm text-[var(--color-navy)]">
+        <label className="flex items-center gap-2 text-sm text-[var(--color-navy)] dark:text-slate-200">
           <input type="checkbox" name="hasCertificate" checked={formData.hasCertificate} onChange={handleChange} className="h-4 w-4 rounded border-slate-300" />
           Menyediakan sertifikat
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="tanggalMulai" className="mb-1 block text-sm font-medium text-[var(--color-navy)]">Tanggal Mulai</label>
-            <input id="tanggalMulai" type="date" name="tanggalMulai" value={formData.tanggalMulai} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30" />
+            <label htmlFor="tanggalMulai" className="mb-1 block text-sm font-medium text-[var(--color-navy)] dark:text-slate-200">Tanggal Mulai</label>
+            <input id="tanggalMulai" type="date" name="tanggalMulai" value={formData.tanggalMulai} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200" />
           </div>
           <div>
-            <label htmlFor="tanggalSelesai" className="mb-1 block text-sm font-medium text-[var(--color-navy)]">Tanggal Selesai</label>
-            <input id="tanggalSelesai" type="date" name="tanggalSelesai" value={formData.tanggalSelesai} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30" />
+            <label htmlFor="tanggalSelesai" className="mb-1 block text-sm font-medium text-[var(--color-navy)] dark:text-slate-200">Tanggal Selesai</label>
+            <input id="tanggalSelesai" type="date" name="tanggalSelesai" value={formData.tanggalSelesai} onChange={handleChange} required className="w-full rounded-lg border border-[var(--color-border-soft)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200" />
           </div>
         </div>
 

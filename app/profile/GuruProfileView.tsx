@@ -535,11 +535,11 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
           }`}
         >
           {message.type === "success" ? (
-            <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-emerald-600 shrink-0 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
-            <svg className="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-rose-600 shrink-0 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           )}
@@ -638,7 +638,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
             <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-4 dark:bg-slate-800/80 dark:border-slate-700">
               <div className="flex justify-between items-center">
                 <label className="block text-xs font-bold text-slate-800 flex items-center gap-2 dark:text-slate-100">
-                  <svg className="w-4 h-4 text-[#0047A5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[#0047A5] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
                   </svg>
                   Instansi Sekolah Wilayah Jawa Barat
@@ -650,7 +650,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                     setSelectedDaerah("");
                     setFormData((prev) => ({ ...prev, sekolah: "", alamatSekolah: "" }));
                   }}
-                  className="text-xs text-[#0047A5] hover:text-[#002B66] font-semibold transition-colors"
+                  className="text-xs text-[#0047A5] hover:text-[#002B66] font-semibold transition-colors dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   {ketikManual ? "Pilih dari Daftar Wilayah" : "Sekolah tidak ada? Ketik manual"}
                 </button>

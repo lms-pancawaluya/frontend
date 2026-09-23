@@ -116,11 +116,11 @@ export default function PengajarGuruPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-[var(--color-border-soft)] bg-[var(--color-pale)]">
               <tr>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)]">Nama</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)]">Sekolah</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)]">Email</th>
-                <th className="whitespace-nowrap px-4 py-3 text-center font-medium text-[var(--color-navy)]">Status</th>
-                <th className="whitespace-nowrap px-4 py-3 text-center font-medium text-[var(--color-navy)]">Aksi</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">Nama</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">Sekolah</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">Email</th>
+                <th className="whitespace-nowrap px-4 py-3 text-center font-medium text-[var(--color-navy)] dark:text-slate-200">Status</th>
+                <th className="whitespace-nowrap px-4 py-3 text-center font-medium text-[var(--color-navy)] dark:text-slate-200">Aksi</th>
               </tr>
             </thead>
             <tbody>

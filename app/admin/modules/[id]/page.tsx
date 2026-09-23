@@ -214,7 +214,7 @@ export default function AdminModuleDetailPage() {
     return (
       <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6 dark:bg-slate-900/60">
         <div className="flex items-center gap-3 text-slate-500 font-medium text-sm dark:text-slate-400">
-          <svg className="w-5 h-5 animate-spin text-emerald-700" fill="none" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 animate-spin text-emerald-700 dark:text-emerald-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path
               className="opacity-75"
@@ -231,13 +231,13 @@ export default function AdminModuleDetailPage() {
   if (accessDenied) {
     return (
       <div className="max-w-md mx-auto mt-16 p-6 text-center">
-        <div className="bg-amber-50 text-amber-700 text-sm px-4 py-3 rounded-lg border border-amber-200">
+        <div className="bg-amber-50 text-amber-700 text-sm px-4 py-3 rounded-lg border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
           Module ini berada pada Course yang bukan milik Anda, sehingga tidak dapat dikelola. Hubungi Admin jika perlu.
         </div>
         <button
           type="button"
           onClick={() => router.push("/admin/modules")}
-          className="mt-4 text-sm text-emerald-700 hover:underline"
+          className="mt-4 text-sm text-emerald-700 hover:underline dark:text-emerald-400"
         >
           ← Kembali ke daftar modul
         </button>
@@ -248,7 +248,7 @@ export default function AdminModuleDetailPage() {
   if (error || !module) {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error || "Modul tidak ditemukan."}
         </div>
       </div>
@@ -633,8 +633,8 @@ export default function AdminModuleDetailPage() {
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{title}</h2>
           {items.length === 0 && <button type="button" onClick={() => openEvaluationForm(type)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full dark:bg-slate-700">+ Buat {title}</button>}
         </div>
-        {evaluationMessage && isActiveForm && <p className="text-sm text-red-600">{evaluationMessage}</p>}
-        {evaluationDeleteError[type] && <p className="text-sm text-red-600">{evaluationDeleteError[type]}</p>}
+        {evaluationMessage && isActiveForm && <p className="text-sm text-red-600 dark:text-red-400">{evaluationMessage}</p>}
+        {evaluationDeleteError[type] && <p className="text-sm text-red-600 dark:text-red-400">{evaluationDeleteError[type]}</p>}
         {isActiveForm && (
           <form onSubmit={handleEvaluationSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_auto] gap-3">
             <input
@@ -692,10 +692,10 @@ export default function AdminModuleDetailPage() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button type="button" onClick={() => startEvaluationQuestionForm(evaluation.id)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">+ Tambah Soal</button>
-                      <button type="button" onClick={() => handleEvaluationDelete(evaluation.id, title, type)} disabled={evaluationDeletingId === evaluation.id} className="px-4 py-2 border border-red-200 text-red-600 text-xs font-semibold rounded-full text-center hover:bg-red-50 disabled:opacity-60">{evaluationDeletingId === evaluation.id ? "Menghapus..." : "Hapus"}</button>
+                      <button type="button" onClick={() => handleEvaluationDelete(evaluation.id, title, type)} disabled={evaluationDeletingId === evaluation.id} className="px-4 py-2 border border-red-200 text-red-600 text-xs font-semibold rounded-full text-center hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30">{evaluationDeletingId === evaluation.id ? "Menghapus..." : "Hapus"}</button>
                     </div>
                   </div>
-                  {evaluationQuestionError[evaluation.id] && <p className="text-sm text-red-600">{evaluationQuestionError[evaluation.id]}</p>}
+                  {evaluationQuestionError[evaluation.id] && <p className="text-sm text-red-600 dark:text-red-400">{evaluationQuestionError[evaluation.id]}</p>}
                   {questions.length === 0 ? (
                     <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada soal untuk {title} ini.</p>
                   ) : (
@@ -709,7 +709,7 @@ export default function AdminModuleDetailPage() {
                             </div>
                             <div className="flex gap-2">
                               <button type="button" onClick={() => startEvaluationQuestionEdit(evaluation.id, question)} className="text-xs font-semibold text-slate-600 dark:text-slate-300">Edit</button>
-                              <button type="button" onClick={() => removeEvaluationQuestion(evaluation.id, question.id)} disabled={evaluationQuestionDeletingId === question.id} className="text-xs font-semibold text-red-600 disabled:opacity-60">{evaluationQuestionDeletingId === question.id ? "Menghapus..." : "Hapus"}</button>
+                              <button type="button" onClick={() => removeEvaluationQuestion(evaluation.id, question.id)} disabled={evaluationQuestionDeletingId === question.id} className="text-xs font-semibold text-red-600 disabled:opacity-60 dark:text-red-400">{evaluationQuestionDeletingId === question.id ? "Menghapus..." : "Hapus"}</button>
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -731,11 +731,11 @@ export default function AdminModuleDetailPage() {
                           <div key={optionIndex} className="flex gap-2">
                             <input type="radio" name={`correct-${evaluation.id}`} checked={option.isCorrect} onChange={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === optionIndex })) })} />
                             <input value={option.teksOpsi} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => itemIndex === optionIndex ? { ...item, teksOpsi: e.target.value } : item) })} className="flex-1 border border-slate-200 rounded-xl p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" placeholder={`Opsi ${optionIndex + 1}`} required />
-                            {evaluationQuestionForm.options.length > 2 && <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.filter((_, itemIndex) => itemIndex !== optionIndex) })} className="text-xs text-red-600">Hapus</button>}
+                            {evaluationQuestionForm.options.length > 2 && <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.filter((_, itemIndex) => itemIndex !== optionIndex) })} className="text-xs text-red-600 dark:text-red-400">Hapus</button>}
                           </div>
                         ))}
                       </div>
-                      <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: [...evaluationQuestionForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">+ Tambah Opsi</button>
+                      <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: [...evaluationQuestionForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700 dark:text-emerald-400">+ Tambah Opsi</button>
                       <div className="flex gap-2">
                         <button type="submit" disabled={evaluationQuestionBusy} className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs disabled:opacity-60">{evaluationQuestionBusy ? "Menyimpan..." : evaluationQuestionForm.questionId ? "Simpan Perubahan" : "Tambah Soal"}</button>
                         <button type="button" onClick={() => setEvaluationQuestionForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">Batal</button>
@@ -795,7 +795,7 @@ export default function AdminModuleDetailPage() {
          {/* Informasi Modul */}
          <form onSubmit={handleModuleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
            <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Informasi Modul</h2>
-           {moduleMessage && <div className={`text-sm px-4 py-3 rounded-xl border ${moduleMessage.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>{moduleMessage.text}</div>}
+           {moduleMessage && <div className={`text-sm px-4 py-3 rounded-xl border ${moduleMessage.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" : "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800"}`}>{moduleMessage.text}</div>}
            <div className="space-y-4">
               <div>
                 <label htmlFor="judul" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
@@ -869,7 +869,7 @@ export default function AdminModuleDetailPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 dark:text-slate-100">
-              <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-emerald-700 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
               Konten Pembelajaran
@@ -946,9 +946,9 @@ export default function AdminModuleDetailPage() {
                                />
                                <p id={`pdf-file-help-${content.id}`} className="mt-1 text-xs text-slate-500 dark:text-slate-400">Format PDF, maksimal 10MB.</p>
                                {pdfUploadingId === content.id && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mengunggah file PDF...</p>}
-                               {pdfMessage && <p className="mt-1 text-xs text-red-600">{pdfMessage}</p>}
+                               {pdfMessage && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{pdfMessage}</p>}
                                {pdfUploadingId !== content.id && !pdfMessage && contentData.konten && (
-                                 <p className="mt-1 text-xs text-emerald-700">
+                                 <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
                                    {pdfFileName ? `${pdfFileName} — ` : ""}File PDF berhasil diunggah.
                                  </p>
                                )}
@@ -1016,7 +1016,7 @@ export default function AdminModuleDetailPage() {
                                 <div className="flex h-[480px] items-center justify-center text-sm text-slate-500 dark:text-slate-400">Memuat pratinjau PDF...</div>
                               ) : previewError[content.id] ? (
                                 <div className="flex h-[480px] flex-col items-center justify-center gap-3 p-6 text-center">
-                                  <p className="text-sm text-red-600">{previewError[content.id]}</p>
+                                  <p className="text-sm text-red-600 dark:text-red-400">{previewError[content.id]}</p>
                                   <a
                                     href={content.konten}
                                     target="_blank"
@@ -1056,7 +1056,7 @@ export default function AdminModuleDetailPage() {
                               </button>
                             )}
                           </div>
-                          {downloadError[content.id] && <p className="text-xs text-red-600">{downloadError[content.id]}</p>}
+                          {downloadError[content.id] && <p className="text-xs text-red-600 dark:text-red-400">{downloadError[content.id]}</p>}
                         </div>
                       ) : content.tipe === "link" ? (
                         <div className="space-y-3">
@@ -1103,7 +1103,7 @@ export default function AdminModuleDetailPage() {
                               type="button"
                               onClick={() => handleContentDelete(content)}
                               disabled={contentBusy}
-                              className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60"
+                              className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60 dark:text-red-400 dark:border-red-800"
                             >
                               Hapus
                             </button>
@@ -1111,7 +1111,7 @@ export default function AdminModuleDetailPage() {
                               <button
                                 type="button"
                                 onClick={() => toggleInteractiveQuestions(content.id)}
-                                className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg"
+                                className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg dark:text-emerald-400 dark:border-emerald-800"
                               >
                                 {expandedVideoId === content.id ? "Tutup Pertanyaan Interaktif" : "Kelola Pertanyaan Interaktif"}
                               </button>
@@ -1131,7 +1131,7 @@ export default function AdminModuleDetailPage() {
                                 <button
                                   type="button"
                                   onClick={() => setCheckpointForm({ contentId: content.id, judul: "", timestamp: "" })}
-                                  className="shrink-0 text-sm font-semibold text-emerald-700 border border-emerald-200 rounded-xl px-4 py-2 hover:bg-emerald-50"
+                                  className="shrink-0 text-sm font-semibold text-emerald-700 border border-emerald-200 rounded-xl px-4 py-2 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/40"
                                 >
                                   + Tambah Checkpoint
                                 </button>
@@ -1176,7 +1176,7 @@ export default function AdminModuleDetailPage() {
                             {interactiveLoading === content.id ? (
                               <p className="text-xs text-slate-500 dark:text-slate-400">Memuat...</p>
                             ) : interactiveError[content.id] ? (
-                              <p className="text-xs text-red-600">{interactiveError[content.id]}</p>
+                              <p className="text-xs text-red-600 dark:text-red-400">{interactiveError[content.id]}</p>
                             ) : (videoQuizzes[content.id] || []).length === 0 ? (
                               <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
                                 Belum ada checkpoint pada video ini.
@@ -1191,10 +1191,10 @@ export default function AdminModuleDetailPage() {
                                         <h5 className="text-base font-bold text-slate-900 mt-1 dark:text-slate-100">{quiz.judul || "Checkpoint tanpa nama"}</h5>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
+                                        <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300">
                                           {formatTimestamp(quiz.timestampSeconds)}
                                         </span>
-                                        <button type="button" onClick={() => removeCheckpoint(content.id, quiz.id)} disabled={interactiveDeletingId === quiz.id} className="text-xs font-semibold text-red-600 border border-red-200 px-2 py-1 rounded-lg hover:bg-red-50 disabled:opacity-60">Hapus</button>
+                                        <button type="button" onClick={() => removeCheckpoint(content.id, quiz.id)} disabled={interactiveDeletingId === quiz.id} className="text-xs font-semibold text-red-600 border border-red-200 px-2 py-1 rounded-lg hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30">Hapus</button>
                                       </div>
                                     </div>
                                     {(quiz.questions || []).length === 0 ? (
@@ -1213,7 +1213,7 @@ export default function AdminModuleDetailPage() {
                                               >
                                                 Edit
                                               </button>
-                                              <button type="button" onClick={() => removeInteractiveQuestion(content.id, question.id)} className="text-xs font-semibold text-red-600">
+                                              <button type="button" onClick={() => removeInteractiveQuestion(content.id, question.id)} className="text-xs font-semibold text-red-600 dark:text-red-400">
                                                 Hapus
                                               </button>
                                             </div>
@@ -1224,7 +1224,7 @@ export default function AdminModuleDetailPage() {
                                     <button
                                       type="button"
                                       onClick={() => setInteractiveForm({ quizId: quiz.id, pertanyaan: "", options: [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }] })}
-                                      className="text-sm font-semibold text-emerald-700 text-right"
+                                      className="text-sm font-semibold text-emerald-700 text-right dark:text-emerald-400"
                                     >
                                       + Tambah Pertanyaan
                                     </button>
@@ -1258,13 +1258,13 @@ export default function AdminModuleDetailPage() {
                                       {option.isCorrect ? "Benar" : "Tandai benar"}
                                     </button>
                                     {interactiveForm.options.length > 2 && (
-                                      <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.filter((_, itemIndex) => itemIndex !== index) })} className="text-xs text-red-600">
+                                      <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.filter((_, itemIndex) => itemIndex !== index) })} className="text-xs text-red-600 dark:text-red-400">
                                         Hapus
                                       </button>
                                     )}
                                   </div>
                                 ))}
-                                <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: [...interactiveForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">
+                                <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: [...interactiveForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700 dark:text-emerald-400">
                                   + Tambah opsi
                                 </button>
                                 <div className="flex gap-2">
@@ -1275,7 +1275,7 @@ export default function AdminModuleDetailPage() {
                             )}
                           </div>
                         )}
-                       {contentMessage && editingContentId === null && <p className="text-xs text-red-600 mt-2">{contentMessage}</p>}
+                       {contentMessage && editingContentId === null && <p className="text-xs text-red-600 mt-2 dark:text-red-400">{contentMessage}</p>}
                      </div>
                    </div>
 

@@ -122,7 +122,7 @@ function OtpContent() {
   return (
     <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20 dark:bg-slate-900/95">
       <div className="text-center mb-6">
-        <div className="inline-block bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-3 py-1 rounded-full mb-3 border border-[var(--color-border-soft)]">
+        <div className="inline-block bg-[var(--color-pale)] text-[var(--color-navy)] text-xs font-semibold px-3 py-1 rounded-full mb-3 border border-[var(--color-border-soft)] dark:text-slate-200">
           Pancawaluya
         </div>
 
@@ -205,7 +205,7 @@ function OtpContent() {
             <button
               type="button"
               onClick={handleResend}
-              className="text-[var(--color-accent)] font-semibold hover:underline"
+              className="text-[var(--color-accent)] font-semibold hover:underline dark:text-blue-400"
             >
               Kirim Ulang OTP
             </button>

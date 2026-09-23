@@ -200,12 +200,12 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                 {/* LULUS */}
                 {attemptResult.isLolos && (
                   <div className="space-y-3">
-                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto dark:bg-emerald-950/40 dark:text-emerald-400">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-emerald-600">Selamat! Kamu Lolos</h4>
+                    <h4 className="text-lg font-bold text-emerald-600 dark:text-emerald-400">Selamat! Kamu Lolos</h4>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
                       Nilai: <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> ({attemptResult.benar} dari {attemptResult.totalSoal} benar)
                     </p>
@@ -221,14 +221,14 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                 {/* GAGAL, BISA RETRY */}
                 {!attemptResult.isLolos && !attemptResult.mustRepeat && (
                   <div className="space-y-3">
-                    <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto dark:bg-amber-950/40 dark:text-amber-400">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-amber-600">Belum Mencapai Passing Grade</h4>
+                    <h4 className="text-lg font-bold text-amber-600 dark:text-amber-400">Belum Mencapai Passing Grade</h4>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
-                      Nilai: <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> | Sisa Percobaan: <span className="font-bold text-amber-600">{attemptResult.sisaPercobaan}x</span>
+                      Nilai: <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> | Sisa Percobaan: <span className="font-bold text-amber-600 dark:text-amber-400">{attemptResult.sisaPercobaan}x</span>
                     </p>
                     <button
                       onClick={handleRetryQuiz}
@@ -242,12 +242,12 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                 {/* GAGAL 3X (MUST REPEAT) */}
                 {!attemptResult.isLolos && attemptResult.mustRepeat && (
                   <div className="space-y-3">
-                    <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto dark:bg-rose-950/40 dark:text-rose-400">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-rose-600">Kesempatan Habis</h4>
+                    <h4 className="text-lg font-bold text-rose-600 dark:text-rose-400">Kesempatan Habis</h4>
                     <p className="text-sm text-slate-600 leading-relaxed dark:text-slate-300">
                       Kamu gagal 3 kali berturut-turut. Silakan tonton ulang materi video dari awal untuk mengulang kuis.
                     </p>

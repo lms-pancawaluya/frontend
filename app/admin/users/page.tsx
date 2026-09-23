@@ -354,12 +354,12 @@ export default function AdminUsersPage() {
           <table className="w-full text-sm">
             <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Nama</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Sekolah</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Email</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Role</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Status</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap">Aksi</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Nama</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Sekolah</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Email</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Role</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Status</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Aksi</th>
               </tr>
             </thead>
             <tbody>

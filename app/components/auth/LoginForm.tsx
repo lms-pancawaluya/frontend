@@ -127,7 +127,7 @@ export default function LoginForm() {
         <div className="flex justify-end mt-1.5">
           <Link
             href="/forgot-password"
-            className="text-xs font-medium text-sky-600 hover:text-sky-700 hover:underline transition-colors"
+            className="text-xs font-medium text-sky-600 hover:text-sky-700 hover:underline transition-colors dark:text-sky-400 dark:hover:text-sky-300"
           >
             Lupa Password?
           </Link>

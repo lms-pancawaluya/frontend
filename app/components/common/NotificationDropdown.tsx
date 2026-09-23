@@ -152,7 +152,7 @@ export default function NotificationDropdown() {
       case "COMMENT_MENTION":
         return <MessageSquare className="w-5 h-5 text-green-500" />;
       default:
-        return <Bell className="w-5 h-5 text-slate-500" />;
+        return <Bell className="w-5 h-5 text-slate-500 dark:text-slate-400" />;
     }
   };
 

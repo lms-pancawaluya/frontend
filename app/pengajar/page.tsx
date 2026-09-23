@@ -223,7 +223,7 @@ export default function PengajarDashboardPage() {
       desc: "Lihat dan perbarui data guru di sekolah Anda.",
       href: "/pengajar/guru",
       icon: ICONS.users,
-      iconWrap: "bg-emerald-100 text-emerald-600",
+      iconWrap: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
       arrow: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400",
     },
     {
@@ -231,7 +231,7 @@ export default function PengajarDashboardPage() {
       desc: "Pantau progres pembelajaran (course) tiap guru binaan.",
       href: "/pengajar/monitoring",
       icon: ICONS.monitoring,
-      iconWrap: "bg-amber-100 text-amber-600",
+      iconWrap: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
       arrow: "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400",
     },
     {
@@ -239,7 +239,7 @@ export default function PengajarDashboardPage() {
       desc: "Ikuti diskusi modul dan berikan tanggapan untuk guru.",
       href: "/pengajar/diskusi",
       icon: ICONS.chat,
-      iconWrap: "bg-blue-100 text-blue-600",
+      iconWrap: "bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
       arrow: "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
     },
   ];
@@ -303,7 +303,7 @@ export default function PengajarDashboardPage() {
         <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm dark:bg-slate-900">
           <div className="mb-6 flex items-center justify-between gap-3">
             <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">
-              <span className="text-[var(--color-accent)]">{ICONS.monitoring}</span>
+              <span className="text-[var(--color-accent)] dark:text-blue-400">{ICONS.monitoring}</span>
               Monitoring Pembelajaran
             </h2>
             <Link

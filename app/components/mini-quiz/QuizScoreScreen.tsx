@@ -31,18 +31,18 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
     return (
       <div className="text-center space-y-5 py-3">
         {/* Lencana Warning */}
-        <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+        <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner dark:bg-rose-950/40 dark:text-rose-400">
           ✕
         </div>
 
         <div>
-          <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-semibold rounded-full uppercase tracking-wider">
+          <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-semibold rounded-full uppercase tracking-wider dark:bg-rose-950/40 dark:text-rose-300">
             Kesempatan Habis
           </span>
           <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
             {skor} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
           </h3>
-          <p className="text-xs text-rose-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed">
+          <p className="text-xs text-rose-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed dark:text-rose-400">
             {pesan ||
               "Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal."}
           </p>
@@ -64,18 +64,18 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
     return (
       <div className="text-center space-y-5 py-3">
         {/* Lencana Lulus */}
-        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner dark:bg-emerald-950/40 dark:text-emerald-400">
           ✓
         </div>
 
         <div>
-          <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full uppercase tracking-wider">
+          <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full uppercase tracking-wider dark:bg-emerald-950/40 dark:text-emerald-300">
             Lulus
           </span>
           <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
             {skor} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
           </h3>
-          <p className="text-xs text-emerald-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed">
+          <p className="text-xs text-emerald-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed dark:text-emerald-400">
             {pesan || "Selamat! Kamu lulus mini kuis ini. Lanjut ke materi berikutnya!"}
           </p>
         </div>
@@ -95,12 +95,12 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
   return (
     <div className="text-center space-y-5 py-3">
       {/* Lencana Belum Lulus */}
-      <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+      <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner dark:bg-amber-950/40 dark:text-amber-400">
         !
       </div>
 
       <div>
-        <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full uppercase tracking-wider">
+        <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full uppercase tracking-wider dark:bg-amber-950/40 dark:text-amber-300">
           Belum Lulus
         </span>
         <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
@@ -108,7 +108,7 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
         </h3>
         <p className="text-xs text-slate-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed dark:text-slate-300">
           Skor minimal lulus adalah {passingScore || 80}. Sisa kesempatan kamu:{" "}
-          <span className="font-bold text-amber-600">{sisaPercobaan} kali</span>.
+          <span className="font-bold text-amber-600 dark:text-amber-400">{sisaPercobaan} kali</span>.
         </p>
       </div>
 

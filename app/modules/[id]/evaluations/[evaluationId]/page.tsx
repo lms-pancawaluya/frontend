@@ -232,7 +232,7 @@ export default function EvaluationDetailPage() {
       <div className="mb-8">
         <Link
           href={courseDetailUrl}
-          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-accent)] hover:text-[var(--color-navy)] mb-4 transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-accent)] hover:text-[var(--color-navy)] mb-4 transition-colors dark:text-blue-400 dark:hover:text-slate-100"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -248,7 +248,7 @@ export default function EvaluationDetailPage() {
                   ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
                   : postTest
                   ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                  : "bg-[var(--color-pale)] text-[var(--color-accent)]"
+                  : "bg-[var(--color-pale)] text-[var(--color-accent)] dark:text-blue-400"
               }`}
             >
               {getStageLabel(tipe)}
@@ -266,7 +266,7 @@ export default function EvaluationDetailPage() {
 
           {!result && (
             <div className="bg-[var(--color-pale)]/50 p-4 rounded-xl border border-[var(--color-border-soft)] min-w-[220px]">
-              <div className="flex justify-between text-xs font-semibold text-[var(--color-navy)] mb-1.5">
+              <div className="flex justify-between text-xs font-semibold text-[var(--color-navy)] mb-1.5 dark:text-slate-200">
                 <span>Progres Pengerjaan</span>
                 <span>{progressPercentage}%</span>
               </div>
@@ -276,7 +276,7 @@ export default function EvaluationDetailPage() {
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
-              <p className="text-[11px] text-[var(--color-accent)] mt-1.5 text-right font-medium">
+              <p className="text-[11px] text-[var(--color-accent)] mt-1.5 text-right font-medium dark:text-blue-400">
                 {answeredCount} dari {totalQuestions} soal terjawab
               </p>
             </div>
@@ -399,10 +399,10 @@ export default function EvaluationDetailPage() {
               className="p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm dark:bg-slate-900"
             >
               <div className="flex items-start gap-3 mb-5">
-                <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--color-pale)] text-[var(--color-navy)] font-bold text-sm border border-[var(--color-border-soft)]">
+                <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--color-pale)] text-[var(--color-navy)] font-bold text-sm border border-[var(--color-border-soft)] dark:text-slate-200">
                   {index + 1}
                 </span>
-                <p className="text-base font-semibold text-[var(--color-navy)] pt-0.5 leading-relaxed">
+                <p className="text-base font-semibold text-[var(--color-navy)] pt-0.5 leading-relaxed dark:text-slate-100">
                   {q.pertanyaan}
                 </p>
               </div>
@@ -418,7 +418,7 @@ export default function EvaluationDetailPage() {
                       onClick={() => handleOptionSelect(q.id, opt.id)}
                       className={`group flex items-center gap-3.5 p-4 rounded-xl border cursor-pointer select-none transition-all ${
                         isSelected
-                          ? "bg-[var(--color-pale)] border-[var(--color-accent)] text-[var(--color-navy)] shadow-sm ring-1 ring-[var(--color-accent)]"
+                          ? "bg-[var(--color-pale)] border-[var(--color-accent)] text-[var(--color-navy)] shadow-sm ring-1 ring-[var(--color-accent)] dark:text-slate-100"
                           : "bg-white border-[var(--color-border-soft)] hover:border-[var(--color-accent)] hover:bg-[var(--color-pale)]/30 text-slate-700 dark:bg-slate-900 dark:text-slate-300"
                       }`}
                     >
@@ -426,7 +426,7 @@ export default function EvaluationDetailPage() {
                         className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg font-bold text-xs transition-colors ${
                           isSelected
                             ? "bg-[var(--color-accent)] text-white"
-                            : "bg-[var(--color-pale)] text-[var(--color-navy)] group-hover:bg-[var(--color-border-soft)]"
+                            : "bg-[var(--color-pale)] text-[var(--color-navy)] group-hover:bg-[var(--color-border-soft)] dark:text-slate-200"
                         }`}
                       >
                         {optionLetter}
@@ -453,7 +453,7 @@ export default function EvaluationDetailPage() {
           ))}
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm mt-8 dark:bg-slate-900">
-            <p className="text-xs text-[var(--color-accent)] text-center sm:text-left font-medium">
+            <p className="text-xs text-[var(--color-accent)] text-center sm:text-left font-medium dark:text-blue-400">
               Pastikan seluruh soal telah terjawab sebelum mengirim asesmen.
             </p>
             <button

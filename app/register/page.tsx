@@ -75,7 +75,7 @@ export default function RegisterPage() {
 
         <p className="text-sm text-gray-500 text-center mt-6 dark:text-slate-400">
           Sudah punya akun?{" "}
-          <Link href="/login" className="text-[var(--color-accent)] font-medium hover:underline">
+          <Link href="/login" className="text-[var(--color-accent)] font-medium hover:underline dark:text-blue-400">
             Login di sini
           </Link>
         </p>

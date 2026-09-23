@@ -334,7 +334,7 @@ export default function ForgotPasswordPage() {
           Kembali ke{" "}
           <Link
             href="/login"
-            className="text-[var(--color-accent)] font-medium hover:underline transition-colors"
+            className="text-[var(--color-accent)] font-medium hover:underline transition-colors dark:text-blue-400"
           >
             Halaman Login
           </Link>

@@ -199,7 +199,7 @@ export default function DashboardPage() {
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Akses materi, Pre-Test, dan Post-Test Pancawaluya</p>
                 </div>
-                <Link href="/modules" className="text-xs font-semibold text-[var(--color-accent)] hover:underline">
+                <Link href="/modules" className="text-xs font-semibold text-[var(--color-accent)] hover:underline dark:text-blue-400">
                   Lihat Semua Modul →
                 </Link>
               </div>

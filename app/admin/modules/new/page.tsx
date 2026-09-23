@@ -121,30 +121,30 @@ function NewModuleForm() {
   <div className="max-w-xl mx-auto p-6">
     <button
       onClick={() => router.push("/admin/modules")}
-      className="text-sm text-[var(--color-accent)] hover:underline mb-6"
+      className="text-sm text-[var(--color-accent)] hover:underline mb-6 dark:text-blue-400"
     >
       ← Kembali ke daftar modul
     </button>
 
-    <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-6">
+    <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-6 dark:text-slate-100">
       Tambah Modul Baru
     </h1>
 
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Course</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Course</label>
         <select
           name="courseId"
           value={formData.courseId}
           onChange={handleChange}
           disabled={loadingCourses}
-          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
           required
         >
           <option value="" disabled>
@@ -157,32 +157,32 @@ function NewModuleForm() {
           ))}
         </select>
         {!loadingCourses && courses.length === 0 && (
-          <p className="text-xs text-amber-600 mt-1">
+          <p className="text-xs text-amber-600 mt-1 dark:text-amber-400">
             Belum ada course. Buat course terlebih dahulu sebelum menambah modul.
           </p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Judul Modul</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Judul Modul</label>
         <input
           type="text"
           name="judul"
           value={formData.judul}
           onChange={handleChange}
-          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
           placeholder="Modul Bageur - Percaya Diri & Kolaborasi"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Deskripsi</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Deskripsi</label>
         <textarea
           name="deskripsi"
           value={formData.deskripsi}
           onChange={handleChange}
-          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
           rows={4}
           placeholder="Jelaskan isi modul ini secara singkat..."
           required
@@ -190,12 +190,12 @@ function NewModuleForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Aspek Pancawaluya</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Aspek Pancawaluya</label>
         <select
           name="aspekPancawaluya"
           value={formData.aspekPancawaluya}
           onChange={handleChange}
-          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 capitalize focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 capitalize focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
         >
           {aspekOptions.map((aspek) => (
             <option key={aspek} value={aspek} className="capitalize">
@@ -206,13 +206,13 @@ function NewModuleForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1">Urutan</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Urutan</label>
         <input
           type="number"
           name="urutan"
           value={formData.urutan}
           onChange={handleChange}
-          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+          className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
           min={1}
           required
         />

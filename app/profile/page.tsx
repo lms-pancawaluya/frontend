@@ -106,7 +106,7 @@ function ProfilePageContent({ initialTab }: { initialTab: GuruProfileTab }) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-[var(--color-pale)] p-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-md dark:bg-slate-900 dark:border-red-800">
-          <p className="text-red-600 font-medium text-sm mb-4">{error}</p>
+          <p className="text-red-600 font-medium text-sm mb-4 dark:text-red-400">{error}</p>
           <a
             href="/login"
             className="inline-block bg-[var(--color-navy)] text-white text-xs font-semibold px-4 py-2 rounded-xl"

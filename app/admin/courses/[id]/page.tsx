@@ -244,7 +244,7 @@ export default function AdminCourseDetailPage() {
         <button
           type="button"
           onClick={() => router.push("/admin/courses")}
-          className="mt-4 text-sm text-[var(--color-accent)] hover:underline"
+          className="mt-4 text-sm text-[var(--color-accent)] hover:underline dark:text-blue-400"
         >
           ← Kembali ke daftar course
         </button>
@@ -266,7 +266,7 @@ export default function AdminCourseDetailPage() {
         <button
           type="button"
           onClick={() => router.push("/admin/courses")}
-          className="text-sm text-[var(--color-accent)] hover:underline"
+          className="text-sm text-[var(--color-accent)] hover:underline dark:text-blue-400"
         >
           ← Kembali ke daftar course
         </button>

@@ -175,7 +175,7 @@ export default function PengajarRtlPage() {
           <div className="space-y-3 py-16 text-center">
             <p className="inline-block rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</p>
             <div>
-              <button onClick={() => setRefreshKey((k) => k + 1)} className="text-xs font-semibold text-[var(--color-accent)] hover:underline">
+              <button onClick={() => setRefreshKey((k) => k + 1)} className="text-xs font-semibold text-[var(--color-accent)] hover:underline dark:text-blue-400">
                 Coba lagi
               </button>
             </div>
@@ -217,7 +217,7 @@ export default function PengajarRtlPage() {
                             href={r.filePdfUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
+                            className="text-xs font-semibold text-[var(--color-accent)] hover:underline dark:text-blue-400"
                           >
                             Preview PDF
                           </a>
