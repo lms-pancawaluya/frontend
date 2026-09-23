@@ -176,11 +176,11 @@ function getStatusBadge(status?: string): { label: string; className: string } {
     return { label: "Resolved", className: "bg-emerald-100 text-emerald-800 border-emerald-200" };
   }
   if (s === "closed" || s === "tutup") {
-    return { label: "Closed", className: "bg-slate-100 text-slate-800 border-slate-200" };
+    return { label: "Closed", className: "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700" };
   }
   return {
     label: status || "Tidak diketahui",
-    className: "bg-slate-50 text-slate-600 border-slate-200",
+    className: "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
   };
 }
 
@@ -538,15 +538,15 @@ function AdminHelpdeskContent() {
       </div>
 
       {/* TAB NAVIGASI */}
-      <div className="flex gap-2 border-b border-slate-200">
+      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800">
         <button
           type="button"
           onClick={() => setActiveTab("tickets")}
           aria-pressed={activeTab === "tickets"}
           className={`px-4 py-2.5 text-sm font-bold -mb-px border-b-2 transition-colors ${
             activeTab === "tickets"
-              ? "border-emerald-500 text-emerald-700"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-emerald-500 text-emerald-700 dark:text-emerald-400"
+              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           }`}
         >
           Tiket Bantuan
@@ -557,8 +557,8 @@ function AdminHelpdeskContent() {
           aria-pressed={activeTab === "feedback"}
           className={`px-4 py-2.5 text-sm font-bold -mb-px border-b-2 transition-colors ${
             activeTab === "feedback"
-              ? "border-emerald-500 text-emerald-700"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-emerald-500 text-emerald-700 dark:text-emerald-400"
+              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           }`}
         >
           Saran &amp; Masukan
@@ -568,16 +568,16 @@ function AdminHelpdeskContent() {
       {activeTab === "tickets" && (
         <>
       {/* FILTER PANEL */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col sm:flex-row gap-4 items-end">
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col sm:flex-row gap-4 items-end dark:bg-slate-900 dark:border-slate-800">
         <div className="flex-1 space-y-1.5 w-full">
-          <label htmlFor="filter-status" className="text-xs font-bold text-slate-600">
+          <label htmlFor="filter-status" className="text-xs font-bold text-slate-600 dark:text-slate-300">
             Filter Status
           </label>
           <select
             id="filter-status"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
+            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
           >
             <option value="">Semua Status</option>
             <option value="open">Open</option>
@@ -588,7 +588,7 @@ function AdminHelpdeskContent() {
         </div>
 
         <div className="flex-1 space-y-1.5 w-full">
-          <label htmlFor="filter-category" className="text-xs font-bold text-slate-600">
+          <label htmlFor="filter-category" className="text-xs font-bold text-slate-600 dark:text-slate-300">
             Filter Kategori
           </label>
           <select
@@ -596,7 +596,7 @@ function AdminHelpdeskContent() {
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
             disabled={!!categoriesError}
-            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all disabled:opacity-60"
+            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all disabled:opacity-60 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
           >
             <option value="">Semua Kategori</option>
             {ticketCategories.map((c) => (
@@ -606,7 +606,7 @@ function AdminHelpdeskContent() {
             ))}
           </select>
           {categoriesError && (
-            <p className="text-[11px] text-rose-600">{categoriesError}</p>
+            <p className="text-[11px] text-rose-600 dark:text-rose-400">{categoriesError}</p>
           )}
         </div>
 
@@ -616,7 +616,7 @@ function AdminHelpdeskContent() {
               setFilterStatus("");
               setFilterCategory("");
             }}
-            className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors h-10 px-4 flex items-center justify-center border border-slate-200 rounded-xl hover:bg-slate-50 shrink-0 w-full sm:w-auto"
+            className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors h-10 px-4 flex items-center justify-center border border-slate-200 rounded-xl hover:bg-slate-50 shrink-0 w-full sm:w-auto dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-800"
           >
             Bersihkan Filter
           </button>
@@ -625,9 +625,9 @@ function AdminHelpdeskContent() {
 
       {/* NOTIFIKASI SUKSES */}
       {successMsg && (
-        <div className="bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-2xl border border-emerald-200 animate-fade-in flex items-center justify-between">
+        <div className="bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-2xl border border-emerald-200 animate-fade-in flex items-center justify-between dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
           <span>{successMsg}</span>
-          <button onClick={() => setSuccessMsg("")} className="text-emerald-500 hover:text-emerald-700">
+          <button onClick={() => setSuccessMsg("")} className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -636,9 +636,9 @@ function AdminHelpdeskContent() {
       )}
 
       {/* TABEL DATA TIKET */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
         {loading ? (
-          <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-20">
+          <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-20 dark:text-slate-400">
             <svg className="w-5 h-5 animate-spin text-emerald-600" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -659,17 +659,17 @@ function AdminHelpdeskContent() {
           </div>
         ) : tickets.length === 0 ? (
           <div className="text-center py-20 space-y-2">
-            <svg className="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-12 h-12 text-slate-300 mx-auto dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-4M4 13h4m1.5-4h.01M12 9h.01M15.5 9h.01" />
             </svg>
-            <p className="text-slate-600 text-sm font-semibold">Tidak ada tiket ditemukan.</p>
-            <p className="text-slate-400 text-xs">Coba sesuaikan status atau kategori filter Anda.</p>
+            <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">Tidak ada tiket ditemukan.</p>
+            <p className="text-slate-400 text-xs dark:text-slate-500">Coba sesuaikan status atau kategori filter Anda.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider">
+                <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider dark:bg-slate-800/60 dark:border-slate-800 dark:text-slate-300">
                   <th className="py-4 px-6">No. Tiket</th>
                   <th className="py-4 px-6">Pengirim</th>
                   <th className="py-4 px-6">Subjek & Kategori</th>
@@ -678,31 +678,31 @@ function AdminHelpdeskContent() {
                   <th className="py-4 px-6 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 text-sm">
+              <tbody className="divide-y divide-slate-100 text-slate-700 text-sm dark:divide-slate-800 dark:text-slate-300">
                 {[...tickets]
                   .sort((a, b) => Number(isPengajarTicket(b)) - Number(isPengajarTicket(a)))
                   .map((t) => {
                   const badge = getStatusBadge(t.status);
                   const fromPengajar = isPengajarTicket(t);
                   return (
-                    <tr key={t.id} className={`transition-colors ${fromPengajar ? "bg-amber-50/60 hover:bg-amber-50" : "hover:bg-slate-50/50"}`}>
-                      <td className="py-4 px-6 font-mono text-xs font-bold text-slate-500">
+                    <tr key={t.id} className={`transition-colors ${fromPengajar ? "bg-amber-50/60 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/30" : "hover:bg-slate-50/50 dark:hover:bg-slate-800/40"}`}>
+                      <td className="py-4 px-6 font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
                         {getTicketNumber(t)}
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-800">{t.user?.nama || "-"}</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-100">{t.user?.nama || "-"}</span>
                           {fromPengajar && (
-                            <span className="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                            <span className="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
                               Pengajar
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-slate-400">{t.user?.email || ""}</div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500">{t.user?.email || ""}</div>
                       </td>
                       <td className="py-4 px-6">
-                        <div className="font-semibold text-slate-900 leading-snug">{getSubject(t)}</div>
-                        <div className="inline-block text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md mt-1">
+                        <div className="font-semibold text-slate-900 leading-snug dark:text-slate-100">{getSubject(t)}</div>
+                        <div className="inline-block text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md mt-1 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300">
                           {getCategory(t)}
                         </div>
                       </td>
@@ -711,13 +711,13 @@ function AdminHelpdeskContent() {
                           {badge.label}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-slate-500 text-xs">
+                      <td className="py-4 px-6 text-slate-500 text-xs dark:text-slate-400">
                         {getCreatedDate(t)}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <button
                           onClick={() => handleOpenDetailModal(t.id!)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 px-3 py-2 rounded-xl transition-all"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 px-3 py-2 rounded-xl transition-all dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800"
                         >
                           Tinjau Tiket
                         </button>
@@ -737,16 +737,16 @@ function AdminHelpdeskContent() {
       {activeTab === "feedback" && (
         <>
           {/* FILTER SARAN & MASUKAN (Kota / Sekolah) */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col sm:flex-row gap-4 items-end">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col sm:flex-row gap-4 items-end dark:bg-slate-900 dark:border-slate-800">
             <div className="flex-1 space-y-1.5 w-full">
-              <label htmlFor="feedback-filter-kota" className="text-xs font-bold text-slate-600">
+              <label htmlFor="feedback-filter-kota" className="text-xs font-bold text-slate-600 dark:text-slate-300">
                 Filter Kota
               </label>
               <select
                 id="feedback-filter-kota"
                 value={filterKota}
                 onChange={(e) => setFilterKota(e.target.value)}
-                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
+                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
               >
                 <option value="">Semua Kota</option>
                 {feedbackKotaOptions.map((kota) => (
@@ -758,14 +758,14 @@ function AdminHelpdeskContent() {
             </div>
 
             <div className="flex-1 space-y-1.5 w-full">
-              <label htmlFor="feedback-filter-sekolah" className="text-xs font-bold text-slate-600">
+              <label htmlFor="feedback-filter-sekolah" className="text-xs font-bold text-slate-600 dark:text-slate-300">
                 Filter Sekolah
               </label>
               <select
                 id="feedback-filter-sekolah"
                 value={filterSekolah}
                 onChange={(e) => setFilterSekolah(e.target.value)}
-                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
+                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
               >
                 <option value="">Semua Sekolah</option>
                 {feedbackSekolahOptions.map((sekolah) => (
@@ -782,7 +782,7 @@ function AdminHelpdeskContent() {
                   setFilterKota("");
                   setFilterSekolah("");
                 }}
-                className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors h-10 px-4 flex items-center justify-center border border-slate-200 rounded-xl hover:bg-slate-50 shrink-0 w-full sm:w-auto"
+                className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors h-10 px-4 flex items-center justify-center border border-slate-200 rounded-xl hover:bg-slate-50 shrink-0 w-full sm:w-auto dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-800"
               >
                 Bersihkan Filter
               </button>
@@ -790,9 +790,9 @@ function AdminHelpdeskContent() {
           </div>
 
           {/* DAFTAR SARAN & MASUKAN */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
             {feedbackLoading ? (
-              <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-20">
+              <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-20 dark:text-slate-400">
                 <svg className="w-5 h-5 animate-spin text-emerald-600" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -813,22 +813,22 @@ function AdminHelpdeskContent() {
               </div>
             ) : filteredFeedbacks.length === 0 ? (
               <div className="text-center py-20 space-y-2">
-                <svg className="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-12 h-12 text-slate-300 mx-auto dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M7 8h10M7 12h6m-1 9l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v9a2 2 0 01-2 2h-6l-4 4z" />
                 </svg>
-                <p className="text-slate-600 text-sm font-semibold">
+                <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">
                   {feedbacks.length === 0
                     ? "Belum ada saran & masukan."
                     : "Tidak ada saran & masukan sesuai filter."}
                 </p>
                 {feedbacks.length > 0 && (
-                  <p className="text-slate-400 text-xs">
+                  <p className="text-slate-400 text-xs dark:text-slate-500">
                     Coba sesuaikan filter Kota atau Sekolah.
                   </p>
                 )}
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredFeedbacks.map((fb, idx) => {
                   const sender = resolveFeedbackSender(fb);
                   const createdAt = getFeedbackCreatedRaw(fb);
@@ -837,21 +837,21 @@ function AdminHelpdeskContent() {
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-slate-800">{sender.nama}</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-100">{sender.nama}</span>
                             {sender.role && (
-                              <span className="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                              <span className="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                 {getSenderRoleLabel(sender.role)}
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-slate-400">{sender.email}</div>
-                          <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                          <div className="text-xs text-slate-400 dark:text-slate-500">{sender.email}</div>
+                          <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-3 gap-y-0.5 dark:text-slate-400">
                             <span>Sekolah: {sender.sekolah || "—"}</span>
                             <span>Kota: {sender.kota || "—"}</span>
                           </div>
                         </div>
-                        <div className="text-xs text-slate-400 shrink-0 sm:text-right">
-                          <div className="font-semibold text-slate-500">
+                        <div className="text-xs text-slate-400 shrink-0 sm:text-right dark:text-slate-500">
+                          <div className="font-semibold text-slate-500 dark:text-slate-400">
                             Course: {getFeedbackCourseLabel(fb)}
                           </div>
                           {createdAt && <div className="mt-0.5">{formatDateTime(createdAt)}</div>}
@@ -859,19 +859,19 @@ function AdminHelpdeskContent() {
                       </div>
 
                       <div className="grid gap-2.5 sm:grid-cols-2">
-                        <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                        <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 dark:bg-slate-800 dark:border-slate-700">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                             Masukan
                           </p>
-                          <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
+                          <p className="mt-1 text-xs text-slate-700 whitespace-pre-line dark:text-slate-300">
                             {getFeedbackMasukan(fb) || "—"}
                           </p>
                         </div>
-                        <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                        <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 dark:bg-slate-800 dark:border-slate-700">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                             Saran
                           </p>
-                          <p className="mt-1 text-xs text-slate-700 whitespace-pre-line">
+                          <p className="mt-1 text-xs text-slate-700 whitespace-pre-line dark:text-slate-300">
                             {fb.saran || "—"}
                           </p>
                         </div>
@@ -892,15 +892,15 @@ function AdminHelpdeskContent() {
           onClick={handleCloseDetailModal}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden dark:bg-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0 dark:border-slate-800">
               <div>
-                <h2 className="text-base font-bold text-slate-900">Peninjauan Detail Tiket</h2>
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Peninjauan Detail Tiket</h2>
                 {detailTicket && (
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-400 mt-0.5 dark:text-slate-500">
                     ID Tiket: {getTicketNumber(detailTicket)}
                   </p>
                 )}
@@ -908,7 +908,7 @@ function AdminHelpdeskContent() {
               <button
                 onClick={handleCloseDetailModal}
                 disabled={replySending || statusUpdating}
-                className="text-slate-400 hover:text-slate-600 disabled:opacity-50"
+                className="text-slate-400 hover:text-slate-600 disabled:opacity-50 dark:hover:text-slate-200"
                 aria-label="Tutup"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -920,7 +920,7 @@ function AdminHelpdeskContent() {
             {/* Modal Body (scrollable) */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {detailLoading ? (
-                <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-20">
+                <div className="flex items-center gap-3 text-slate-500 font-medium text-sm justify-center py-20 dark:text-slate-400">
                   <svg className="w-5 h-5 animate-spin text-emerald-600" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -941,16 +941,16 @@ function AdminHelpdeskContent() {
                 </div>
               ) : !detailTicket ? (
                 <div className="text-center py-10">
-                  <p className="text-slate-600 text-sm font-semibold">Tiket tidak ditemukan.</p>
+                  <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">Tiket tidak ditemukan.</p>
                 </div>
               ) : (
                 <>
                   {/* Grid layout: Info Tiket vs Update Status */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     {/* Detail Informasi */}
-                    <div className="md:col-span-2 bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5 space-y-3">
+                    <div className="md:col-span-2 bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5 space-y-3 dark:bg-slate-800/50 dark:border-slate-700">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded dark:bg-slate-700 dark:text-slate-300">
                           KATEGORI: {detailCategory}
                         </span>
                         {detailBadge && (
@@ -959,50 +959,50 @@ function AdminHelpdeskContent() {
                           </span>
                         )}
                         {detailTicket.createdAt && (
-                          <span className="text-[10px] text-slate-400 font-medium">
+                          <span className="text-[10px] text-slate-400 font-medium dark:text-slate-500">
                             Dibuat: {formatDateTime(detailTicket.createdAt || detailTicket.created_at)}
                           </span>
                         )}
                       </div>
-                      <h3 className="text-base font-bold text-slate-900 leading-snug">
+                      <h3 className="text-base font-bold text-slate-900 leading-snug dark:text-slate-100">
                         {getSubject(detailTicket)}
                       </h3>
-                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap break-words border-t border-slate-200/40 pt-2.5">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap break-words border-t border-slate-200/40 pt-2.5 dark:text-slate-300 dark:border-slate-700">
                         {detailDescription}
                       </p>
                     </div>
 
                     {/* Requester Info & Status Controller */}
-                    <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5 space-y-4">
+                    <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5 space-y-4 dark:bg-slate-800/50 dark:border-slate-700">
                       {/* Requester Info */}
                       <div>
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Pengirim</h4>
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide dark:text-slate-500">Pengirim</h4>
                         <div className="mt-1 flex items-center gap-2">
-                          <p className="text-sm font-bold text-slate-900">{detailTicket.user?.nama || "-"}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{detailTicket.user?.nama || "-"}</p>
                           {isPengajarTicket(detailTicket) && (
-                            <span className="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                            <span className="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
                               Pengajar
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400">{detailTicket.user?.email || ""}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">{detailTicket.user?.email || ""}</p>
                         {detailTicket.user?.sekolah && (
-                          <p className="text-xs text-slate-500 mt-0.5 italic">Asal: {detailTicket.user.sekolah}</p>
+                          <p className="text-xs text-slate-500 mt-0.5 italic dark:text-slate-400">Asal: {detailTicket.user.sekolah}</p>
                         )}
                       </div>
 
                       {/* Status Selector */}
-                      <div className="border-t border-slate-200/60 pt-3 space-y-2">
-                        <label htmlFor="update-status" className="text-xs font-bold text-slate-600 block">
+                      <div className="border-t border-slate-200/60 pt-3 space-y-2 dark:border-slate-700">
+                        <label htmlFor="update-status" className="text-xs font-bold text-slate-600 block dark:text-slate-300">
                           Ubah Status Tiket
                         </label>
-                        {statusUpdateError && <p className="text-xs text-red-500 leading-snug">{statusUpdateError}</p>}
+                        {statusUpdateError && <p className="text-xs text-red-500 leading-snug dark:text-red-400">{statusUpdateError}</p>}
                         <select
                           id="update-status"
                           disabled={statusUpdating}
                           value={detailTicket.status || "open"}
                           onChange={(e) => handleStatusChange(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-200 rounded-xl px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all font-semibold"
+                          className="w-full text-xs bg-white border border-slate-200 rounded-xl px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all font-semibold dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                         >
                           {statusOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>
@@ -1016,10 +1016,10 @@ function AdminHelpdeskContent() {
 
                   {/* Percakapan */}
                   <div className="space-y-3">
-                    <h3 className="text-sm font-bold text-slate-700">Percakapan / Balasan</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Percakapan / Balasan</h3>
                     {detailReplies.length === 0 ? (
-                      <div className="text-center py-8 bg-slate-50/40 rounded-2xl border border-slate-100">
-                        <p className="text-slate-400 text-xs">Belum ada percakapan pada tiket ini.</p>
+                      <div className="text-center py-8 bg-slate-50/40 rounded-2xl border border-slate-100 dark:bg-slate-800/40 dark:border-slate-700">
+                        <p className="text-slate-400 text-xs dark:text-slate-500">Belum ada percakapan pada tiket ini.</p>
                       </div>
                     ) : (
                       <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
@@ -1030,28 +1030,28 @@ function AdminHelpdeskContent() {
                               <div
                                 className={`max-w-[85%] rounded-2xl border px-4 py-3 shadow-sm ${
                                   isGuru
-                                    ? "bg-white border-slate-200/85"
-                                    : "bg-emerald-50 border-emerald-200"
+                                    ? "bg-white border-slate-200/85 dark:bg-slate-800 dark:border-slate-700"
+                                    : "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800"
                                 }`}
                               >
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="text-xs font-bold text-slate-800">
+                                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
                                     {r.sender?.nama || "Pengguna"}
                                   </span>
                                   <span
                                     className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
                                       isGuru
-                                        ? "bg-blue-100 text-blue-700"
-                                        : "bg-purple-100 text-purple-700"
+                                        ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                                        : "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
                                     }`}
                                   >
                                     {getSenderRoleLabel(r.sender?.role)}
                                   </span>
                                 </div>
-                                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+                                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words dark:text-slate-300">
                                   {r.message || r.pesan || ""}
                                 </p>
-                                <p className="text-[10px] text-slate-400 mt-1.5">
+                                <p className="text-[10px] text-slate-400 mt-1.5 dark:text-slate-500">
                                   {formatDateTime(r.createdAt || r.created_at)}
                                 </p>
                               </div>
@@ -1065,12 +1065,12 @@ function AdminHelpdeskContent() {
 
                   {/* Input Form Balasan */}
                   {isClosedOrResolved ? (
-                    <div className="text-center py-3 text-xs text-slate-400 font-semibold bg-slate-50/50 rounded-2xl border border-slate-100">
+                    <div className="text-center py-3 text-xs text-slate-400 font-semibold bg-slate-50/50 rounded-2xl border border-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-500">
                       Tiket telah ditutup/diselesaikan. Buka kembali tiket jika ingin mengirim balasan.
                     </div>
                   ) : (
-                    <form onSubmit={handleReply} className="space-y-3 border-t border-slate-100 pt-4">
-                      <label htmlFor="reply-message" className="text-xs font-bold text-slate-600 block">
+                    <form onSubmit={handleReply} className="space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+                      <label htmlFor="reply-message" className="text-xs font-bold text-slate-600 block dark:text-slate-300">
                         Tulis Balasan Tanggapan
                       </label>
                       {replyError && <p className="alert-error">{replyError}</p>}
@@ -1080,7 +1080,7 @@ function AdminHelpdeskContent() {
                         onChange={(e) => setReplyMessage(e.target.value)}
                         rows={3}
                         placeholder="Ketik pesan balasan penyelesaian kendala di sini..."
-                        className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all resize-y"
+                        className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all resize-y dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                         required
                       />
                       <div className="flex justify-end">

@@ -114,7 +114,7 @@ function NewModuleForm() {
   }
 
   if (checkingAccess) {
-    return <p className="text-center mt-16 text-gray-500">Memeriksa akses...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memeriksa akses...</p>;
   }
 
   return (
@@ -232,7 +232,7 @@ function NewModuleForm() {
 
 export default function NewModulePage() {
   return (
-    <Suspense fallback={<p className="text-center mt-16 text-gray-500">Memuat halaman...</p>}>
+    <Suspense fallback={<p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memuat halaman...</p>}>
       <NewModuleForm />
     </Suspense>
   );

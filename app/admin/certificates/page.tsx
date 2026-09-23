@@ -163,13 +163,13 @@ export default function AdminCertificatesPage() {
   }
 
   if (loading) {
-    return <p className="mt-16 text-center text-gray-500">Memuat daftar course...</p>;
+    return <p className="mt-16 text-center text-gray-500 dark:text-slate-400">Memuat daftar course...</p>;
   }
 
   if (error) {
     return (
       <div className="mx-auto mt-16 max-w-md p-4">
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</div>
       </div>
     );
   }
@@ -177,17 +177,17 @@ export default function AdminCertificatesPage() {
   return (
     <div className="mx-auto max-w-5xl p-6">
       <div className="mb-6">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)]">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] dark:text-slate-100">
           Manajemen Sertifikat
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
           Kelola template sertifikat per course. Unggah file PDF dengan area nama penerima dibiarkan kosong —
           nama akan ditempel otomatis oleh sistem saat sertifikat dibuat.
         </p>
       </div>
 
       {courses.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-8 text-center text-sm text-gray-500">
+        <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-8 text-center text-sm text-gray-500 dark:bg-slate-900 dark:text-slate-400">
           Belum ada course tersedia.
         </div>
       ) : (
@@ -199,47 +199,47 @@ export default function AdminCertificatesPage() {
             return (
               <div
                 key={course.id}
-                className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-5"
+                className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-5 dark:bg-slate-900"
               >
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                   <div className="min-w-0">
-                    <h2 className="truncate font-medium text-[var(--color-navy)]">
+                    <h2 className="truncate font-medium text-[var(--color-navy)] dark:text-slate-100">
                       {course.judul || "Tanpa judul"}
                     </h2>
-                    <p className="mt-1 line-clamp-2 text-sm text-gray-500">
+                    <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-slate-400">
                       {course.deskripsi || "Tidak ada deskripsi."}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
                     {course.hasCertificate ? (
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700">
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                         Course bersertifikat
                       </span>
                     ) : (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                         Course tanpa sertifikat
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-slate-400">
                   {template.loading ? (
                     <span>Memuat status template...</span>
                   ) : template.error ? (
-                    <span className="text-red-600">{template.error}</span>
+                    <span className="text-red-600 dark:text-red-400">{template.error}</span>
                   ) : template.hasTemplate ? (
-                    <span className="text-emerald-700">
+                    <span className="text-emerald-700 dark:text-emerald-400">
                       Template tersedia
                       {template.fileName ? ` — ${template.fileName}` : ""}
                     </span>
                   ) : (
-                    <span className="text-amber-600">Belum ada template</span>
+                    <span className="text-amber-600 dark:text-amber-400">Belum ada template</span>
                   )}
                 </div>
 
                 {downloadError[course.id] && (
-                  <p className="mt-2 text-xs text-red-600">{downloadError[course.id]}</p>
+                  <p className="mt-2 text-xs text-red-600 dark:text-red-400">{downloadError[course.id]}</p>
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -267,13 +267,13 @@ export default function AdminCertificatesPage() {
                     }}
                     className="sr-only"
                   />
-                  <span className="text-xs text-gray-400">Format PDF, maksimal 10MB.</span>
+                  <span className="text-xs text-gray-400 dark:text-slate-500">Format PDF, maksimal 10MB.</span>
 
                   {template.hasTemplate && template.url && (
                     <button
                       type="button"
                       onClick={() => handleDownload(course.id, template.url as string, course.judul)}
-                      className="rounded-full border border-[var(--color-border-soft)] px-4 py-2 text-sm text-[var(--color-navy)] transition hover:bg-gray-50"
+                      className="rounded-full border border-[var(--color-border-soft)] px-4 py-2 text-sm text-[var(--color-navy)] transition hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       Unduh Template
                     </button>

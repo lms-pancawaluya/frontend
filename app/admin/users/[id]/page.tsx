@@ -135,13 +135,13 @@ export default function EditUserPage() {
   }
 
   if (loadingData) {
-    return <p className="text-center mt-16 text-gray-500">Memuat data pengguna...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memuat data pengguna...</p>;
   }
 
   if (error) {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       </div>
@@ -151,23 +151,23 @@ export default function EditUserPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/admin/users" className="text-sm text-gray-500 hover:text-[var(--color-navy)] transition">
+        <Link href="/admin/users" className="text-sm text-gray-500 hover:text-[var(--color-navy)] transition dark:text-slate-400 dark:hover:text-slate-200">
           ← Kembali
         </Link>
       </div>
 
       <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-1">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-1 dark:text-slate-100">
           Edit Akun Guru
         </h1>
-        <p className="text-gray-500">Ubah email, sekolah, dan status akun guru</p>
+        <p className="text-gray-500 dark:text-slate-400">Ubah email, sekolah, dan status akun guru</p>
       </div>
 
       {/* Form Edit Data */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)] dark:bg-slate-900">
         {message && (
           <div className={`mb-4 p-3 rounded-xl text-sm font-medium border ${
-            message.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
+            message.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
           }`}>
             {message.text}
           </div>
@@ -176,81 +176,81 @@ export default function EditUserPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Nama</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Nama</label>
               <input
                 type="text"
                 value={user?.nama || ""}
                 disabled
                 readOnly
-                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-500 cursor-not-allowed outline-none"
+                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-500 cursor-not-allowed outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">NIP (Nomor Induk Pegawai)</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">NIP (Nomor Induk Pegawai)</label>
               <input
                 type="text"
                 value={formatNipDisplay(user?.nip)}
                 disabled
                 readOnly
-                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-500 cursor-not-allowed outline-none select-none font-mono"
+                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-500 cursor-not-allowed outline-none select-none font-mono dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
               />
-              <p className="text-[11px] text-slate-400 mt-1">NIP bersifat permanen dan tidak dapat diubah.</p>
+              <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">NIP bersifat permanen dan tidak dapat diubah.</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Email</label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
-              className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+              className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Sekolah</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Sekolah</label>
             <input
               type="text"
               value={formData.sekolah}
               onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
               placeholder="Contoh: SMA Negeri 1 Bandung"
-              className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+              className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Kota/Kabupaten</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Kota/Kabupaten</label>
               <input
                 type="text"
                 value={formData.kotaKab}
                 onChange={(e) => setFormData({ ...formData, kotaKab: e.target.value })}
                 placeholder="Contoh: Kota Bandung"
-                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Kecamatan</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Kecamatan</label>
               <input
                 type="text"
                 value={formData.kecamatan}
                 onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
                 placeholder="Contoh: Coblong"
-                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none"
+                className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Status</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer capitalize"
+              className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             >
               {statusOptions.map((s) => (
                 <option key={s} value={s}>
@@ -273,13 +273,13 @@ export default function EditUserPage() {
       </div>
 
       {/* Reset Password */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)]">
-        <h2 className="text-lg font-bold text-[var(--color-navy)] mb-1">Reset Password</h2>
-        <p className="text-sm text-gray-500 mb-4">Atur password baru untuk akun guru ini (minimal 8 karakter).</p>
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)] dark:bg-slate-900">
+        <h2 className="text-lg font-bold text-[var(--color-navy)] mb-1 dark:text-slate-100">Reset Password</h2>
+        <p className="text-sm text-gray-500 mb-4 dark:text-slate-400">Atur password baru untuk akun guru ini (minimal 8 karakter).</p>
 
         {passwordMessage && (
           <div className={`mb-4 p-3 rounded-xl text-sm font-medium border ${
-            passwordMessage.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
+            passwordMessage.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
           }`}>
             {passwordMessage.text}
           </div>
@@ -287,7 +287,7 @@ export default function EditUserPage() {
 
         <form onSubmit={handleResetPassword} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Password Baru</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Password Baru</label>
             <input
               type="password"
               value={passwordBaru}
@@ -295,7 +295,7 @@ export default function EditUserPage() {
               minLength={8}
               required
               placeholder="Minimal 8 karakter"
-              className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-amber-500 outline-none"
+              className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-amber-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             />
           </div>
 

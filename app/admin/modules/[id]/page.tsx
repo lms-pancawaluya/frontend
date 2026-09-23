@@ -212,8 +212,8 @@ export default function AdminModuleDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6">
-        <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
+      <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6 dark:bg-slate-900/60">
+        <div className="flex items-center gap-3 text-slate-500 font-medium text-sm dark:text-slate-400">
           <svg className="w-5 h-5 animate-spin text-emerald-700" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path
@@ -628,10 +628,10 @@ export default function AdminModuleDetailPage() {
     const isActiveForm = showEvaluationForm && evaluationType === type;
 
     return (
-      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5 dark:bg-slate-900 dark:border-slate-800">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-slate-900">{title}</h2>
-          {items.length === 0 && <button type="button" onClick={() => openEvaluationForm(type)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">+ Buat {title}</button>}
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{title}</h2>
+          {items.length === 0 && <button type="button" onClick={() => openEvaluationForm(type)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full dark:bg-slate-700">+ Buat {title}</button>}
         </div>
         {evaluationMessage && isActiveForm && <p className="text-sm text-red-600">{evaluationMessage}</p>}
         {evaluationDeleteError[type] && <p className="text-sm text-red-600">{evaluationDeleteError[type]}</p>}
@@ -641,7 +641,7 @@ export default function AdminModuleDetailPage() {
               value={evaluationTitle}
               onChange={(e) => setEvaluationTitle(e.target.value)}
               placeholder={`Judul ${title}`}
-              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               required
             />
             <input
@@ -650,7 +650,7 @@ export default function AdminModuleDetailPage() {
               max={100}
               value={passingScore}
               onChange={(e) => setPassingScore(Number(e.target.value))}
-              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               aria-label="Passing Score"
             />
             <input
@@ -658,7 +658,7 @@ export default function AdminModuleDetailPage() {
               min={1}
               value={maxAttempts}
               onChange={(e) => setMaxAttempts(Number(e.target.value))}
-              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               aria-label="Max Attempts"
             />
             <button
@@ -671,7 +671,7 @@ export default function AdminModuleDetailPage() {
           </form>
         )}
         {items.length === 0 ? (
-          <p className="text-sm text-slate-500">Belum ada {title} untuk modul ini.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada {title} untuk modul ini.</p>
         ) : (
           <div className="space-y-3">
             {items.map((evaluation) => {
@@ -679,11 +679,11 @@ export default function AdminModuleDetailPage() {
               const activeForm = evaluationQuestionForm?.evaluationId === evaluation.id;
 
               return (
-                <div key={evaluation.id} className="border border-slate-200 rounded-2xl p-4 space-y-5">
+                <div key={evaluation.id} className="border border-slate-200 rounded-2xl p-4 space-y-5 dark:border-slate-700">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-sm text-slate-900">{evaluation.judul}</p>
-                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
+                      <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{evaluation.judul}</p>
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1 dark:text-slate-400">
                         <span>{title}</span>
                         <span>{questions.length} soal</span>
                         {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
@@ -697,24 +697,24 @@ export default function AdminModuleDetailPage() {
                   </div>
                   {evaluationQuestionError[evaluation.id] && <p className="text-sm text-red-600">{evaluationQuestionError[evaluation.id]}</p>}
                   {questions.length === 0 ? (
-                    <p className="text-sm text-slate-500">Belum ada soal untuk {title} ini.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada soal untuk {title} ini.</p>
                   ) : (
                     <div className="space-y-3">
                       {questions.map((question, index) => (
-                        <div key={question.id} className="rounded-xl bg-slate-50 p-4 space-y-3">
+                        <div key={question.id} className="rounded-xl bg-slate-50 p-4 space-y-3 dark:bg-slate-800">
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div>
-                              <p className="text-sm font-semibold text-slate-800">{index + 1}. {question.pertanyaan}</p>
-                              <p className="text-xs text-slate-500 mt-1">{(question.options || []).length} opsi</p>
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{index + 1}. {question.pertanyaan}</p>
+                              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">{(question.options || []).length} opsi</p>
                             </div>
                             <div className="flex gap-2">
-                              <button type="button" onClick={() => startEvaluationQuestionEdit(evaluation.id, question)} className="text-xs font-semibold text-slate-600">Edit</button>
+                              <button type="button" onClick={() => startEvaluationQuestionEdit(evaluation.id, question)} className="text-xs font-semibold text-slate-600 dark:text-slate-300">Edit</button>
                               <button type="button" onClick={() => removeEvaluationQuestion(evaluation.id, question.id)} disabled={evaluationQuestionDeletingId === question.id} className="text-xs font-semibold text-red-600 disabled:opacity-60">{evaluationQuestionDeletingId === question.id ? "Menghapus..." : "Hapus"}</button>
                             </div>
                           </div>
                           <div className="space-y-2">
                             {(question.options || []).map((option, optionIndex) => (
-                              <p key={option.id || optionIndex} className={`text-xs rounded-lg px-3 py-2 ${option.isCorrect ? "bg-emerald-50 text-emerald-700" : "bg-white text-slate-600"}`}>
+                              <p key={option.id || optionIndex} className={`text-xs rounded-lg px-3 py-2 ${option.isCorrect ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
                                 {option.teksOpsi || option.teks || "Opsi kosong"}{option.isCorrect ? " • Jawaban benar" : ""}
                               </p>
                             ))}
@@ -724,13 +724,13 @@ export default function AdminModuleDetailPage() {
                     </div>
                   )}
                   {activeForm && (
-                    <form onSubmit={saveEvaluationQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                      <textarea value={evaluationQuestionForm.pertanyaan} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, pertanyaan: e.target.value })} className="w-full border border-slate-200 rounded-xl p-2 text-sm" placeholder="Pertanyaan" rows={2} required />
+                    <form onSubmit={saveEvaluationQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-700 dark:bg-slate-800">
+                      <textarea value={evaluationQuestionForm.pertanyaan} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, pertanyaan: e.target.value })} className="w-full border border-slate-200 rounded-xl p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" placeholder="Pertanyaan" rows={2} required />
                       <div className="space-y-2">
                         {evaluationQuestionForm.options.map((option, optionIndex) => (
                           <div key={optionIndex} className="flex gap-2">
                             <input type="radio" name={`correct-${evaluation.id}`} checked={option.isCorrect} onChange={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === optionIndex })) })} />
-                            <input value={option.teksOpsi} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => itemIndex === optionIndex ? { ...item, teksOpsi: e.target.value } : item) })} className="flex-1 border border-slate-200 rounded-xl p-2 text-sm" placeholder={`Opsi ${optionIndex + 1}`} required />
+                            <input value={option.teksOpsi} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => itemIndex === optionIndex ? { ...item, teksOpsi: e.target.value } : item) })} className="flex-1 border border-slate-200 rounded-xl p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" placeholder={`Opsi ${optionIndex + 1}`} required />
                             {evaluationQuestionForm.options.length > 2 && <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.filter((_, itemIndex) => itemIndex !== optionIndex) })} className="text-xs text-red-600">Hapus</button>}
                           </div>
                         ))}
@@ -738,7 +738,7 @@ export default function AdminModuleDetailPage() {
                       <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: [...evaluationQuestionForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700">+ Tambah Opsi</button>
                       <div className="flex gap-2">
                         <button type="submit" disabled={evaluationQuestionBusy} className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs disabled:opacity-60">{evaluationQuestionBusy ? "Menyimpan..." : evaluationQuestionForm.questionId ? "Simpan Perubahan" : "Tambah Soal"}</button>
-                        <button type="button" onClick={() => setEvaluationQuestionForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white">Batal</button>
+                        <button type="button" onClick={() => setEvaluationQuestionForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">Batal</button>
                       </div>
                     </form>
                   )}
@@ -752,15 +752,15 @@ export default function AdminModuleDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
+    <div className="min-h-screen bg-slate-50/60 pb-16 pt-6 dark:bg-slate-900/60">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
         {/* Tombol Navigasi Kembali */}
         <div>
           <button
             onClick={() => router.push("/admin/modules")}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:text-emerald-400"
           >
-            <span className="p-1 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors">
+            <span className="p-1 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors dark:bg-slate-700 dark:group-hover:bg-emerald-950/40 dark:text-slate-400 dark:group-hover:text-emerald-400">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
@@ -793,12 +793,12 @@ export default function AdminModuleDetailPage() {
         </div>
 
          {/* Informasi Modul */}
-         <form onSubmit={handleModuleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-           <h2 className="text-base font-bold text-slate-900 tracking-tight">Informasi Modul</h2>
+         <form onSubmit={handleModuleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
+           <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Informasi Modul</h2>
            {moduleMessage && <div className={`text-sm px-4 py-3 rounded-xl border ${moduleMessage.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>{moduleMessage.text}</div>}
            <div className="space-y-4">
               <div>
-                <label htmlFor="judul" className="block text-xs font-semibold text-slate-600 mb-1">
+                <label htmlFor="judul" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
                   Judul Modul
                 </label>
                 <input
@@ -806,12 +806,12 @@ export default function AdminModuleDetailPage() {
                   name="judul"
                   value={formData.judul}
                   onChange={handleModuleChange}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="deskripsi" className="block text-xs font-semibold text-slate-600 mb-1">
+                <label htmlFor="deskripsi" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
                   Deskripsi
                 </label>
                 <textarea
@@ -819,14 +819,14 @@ export default function AdminModuleDetailPage() {
                   name="deskripsi"
                   value={formData.deskripsi}
                   onChange={handleModuleChange}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm resize-y"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm resize-y dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   rows={4}
                   required
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="aspekPancawaluya" className="block text-xs font-semibold text-slate-600 mb-1">
+                  <label htmlFor="aspekPancawaluya" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
                     Aspek Pancawaluya
                   </label>
                   <select
@@ -834,7 +834,7 @@ export default function AdminModuleDetailPage() {
                     name="aspekPancawaluya"
                     value={formData.aspekPancawaluya}
                     onChange={handleModuleChange}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   >
                     {aspekOptions.map((aspek) => (
                       <option key={aspek} value={aspek}>
@@ -844,7 +844,7 @@ export default function AdminModuleDetailPage() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="urutan" className="block text-xs font-semibold text-slate-600 mb-1">
+                  <label htmlFor="urutan" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
                     Urutan Modul
                   </label>
                   <input
@@ -854,7 +854,7 @@ export default function AdminModuleDetailPage() {
                     value={formData.urutan}
                     onChange={handleModuleChange}
                     min={1}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     required
                   />
                 </div>
@@ -868,7 +868,7 @@ export default function AdminModuleDetailPage() {
         {/* Konten Pembelajaran - Kartu */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 dark:text-slate-100">
               <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
@@ -883,8 +883,8 @@ export default function AdminModuleDetailPage() {
           </div>
 
           {contents.length === 0 ? (
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-              <p className="text-sm text-slate-500">Belum ada konten untuk modul ini.</p>
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+              <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada konten untuk modul ini.</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -893,16 +893,16 @@ export default function AdminModuleDetailPage() {
                 .map((content) => (
                   <div
                     key={content.id}
-                    className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden"
+                    className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800"
                   >
-                    <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+                    <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between dark:border-slate-800">
                       <div className="flex items-center gap-3">
                         <strong className="text-xs font-bold text-slate-400">#{content.urutan}</strong>
-                        <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-base dark:text-slate-100">
                           {content.judul}
                         </h3>
                       </div>
-                      <span className="text-xs text-slate-400 capitalize bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                      <span className="text-xs text-slate-400 capitalize bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
                         {content.tipe}
                       </span>
                     </div>
@@ -913,7 +913,7 @@ export default function AdminModuleDetailPage() {
                            <input
                              value={contentData.judul}
                              onChange={(e) => setContentData({ ...contentData, judul: e.target.value })}
-                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                              required
                            />
                            <select
@@ -925,7 +925,7 @@ export default function AdminModuleDetailPage() {
                                setContentMessage("");
                                setContentData((prev) => ({ ...prev, tipe, ...(tipe === "pdf" || tipe === "link" ? { konten: "" } : {}) }));
                              }}
-                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize"
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                            >
                              <option value="teks">Text</option>
                              <option value="video">Video</option>
@@ -934,18 +934,18 @@ export default function AdminModuleDetailPage() {
                            </select>
                            {contentData.tipe === "pdf" ? (
                              <div>
-                               <label htmlFor={`pdf-file-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1">File PDF</label>
+                               <label htmlFor={`pdf-file-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">File PDF</label>
                                <input
                                  id={`pdf-file-${content.id}`}
                                  type="file"
                                  accept="application/pdf,.pdf"
                                  onChange={handleContentPdfUpload}
                                  disabled={pdfUploadingId === content.id}
-                                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm file:mr-3 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-1.5 file:text-white disabled:opacity-60"
+                                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm file:mr-3 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-1.5 file:text-white disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:file:bg-slate-700"
                                  aria-describedby={`pdf-file-help-${content.id}`}
                                />
-                               <p id={`pdf-file-help-${content.id}`} className="mt-1 text-xs text-slate-500">Format PDF, maksimal 10MB.</p>
-                               {pdfUploadingId === content.id && <p className="mt-1 text-xs text-slate-500">Mengunggah file PDF...</p>}
+                               <p id={`pdf-file-help-${content.id}`} className="mt-1 text-xs text-slate-500 dark:text-slate-400">Format PDF, maksimal 10MB.</p>
+                               {pdfUploadingId === content.id && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mengunggah file PDF...</p>}
                                {pdfMessage && <p className="mt-1 text-xs text-red-600">{pdfMessage}</p>}
                                {pdfUploadingId !== content.id && !pdfMessage && contentData.konten && (
                                  <p className="mt-1 text-xs text-emerald-700">
@@ -955,25 +955,25 @@ export default function AdminModuleDetailPage() {
                              </div>
                            ) : contentData.tipe === "link" ? (
                              <div>
-                               <label htmlFor={`link-url-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1">URL Link</label>
+                               <label htmlFor={`link-url-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">URL Link</label>
                                <input
                                  id={`link-url-${content.id}`}
                                  type="url"
                                  value={contentData.konten}
                                  onChange={(e) => setContentData({ ...contentData, konten: e.target.value })}
-                                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                  placeholder="https://contoh.com/materi"
                                  aria-describedby={`link-url-help-${content.id}`}
                                  required
                                />
-                               <p id={`link-url-help-${content.id}`} className="mt-1 text-xs text-slate-500">Masukkan URL eksternal lengkap (http:// atau https://).</p>
+                               <p id={`link-url-help-${content.id}`} className="mt-1 text-xs text-slate-500 dark:text-slate-400">Masukkan URL eksternal lengkap (http:// atau https://).</p>
                              </div>
                            ) : (
                              <textarea
                                value={contentData.konten}
                                onChange={(e) => setContentData({ ...contentData, konten: e.target.value })}
                                rows={contentData.tipe === "video" ? 2 : 6}
-                               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                required
                              />
                            )}
@@ -982,14 +982,14 @@ export default function AdminModuleDetailPage() {
                              min={1}
                              value={contentData.urutan}
                              onChange={(e) => setContentData({ ...contentData, urutan: Number(e.target.value) })}
-                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm"
+                             className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                              required
                            />
                            <div className="flex gap-2">
                              <button type="submit" disabled={contentBusy || pdfUploadingId === content.id} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">
                                Simpan
                              </button>
-                             <button type="button" onClick={cancelContentEdit} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl">
+                             <button type="button" onClick={cancelContentEdit} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                                Batal
                              </button>
                            </div>
@@ -1006,14 +1006,14 @@ export default function AdminModuleDetailPage() {
                       ) : content.tipe === "pdf" ? (
                         <div className="space-y-3">
                           {!content.konten && (
-                            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
                               File PDF belum tersedia untuk materi ini.
                             </p>
                           )}
                           {content.konten && previewContentId === content.id && (
-                            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
                               {previewLoading ? (
-                                <div className="flex h-[480px] items-center justify-center text-sm text-slate-500">Memuat pratinjau PDF...</div>
+                                <div className="flex h-[480px] items-center justify-center text-sm text-slate-500 dark:text-slate-400">Memuat pratinjau PDF...</div>
                               ) : previewError[content.id] ? (
                                 <div className="flex h-[480px] flex-col items-center justify-center gap-3 p-6 text-center">
                                   <p className="text-sm text-red-600">{previewError[content.id]}</p>
@@ -1021,7 +1021,7 @@ export default function AdminModuleDetailPage() {
                                     href={content.konten}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                                   >
                                     Buka PDF di tab baru
                                   </a>
@@ -1050,7 +1050,7 @@ export default function AdminModuleDetailPage() {
                                 onClick={() => handleContentPreview(content)}
                                 disabled={previewLoading && previewContentId === content.id}
                                 aria-expanded={previewContentId === content.id}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                               >
                                 {previewContentId === content.id ? "Tutup Preview" : previewLoading && previewContentId === content.id ? "Memuat..." : "Preview PDF"}
                               </button>
@@ -1061,12 +1061,12 @@ export default function AdminModuleDetailPage() {
                       ) : content.tipe === "link" ? (
                         <div className="space-y-3">
                           {content.konten ? (
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800">
                               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tautan Eksternal</p>
-                              <p className="mt-1 text-sm text-slate-700 break-all">{content.konten}</p>
+                              <p className="mt-1 text-sm text-slate-700 break-all dark:text-slate-300">{content.konten}</p>
                             </div>
                           ) : (
-                            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                            <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
                               URL link belum tersedia untuk materi ini.
                             </p>
                           )}
@@ -1085,7 +1085,7 @@ export default function AdminModuleDetailPage() {
                         </div>
                       ) : (
                         <div className="prose prose-slate prose-sm max-w-none">
-                          <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+                          <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line dark:text-slate-300">
                             {content.konten}
                           </p>
                         </div>
@@ -1095,7 +1095,7 @@ export default function AdminModuleDetailPage() {
                             <button
                               type="button"
                               onClick={() => startContentEdit(content)}
-                              className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg"
+                              className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             >
                               Edit
                             </button>
@@ -1119,12 +1119,12 @@ export default function AdminModuleDetailPage() {
                           </div>
                         )}
                         {content.tipe === "video" && expandedVideoId === content.id && (
-                          <div className="mt-6 border-t border-slate-100 pt-6 space-y-5">
+                          <div className="mt-6 border-t border-slate-100 pt-6 space-y-5 dark:border-slate-800">
                             <div className="space-y-2">
                               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                 <div>
-                                  <h4 className="text-base font-bold text-slate-900">Pertanyaan Interaktif</h4>
-                                  <p className="text-sm text-slate-500 mt-1">
+                                  <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">Pertanyaan Interaktif</h4>
+                                  <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
                                     Tambahkan checkpoint pada waktu tertentu di video untuk menampilkan pertanyaan kepada peserta.
                                   </p>
                                 </div>
@@ -1137,20 +1137,20 @@ export default function AdminModuleDetailPage() {
                                 </button>
                               </div>
                               {checkpointForm?.contentId === content.id && (
-                                <form onSubmit={saveCheckpoint} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4">
-                                  <h5 className="text-sm font-bold text-slate-900">Tambah Checkpoint</h5>
+                                <form onSubmit={saveCheckpoint} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4 dark:border-slate-700 dark:bg-slate-800">
+                                  <h5 className="text-sm font-bold text-slate-900 dark:text-slate-100">Tambah Checkpoint</h5>
                                   <div>
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Checkpoint</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Nama Checkpoint</label>
                                     <input
                                       value={checkpointForm.judul}
                                       onChange={(e) => setCheckpointForm({ ...checkpointForm, judul: e.target.value })}
                                       placeholder="Nama checkpoint"
-                                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"
+                                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                       required
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Video</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Waktu Video</label>
                                     <input
                                       value={checkpointForm.timestamp}
                                       onChange={(e) => setCheckpointForm({ ...checkpointForm, timestamp: e.target.value })}
@@ -1158,12 +1158,12 @@ export default function AdminModuleDetailPage() {
                                       inputMode="numeric"
                                       pattern="\d+:\d{2}"
                                       aria-label="Waktu checkpoint MM:SS"
-                                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"
+                                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                       required
                                     />
                                   </div>
                                   <div className="flex justify-end gap-2">
-                                    <button type="button" onClick={() => setCheckpointForm(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl bg-white">
+                                    <button type="button" onClick={() => setCheckpointForm(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                                       Batal
                                     </button>
                                     <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">
@@ -1174,21 +1174,21 @@ export default function AdminModuleDetailPage() {
                               )}
                             </div>
                             {interactiveLoading === content.id ? (
-                              <p className="text-xs text-slate-500">Memuat...</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">Memuat...</p>
                             ) : interactiveError[content.id] ? (
                               <p className="text-xs text-red-600">{interactiveError[content.id]}</p>
                             ) : (videoQuizzes[content.id] || []).length === 0 ? (
-                              <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5">
+                              <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
                                 Belum ada checkpoint pada video ini.
                               </p>
                             ) : (
                               <div className="space-y-4">
                                 {(videoQuizzes[content.id] || []).map((quiz) => (
-                                  <div key={quiz.id} className="rounded-2xl border border-slate-200 p-5 space-y-5">
+                                  <div key={quiz.id} className="rounded-2xl border border-slate-200 p-5 space-y-5 dark:border-slate-700">
                                     <div className="flex items-start justify-between gap-4">
                                       <div>
                                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Checkpoint</p>
-                                        <h5 className="text-base font-bold text-slate-900 mt-1">{quiz.judul || "Checkpoint tanpa nama"}</h5>
+                                        <h5 className="text-base font-bold text-slate-900 mt-1 dark:text-slate-100">{quiz.judul || "Checkpoint tanpa nama"}</h5>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
@@ -1198,18 +1198,18 @@ export default function AdminModuleDetailPage() {
                                       </div>
                                     </div>
                                     {(quiz.questions || []).length === 0 ? (
-                                      <p className="text-sm text-slate-500">Belum ada pertanyaan pada checkpoint ini.</p>
+                                      <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada pertanyaan pada checkpoint ini.</p>
                                     ) : (
                                       <div className="space-y-3">
                                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pertanyaan Interaktif</p>
                                         {(quiz.questions || []).map((question) => (
-                                          <div key={question.id} className="rounded-xl bg-slate-50 p-4">
-                                            <p className="text-sm font-semibold text-slate-800">{question.pertanyaan}</p>
+                                          <div key={question.id} className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
+                                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{question.pertanyaan}</p>
                                             <div className="flex gap-3 mt-3">
                                               <button
                                                 type="button"
                                                 onClick={() => setInteractiveForm({ quizId: quiz.id, questionId: question.id, pertanyaan: question.pertanyaan, options: question.options.map(({ teksOpsi, isCorrect }) => ({ teksOpsi, isCorrect })) })}
-                                                className="text-xs font-semibold text-slate-600"
+                                                className="text-xs font-semibold text-slate-600 dark:text-slate-300"
                                               >
                                                 Edit
                                               </button>
@@ -1233,11 +1233,11 @@ export default function AdminModuleDetailPage() {
                               </div>
                             )}
                             {interactiveForm && (
-                              <form onSubmit={saveInteractiveQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+                              <form onSubmit={saveInteractiveQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2 dark:border-slate-700 dark:bg-slate-800">
                                 <textarea
                                   value={interactiveForm.pertanyaan}
                                   onChange={(e) => setInteractiveForm({ ...interactiveForm, pertanyaan: e.target.value })}
-                                  className="w-full border border-slate-200 rounded-xl p-2 text-xs"
+                                  className="w-full border border-slate-200 rounded-xl p-2 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                   placeholder="Pertanyaan"
                                   required
                                 />
@@ -1246,14 +1246,14 @@ export default function AdminModuleDetailPage() {
                                     <input
                                       value={option.teksOpsi}
                                       onChange={(e) => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => itemIndex === index ? { ...item, teksOpsi: e.target.value } : item) })}
-                                      className="flex-1 border border-slate-200 rounded-xl p-2 text-xs"
+                                      className="flex-1 border border-slate-200 rounded-xl p-2 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                       placeholder={`Opsi ${index + 1}`}
                                       required
                                     />
                                     <button
                                       type="button"
                                       onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === index })) })}
-                                      className={`text-xs px-2 rounded-lg ${option.isCorrect ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 text-slate-500"}`}
+                                      className={`text-xs px-2 rounded-lg ${option.isCorrect ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "border border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400"}`}
                                     >
                                       {option.isCorrect ? "Benar" : "Tandai benar"}
                                     </button>
@@ -1269,7 +1269,7 @@ export default function AdminModuleDetailPage() {
                                 </button>
                                 <div className="flex gap-2">
                                   <button type="submit" className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs">Simpan</button>
-                                  <button type="button" onClick={() => setInteractiveForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs">Batal</button>
+                                  <button type="button" onClick={() => setInteractiveForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">Batal</button>
                                 </div>
                               </form>
                             )}

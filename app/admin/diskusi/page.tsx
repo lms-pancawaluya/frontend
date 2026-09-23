@@ -28,10 +28,10 @@ function roleLabel(role?: string): string {
 
 function roleBadgeClass(role?: string): string {
   const r = String(role || "").toLowerCase();
-  if (r === "admin") return "bg-purple-100 text-purple-700";
-  if (r === "pengajar") return "bg-amber-100 text-amber-700";
-  if (r === "guru") return "bg-blue-100 text-blue-700";
-  return "bg-slate-100 text-slate-600";
+  if (r === "admin") return "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300";
+  if (r === "pengajar") return "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300";
+  if (r === "guru") return "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300";
+  return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
 }
 
 function formatDateTime(raw?: string): string {
@@ -271,20 +271,20 @@ function AdminDiskusiContent() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
       <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)]">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)] dark:text-slate-100">
           Moderasi Diskusi Course
         </h1>
-        <p className="mt-1 text-sm text-gray-500">Pantau, ikuti diskusi, dan kelola komentar pada seluruh course.</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">Pantau, ikuti diskusi, dan kelola komentar pada seluruh course.</p>
       </div>
 
-      <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-4 shadow-sm sm:p-6">
-        <label htmlFor="course-select" className="mb-1.5 block text-xs font-bold text-slate-600">
+      <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-4 shadow-sm sm:p-6 dark:bg-slate-900">
+        <label htmlFor="course-select" className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">
           Pilih Course
         </label>
         {coursesLoading ? (
-          <div className="h-11 w-full animate-pulse rounded-xl bg-gray-100" />
+          <div className="h-11 w-full animate-pulse rounded-xl bg-gray-100 dark:bg-slate-800" />
         ) : courses.length === 0 ? (
-          <p className="text-sm text-gray-500">Belum ada course tersedia.</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400">Belum ada course tersedia.</p>
         ) : (
           <select
             id="course-select"
@@ -293,7 +293,7 @@ function AdminDiskusiContent() {
               setSelectedCourseId(e.target.value);
               cancelReply();
             }}
-            className="w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15"
+            className="w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
           >
             {courses.map((c) => (
               <option key={c.id} value={c.id}>
@@ -305,26 +305,26 @@ function AdminDiskusiContent() {
       </div>
 
       {/* Utas Diskusi Course */}
-      <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-4 shadow-sm sm:p-6 space-y-5">
+      <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-4 shadow-sm sm:p-6 space-y-5 dark:bg-slate-900">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5 text-[var(--color-navy)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z" />
             </svg>
-            <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">Utas Diskusi</h2>
+            <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">Utas Diskusi</h2>
           </div>
-          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full dark:bg-slate-800 dark:text-slate-400">
             {comments.length} diskusi
           </span>
         </div>
 
         {/* Composer komentar baru — di ATAS thread */}
         {selectedCourseId && (
-          <form onSubmit={handlePost} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-            <label htmlFor="new-comment" className="mb-1.5 block text-xs font-bold text-slate-600">
+          <form onSubmit={handlePost} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <label htmlFor="new-comment" className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">
               Tulis Komentar
             </label>
-            {postError && <p className="mb-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{postError}</p>}
+            {postError && <p className="mb-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">{postError}</p>}
             <MentionTextarea
               id="new-comment"
               value={newComment}
@@ -332,7 +332,7 @@ function AdminDiskusiContent() {
               onMentionsChange={setNewCommentMentions}
               rows={3}
               placeholder="Bagikan tanggapan, arahan, atau jawaban untuk course ini... Ketik @ untuk menyebut pengguna"
-              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15"
+              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             />
             <div className="flex justify-end">
               <button
@@ -348,13 +348,13 @@ function AdminDiskusiContent() {
 
         {/* Daftar diskusi (nested) — langsung setelah composer */}
         {commentsLoading ? (
-          <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 text-center text-sm text-gray-500">
+          <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 text-center text-sm text-gray-500 dark:bg-slate-900 dark:text-slate-400">
             Memuat diskusi...
           </div>
         ) : commentsError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{commentsError}</div>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{commentsError}</div>
         ) : comments.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-gray-500">
+          <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-gray-500 dark:border-slate-700 dark:text-slate-400">
             Belum ada diskusi pada course ini.
           </div>
         ) : (
@@ -367,7 +367,7 @@ function AdminDiskusiContent() {
               const replies = Array.isArray(c.replies) ? c.replies : [];
 
               return (
-                <li key={c.id} id={`comment-${c.id}`} className={`scroll-mt-24 rounded-2xl border bg-white p-4 shadow-sm transition ${isDeleting ? "opacity-50" : ""} ${highlightCommentId === c.id ? "border-emerald-400 ring-2 ring-emerald-300" : "border-[var(--color-border-soft)]"}`}>
+                <li key={c.id} id={`comment-${c.id}`} className={`scroll-mt-24 rounded-2xl border bg-white p-4 shadow-sm transition dark:bg-slate-900 ${isDeleting ? "opacity-50" : ""} ${highlightCommentId === c.id ? "border-emerald-400 ring-2 ring-emerald-300" : "border-[var(--color-border-soft)]"}`}>
                   {/* Root comment */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -377,7 +377,7 @@ function AdminDiskusiContent() {
                           alt={nama}
                           width={40}
                           height={40}
-                          className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover"
+                          className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
                         />
                       ) : (
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-navy)] text-sm font-bold uppercase text-white">
@@ -386,18 +386,18 @@ function AdminDiskusiContent() {
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-bold text-[var(--color-navy)]">{nama}</span>
+                          <span className="text-sm font-bold text-[var(--color-navy)] dark:text-slate-100">{nama}</span>
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(cUser?.role)}`}>
                             {roleLabel(cUser?.role)}
                           </span>
-                          {c.createdAt && <span className="text-[11px] text-gray-400">{formatDateTime(c.createdAt)}</span>}
+                          {c.createdAt && <span className="text-[11px] text-gray-400 dark:text-slate-500">{formatDateTime(c.createdAt)}</span>}
                         </div>
-                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700">{renderCommentText(commentText(c), "font-semibold text-[var(--color-navy)]")}</p>
+                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">{renderCommentText(commentText(c), "font-semibold text-[var(--color-navy)] dark:text-slate-100")}</p>
                         <div className="mt-2">
                           <button
                             type="button"
                             onClick={() => (replyToId === c.id ? cancelReply() : startReply(c.id))}
-                            className="text-xs font-semibold text-[var(--color-navy)] hover:text-emerald-700"
+                            className="text-xs font-semibold text-[var(--color-navy)] hover:text-emerald-700 dark:text-slate-200 dark:hover:text-emerald-400"
                           >
                             {replyToId === c.id ? "Batal" : "Balas"}
                           </button>
@@ -407,16 +407,16 @@ function AdminDiskusiContent() {
                         {replyToId === c.id && (
                           <form
                             onSubmit={(e) => handleReply(e, c.id)}
-                            className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2"
+                            className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2 dark:border-slate-700 dark:bg-slate-800"
                           >
-                            {replyError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{replyError}</p>}
+                            {replyError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">{replyError}</p>}
                             <MentionTextarea
                               value={replyText}
                               onChange={setReplyText}
                               onMentionsChange={setReplyMentions}
                               rows={2}
                               placeholder="Tulis balasan... Ketik @ untuk menyebut pengguna"
-                              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15"
+                              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                             />
                             <div className="flex justify-end">
                               <button
@@ -434,7 +434,7 @@ function AdminDiskusiContent() {
                     <button
                       onClick={() => handleDelete(c.id)}
                       disabled={isDeleting}
-                      className="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                      className="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:text-slate-500 dark:hover:bg-rose-950/30"
                       title="Hapus komentar"
                       aria-label="Hapus komentar"
                     >
@@ -446,7 +446,7 @@ function AdminDiskusiContent() {
 
                   {/* Nested replies (struktur langsung dari BE) */}
                   {replies.length > 0 && (
-                    <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4">
+                    <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4 dark:border-slate-800">
                       {replies.map((reply) => {
                         const rUser = commentAuthor(reply);
                         const rfoto = userPhoto(rUser);
@@ -454,7 +454,7 @@ function AdminDiskusiContent() {
                         const isReplyDeleting = deletingId === reply.id;
 
                         return (
-                          <li key={reply.id} id={`comment-${reply.id}`} className={`scroll-mt-24 rounded-xl p-3 transition ${isReplyDeleting ? "opacity-50" : ""} ${highlightCommentId === reply.id ? "bg-emerald-50 ring-2 ring-emerald-300" : "bg-slate-50"}`}>
+                          <li key={reply.id} id={`comment-${reply.id}`} className={`scroll-mt-24 rounded-xl p-3 transition ${isReplyDeleting ? "opacity-50" : ""} ${highlightCommentId === reply.id ? "bg-emerald-50 ring-2 ring-emerald-300 dark:bg-emerald-950/30" : "bg-slate-50 dark:bg-slate-800/60"}`}>
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex items-start gap-2.5 min-w-0 flex-1">
                                 {rfoto ? (
@@ -463,7 +463,7 @@ function AdminDiskusiContent() {
                                     alt={rnama}
                                     width={32}
                                     height={32}
-                                    className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover"
+                                    className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
                                   />
                                 ) : (
                                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-500 text-xs font-bold uppercase text-white">
@@ -472,19 +472,19 @@ function AdminDiskusiContent() {
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <span className="text-xs font-bold text-slate-800">{rnama}</span>
+                                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{rnama}</span>
                                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(rUser?.role)}`}>
                                       {roleLabel(rUser?.role)}
                                     </span>
-                                    {reply.createdAt && <span className="text-[11px] text-gray-400">{formatDateTime(reply.createdAt)}</span>}
+                                    {reply.createdAt && <span className="text-[11px] text-gray-400 dark:text-slate-500">{formatDateTime(reply.createdAt)}</span>}
                                   </div>
-                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{renderCommentText(commentText(reply), "font-semibold text-[var(--color-navy)]")}</p>
+                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">{renderCommentText(commentText(reply), "font-semibold text-[var(--color-navy)] dark:text-slate-100")}</p>
                                 </div>
                               </div>
                               <button
                                 onClick={() => handleDelete(reply.id)}
                                 disabled={isReplyDeleting}
-                                className="shrink-0 rounded-lg p-1.5 text-gray-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                                className="shrink-0 rounded-lg p-1.5 text-gray-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:text-slate-500 dark:hover:bg-rose-950/30"
                                 title="Hapus balasan"
                                 aria-label="Hapus balasan"
                               >

@@ -167,7 +167,7 @@ export default function NewContentPage() {
             aria-describedby="konten-link-help"
             required
           />
-          <p id="konten-link-help" className="mt-1 text-xs text-gray-500">
+          <p id="konten-link-help" className="mt-1 text-xs text-gray-500 dark:text-slate-400">
             Masukkan URL eksternal lengkap (http:// atau https://).
           </p>
         </div>
@@ -183,8 +183,8 @@ export default function NewContentPage() {
             className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-[var(--color-navy)] file:px-4 file:py-1.5 file:text-white disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
             aria-describedby="file-pdf-help"
           />
-          <p id="file-pdf-help" className="mt-1 text-xs text-gray-500">Format PDF, maksimal 10MB.</p>
-          {uploadingPdf && <p className="mt-1 text-xs text-gray-500">Mengunggah file PDF...</p>}
+          <p id="file-pdf-help" className="mt-1 text-xs text-gray-500 dark:text-slate-400">Format PDF, maksimal 10MB.</p>
+          {uploadingPdf && <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Mengunggah file PDF...</p>}
           {pdfError && <p className="mt-1 text-xs text-red-600">{pdfError}</p>}
           {!uploadingPdf && !pdfError && formData.konten && (
             <p className="mt-1 text-xs text-emerald-700">

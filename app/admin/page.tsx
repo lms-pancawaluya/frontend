@@ -230,13 +230,13 @@ export default function AdminDashboardPage() {
   }, [user]);
 
   if (loading) {
-    return <p className="text-center mt-16 text-gray-500">Memuat Dashboard Admin...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memuat Dashboard Admin...</p>;
   }
 
   if (error) {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       </div>
@@ -248,19 +248,19 @@ export default function AdminDashboardPage() {
       label: "Total Modul",
       value: stats?.modulCount ?? 0,
       sub: "modul pembelajaran",
-      subClass: "text-gray-400",
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.modules,
       iconWrap: "bg-blue-100 text-blue-600",
-      card: "border-blue-100 bg-blue-50/40",
+      card: "border-blue-100 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20",
     },
     {
       label: "Total Guru",
       value: stats?.guruCount ?? 0,
       sub: "guru terdaftar",
-      subClass: "text-gray-400",
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.users,
       iconWrap: "bg-emerald-100 text-emerald-600",
-      card: "border-emerald-100 bg-emerald-50/40",
+      card: "border-emerald-100 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20",
     },
     {
       label: "Tiket Bantuan",
@@ -269,19 +269,19 @@ export default function AdminDashboardPage() {
         stats && stats.ticketPerluTindak > 0
           ? `${stats.ticketPerluTindak} perlu ditindaklanjuti`
           : "tidak ada antrean",
-      subClass: stats && stats.ticketPerluTindak > 0 ? "text-red-500 font-medium" : "text-gray-400",
+      subClass: stats && stats.ticketPerluTindak > 0 ? "text-red-500 font-medium dark:text-red-400" : "text-gray-400 dark:text-slate-500",
       icon: ICONS.helpdesk,
       iconWrap: "bg-red-100 text-red-600",
-      card: "border-red-100 bg-red-50/40",
+      card: "border-red-100 bg-red-50/40 dark:border-red-900 dark:bg-red-950/20",
     },
     {
       label: "Rata-rata Progress",
       value: stats?.avgProgress === null || stats?.avgProgress === undefined ? "—" : `${stats.avgProgress}%`,
       sub: "seluruh guru",
-      subClass: "text-gray-400",
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.monitoring,
       iconWrap: "bg-amber-100 text-amber-600",
-      card: "border-amber-100 bg-amber-50/40",
+      card: "border-amber-100 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20",
     },
   ];
 
@@ -311,7 +311,7 @@ export default function AdminDashboardPage() {
       href: "/admin/modules",
       icon: ICONS.modules,
       iconWrap: "bg-blue-100 text-blue-600",
-      arrow: "bg-blue-50 text-blue-600",
+      arrow: "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
     },
     {
       title: "Kelola Akun Guru",
@@ -319,7 +319,7 @@ export default function AdminDashboardPage() {
       href: "/admin/users",
       icon: ICONS.users,
       iconWrap: "bg-emerald-100 text-emerald-600",
-      arrow: "bg-emerald-50 text-emerald-600",
+      arrow: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400",
     },
     {
       title: "Kelola Tiket Bantuan (Helpdesk)",
@@ -327,7 +327,7 @@ export default function AdminDashboardPage() {
       href: "/admin/helpdesk",
       icon: ICONS.helpdesk,
       iconWrap: "bg-red-100 text-red-600",
-      arrow: "bg-red-50 text-red-600",
+      arrow: "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
     },
     {
       title: "Monitoring Pembelajaran",
@@ -335,7 +335,7 @@ export default function AdminDashboardPage() {
       href: "/admin/checklist/report",
       icon: ICONS.monitoring,
       iconWrap: "bg-amber-100 text-amber-600",
-      arrow: "bg-amber-50 text-amber-600",
+      arrow: "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400",
     },
   ];
 
@@ -388,11 +388,11 @@ export default function AdminDashboardPage() {
                 {kpi.icon}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-gray-500">{kpi.label}</p>
+                <p className="truncate text-xs font-medium text-gray-500 dark:text-slate-400">{kpi.label}</p>
                 {statsLoading ? (
-                  <span className="mt-2 block h-7 w-14 animate-pulse rounded bg-gray-200" />
+                  <span className="mt-2 block h-7 w-14 animate-pulse rounded bg-gray-200 dark:bg-slate-700" />
                 ) : (
-                  <p className="mt-0.5 text-2xl font-bold text-[var(--color-navy)]">{kpi.value}</p>
+                  <p className="mt-0.5 text-2xl font-bold text-[var(--color-navy)] dark:text-slate-100">{kpi.value}</p>
                 )}
                 <p className={`mt-0.5 truncate text-[11px] ${kpi.subClass}`}>{kpi.sub}</p>
               </div>
@@ -404,15 +404,15 @@ export default function AdminDashboardPage() {
       {/* Monitoring + Aktivitas */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Monitoring Pembelajaran */}
-        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm dark:bg-slate-900">
           <div className="mb-6 flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">
+            <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">
               <span className="text-[var(--color-accent)]">{ICONS.monitoring}</span>
               Monitoring Pembelajaran
             </h2>
             <Link
               href="/admin/checklist/report"
-              className="shrink-0 rounded-lg border border-[var(--color-border-soft)] px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-[var(--color-pale)] hover:text-[var(--color-navy)]"
+              className="shrink-0 rounded-lg border border-[var(--color-border-soft)] px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-[var(--color-pale)] hover:text-[var(--color-navy)] dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             >
               Lihat Detail →
             </Link>
@@ -420,15 +420,15 @@ export default function AdminDashboardPage() {
 
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
             <div className="relative h-40 w-40 shrink-0 rounded-full" style={donutStyle}>
-              <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-white text-center shadow-inner">
+              <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-white text-center shadow-inner dark:bg-slate-900">
                 {statsLoading ? (
-                  <span className="h-6 w-12 animate-pulse rounded bg-gray-200" />
+                  <span className="h-6 w-12 animate-pulse rounded bg-gray-200 dark:bg-slate-700" />
                 ) : (
-                  <span className="text-2xl font-bold text-[var(--color-navy)]">
+                  <span className="text-2xl font-bold text-[var(--color-navy)] dark:text-slate-100">
                     {stats?.avgProgress === null || stats?.avgProgress === undefined ? "—" : `${stats.avgProgress}%`}
                   </span>
                 )}
-                <span className="text-[11px] text-gray-400">Rata-rata Progress</span>
+                <span className="text-[11px] text-gray-400 dark:text-slate-500">Rata-rata Progress</span>
               </div>
             </div>
 
@@ -436,9 +436,9 @@ export default function AdminDashboardPage() {
               {legend.map((l) => (
                 <li key={l.label} className="flex items-center gap-3 text-sm">
                   <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${l.dot}`} />
-                  <span className="flex-1 text-gray-600">{l.label}</span>
-                  <span className="font-medium text-gray-500">{l.count} guru</span>
-                  <span className="w-10 text-right font-bold text-[var(--color-navy)]">
+                  <span className="flex-1 text-gray-600 dark:text-slate-300">{l.label}</span>
+                  <span className="font-medium text-gray-500 dark:text-slate-400">{l.count} guru</span>
+                  <span className="w-10 text-right font-bold text-[var(--color-navy)] dark:text-slate-100">
                     {Math.round(share(l.count))}%
                   </span>
                 </li>
@@ -446,19 +446,19 @@ export default function AdminDashboardPage() {
             </ul>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border-soft)] pt-4 text-xs text-gray-500">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border-soft)] pt-4 text-xs text-gray-500 dark:text-slate-400">
             <span>
-              Total Guru Aktif · <span className="font-bold text-[var(--color-navy)]">{stats?.guruCount ?? 0} guru</span>
+              Total Guru Aktif · <span className="font-bold text-[var(--color-navy)] dark:text-slate-100">{stats?.guruCount ?? 0} guru</span>
             </span>
             <span>
-              Modul Aktif · <span className="font-bold text-[var(--color-navy)]">{stats?.modulCount ?? 0} modul</span>
+              Modul Aktif · <span className="font-bold text-[var(--color-navy)] dark:text-slate-100">{stats?.modulCount ?? 0} modul</span>
             </span>
           </div>
         </section>
 
         {/* Aktivitas Terbaru */}
-        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm">
-          <h2 className="mb-4 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">
+        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm dark:bg-slate-900">
+          <h2 className="mb-4 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">
             Aktivitas Terbaru
           </h2>
 
@@ -466,8 +466,8 @@ export default function AdminDashboardPage() {
             <ul className="space-y-4">
               {[0, 1, 2, 3].map((i) => (
                 <li key={i} className="flex items-center gap-3">
-                  <span className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-gray-100" />
-                  <span className="h-4 flex-1 animate-pulse rounded bg-gray-100" />
+                  <span className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-gray-100 dark:bg-slate-800" />
+                  <span className="h-4 flex-1 animate-pulse rounded bg-gray-100 dark:bg-slate-800" />
                 </li>
               ))}
             </ul>
@@ -477,22 +477,22 @@ export default function AdminDashboardPage() {
                 <li key={a.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                   <span
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                      a.kind === "user" ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600"
+                      a.kind === "user" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400"
                     }`}
                   >
                     {a.kind === "user" ? ICONS.users : ICONS.helpdesk}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[var(--color-navy)]">{a.title}</p>
-                    <p className="truncate text-xs text-gray-500">{a.desc}</p>
+                    <p className="text-sm font-semibold text-[var(--color-navy)] dark:text-slate-100">{a.title}</p>
+                    <p className="truncate text-xs text-gray-500 dark:text-slate-400">{a.desc}</p>
                   </div>
-                  <span className="shrink-0 text-[11px] text-gray-400">{timeAgo(new Date(a.time).toISOString())}</span>
+                  <span className="shrink-0 text-[11px] text-gray-400 dark:text-slate-500">{timeAgo(new Date(a.time).toISOString())}</span>
                 </li>
               ))}
             </ul>
           ) : (
             <div className="py-12 text-center">
-              <p className="text-sm text-gray-500">Belum ada aktivitas terbaru.</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">Belum ada aktivitas terbaru.</p>
             </div>
           )}
         </section>
@@ -500,7 +500,7 @@ export default function AdminDashboardPage() {
 
       {/* Menu Cepat */}
       <section>
-        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--color-navy)]">
+        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--color-navy)] dark:text-slate-100">
           Menu Cepat
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -508,15 +508,15 @@ export default function AdminDashboardPage() {
             <Link
               key={item.href}
               href={item.href}
-              className="group flex flex-col rounded-2xl border border-[var(--color-border-soft)] bg-white p-5 shadow-sm transition hover:shadow-md"
+              className="group flex flex-col rounded-2xl border border-[var(--color-border-soft)] bg-white p-5 shadow-sm transition hover:shadow-md dark:bg-slate-900 dark:hover:border-slate-700"
             >
               <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${item.iconWrap}`}>
                 {item.icon}
               </span>
-              <h3 className="text-sm font-semibold text-[var(--color-navy)] group-hover:text-[var(--color-accent)]">
+              <h3 className="text-sm font-semibold text-[var(--color-navy)] group-hover:text-[var(--color-accent)] dark:text-slate-100">
                 {item.title}
               </h3>
-              <p className="mt-1 flex-1 text-xs leading-relaxed text-gray-500">{item.desc}</p>
+              <p className="mt-1 flex-1 text-xs leading-relaxed text-gray-500 dark:text-slate-400">{item.desc}</p>
               <span
                 className={`mt-4 flex h-8 w-8 items-center justify-center rounded-full transition group-hover:translate-x-0.5 ${item.arrow}`}
               >

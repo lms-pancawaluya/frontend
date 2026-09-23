@@ -103,7 +103,7 @@ export default function EditCoursePage() {
   }
 
   if (loadingData) {
-    return <p className="mt-16 text-center text-gray-500">Memuat data course...</p>;
+    return <p className="mt-16 text-center text-gray-500 dark:text-slate-400">Memuat data course...</p>;
   }
 
   if (accessDenied) {

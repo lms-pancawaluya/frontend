@@ -19,10 +19,10 @@ interface UserItem {
 }
 
 const statusColor: Record<string, string> = {
-  aktif: "bg-green-100 text-green-700",
-  nonaktif: "bg-gray-100 text-gray-600",
-  pensiun: "bg-amber-100 text-amber-700",
-  wafat: "bg-red-100 text-red-700",
+  aktif: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300",
+  nonaktif: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300",
+  pensiun: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  wafat: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
 };
 
 function normalizeRole(role?: string): string {
@@ -36,9 +36,9 @@ function isManagedStaff(role?: string): boolean {
 
 function getRoleBadge(role?: string): { label: string; className: string } {
   const r = normalizeRole(role);
-  if (r === "pengajar") return { label: "Pengajar", className: "bg-amber-100 text-amber-800" };
-  if (r === "guru") return { label: "Guru", className: "bg-blue-100 text-blue-700" };
-  return { label: role || "—", className: "bg-gray-100 text-gray-600" };
+  if (r === "pengajar") return { label: "Pengajar", className: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" };
+  if (r === "guru") return { label: "Guru", className: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" };
+  return { label: role || "—", className: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300" };
 }
 
 export default function AdminUsersPage() {
@@ -172,13 +172,13 @@ export default function AdminUsersPage() {
   };
 
   if (initialLoading) {
-    return <p className="text-center mt-16 text-gray-500">Memuat data pengguna...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memuat data pengguna...</p>;
   }
 
   if (error) {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       </div>
@@ -198,17 +198,17 @@ export default function AdminUsersPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-2">
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-2 dark:text-slate-100">
         Kelola Akun Guru
       </h1>
-      <p className="text-gray-500 mb-8">Daftar guru dan pengajar terdaftar di sistem</p>
+      <p className="text-gray-500 mb-8 dark:text-slate-400">Daftar guru dan pengajar terdaftar di sistem</p>
 
-      <div className="bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm p-6 mb-6 space-y-4">
+      <div className="bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm p-6 mb-6 space-y-4 dark:bg-slate-900">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 space-y-1.5">
-            <label className="text-xs font-bold text-slate-600">Cari</label>
+            <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Cari</label>
             <div className="relative w-full">
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 dark:text-slate-500">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
                 </svg>
@@ -219,7 +219,7 @@ export default function AdminUsersPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari nama, NIP, atau email..."
                 aria-label="Cari nama, NIP, atau email"
-                className="w-full rounded-xl border border-[var(--color-border-soft)] bg-slate-50 py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:bg-white focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15"
+                className="w-full rounded-xl border border-[var(--color-border-soft)] bg-slate-50 py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:bg-white focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:bg-slate-800 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
               />
               {searchQuery && (
                 <button
@@ -229,7 +229,7 @@ export default function AdminUsersPage() {
                     setDebouncedQuery("");
                   }}
                   aria-label="Bersihkan pencarian"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:text-slate-300"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -240,14 +240,14 @@ export default function AdminUsersPage() {
           </div>
 
           <div className="w-full md:w-48 space-y-1.5">
-            <label htmlFor="filter-status" className="text-xs font-bold text-slate-600">
+            <label htmlFor="filter-status" className="text-xs font-bold text-slate-600 dark:text-slate-300">
               Filter Status
             </label>
             <select
               id="filter-status"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
               <option value="">Semua Status</option>
               <option value="aktif">Aktif</option>
@@ -258,14 +258,14 @@ export default function AdminUsersPage() {
           </div>
 
           <div className="w-full md:w-48 space-y-1.5">
-            <label htmlFor="filter-role" className="text-xs font-bold text-slate-600">
+            <label htmlFor="filter-role" className="text-xs font-bold text-slate-600 dark:text-slate-300">
               Filter Role
             </label>
             <select
               id="filter-role"
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
               <option value="">Semua</option>
               <option value="guru">Guru</option>
@@ -276,14 +276,14 @@ export default function AdminUsersPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <label htmlFor="filter-kota" className="text-xs font-bold text-slate-600">
+            <label htmlFor="filter-kota" className="text-xs font-bold text-slate-600 dark:text-slate-300">
               Filter Kota/Kabupaten
             </label>
             <select
               id="filter-kota"
               value={filterKota}
               onChange={(e) => setFilterKota(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
               <option value="">Semua Kota/Kabupaten</option>
               {allCities.map((city) => (
@@ -295,14 +295,14 @@ export default function AdminUsersPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="filter-daerah" className="text-xs font-bold text-slate-600">
+            <label htmlFor="filter-daerah" className="text-xs font-bold text-slate-600 dark:text-slate-300">
               Filter Daerah/Kecamatan
             </label>
             <select
               id="filter-daerah"
               value={filterDaerah}
               onChange={(e) => setFilterDaerah(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
               <option value="">Semua Daerah/Kecamatan</option>
               {allRegions.map((region) => (
@@ -314,14 +314,14 @@ export default function AdminUsersPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="filter-sekolah" className="text-xs font-bold text-slate-600">
+            <label htmlFor="filter-sekolah" className="text-xs font-bold text-slate-600 dark:text-slate-300">
               Filter Sekolah
             </label>
             <select
               id="filter-sekolah"
               value={filterSekolah}
               onChange={(e) => setFilterSekolah(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700"
+              className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
               <option value="">Semua Sekolah</option>
               {allSchools.map((school) => (
@@ -338,7 +338,7 @@ export default function AdminUsersPage() {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors px-4 py-2 border border-[var(--color-border-soft)] rounded-xl hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer"
+              className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors px-4 py-2 border border-[var(--color-border-soft)] rounded-xl hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
@@ -349,7 +349,7 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden">
+      <div className="bg-white border border-[var(--color-border-soft)] rounded-2xl overflow-hidden dark:bg-slate-900">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
@@ -365,13 +365,13 @@ export default function AdminUsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-slate-400">
                     Memuat data pengguna...
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-slate-400">
                     {emptyLabel}
                   </td>
                 </tr>
@@ -381,11 +381,11 @@ export default function AdminUsersPage() {
 
                   return (
                     <tr key={u.id} className="border-b border-[var(--color-border-soft)] last:border-0">
-                      <td className="px-4 py-3 text-gray-800">{u.nama}</td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {u.sekolah ? u.sekolah : <span className="text-gray-400">—</span>}
+                      <td className="px-4 py-3 text-gray-800 dark:text-slate-200">{u.nama}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-slate-300">
+                        {u.sekolah ? u.sekolah : <span className="text-gray-400 dark:text-slate-500">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{u.email}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-slate-300">{u.email}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${roleBadge.className}`}>
                           {roleBadge.label}
@@ -395,27 +395,27 @@ export default function AdminUsersPage() {
                         {u.status ? (
                           <span
                             className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
-                              statusColor[u.status] || "bg-gray-100 text-gray-600"
+                              statusColor[u.status] || "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300"
                             }`}
                           >
                             {u.status}
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-400">—</span>
+                          <span className="text-xs text-gray-400 dark:text-slate-500">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2 justify-center">
                           <Link
                             href={`/admin/users/${u.id}`}
-                            className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
+                            className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition dark:text-slate-200 dark:hover:bg-slate-800"
                           >
                             Edit
                           </Link>
                           <button
                             onClick={() => handleDelete(u.id, u.nama)}
                             disabled={deletingId === u.id}
-                            className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
+                            className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30 dark:disabled:text-slate-600 dark:disabled:border-slate-700"
                           >
                             {deletingId === u.id ? "Menghapus..." : "Hapus"}
                           </button>
