@@ -14,6 +14,7 @@ import ModuleStageGuard from "@/app/components/common/ModuleStageGuard";
 import MaterialStatusBadge from "@/app/components/common/MaterialStatusBadge";
 
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 const API_BASE_URL = `${API_URL}/api`;
 
@@ -108,8 +109,9 @@ const getYoutubeId = (url?: string): string => {
 };
 
 export default function ModuleVideoPage() {
+  const { t } = useApp();
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 text-xs text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">Memuat materi...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50/70 flex items-center justify-center p-6 text-xs text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">{t("Memuat materi...", "Loading material...")}</div>}>
       <ModuleStageGuardWrapper />
     </Suspense>
   );
@@ -130,6 +132,7 @@ function ModuleVideoPageContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useApp();
   const moduleId = params.id as string;
 
   const [videoContent, setVideoContent] = useState<ModuleContent | null>(null);
@@ -165,7 +168,7 @@ function ModuleVideoPageContent() {
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const invalidVideoMessage =
     videoContent && !getYoutubeId(videoContent.konten)
-      ? "URL Video tidak valid atau ID YouTube tidak ditemukan."
+      ? t("URL Video tidak valid atau ID YouTube tidak ditemukan.", "Invalid video URL or YouTube ID not found.")
       : null;
   const displayErrorMessage = errorMessage || invalidVideoMessage;
 
@@ -267,11 +270,11 @@ function ModuleVideoPageContent() {
       } catch (err) {
         console.error("Gagal memuat konten pembelajaran:", err);
         setResolutionStatus("error");
-        setErrorMessage("Gagal terhubung ke server backend.");
+        setErrorMessage(t("Gagal terhubung ke server backend.", "Failed to connect to the backend server."));
       }
     }
     init();
-  }, [moduleId, authToken, router, searchParams, refreshMaterialStatus]);
+  }, [moduleId, authToken, router, searchParams, refreshMaterialStatus, t]);
 
   // ❌ useEffect fetch detail kuis ke endpoint GET /mini-quizzes/:id sudah
   // DIHAPUS. Endpoint itu tidak tersedia di backend dan menyebabkan error
@@ -560,16 +563,16 @@ function ModuleVideoPageContent() {
         {isError ? (
           <div className="max-w-md text-center space-y-2">
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {displayErrorMessage || "Materi tidak dapat ditampilkan."}
+              {displayErrorMessage || t("Materi tidak dapat ditampilkan.", "Material cannot be displayed.")}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.
+              {t("Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.", "Please check the module data again or make sure the internet connection is active.")}
             </p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
             <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs font-medium">Memuat materi pembelajaran...</p>
+            <p className="text-xs font-medium">{t("Memuat materi pembelajaran...", "Loading learning material...")}</p>
           </div>
         )}
       </div>
@@ -623,7 +626,7 @@ function ModuleVideoPageContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </span>
-            Kembali ke Detail Course
+            {t("Kembali ke Detail Course", "Back to Course Detail")}
           </button>
 
           <div className="flex items-center gap-2">
@@ -631,7 +634,7 @@ function ModuleVideoPageContent() {
               <svg className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Penayangan Video Wajib Diselesaikan
+              {t("Penayangan Video Wajib Diselesaikan", "Video Playthrough Must Be Completed")}
             </span>
           </div>
         </div>
@@ -650,11 +653,11 @@ function ModuleVideoPageContent() {
             <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
-            Materi Pembelajaran Video
+            {t("Materi Pembelajaran Video", "Video Learning Material")}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight dark:text-slate-100">
-              {videoContent?.judul || "Materi Video Utama"}
+              {videoContent?.judul || t("Materi Video Utama", "Main Video Material")}
             </h1>
             <MaterialStatusBadge
               entry={videoContent ? materialStatus[videoContent.id] : undefined}
@@ -674,7 +677,7 @@ function ModuleVideoPageContent() {
               </div>
               <p className="font-semibold text-white text-base">{displayErrorMessage}</p>
               <p className="text-xs text-slate-400 max-w-sm">
-                Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.
+                {t("Silakan periksa kembali data modul atau pastikan koneksi internet terhubung.", "Please check the module data again or make sure the internet connection is active.")}
               </p>
             </div>
           )}
@@ -694,10 +697,10 @@ function ModuleVideoPageContent() {
                           <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Kuis Interaktif
+                          {t("Kuis Interaktif", "Interactive Quiz")}
                         </span>
                         <span className="text-xs text-slate-400 font-medium dark:text-slate-500">
-                          Batas Kelulusan: {activeQuiz.passingScore}%
+                          {t("Batas Kelulusan:", "Passing Threshold:")} {activeQuiz.passingScore}%
                         </span>
                       </div>
                       <h3 className="font-bold text-slate-800 text-base leading-snug dark:text-slate-100">
@@ -753,7 +756,7 @@ function ModuleVideoPageContent() {
                         ))
                       ) : (
                         <p className="text-xs text-slate-400 text-center py-4 dark:text-slate-500">
-                          Kuis ini belum memiliki soal.
+                          {t("Kuis ini belum memiliki soal.", "This quiz has no questions yet.")}
                         </p>
                       )}
                     </div>
@@ -768,7 +771,7 @@ function ModuleVideoPageContent() {
                       }
                       className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer disabled:cursor-not-allowed dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
                     >
-                      {isSubmitting ? "Memproses Jawaban..." : "Kirim Jawaban Kuis"}
+                      {isSubmitting ? t("Memproses Jawaban...", "Processing Answers...") : t("Kirim Jawaban Kuis", "Submit Quiz Answers")}
                     </button>
                   </form>
                 ) : (
@@ -794,15 +797,15 @@ function ModuleVideoPageContent() {
 
                     <div className="space-y-1">
                       <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">
-                        Hasil Kuis Interaktif
+                        {t("Hasil Kuis Interaktif", "Interactive Quiz Result")}
                       </span>
                       <h4 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        Capaian Skor: {attemptResult.skor}%
+                        {t("Capaian Skor:", "Score Achieved:")} {attemptResult.skor}%
                       </h4>
                       <p className="text-xs sm:text-sm text-slate-600 max-w-xs mx-auto leading-relaxed pt-1 dark:text-slate-300">
                         {attemptResult.isLolos
-                          ? "Anda telah memenuhi batas kriteria ketuntasan minimal. Silakan melanjutkan pemutaran video."
-                          : "Skor belum mencapai batas kriteria ketuntasan minimal (80%). Silakan lakukan pemahaman ulang."}
+                          ? t("Anda telah memenuhi batas kriteria ketuntasan minimal. Silakan melanjutkan pemutaran video.", "You have met the minimum passing criteria. Please continue the video playback.")
+                          : t("Skor belum mencapai batas kriteria ketuntasan minimal (80%). Silakan lakukan pemahaman ulang.", "Your score has not reached the minimum passing criteria (80%). Please review the material.")}
                       </p>
                     </div>
 
@@ -816,7 +819,7 @@ function ModuleVideoPageContent() {
                         }}
                         className="w-full inline-flex items-center justify-center gap-2 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
                       >
-                        <span>Lanjutkan Pemutaran Video</span>
+                        <span>{t("Lanjutkan Pemutaran Video", "Continue Video Playback")}</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
@@ -837,7 +840,7 @@ function ModuleVideoPageContent() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        <span>Ulangi Pemutaran dari Awal</span>
+                        <span>{t("Ulangi Pemutaran dari Awal", "Restart Playback from Beginning")}</span>
                       </button>
                     ) : (
                       <button
@@ -847,7 +850,7 @@ function ModuleVideoPageContent() {
                         }}
                         className="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200 dark:bg-slate-700 dark:hover:bg-slate-600"
                       >
-                        Coba Kembali Kuis
+                        {t("Coba Kembali Kuis", "Retry Quiz")}
                       </button>
                     )}
                   </div>
@@ -867,8 +870,8 @@ function ModuleVideoPageContent() {
             />
             <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed dark:text-slate-300">
               {!isVideoFinished
-                ? "Selesaikan penayangan video dan kuis interaktif untuk melanjutkan ke materi berikutnya."
-                : "Seluruh tahapan pembelajaran video dan kuis interaktif telah diselesaikan."}
+                ? t("Selesaikan penayangan video dan kuis interaktif untuk melanjutkan ke materi berikutnya.", "Complete the video playthrough and interactive quiz to continue to the next material.")
+                : t("Seluruh tahapan pembelajaran video dan kuis interaktif telah diselesaikan.", "All video learning and interactive quiz stages have been completed.")}
             </p>
           </div>
 
@@ -884,7 +887,7 @@ function ModuleVideoPageContent() {
                 : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60 shadow-none dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700"
             }`}
           >
-            <span>{currentIndex + 1 < materials.length ? "Materi Berikutnya" : "Kembali ke Detail Course"}</span>
+            <span>{currentIndex + 1 < materials.length ? t("Materi Berikutnya", "Next Material") : t("Kembali ke Detail Course", "Back to Course Detail")}</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>

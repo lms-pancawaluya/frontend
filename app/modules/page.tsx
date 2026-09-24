@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getModules } from "@/services/module.service";
 import { getCourses } from "@/services/course.service";
 import type { Course } from "@/types/course";
+import { useApp } from "@/app/context/AppContext";
 
 interface ModuleCard {
   id: string;
@@ -62,7 +63,7 @@ function capitalize(value: string): string {
 }
 
 /** Mapping respons API (module.service) ke bentuk kartu UI sesuai instruksi BE */
-function mapApiModules(apiData: ModuleApiItem[]): ModuleCard[] {
+function mapApiModules(apiData: ModuleApiItem[], tr: (id: string, en: string) => string): ModuleCard[] {
   if (!Array.isArray(apiData)) return [];
   return apiData.map((item, idx) => {
     const rawCategory = item.aspekPancawaluya || item.kategori || "umum";
@@ -70,8 +71,8 @@ function mapApiModules(apiData: ModuleApiItem[]): ModuleCard[] {
 
     return {
       id: item.id,
-      code: `Modul ${item.urutan ?? idx + 1}`,
-      title: item.judul || "Modul Pembelajaran",
+      code: `${tr("Modul", "Module")} ${item.urutan ?? idx + 1}`,
+      title: item.judul || tr("Modul Pembelajaran", "Learning Module"),
       description: item.deskripsi || "",
       category: capitalize(categoryKey) as ModuleCard["category"],
       progress: item.status === "selesai" ? 100 : 0,
@@ -102,6 +103,7 @@ function extractArray<T>(res: unknown): T[] {
 }
 
 export default function ModulesPage() {
+  const { t } = useApp();
   const [courses, setCourses] = useState<CourseWithModules[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"semua" | "proses" | "selesai">("semua");
@@ -129,7 +131,7 @@ export default function ModulesPage() {
                 rawModules = extractArray<ModuleApiItem>(modulesRes);
               }
 
-              const modules = mapApiModules(rawModules);
+              const modules = mapApiModules(rawModules, t);
               return { ...course, modules } as CourseWithModules;
             })
           );
@@ -146,7 +148,7 @@ export default function ModulesPage() {
     }
 
     fetchData();
-  }, []);
+  }, [t]);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -200,30 +202,29 @@ export default function ModulesPage() {
               LMS Panca Waluya Jabar
             </span>
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              Modul Pembelajaran Guru
+              {t("Modul Pembelajaran Guru", "Teacher Learning Modules")}
             </h1>
             <p className="text-slate-100 text-xs sm:text-sm leading-relaxed opacity-90">
-              Tingkatkan kompetensi pendidik melalui 5 pilar karakter Sunda (Cageur, Bageur, Bener,
-              Singer, Pinter) secara terstruktur dan terukur.
+              {t("Tingkatkan kompetensi pendidik melalui 5 pilar karakter Sunda (Cageur, Bageur, Bener, Singer, Pinter) secara terstruktur dan terukur.", "Improve educator competencies through the 5 pillars of Sundanese character (Cageur, Bageur, Bener, Singer, Pinter) in a structured and measurable way.")}
             </p>
           </div>
 
           {/* STATS OVERVIEW */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-white/15 text-xs">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Total Course</p>
-              <p className="text-xl font-extrabold mt-0.5">{courses.length} Course</p>
+              <p className="text-white/70 font-medium">{t("Total Course", "Total Courses")}</p>
+              <p className="text-xl font-extrabold mt-0.5">{courses.length} {t("Course", "Courses")}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Total Modul</p>
-              <p className="text-xl font-extrabold mt-0.5">{totalModules} Modul</p>
+              <p className="text-white/70 font-medium">{t("Total Modul", "Total Modules")}</p>
+              <p className="text-xl font-extrabold mt-0.5">{totalModules} {t("Modul", "Modules")}</p>
               <p className="text-white/60 font-medium mt-0.5">
-                {totalCompleted} / {totalModules} Selesai
+                {totalCompleted} / {totalModules} {t("Selesai", "Completed")}
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Sertifikat Kelulusan</p>
-              <p className="text-xl font-extrabold mt-0.5 text-amber-300">Belum Tersedia</p>
+              <p className="text-white/70 font-medium">{t("Sertifikat Kelulusan", "Completion Certificate")}</p>
+              <p className="text-xl font-extrabold mt-0.5 text-amber-300">{t("Belum Tersedia", "Not Available Yet")}</p>
             </div>
           </div>
         </div>
@@ -239,7 +240,7 @@ export default function ModulesPage() {
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              Semua Modul
+              {t("Semua Modul", "All Modules")}
             </button>
             <button
               onClick={() => setActiveTab("proses")}
@@ -249,7 +250,7 @@ export default function ModulesPage() {
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              Sedang Dipelajari
+              {t("Sedang Dipelajari", "In Progress")}
             </button>
             <button
               onClick={() => setActiveTab("selesai")}
@@ -259,14 +260,14 @@ export default function ModulesPage() {
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              Selesai
+              {t("Selesai", "Completed")}
             </button>
           </div>
 
           <div className="relative flex-1 max-w-xs">
             <input
               type="text"
-              placeholder="Cari course atau materi modul..."
+              placeholder={t("Cari course atau materi modul...", "Search course or module material...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
@@ -298,8 +299,8 @@ export default function ModulesPage() {
           <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8 dark:bg-slate-900 dark:border-slate-800">
             <p className="text-slate-500 text-sm font-medium dark:text-slate-400">
               {courses.length === 0
-                ? "Belum ada course yang tersedia dari backend."
-                : "Tidak ada course yang sesuai dengan pencarian Anda."}
+                ? t("Belum ada course yang tersedia dari backend.", "No courses available from the backend yet.")
+                : t("Tidak ada course yang sesuai dengan pencarian Anda.", "No courses match your search.")}
             </p>
           </div>
         ) : (
@@ -314,11 +315,11 @@ export default function ModulesPage() {
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-800 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800">
-                      {course.mode === "offline" ? "Tatap Muka" : "Online"}
+                      {course.mode === "offline" ? t("Tatap Muka", "In Person") : t("Online", "Online")}
                     </span>
                     {course.hasCertificate && (
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                        Bersertifikat
+                        {t("Bersertifikat", "With Certificate")}
                       </span>
                     )}
                   </div>
@@ -333,7 +334,7 @@ export default function ModulesPage() {
                   <div className="mt-4 space-y-1.5">
                     <div className="flex justify-between items-center text-[11px] font-medium">
                       <span className="text-slate-500 dark:text-slate-400">
-                        Progres Course · {course.modules.length} Modul
+                        {t("Progres Course", "Course Progress")} · {course.modules.length} {t("Modul", "Modules")}
                       </span>
                       <span className="text-slate-800 font-bold dark:text-slate-200">
                         {course.progressPercentage ?? 0}%
@@ -348,7 +349,7 @@ export default function ModulesPage() {
                   </div>
 
                   <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                    Lihat Detail Course
+                    {t("Lihat Detail Course", "View Course Detail")}
                     <svg
                       className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all dark:text-slate-600"
                       fill="none"

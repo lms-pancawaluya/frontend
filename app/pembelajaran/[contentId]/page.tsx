@@ -6,11 +6,13 @@ import { VideoPlayerWithQuiz } from "@/app/components/mini-quiz/VideoPlayerWithQ
 import { ContentLockGuard } from "@/app/components/mini-quiz/ContentLockGuard";
 
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 const API_BASE_URL = `${API_URL}/api`;
 
 export default function PembelajaranPage() {
   const params = useParams();
+  const { t } = useApp();
   const contentId = params?.contentId as string;
 
   const [videoUrl, setVideoUrl] = useState<string>("");
@@ -49,14 +51,14 @@ export default function PembelajaranPage() {
   if (loading) {
     return (
       <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-        Memuat materi pembelajaran...
+        {t("Memuat materi pembelajaran...", "Loading learning material...")}
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Materi Pembelajaran</h1>
+      <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t("Materi Pembelajaran", "Learning Material")}</h1>
 
       <ContentLockGuard contentId={contentId} authToken={authToken}>
         <VideoPlayerWithQuiz

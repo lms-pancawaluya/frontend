@@ -1,6 +1,7 @@
 "use client";
 
 import { isMaterialEntryCompleted, type MaterialProgressEntry } from "@/lib/contentProgress";
+import { useApp } from "@/app/context/AppContext";
 
 interface MaterialStatusBadgeProps {
   entry?: MaterialProgressEntry;
@@ -16,6 +17,7 @@ interface MaterialStatusBadgeProps {
  * Tidak menghitung/menyimpan completion sendiri — hanya menampilkan data BE.
  */
 export default function MaterialStatusBadge({ entry, className = "" }: MaterialStatusBadgeProps) {
+  const { t } = useApp();
   const completed = isMaterialEntryCompleted(entry);
   const percent =
     entry?.progressPercent !== undefined ? Math.max(0, Math.min(100, Math.round(entry.progressPercent))) : undefined;
@@ -32,7 +34,7 @@ export default function MaterialStatusBadge({ entry, className = "" }: MaterialS
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
         </svg>
-        Selesai
+        {t("Selesai", "Completed")}
       </span>
     );
   }

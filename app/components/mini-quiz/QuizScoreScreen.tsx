@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useApp } from "@/app/context/AppContext";
 
 export interface QuizAttemptResult {
   skor: number;
@@ -24,6 +25,7 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
   onRetry,
   onRepeatVideo,
 }) => {
+  const { t } = useApp();
   const { skor, isLolos, passingScore, sisaPercobaan, mustRepeat, pesan } = result;
 
   // KONDISI C: GAGAL 3 KALI BERTURUT-TURUT
@@ -37,14 +39,14 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
 
         <div>
           <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-semibold rounded-full uppercase tracking-wider dark:bg-rose-950/40 dark:text-rose-300">
-            Kesempatan Habis
+            {t("Kesempatan Habis", "No Attempts Left")}
           </span>
           <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
             {skor} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
           </h3>
           <p className="text-xs text-rose-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed dark:text-rose-400">
             {pesan ||
-              "Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal."}
+              t("Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal.", "You have failed 3 times. The quiz has been reset and you must re-study the material from the beginning.")}
           </p>
         </div>
 
@@ -53,7 +55,7 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
           onClick={onRepeatVideo}
           className="w-full py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-sm transition-all shadow-md shadow-rose-200"
         >
-          Tonton Ulang Materi
+          {t("Tonton Ulang Materi", "Rewatch Material")}
         </button>
       </div>
     );
@@ -70,13 +72,13 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
 
         <div>
           <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full uppercase tracking-wider dark:bg-emerald-950/40 dark:text-emerald-300">
-            Lulus
+            {t("Lulus", "Passed")}
           </span>
           <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
             {skor} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
           </h3>
           <p className="text-xs text-emerald-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed dark:text-emerald-400">
-            {pesan || "Selamat! Kamu lulus mini kuis ini. Lanjut ke materi berikutnya!"}
+            {pesan || t("Selamat! Kamu lulus mini kuis ini. Lanjut ke materi berikutnya!", "Congratulations! You passed this mini quiz. Continue to the next material!")}
           </p>
         </div>
 
@@ -85,7 +87,7 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
           onClick={onNext}
           className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm transition-all shadow-md shadow-emerald-200"
         >
-          Lanjut ke Materi Selanjutnya
+          {t("Lanjut ke Materi Selanjutnya", "Continue to Next Material")}
         </button>
       </div>
     );
@@ -101,14 +103,14 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
 
       <div>
         <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full uppercase tracking-wider dark:bg-amber-950/40 dark:text-amber-300">
-          Belum Lulus
+          {t("Belum Lulus", "Not Passed")}
         </span>
         <h3 className="text-3xl font-extrabold text-slate-900 mt-3 dark:text-slate-100">
           {skor} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ 100</span>
         </h3>
         <p className="text-xs text-slate-600 font-medium mt-2 max-w-xs mx-auto leading-relaxed dark:text-slate-300">
-          Skor minimal lulus adalah {passingScore || 80}. Sisa kesempatan kamu:{" "}
-          <span className="font-bold text-amber-600 dark:text-amber-400">{sisaPercobaan} kali</span>.
+          {t("Skor minimal lulus adalah", "The minimum passing score is")} {passingScore || 80}. {t("Sisa kesempatan kamu:", "Remaining attempts:")}{" "}
+          <span className="font-bold text-amber-600 dark:text-amber-400">{sisaPercobaan} {t("kali", "times")}</span>.
         </p>
       </div>
 
@@ -117,7 +119,7 @@ export const QuizScoreScreen: React.FC<QuizScoreScreenProps> = ({
         onClick={onRetry}
         className="w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-sm transition-all shadow-md shadow-amber-200"
       >
-        Coba Lagi
+        {t("Coba Lagi", "Try Again")}
       </button>
     </div>
   );

@@ -11,6 +11,7 @@ interface VideoInteractiveQuizProps {
 }
 
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 const API_BASE_URL = `${API_URL}/api`;
 
@@ -20,6 +21,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
   authToken,
   onQuizCompleted,
 }) => {
+  const { t } = useApp();
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [quizzes, setQuizzes] = useState<MiniQuiz[]>([]);
@@ -95,7 +97,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
     if (!activeQuiz) return;
 
     if (Object.keys(selectedAnswers).length < activeQuiz.questions.length) {
-      setErrorMessage("Pilih jawaban untuk semua pertanyaan sebelum mengirim.");
+      setErrorMessage(t("Pilih jawaban untuk semua pertanyaan sebelum mengirim.", "Select an answer for all questions before submitting."));
       return;
     }
 
@@ -129,10 +131,10 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
           if (onQuizCompleted) onQuizCompleted();
         }
       } else {
-        setErrorMessage(result.pesan || "Terjadi kesalahan saat mengirim jawaban.");
+        setErrorMessage(result.pesan || t("Terjadi kesalahan saat mengirim jawaban.", "An error occurred while submitting answers."));
       }
     } catch {
-      setErrorMessage("Gagal terhubung ke server.");
+      setErrorMessage(t("Gagal terhubung ke server.", "Failed to connect to the server."));
     } finally {
       setIsSubmitting(false);
     }
@@ -184,7 +186,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{activeQuiz.judul}</h3>
               <span className="text-xs bg-sky-100 text-sky-800 px-2.5 py-1 rounded-full font-medium dark:bg-sky-950/40 dark:text-sky-300">
-                Passing Grade: {activeQuiz.passingScore}%
+                {t("Passing Grade:", "Passing Grade:")} {activeQuiz.passingScore}%
               </span>
             </div>
 
@@ -205,15 +207,15 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-emerald-600 dark:text-emerald-400">Selamat! Kamu Lolos</h4>
+                    <h4 className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{t("Selamat! Kamu Lolos", "Congratulations! You Passed")}</h4>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
-                      Nilai: <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> ({attemptResult.benar} dari {attemptResult.totalSoal} benar)
+                      {t("Nilai:", "Score:")} <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> ({attemptResult.benar} {t("dari", "of")} {attemptResult.totalSoal} {t("benar", "correct")})
                     </p>
                     <button
                       onClick={handleContinueVideo}
                       className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg transition-colors"
                     >
-                      Lanjutkan Video
+                      {t("Lanjutkan Video", "Continue Video")}
                     </button>
                   </div>
                 )}
@@ -226,15 +228,15 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-amber-600 dark:text-amber-400">Belum Mencapai Passing Grade</h4>
+                    <h4 className="text-lg font-bold text-amber-600 dark:text-amber-400">{t("Belum Mencapai Passing Grade", "Has Not Reached Passing Grade")}</h4>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
-                      Nilai: <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> | Sisa Percobaan: <span className="font-bold text-amber-600 dark:text-amber-400">{attemptResult.sisaPercobaan}x</span>
+                      {t("Nilai:", "Score:")} <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> | {t("Sisa Percobaan:", "Remaining Attempts:")} <span className="font-bold text-amber-600 dark:text-amber-400">{attemptResult.sisaPercobaan}x</span>
                     </p>
                     <button
                       onClick={handleRetryQuiz}
                       className="btn-primary w-full py-2.5 px-4 text-sm"
                     >
-                      Coba Lagi
+                      {t("Coba Lagi", "Try Again")}
                     </button>
                   </div>
                 )}
@@ -247,15 +249,15 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-rose-600 dark:text-rose-400">Kesempatan Habis</h4>
+                    <h4 className="text-lg font-bold text-rose-600 dark:text-rose-400">{t("Kesempatan Habis", "No Attempts Left")}</h4>
                     <p className="text-sm text-slate-600 leading-relaxed dark:text-slate-300">
-                      Kamu gagal 3 kali berturut-turut. Silakan tonton ulang materi video dari awal untuk mengulang kuis.
+                      {t("Kamu gagal 3 kali berturut-turut. Silakan tonton ulang materi video dari awal untuk mengulang kuis.", "You failed 3 times in a row. Please rewatch the video material from the beginning to retake the quiz.")}
                     </p>
                     <button
                       onClick={handleRestartVideo}
                       className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm rounded-lg transition-colors"
                     >
-                      Tonton Ulang Video
+                      {t("Tonton Ulang Video", "Rewatch Video")}
                     </button>
                   </div>
                 )}
@@ -302,7 +304,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                     disabled={isSubmitting}
                     className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-medium text-sm rounded-lg transition-colors"
                   >
-                    {isSubmitting ? "Mengirim..." : "Kirim Jawaban"}
+                    {isSubmitting ? t("Mengirim...", "Sending...") : t("Kirim Jawaban", "Submit Answers")}
                   </button>
                 </div>
               </form>

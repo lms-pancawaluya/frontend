@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 const API_BASE_URL = `${API_URL}/api`;
 
@@ -17,6 +18,7 @@ export const ContentLockGuard: React.FC<ContentLockGuardProps> = ({
   authToken,
   children,
 }) => {
+  const { t } = useApp();
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [reason, setReason] = useState<string>("");
   const [checking, setChecking] = useState<boolean>(true);
@@ -33,7 +35,7 @@ export const ContentLockGuard: React.FC<ContentLockGuardProps> = ({
 
         if (json.sukses && json.data) {
           setIsLocked(json.data.isLocked);
-          setReason(json.data.alasan || "Selesaikan materi sebelumnya untuk membuka materi ini.");
+          setReason(json.data.alasan || t("Selesaikan materi sebelumnya untuk membuka materi ini.", "Complete the previous material to unlock this material."));
         }
       } catch (err) {
         console.error("Gagal memeriksa status kuncian materi:", err);
@@ -43,12 +45,12 @@ export const ContentLockGuard: React.FC<ContentLockGuardProps> = ({
     };
 
     checkLock();
-  }, [contentId, authToken]);
+  }, [contentId, authToken, t]);
 
   if (checking) {
     return (
       <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
-        Memeriksa akses materi...
+        {t("Memeriksa akses materi...", "Checking material access...")}
       </div>
     );
   }
@@ -59,7 +61,7 @@ export const ContentLockGuard: React.FC<ContentLockGuardProps> = ({
         <div className="w-12 h-12 bg-slate-800 text-amber-400 rounded-full flex items-center justify-center mx-auto text-xl">
           🔒
         </div>
-        <h4 className="text-base font-bold text-white">Materi Ini Terkunci</h4>
+        <h4 className="text-base font-bold text-white">{t("Materi Ini Terkunci", "This Material Is Locked")}</h4>
         <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">{reason}</p>
       </div>
     );

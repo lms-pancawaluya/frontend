@@ -19,6 +19,7 @@ import {
   type SubmitAnswerItem,
   type SubmitEvaluationResult,
 } from "@/types/evaluation";
+import { useApp } from "@/app/context/AppContext";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -28,6 +29,7 @@ export default function EvaluationDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useApp();
 
   const moduleId = params.id as string;
   const courseIdFromUrl = searchParams.get("courseId");
@@ -90,7 +92,7 @@ export default function EvaluationDetailPage() {
           const progress = moduleData ? readModuleStageProgress(moduleData) : await refreshStageProgress();
           if (moduleData) setModuleStage(progress ?? {});
           if (!progress) {
-            throw new Error("Gagal memuat status tahapan modul.");
+            throw new Error(t("Gagal memuat status tahapan modul.", "Failed to load module stage status."));
           }
           if (isPostTestLocked(progress)) {
             setStageBlocked(true);
@@ -101,7 +103,7 @@ export default function EvaluationDetailPage() {
         setSummary(currentSummary);
         setEvaluation(detail);
       } catch (err) {
-        setLoadError(getErrorMessage(err, "Gagal mengambil data asesmen."));
+        setLoadError(getErrorMessage(err, t("Gagal mengambil data asesmen.", "Failed to fetch assessment data.")));
       } finally {
         setLoading(false);
       }
@@ -110,7 +112,7 @@ export default function EvaluationDetailPage() {
     if (moduleId && evaluationId) {
       fetchEvaluation();
     }
-  }, [moduleId, evaluationId, refreshStageProgress]);
+  }, [moduleId, evaluationId, refreshStageProgress, t]);
 
   const questionsList = evaluation?.questions || [];
   const tipe = summary?.tipe ?? evaluation?.tipe;
@@ -138,7 +140,7 @@ export default function EvaluationDetailPage() {
   const handleSubmit = async () => {
     if (answeredCount < totalQuestions) {
       const confirmSubmit = confirm(
-        `Anda baru menjawab ${answeredCount} dari ${totalQuestions} soal. Yakin ingin mengirim jawaban sekarang?`
+        t(`Anda baru menjawab ${answeredCount} dari ${totalQuestions} soal. Yakin ingin mengirim jawaban sekarang?`, `You have only answered ${answeredCount} of ${totalQuestions} questions. Are you sure you want to submit now?`)
       );
       if (!confirmSubmit) return;
     }
@@ -161,11 +163,11 @@ export default function EvaluationDetailPage() {
       // Result evaluasi tidak dipakai untuk membuka stage.
       const updatedStage = await refreshStageProgress();
       if (!updatedStage) {
-        throw new Error("Gagal memuat status tahapan terbaru dari server.");
+        throw new Error(t("Gagal memuat status tahapan terbaru dari server.", "Failed to load the latest stage status from the server."));
       }
       setResult(submitResult);
     } catch (err) {
-      setSubmitError(getErrorMessage(err, "Gagal mengirim jawaban asesmen."));
+      setSubmitError(getErrorMessage(err, t("Gagal mengirim jawaban asesmen.", "Failed to submit assessment answers.")));
     } finally {
       setIsSubmitting(false);
     }
@@ -186,7 +188,7 @@ export default function EvaluationDetailPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[60vh] gap-3">
         <div className="w-10 h-10 border-4 border-[var(--color-biru-muda)] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[var(--color-navy)] font-medium text-sm dark:text-slate-200">Memuat soal asesmen...</p>
+        <p className="text-[var(--color-navy)] font-medium text-sm dark:text-slate-200">{t("Memuat soal asesmen...", "Loading assessment questions...")}</p>
       </div>
     );
   }
@@ -210,16 +212,15 @@ export default function EvaluationDetailPage() {
           <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-xl dark:bg-amber-950/40 dark:text-amber-400">
             🔒
           </div>
-          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Post-Test Terkunci</h2>
+          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">{t("Post-Test Terkunci", "Post-Test Locked")}</h2>
           <p className="text-xs text-slate-600 leading-relaxed dark:text-slate-300">
-            Selesaikan seluruh materi pembelajaran modul ini terlebih dahulu sebelum
-            mengerjakan Post-Test.
+            {t("Selesaikan seluruh materi pembelajaran modul ini terlebih dahulu sebelum mengerjakan Post-Test.", "Complete all learning materials of this module first before taking the Post-Test.")}
           </p>
           <button
             onClick={() => router.push(courseDetailUrl)}
             className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-full transition dark:bg-slate-700 dark:hover:bg-slate-600"
           >
-            Kembali ke Detail Course
+            {t("Kembali ke Detail Course", "Back to Course Detail")}
           </button>
         </div>
       </div>
@@ -237,7 +238,7 @@ export default function EvaluationDetailPage() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Kembali ke Detail Course
+          {t("Kembali ke Detail Course", "Back to Course Detail")}
         </Link>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[var(--color-border-soft)] shadow-sm dark:bg-slate-900">
@@ -258,8 +259,8 @@ export default function EvaluationDetailPage() {
             </h1>
             {postTest && passingScore > 0 && (
               <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">
-                Nilai minimal kelulusan: <span className="font-semibold">{passingScore}%</span>
-                {summary?.maxAttempts ? ` · Maks. ${summary.maxAttempts}x percobaan` : ""}
+                {t("Nilai minimal kelulusan:", "Minimum passing score:")} <span className="font-semibold">{passingScore}%</span>
+                {summary?.maxAttempts ? ` · ${t("Maks.", "Max.")} ${summary.maxAttempts}x ${t("percobaan", "attempts")}` : ""}
               </p>
             )}
           </div>
@@ -267,7 +268,7 @@ export default function EvaluationDetailPage() {
           {!result && (
             <div className="bg-[var(--color-pale)]/50 p-4 rounded-xl border border-[var(--color-border-soft)] min-w-[220px]">
               <div className="flex justify-between text-xs font-semibold text-[var(--color-navy)] mb-1.5 dark:text-slate-200">
-                <span>Progres Pengerjaan</span>
+                <span>{t("Progres Pengerjaan", "Completion Progress")}</span>
                 <span>{progressPercentage}%</span>
               </div>
               <div className="w-full bg-white h-2 rounded-full overflow-hidden border border-[var(--color-border-soft)] dark:bg-slate-800">
@@ -277,7 +278,7 @@ export default function EvaluationDetailPage() {
                 ></div>
               </div>
               <p className="text-[11px] text-[var(--color-accent)] mt-1.5 text-right font-medium dark:text-blue-400">
-                {answeredCount} dari {totalQuestions} soal terjawab
+                {answeredCount} {t("dari", "of")} {totalQuestions} {t("soal terjawab", "questions answered")}
               </p>
             </div>
           )}
@@ -307,14 +308,13 @@ export default function EvaluationDetailPage() {
 
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">
-              Hasil {getStageLabel(tipe)}
+              {t("Hasil", "Result")} {getStageLabel(tipe)}
             </span>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Capaian Skor: {result.skor}%</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t("Capaian Skor:", "Score Achieved:")} {result.skor}%</h2>
 
             {preTest && (
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1 dark:text-slate-300">
-                Pre-Test tidak memiliki nilai gugur — materi pembelajaran modul ini sekarang
-                sudah terbuka untuk Anda pelajari.
+                {t("Pre-Test tidak memiliki nilai gugur — materi pembelajaran modul ini sekarang sudah terbuka untuk Anda pelajari.", "The Pre-Test has no failing grade — the learning material for this module is now open for you to study.")}
               </p>
             )}
 
@@ -323,14 +323,14 @@ export default function EvaluationDetailPage() {
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
-                Pre-Test tercatat selesai di server
+                {t("Pre-Test tercatat selesai di server", "Pre-Test recorded as completed on the server")}
               </span>
             )}
 
             {postTest && result.isLolos && (
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1 dark:text-slate-300">
-                Selamat! Anda telah memenuhi nilai minimal kelulusan ({result.passingScore ?? passingScore}%).
-                Modul ini kini berstatus <span className="font-semibold">selesai</span>.
+                {t("Selamat! Anda telah memenuhi nilai minimal kelulusan", "Congratulations! You have met the minimum passing score")} ({result.passingScore ?? passingScore}%).{" "}
+                {t("Modul ini kini berstatus", "This module is now")} <span className="font-semibold">{t("selesai", "completed")}</span>.
               </p>
             )}
 
@@ -339,22 +339,20 @@ export default function EvaluationDetailPage() {
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
-                Post-Test tercatat selesai di server
+                {t("Post-Test tercatat selesai di server", "Post-Test recorded as completed on the server")}
               </span>
             )}
 
             {postTest && !result.isLolos && !result.mustRepeat && (
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed pt-1 dark:text-slate-300">
-                Skor Anda belum mencapai nilai minimal kelulusan ({result.passingScore ?? passingScore}%).
-                Silakan pelajari kembali materi lalu coba lagi.
+                {t("Skor Anda belum mencapai nilai minimal kelulusan", "Your score has not reached the minimum passing score")} ({result.passingScore ?? passingScore}%).{" "}
+                {t("Silakan pelajari kembali materi lalu coba lagi.", "Please review the material and try again.")}
               </p>
             )}
 
             {postTest && !result.isLolos && result.mustRepeat && (
               <p className="text-xs sm:text-sm text-rose-600 max-w-md mx-auto leading-relaxed pt-1 font-medium dark:text-rose-400">
-                Anda sudah gagal 3 kali percobaan Post-Test. Status modul ini direset ke
-                &quot;belum dimulai&quot; — Anda perlu mengulang modul ini dari awal (termasuk
-                Pre-Test dan materi pembelajaran).
+                {t("Anda sudah gagal 3 kali percobaan Post-Test. Status modul ini direset ke \"belum dimulai\" — Anda perlu mengulang modul ini dari awal (termasuk Pre-Test dan materi pembelajaran).", "You have failed the Post-Test 3 times. This module's status has been reset to \"not started\" — you need to repeat this module from the beginning (including the Pre-Test and learning material).")}
               </p>
             )}
           </div>
@@ -364,7 +362,7 @@ export default function EvaluationDetailPage() {
               onClick={() => router.push(courseDetailUrl)}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
             >
-              <span>Kembali ke Detail Course</span>
+              <span>{t("Kembali ke Detail Course", "Back to Course Detail")}</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -374,14 +372,14 @@ export default function EvaluationDetailPage() {
               onClick={() => router.push(courseDetailUrl)}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200"
             >
-              Kembali ke Detail Course
+              {t("Kembali ke Detail Course", "Back to Course Detail")}
             </button>
           ) : (
             <button
               onClick={handleRetry}
               className="w-full sm:w-auto px-8 py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-2xl shadow-md transition duration-200 dark:bg-slate-700 dark:hover:bg-slate-600"
             >
-              Coba Lagi Post-Test
+              {t("Coba Lagi Post-Test", "Retry Post-Test")}
             </button>
           )}
         </div>
@@ -454,7 +452,7 @@ export default function EvaluationDetailPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm mt-8 dark:bg-slate-900">
             <p className="text-xs text-[var(--color-accent)] text-center sm:text-left font-medium dark:text-blue-400">
-              Pastikan seluruh soal telah terjawab sebelum mengirim asesmen.
+              {t("Pastikan seluruh soal telah terjawab sebelum mengirim asesmen.", "Make sure all questions are answered before submitting the assessment.")}
             </p>
             <button
               onClick={handleSubmit}
@@ -464,17 +462,17 @@ export default function EvaluationDetailPage() {
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Mengirim...
+                  {t("Mengirim...", "Sending...")}
                 </>
               ) : (
-                "Kirim Jawaban"
+                t("Kirim Jawaban", "Submit Answers")
               )}
             </button>
           </div>
         </div>
       ) : (
         <div className="text-center py-16 bg-white rounded-2xl border border-[var(--color-border-soft)] text-[var(--color-navy)] dark:bg-slate-900 dark:text-slate-200">
-          Belum ada soal yang tersedia pada asesmen ini.
+          {t("Belum ada soal yang tersedia pada asesmen ini.", "No questions are available in this assessment yet.")}
         </div>
       )}
     </div>

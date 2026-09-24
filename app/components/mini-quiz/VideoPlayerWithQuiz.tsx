@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 const API_BASE_URL = `${API_URL}/api`;
 
@@ -74,6 +75,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
   contentId,
   authToken,
 }) => {
+  const { t } = useApp();
   const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<MiniQuiz | null>(null);
@@ -221,7 +223,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
     }));
 
     if (jawabanPayload.length < activeQuiz.questions.length) {
-      alert("Mohon jawab semua pertanyaan terlebih dahulu!");
+      alert(t("Mohon jawab semua pertanyaan terlebih dahulu!", "Please answer all questions first!"));
       return;
     }
 
@@ -244,11 +246,11 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
           setAnsweredQuizIds((prev) => [...prev, activeQuiz.id]);
         }
       } else {
-        alert(json.pesan || "Gagal mengirim jawaban.");
+        alert(json.pesan || t("Gagal mengirim jawaban.", "Failed to submit answers."));
       }
     } catch (err) {
       console.error("Submit quiz error:", err);
-      alert("Terjadi kesalahan koneksi saat mengirim jawaban.");
+      alert(t("Terjadi kesalahan koneksi saat mengirim jawaban.", "A connection error occurred while submitting answers."));
     } finally {
       setIsSubmitting(false);
     }
@@ -293,11 +295,11 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
               <form onSubmit={handleSubmitQuiz} className="space-y-5">
                 <div className="border-b border-slate-100 pb-3 dark:border-slate-800">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded dark:bg-emerald-950/40 dark:text-emerald-300">
-                    Mini Quiz Pop-Up
+                    {t("Mini Quiz Pop-Up", "Mini Quiz Pop-Up")}
                   </span>
                   <h3 className="text-lg font-bold text-slate-800 mt-1 dark:text-slate-100">{activeQuiz.judul}</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Batas Lulus: {activeQuiz.passingScore}% | Maksimal Percobaan: {activeQuiz.maxAttempts}x
+                    {t("Batas Lulus:", "Passing Threshold:")} {activeQuiz.passingScore}% | {t("Maksimal Percobaan:", "Max Attempts:")} {activeQuiz.maxAttempts}x
                   </p>
                 </div>
 
@@ -338,7 +340,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                   disabled={isSubmitting}
                   className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-200"
                 >
-                  {isSubmitting ? "Mengirim Jawaban..." : "Submit Jawaban"}
+                  {isSubmitting ? t("Mengirim Jawaban...", "Submitting Answers...") : t("Submit Jawaban", "Submit Answers")}
                 </button>
               </form>
             ) : (
@@ -352,18 +354,18 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                     </div>
                     <div>
                       <span className="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-emerald-950/40 dark:text-emerald-300">
-                        Lulus
+                        {t("Lulus", "Passed")}
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Skor: {attemptResult.skor}</h4>
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{t("Skor:", "Score:")} {attemptResult.skor}</h4>
                       <p className="text-xs text-slate-600 mt-2 dark:text-slate-300">
-                        Selamat! Kamu telah berhasil melampaui passing grade ({attemptResult.passingScore}%).
+                        {t("Selamat! Kamu telah berhasil melampaui passing grade", "Congratulations! You have successfully surpassed the passing grade")} ({attemptResult.passingScore}%).
                       </p>
                     </div>
                     <button
                       onClick={handleContinueVideo}
                       className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-200"
                     >
-                      Lanjut ke Materi Selanjutnya
+                      {t("Lanjut ke Materi Selanjutnya", "Continue to Next Material")}
                     </button>
                   </>
                 )}
@@ -376,19 +378,19 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                     </div>
                     <div>
                       <span className="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-amber-950/40 dark:text-amber-300">
-                        Belum Lulus
+                        {t("Belum Lulus", "Not Passed")}
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Skor: {attemptResult.skor}</h4>
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{t("Skor:", "Score:")} {attemptResult.skor}</h4>
                       <p className="text-xs text-slate-600 mt-2 dark:text-slate-300">
-                        Skor minimal lulus adalah {attemptResult.passingScore}%. Sisa kesempatan kamu:{" "}
-                        <span className="font-bold text-amber-600 dark:text-amber-400">{attemptResult.sisaPercobaan} kali</span>.
+                        {t("Skor minimal lulus adalah", "The minimum passing score is")} {attemptResult.passingScore}%. {t("Sisa kesempatan kamu:", "Remaining attempts:")}{" "}
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{attemptResult.sisaPercobaan} {t("kali", "times")}</span>.
                       </p>
                     </div>
                     <button
                       onClick={handleRetryQuiz}
                       className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-amber-200"
                     >
-                      Coba Lagi
+                      {t("Coba Lagi", "Try Again")}
                     </button>
                   </>
                 )}
@@ -401,18 +403,18 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                     </div>
                     <div>
                       <span className="inline-block bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-rose-950/40 dark:text-rose-300">
-                        Kesempatan Habis
+                        {t("Kesempatan Habis", "No Attempts Left")}
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Skor: {attemptResult.skor}</h4>
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{t("Skor:", "Score:")} {attemptResult.skor}</h4>
                       <p className="text-xs text-slate-600 mt-2 leading-relaxed dark:text-slate-300">
-                        Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal.
+                        {t("Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal.", "You have failed 3 times. The quiz has been reset and you must re-study the material from the beginning.")}
                       </p>
                     </div>
                     <button
                       onClick={handleWatchFromBeginning}
                       className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-200"
                     >
-                      Tonton Ulang Materi
+                      {t("Tonton Ulang Materi", "Rewatch Material")}
                     </button>
                   </>
                 )}

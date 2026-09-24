@@ -26,6 +26,7 @@ import {
   type ModuleStageProgress,
 } from "@/lib/moduleStages";
 import { isCourseCompletedByBackend } from "@/lib/certificate";
+import { useApp } from "@/app/context/AppContext";
 
 interface CourseWithModules extends Course {
   modules?: CourseModule[];
@@ -55,21 +56,21 @@ function getModuleTitle(module: CourseModule) {
   return module.judul || module.id;
 }
 
-function getCommentUserLabel(user?: CommentUser) {
-  if (!user) return "Pengguna";
-  return user.gelar ? `${user.nama ?? "Pengguna"}, ${user.gelar}` : user.nama ?? "Pengguna";
+function getCommentUserLabel(user?: CommentUser, tr: (id: string, en: string) => string = (id) => id) {
+  if (!user) return tr("Pengguna", "User");
+  return user.gelar ? `${user.nama ?? tr("Pengguna", "User")}, ${user.gelar}` : user.nama ?? tr("Pengguna", "User");
 }
 
 function getCommentUserPhoto(user?: CommentUser) {
   return user?.fotoProfil || user?.foto || user?.avatar || "";
 }
 
-function roleLabel(role?: string): string {
+function roleLabel(role?: string, tr: (id: string, en: string) => string = (id) => id): string {
   const r = String(role || "").toLowerCase();
   if (r === "admin") return "Admin";
-  if (r === "pengajar") return "Pengajar";
-  if (r === "guru") return "Guru";
-  return role || "Pengguna";
+  if (r === "pengajar") return tr("Pengajar", "Instructor");
+  if (r === "guru") return tr("Guru", "Teacher");
+  return role || tr("Pengguna", "User");
 }
 
 function roleBadgeClass(role?: string): string {
@@ -97,6 +98,7 @@ export default function GuruCourseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useApp();
   const id = params.id as string;
   // commentId dari notifikasi diskusi (linkUrl BE: /courses/:courseId?commentId=:commentId).
   const focusedCommentId = searchParams.get("commentId") || "";
@@ -187,11 +189,11 @@ export default function GuruCourseDetailPage() {
       const data = await getCourseComments(courseId);
       setDiscussion(Array.isArray(data) ? (data as DiscussionComment[]) : []);
     } catch (err) {
-      setDiscussionError(err instanceof Error ? err.message : "Gagal memuat diskusi course.");
+      setDiscussionError(err instanceof Error ? err.message : t("Gagal memuat diskusi course.", "Failed to load course discussion."));
     } finally {
       setDiscussionLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     async function loadCourse() {
@@ -213,14 +215,14 @@ export default function GuruCourseDetailPage() {
         await loadStageProgress(modulesList);
         await loadCertificate(id);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat detail course.");
+        setError(err instanceof Error ? err.message : t("Gagal memuat detail course.", "Failed to load course detail."));
       } finally {
         setLoading(false);
       }
     }
 
     if (id) loadCourse();
-  }, [id, loadStageProgress, loadCertificate]);
+  }, [id, loadStageProgress, loadCertificate, t]);
 
   // Discussion dimuat terpisah dari data course agar kegagalan endpoint diskusi
   // (mis. belum tersedia di BE) tidak memblokir Course Detail.
@@ -295,12 +297,12 @@ export default function GuruCourseDetailPage() {
     } catch (err) {
       setModuleOverviewError((prev) => ({
         ...prev,
-        [moduleId]: err instanceof Error ? err.message : "Gagal memuat isi modul.",
+        [moduleId]: err instanceof Error ? err.message : t("Gagal memuat isi modul.", "Failed to load module contents."),
       }));
     } finally {
       setModuleOverviewLoading((prev) => ({ ...prev, [moduleId]: false }));
     }
-  }, []);
+  }, [t]);
 
   function toggleModule(moduleId: string) {
     const willOpen = !openModuleIds[moduleId];
@@ -349,13 +351,13 @@ export default function GuruCourseDetailPage() {
       if (current?.fileUrl) {
         openCertificateFile(current.fileUrl);
       } else if (current) {
-        setCertificateMessage("Sertifikat sedang diproses oleh server. Silakan coba lagi nanti.");
+        setCertificateMessage(t("Sertifikat sedang diproses oleh server. Silakan coba lagi nanti.", "The certificate is being processed by the server. Please try again later."));
       } else {
-        setCertificateMessage("Sertifikat belum tersedia. Pastikan seluruh modul telah selesai.");
+        setCertificateMessage(t("Sertifikat belum tersedia. Pastikan seluruh modul telah selesai.", "The certificate is not available yet. Make sure all modules are completed."));
       }
     } catch (err) {
       setCertificateMessage(
-        err instanceof Error ? err.message : "Gagal memproses sertifikat."
+        err instanceof Error ? err.message : t("Gagal memproses sertifikat.", "Failed to process the certificate.")
       );
     } finally {
       setCertificateBusy(false);
@@ -380,7 +382,7 @@ export default function GuruCourseDetailPage() {
       setNewCommentMentions([]);
       await loadDiscussion(id);
     } catch (err) {
-      setCommentPostError(err instanceof Error ? err.message : "Gagal mengirim komentar.");
+      setCommentPostError(err instanceof Error ? err.message : t("Gagal mengirim komentar.", "Failed to send comment."));
     } finally {
       setPostingComment(false);
     }
@@ -406,7 +408,7 @@ export default function GuruCourseDetailPage() {
       setReplyToId(null);
       await loadDiscussion(id);
     } catch (err) {
-      setReplyPostError(err instanceof Error ? err.message : "Gagal mengirim balasan.");
+      setReplyPostError(err instanceof Error ? err.message : t("Gagal mengirim balasan.", "Failed to send reply."));
     } finally {
       setPostingReply(false);
     }
@@ -448,7 +450,7 @@ export default function GuruCourseDetailPage() {
       <div className="min-h-screen bg-slate-50/80 flex items-center justify-center p-6 dark:bg-slate-900/80">
         <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
           <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-medium">Memuat detail course...</p>
+          <p className="text-xs font-medium">{t("Memuat detail course...", "Loading course detail...")}</p>
         </div>
       </div>
     );
@@ -458,14 +460,14 @@ export default function GuruCourseDetailPage() {
     return (
       <div className="mx-auto mt-16 max-w-md p-4">
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
-          {error || "Course tidak ditemukan."}
+          {error || t("Course tidak ditemukan.", "Course not found.")}
         </div>
         <button
           type="button"
           onClick={() => router.push("/modules")}
           className="mt-4 text-sm text-emerald-700 hover:underline dark:text-emerald-400"
         >
-          ← Kembali ke daftar course
+          ← {t("Kembali ke daftar course", "Back to course list")}
         </button>
       </div>
     );
@@ -502,7 +504,7 @@ export default function GuruCourseDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </span>
-          Kembali ke daftar course
+          {t("Kembali ke daftar course", "Back to course list")}
         </button>
 
         {/* Banner Course */}
@@ -516,11 +518,11 @@ export default function GuruCourseDetailPage() {
                 title={
                   certificateEnabled
                     ? hasCertificateRecord
-                      ? "Lihat / unduh sertifikat"
-                      : "Ambil sertifikat"
-                    : "Sertifikat tersedia setelah seluruh modul selesai"
+                      ? t("Lihat / unduh sertifikat", "View / download certificate")
+                      : t("Ambil sertifikat", "Claim certificate")
+                    : t("Sertifikat tersedia setelah seluruh modul selesai", "Certificate is available after all modules are completed")
                 }
-                aria-label="Sertifikat"
+                aria-label={t("Sertifikat", "Certificate")}
                 className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition ${
                   certificateEnabled && !certificateBusy
                     ? "bg-white text-[#0047A5] hover:bg-white/90"
@@ -531,10 +533,10 @@ export default function GuruCourseDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.043-.133-2.052-.382-3.016z" />
                 </svg>
                 {certificateBusy
-                  ? "Memproses..."
+                  ? t("Memproses...", "Processing...")
                   : hasCertificateRecord
-                    ? "Sertifikat"
-                    : "Ambil Sertifikat"}
+                    ? t("Sertifikat", "Certificate")
+                    : t("Ambil Sertifikat", "Claim Certificate")}
               </button>
               {certificateMessage && (
                 <p className="mt-2 max-w-[16rem] text-right text-[11px] font-medium text-white/90">
@@ -547,41 +549,41 @@ export default function GuruCourseDetailPage() {
           <div className="relative z-10 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md border border-white/20">
-                {isOffline ? "Tatap Muka" : "Online"}
+                {isOffline ? t("Tatap Muka", "In Person") : t("Online", "Online")}
               </span>
               {course.hasCertificate && (
                 <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-300/90 text-amber-900 border border-amber-200/60">
-                  Bersertifikat
+                  {t("Bersertifikat", "With Certificate")}
                 </span>
               )}
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              {course.judul || "Tanpa judul"}
+              {course.judul || t("Tanpa judul", "Untitled")}
             </h1>
           </div>
 
           {/* Ringkasan Course */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-white/15 text-xs">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Mode</p>
+              <p className="text-white/70 font-medium">{t("Mode", "Mode")}</p>
               <p className="text-lg font-extrabold mt-0.5 capitalize">{course.mode || "—"}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Sertifikat</p>
+              <p className="text-white/70 font-medium">{t("Sertifikat", "Certificate")}</p>
               <p className="text-lg font-extrabold mt-0.5">
-                {course.hasCertificate ? "Tersedia" : "Tidak tersedia"}
+                {course.hasCertificate ? t("Tersedia", "Available") : t("Tidak tersedia", "Not available")}
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Periode</p>
+              <p className="text-white/70 font-medium">{t("Periode", "Period")}</p>
               <p className="text-sm font-extrabold mt-0.5">
                 {formatDate(course.tanggalMulai)} — {formatDate(course.tanggalSelesai)}
               </p>
             </div>
             {isOffline && (
               <div className="col-span-2 sm:col-span-3 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                <p className="text-white/70 font-medium">Lokasi</p>
+                <p className="text-white/70 font-medium">{t("Lokasi", "Location")}</p>
                 <p className="text-lg font-extrabold mt-0.5">{course.lokasi || "—"}</p>
               </div>
             )}
@@ -590,24 +592,24 @@ export default function GuruCourseDetailPage() {
 
         {/* Tentang Course */}
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-3 dark:bg-slate-900 dark:border-slate-800">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Tentang Course</h2>
+          <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">{t("Tentang Course", "About Course")}</h2>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-            {course.deskripsi || "Tidak ada deskripsi."}
+            {course.deskripsi || t("Tidak ada deskripsi.", "No description.")}
           </p>
         </section>
 
         {/* Daftar Module — accordion overview */}
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4 dark:bg-slate-900 dark:border-slate-800">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Modul dalam Course</h2>
+            <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">{t("Modul dalam Course", "Modules in Course")}</h2>
             <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full dark:bg-slate-800 dark:text-slate-400">
-              {modules.length} modul
+              {modules.length} {t("modul", "modules")}
             </span>
           </div>
 
           {modules.length === 0 ? (
             <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 text-center dark:text-slate-400 dark:border-slate-700">
-              Belum ada modul pada course ini.
+              {t("Belum ada modul pada course ini.", "No modules in this course yet.")}
             </p>
           ) : (
             <ul className="space-y-3">
@@ -648,12 +650,12 @@ export default function GuruCourseDetailPage() {
                           )}
                           {module.isLocked && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                              Terkunci
+                              {t("Terkunci", "Locked")}
                             </span>
                           )}
                           {isModuleCompleted ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                              Selesai
+                              {t("Selesai", "Completed")}
                             </span>
                           ) : typeof module.progressPercentage === "number" ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
@@ -684,14 +686,14 @@ export default function GuruCourseDetailPage() {
                       <div id={panelId} role="region" aria-labelledby={buttonId} className="border-t border-slate-100 p-4 space-y-5 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/50">
                         {/* Informasi Module */}
                         <div className="space-y-2">
-                          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Deskripsi Module</h4>
+                          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("Deskripsi Module", "Module Description")}</h4>
                           <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line dark:text-slate-300">
-                            {module.deskripsi || "Belum ada deskripsi untuk module ini."}
+                            {module.deskripsi || t("Belum ada deskripsi untuk module ini.", "No description for this module yet.")}
                           </p>
                         </div>
 
                         {isLoadingOverview ? (
-                          <p className="text-xs text-slate-500 dark:text-slate-400">Memuat aktivitas modul...</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{t("Memuat aktivitas modul...", "Loading module activities...")}</p>
                         ) : overviewError ? (
                           <p className="text-xs text-red-600 dark:text-red-400">{overviewError}</p>
                         ) : (
@@ -709,16 +711,16 @@ export default function GuruCourseDetailPage() {
                                   </span>
                                   {preTestCompleted && (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                                      Selesai
+                                      {t("Selesai", "Completed")}
                                     </span>
                                   )}
                                 </div>
                                 <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
                                   {overview?.preTestId
                                     ? preTestCompleted
-                                      ? "Pre-Test telah Anda selesaikan."
-                                      : "Kerjakan Pre-Test sebelum mempelajari materi modul."
-                                    : "Pre-Test belum tersedia untuk module ini."}
+                                      ? t("Pre-Test telah Anda selesaikan.", "You have completed the Pre-Test.")
+                                      : t("Kerjakan Pre-Test sebelum mempelajari materi modul.", "Take the Pre-Test before studying the module material.")
+                                    : t("Pre-Test belum tersedia untuk module ini.", "Pre-Test is not available for this module yet.")}
                                 </p>
                               </div>
                               {overview?.preTestId ? (
@@ -730,11 +732,11 @@ export default function GuruCourseDetailPage() {
                                       : "bg-sky-700 hover:bg-sky-800"
                                   }`}
                                 >
-                                  {preTestCompleted ? "Lanjutkan Pre-Test" : "Mulai Pre-Test"}
+                                  {preTestCompleted ? t("Lanjutkan Pre-Test", "Continue Pre-Test") : t("Mulai Pre-Test", "Start Pre-Test")}
                                 </Link>
                               ) : (
                                 <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
-                                  Belum tersedia
+                                  {t("Belum tersedia", "Not available yet")}
                                 </span>
                               )}
                             </div>
@@ -755,38 +757,38 @@ export default function GuruCourseDetailPage() {
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                       </svg>
-                                      Terkunci
+                                      {t("Terkunci", "Locked")}
                                     </span>
                                   ) : materialCompleted ? (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                                      Selesai
+                                      {t("Selesai", "Completed")}
                                     </span>
                                   ) : null}
                                 </div>
                                 <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
                                   {materialLocked
-                                    ? "Selesaikan Pre-Test terlebih dahulu untuk membuka materi."
+                                    ? t("Selesaikan Pre-Test terlebih dahulu untuk membuka materi.", "Complete the Pre-Test first to unlock the material.")
                                     : overview?.hasMaterials
                                       ? materialCompleted
-                                        ? "Materi pembelajaran telah Anda selesaikan."
-                                        : "Pelajari materi pembelajaran modul ini."
-                                      : "Learning material belum tersedia untuk module ini."}
+                                        ? t("Materi pembelajaran telah Anda selesaikan.", "You have completed the learning material.")
+                                        : t("Pelajari materi pembelajaran modul ini.", "Study the learning material for this module.")
+                                      : t("Learning material belum tersedia untuk module ini.", "Learning material is not available for this module yet.")}
                                 </p>
                               </div>
                               {materialLocked ? (
                                 <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
-                                  Terkunci
+                                  {t("Terkunci", "Locked")}
                                 </span>
                               ) : overview?.hasMaterials ? (
                                 <Link
                                   href={`/modules/${module.id}?courseId=${id}`}
                                   className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-700 text-white text-xs font-semibold rounded-full hover:bg-emerald-800 transition"
                                 >
-                                  {materialCompleted ? "Lanjutkan Belajar" : "Mulai Belajar"}
+                                  {materialCompleted ? t("Lanjutkan Belajar", "Continue Learning") : t("Mulai Belajar", "Start Learning")}
                                 </Link>
                               ) : (
                                 <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
-                                  Belum tersedia
+                                  {t("Belum tersedia", "Not available yet")}
                                 </span>
                               )}
                             </div>
@@ -807,38 +809,38 @@ export default function GuruCourseDetailPage() {
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                       </svg>
-                                      Terkunci
+                                      {t("Terkunci", "Locked")}
                                     </span>
                                   ) : postTestCompleted ? (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                                      Selesai
+                                      {t("Selesai", "Completed")}
                                     </span>
                                   ) : null}
                                 </div>
                                 <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
                                   {postTestLocked
-                                    ? "Selesaikan seluruh materi pembelajaran untuk membuka Post-Test."
+                                    ? t("Selesaikan seluruh materi pembelajaran untuk membuka Post-Test.", "Complete all learning materials to unlock the Post-Test.")
                                     : overview?.postTestId
                                       ? postTestCompleted
-                                        ? "Post-Test telah Anda selesaikan."
-                                        : "Kerjakan Post-Test setelah menyelesaikan materi modul."
-                                      : "Post-Test belum tersedia untuk module ini."}
+                                        ? t("Post-Test telah Anda selesaikan.", "You have completed the Post-Test.")
+                                        : t("Kerjakan Post-Test setelah menyelesaikan materi modul.", "Take the Post-Test after completing the module material.")
+                                      : t("Post-Test belum tersedia untuk module ini.", "Post-Test is not available for this module yet.")}
                                 </p>
                               </div>
                               {postTestLocked ? (
                                 <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
-                                  Terkunci
+                                  {t("Terkunci", "Locked")}
                                 </span>
                               ) : overview?.postTestId ? (
                                 <Link
                                   href={`/modules/${module.id}/evaluations/${overview.postTestId}?courseId=${id}`}
                                   className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-700 text-white text-xs font-semibold rounded-full hover:bg-purple-800 transition"
                                 >
-                                  {postTestCompleted ? "Lanjutkan Post-Test" : "Mulai Post-Test"}
+                                  {postTestCompleted ? t("Lanjutkan Post-Test", "Continue Post-Test") : t("Mulai Post-Test", "Start Post-Test")}
                                 </Link>
                               ) : (
                                 <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
-                                  Belum tersedia
+                                  {t("Belum tersedia", "Not available yet")}
                                 </span>
                               )}
                             </div>
@@ -860,17 +862,17 @@ export default function GuruCourseDetailPage() {
               <svg className="w-5 h-5 text-emerald-700 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z" />
               </svg>
-              <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Diskusi Course</h2>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">{t("Diskusi Course", "Course Discussion")}</h2>
             </div>
             <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full dark:bg-slate-800 dark:text-slate-400">
-              {discussion.length} diskusi
+              {discussion.length} {t("diskusi", "discussions")}
             </span>
           </div>
 
           {/* Form komentar utama */}
           <form onSubmit={handlePostComment} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3 dark:border-slate-700 dark:bg-slate-800/60">
             <label htmlFor="new-course-comment" className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-              Tulis Komentar
+              {t("Tulis Komentar", "Write Comment")}
             </label>
             {commentPostError && (
               <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">{commentPostError}</p>
@@ -881,7 +883,7 @@ export default function GuruCourseDetailPage() {
               onChange={setNewComment}
               onMentionsChange={setNewCommentMentions}
               rows={3}
-              placeholder="Bagikan pertanyaan atau tanggapan untuk course ini... Ketik @ untuk menyebut pengguna"
+              placeholder={t("Bagikan pertanyaan atau tanggapan untuk course ini... Ketik @ untuk menyebut pengguna", "Share a question or response for this course... Type @ to mention a user")}
               className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             />
             <div className="flex justify-end">
@@ -890,7 +892,7 @@ export default function GuruCourseDetailPage() {
                 disabled={postingComment || !newComment.trim()}
                 className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:opacity-60"
               >
-                {postingComment ? "Mengirim..." : "Kirim Komentar"}
+                {postingComment ? t("Mengirim...", "Sending...") : t("Kirim Komentar", "Send Comment")}
               </button>
             </div>
           </form>
@@ -898,7 +900,7 @@ export default function GuruCourseDetailPage() {
           {/* Daftar diskusi (nested) */}
           {discussionLoading ? (
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-center text-sm text-slate-500 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400">
-              Memuat diskusi...
+              {t("Memuat diskusi...", "Loading discussion...")}
             </div>
           ) : discussionError ? (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
@@ -906,14 +908,14 @@ export default function GuruCourseDetailPage() {
             </div>
           ) : discussion.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              Belum ada diskusi pada course ini.
+              {t("Belum ada diskusi pada course ini.", "No discussion on this course yet.")}
             </div>
           ) : (
             <ul className="space-y-3">
               {discussion.map((comment) => {
                 const user = comment.user || comment.author || comment.pengirim;
                 const photo = getCommentUserPhoto(user);
-                const name = getCommentUserLabel(user);
+                const name = getCommentUserLabel(user, t);
                 const text = comment.komentar || comment.isi || comment.pesan || "";
                 const replies = Array.isArray(comment.replies) ? comment.replies : [];
 
@@ -945,7 +947,7 @@ export default function GuruCourseDetailPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{name}</span>
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(user?.role)}`}>
-                            {roleLabel(user?.role)}
+                            {roleLabel(user?.role, t)}
                           </span>
                           {comment.createdAt && (
                             <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatCommentDateTime(comment.createdAt)}</span>
@@ -959,7 +961,7 @@ export default function GuruCourseDetailPage() {
                             onClick={() => (replyToId === comment.id ? cancelReply() : startReply(comment.id))}
                             className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
                           >
-                            {replyToId === comment.id ? "Batal" : "Balas"}
+                            {replyToId === comment.id ? t("Batal", "Cancel") : t("Balas", "Reply")}
                           </button>
                         </div>
 
@@ -977,7 +979,7 @@ export default function GuruCourseDetailPage() {
                               onChange={setReplyText}
                               onMentionsChange={setReplyMentions}
                               rows={2}
-                              placeholder="Tulis balasan... Ketik @ untuk menyebut pengguna"
+                              placeholder={t("Tulis balasan... Ketik @ untuk menyebut pengguna", "Write a reply... Type @ to mention a user")}
                               className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                             />
                             <div className="flex justify-end">
@@ -986,7 +988,7 @@ export default function GuruCourseDetailPage() {
                                 disabled={postingReply || !replyText.trim()}
                                 className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:opacity-60"
                               >
-                                {postingReply ? "Mengirim..." : "Kirim Balasan"}
+                                {postingReply ? t("Mengirim...", "Sending...") : t("Kirim Balasan", "Send Reply")}
                               </button>
                             </div>
                           </form>
@@ -998,7 +1000,7 @@ export default function GuruCourseDetailPage() {
                             {replies.map((reply) => {
                               const replyUser = reply.user || reply.author || reply.pengirim;
                               const replyPhoto = getCommentUserPhoto(replyUser);
-                              const replyName = getCommentUserLabel(replyUser);
+                              const replyName = getCommentUserLabel(replyUser, t);
                               const replyContent = reply.komentar || reply.isi || reply.pesan || "";
 
                               return (
@@ -1029,7 +1031,7 @@ export default function GuruCourseDetailPage() {
                                       <div className="flex flex-wrap items-center gap-2">
                                         <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{replyName}</span>
                                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(replyUser?.role)}`}>
-                                          {roleLabel(replyUser?.role)}
+                                          {roleLabel(replyUser?.role, t)}
                                         </span>
                                         {reply.createdAt && (
                                           <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatCommentDateTime(reply.createdAt)}</span>
