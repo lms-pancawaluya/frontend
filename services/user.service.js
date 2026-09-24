@@ -182,3 +182,24 @@ export async function getMonitoringUserEvaluations(userId) {
   const result = await readResult(response, "Gagal mengambil hasil evaluasi pengguna");
   return result.data;
 }
+
+export async function getNotificationPreference() {
+  const response = await fetchApi(`${API_URL}/api/users/profile/me/notification-preference`, {
+    method: "GET",
+    headers: getJsonHeaders(),
+  });
+
+  const result = await readResult(response, "Gagal mengambil preferensi notifikasi");
+  return result.data;
+}
+
+export async function updateNotificationPreference(notificationsEnabled) {
+  const response = await fetchApi(`${API_URL}/api/users/profile/me/notification-preference`, {
+    method: "PATCH",
+    headers: getJsonHeaders(),
+    body: JSON.stringify({ notificationsEnabled }),
+  });
+
+  const result = await readResult(response, "Gagal memperbarui preferensi notifikasi");
+  return result.data;
+}

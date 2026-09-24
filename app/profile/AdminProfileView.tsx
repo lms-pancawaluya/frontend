@@ -3,6 +3,7 @@
 import { useState, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 interface AdminProfileProps {
   profile: {
@@ -18,6 +19,7 @@ interface AdminProfileProps {
 type AdminTab = "akun" | "keamanan";
 
 export default function AdminProfileView({ profile, onRefresh }: AdminProfileProps) {
+  const { t } = useApp();
   const getToken = () => localStorage.getItem("token") || "";
 
   const [activeTab, setActiveTab] = useState<AdminTab>("akun");
@@ -56,13 +58,13 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
 
       const json = await res.json();
       if (json.sukses) {
-        setMessage({ type: "success", text: json.pesan || "Profil admin berhasil diupdate" });
+        setMessage({ type: "success", text: json.pesan || t("Profil admin berhasil diupdate", "Admin profile updated successfully") });
         onRefresh();
       } else {
-        setMessage({ type: "error", text: json.pesan || "Gagal mengupdate profil" });
+        setMessage({ type: "error", text: json.pesan || t("Gagal mengupdate profil", "Failed to update profile") });
       }
     } catch {
-      setMessage({ type: "error", text: "Terjadi kesalahan koneksi" });
+      setMessage({ type: "error", text: t("Terjadi kesalahan koneksi", "A connection error occurred") });
     } finally {
       setSavingProfile(false);
     }
@@ -86,13 +88,13 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
 
       const json = await res.json();
       if (json.sukses) {
-        setMessage({ type: "success", text: json.pesan || "Password berhasil diubah" });
+        setMessage({ type: "success", text: json.pesan || t("Password berhasil diubah", "Password changed successfully") });
         setPasswordData({ passwordLama: "", passwordBaru: "" });
       } else {
-        setMessage({ type: "error", text: json.pesan || "Gagal mengubah password" });
+        setMessage({ type: "error", text: json.pesan || t("Gagal mengubah password", "Failed to change password") });
       }
     } catch {
-      setMessage({ type: "error", text: "Terjadi kesalahan" });
+      setMessage({ type: "error", text: t("Terjadi kesalahan", "An error occurred") });
     } finally {
       setSavingPassword(false);
     }
@@ -104,7 +106,7 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: "Ukuran file maksimal 5MB" });
+      setMessage({ type: "error", text: t("Ukuran file maksimal 5MB", "Maximum file size is 5MB") });
       return;
     }
 
@@ -123,13 +125,13 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
 
       const json = await res.json();
       if (json.sukses) {
-        setMessage({ type: "success", text: "Foto profil admin berhasil diunggah" });
+        setMessage({ type: "success", text: t("Foto profil admin berhasil diunggah", "Admin profile photo uploaded successfully") });
         onRefresh();
       } else {
-        setMessage({ type: "error", text: json.pesan || "Gagal unggah foto" });
+        setMessage({ type: "error", text: json.pesan || t("Gagal unggah foto", "Failed to upload photo") });
       }
     } catch {
-      setMessage({ type: "error", text: "Gagal mengunggah foto" });
+      setMessage({ type: "error", text: t("Gagal mengunggah foto", "Failed to upload photo") });
     } finally {
       setUploadingFoto(false);
     }
@@ -157,7 +159,7 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
               <div className="relative shrink-0">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-white/20 shadow-lg bg-white/10 backdrop-blur-md flex items-center justify-center">
                   {profile.fotoProfil ? (
-                    <Image src={profile.fotoProfil} alt="Foto Profil" fill className="object-cover" />
+                    <Image src={profile.fotoProfil} alt={t("Foto Profil", "Profile Photo")} fill className="object-cover" />
                   ) : (
                     <span className="text-3xl font-extrabold text-[#419AD6]">
                       {profile.nama?.charAt(0) || "A"}
@@ -165,7 +167,7 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
                   )}
                   {uploadingFoto && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-[10px] text-white font-medium">
-                      Mengunggah...
+                      {t("Mengunggah...", "Uploading...")}
                     </div>
                   )}
                 </div>
@@ -185,9 +187,9 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
                   <svg className="w-4 h-4 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  {profile.email || "Email belum diatur"}
+                  {profile.email || t("Email belum diatur", "Email not set")}
                 </p>
-                <p className="text-[11px] text-slate-200/70">Kelola informasi akun administrator sistem</p>
+                <p className="text-[11px] text-slate-200/70">{t("Kelola informasi akun administrator sistem", "Manage system administrator account information")}</p>
               </div>
             </div>
           </div>
@@ -195,14 +197,14 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
           {/* 2 WIDGET KARTU DI DALAM BANNER */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
             <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4">
-              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">Peran Akun</p>
+              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">{t("Peran Akun", "Account Role")}</p>
               <p className="text-lg font-bold text-white mt-1 capitalize">{profile.role || "Administrator"}</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 min-w-0">
-              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">Email Terdaftar</p>
+              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">{t("Email Terdaftar", "Registered Email")}</p>
               <p className="text-sm sm:text-base font-bold text-white mt-1 truncate" title={profile.email || ""}>
-                {profile.email || "Belum diatur"}
+                {profile.email || t("Belum diatur", "Not set")}
               </p>
             </div>
           </div>
@@ -214,16 +216,16 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
         <div
           className={`p-4 rounded-2xl text-sm font-medium border flex items-center gap-3 transition-all ${
             message.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-              : "bg-rose-50 text-rose-800 border-rose-200"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
           }`}
         >
           {message.type === "success" ? (
-            <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-emerald-600 shrink-0 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
-            <svg className="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-rose-600 shrink-0 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           )}
@@ -232,59 +234,59 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
       )}
 
       {/* TAB NAVIGATION PILL STYLE */}
-      <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex gap-1 text-xs font-semibold">
+      <div className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex gap-1 text-xs font-semibold dark:bg-slate-800/80">
         <button
           onClick={() => setActiveTab("akun")}
           className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
             activeTab === "akun"
-              ? "bg-white text-slate-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-slate-900 shadow-xs font-bold dark:bg-slate-700 dark:text-slate-100"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           }`}
         >
-          Data Akun
+          {t("Data Akun", "Account Data")}
         </button>
 
         <button
           onClick={() => setActiveTab("keamanan")}
           className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
             activeTab === "keamanan"
-              ? "bg-white text-slate-900 shadow-xs font-bold"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-slate-900 shadow-xs font-bold dark:bg-slate-700 dark:text-slate-100"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           }`}
         >
-          Keamanan Akun
+          {t("Keamanan Akun", "Account Security")}
         </button>
       </div>
 
       {/* TAB 1: DATA AKUN */}
       {activeTab === "akun" && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Informasi Akun Administrator</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Kelola data akun administrator sistem LMS.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("Informasi Akun Administrator", "Administrator Account Information")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">{t("Kelola data akun administrator sistem LMS.", "Manage LMS system administrator account data.")}</p>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-5">
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Administrator</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Nama Administrator", "Administrator Name")}</label>
                 <input
                   type="text"
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   required
-                  placeholder="Masukkan Nama Administrator"
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                  placeholder={t("Masukkan Nama Administrator", "Enter Administrator Name")}
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Email", "Email")}</label>
                 <input
                   type="email"
                   value={profile.email}
                   disabled
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
               </div>
             </div>
@@ -293,9 +295,9 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60"
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
               >
-                {savingProfile ? "Menyimpan..." : "Simpan Perubahan"}
+                {savingProfile ? t("Menyimpan...", "Saving...") : t("Simpan Perubahan", "Save Changes")}
               </button>
             </div>
           </form>
@@ -304,34 +306,34 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
 
       {/* TAB 2: KEAMANAN AKUN */}
       {activeTab === "keamanan" && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Keamanan & Kata Sandi</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("Keamanan & Kata Sandi", "Security & Password")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">{t("Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.", "Keep your LMS account password confidential regularly.")}</p>
           </div>
 
           <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-xl">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Password Saat Ini</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Password Saat Ini", "Current Password")}</label>
               <input
                 type="password"
                 value={passwordData.passwordLama}
                 onChange={(e) => setPasswordData({ ...passwordData, passwordLama: e.target.value })}
                 required
                 placeholder="••••••••"
-                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Password Baru</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Password Baru", "New Password")}</label>
               <input
                 type="password"
                 value={passwordData.passwordBaru}
                 onChange={(e) => setPasswordData({ ...passwordData, passwordBaru: e.target.value })}
                 required
                 placeholder="••••••••"
-                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all"
+                className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
@@ -339,9 +341,9 @@ export default function AdminProfileView({ profile, onRefresh }: AdminProfilePro
               <button
                 type="submit"
                 disabled={savingPassword}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60"
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
               >
-                {savingPassword ? "Memperbarui..." : "Update Password Akun"}
+                {savingPassword ? t("Memperbarui...", "Updating...") : t("Update Password Akun", "Update Account Password")}
               </button>
             </div>
           </form>

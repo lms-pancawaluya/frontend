@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { completeModule } from "@/services/progress.service";
+import { useApp } from "@/app/context/AppContext";
 
 interface ScoreResult {
   skor: number;
@@ -12,6 +13,7 @@ interface ScoreResult {
 export default function ModuleEvaluationPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useApp();
   const moduleId = params.id as string;
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -67,24 +69,24 @@ export default function ModuleEvaluationPage() {
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <button
         onClick={() => router.push(`/modules/${moduleId}/text`)}
-        className="text-xs font-semibold text-slate-500 hover:underline"
+        className="text-xs font-semibold text-slate-500 hover:underline dark:text-slate-400"
       >
-        ← Kembali ke Materi Teks
+        ← {t("Kembali ke Materi Teks", "Back to Text Material")}
       </button>
 
       {!submitted ? (
         <form onSubmit={handleSubmitEvaluation} className="space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <h1 className="text-xl font-bold text-slate-900">Evaluasi Pemahaman Modul</h1>
-            <p className="text-xs text-slate-500">Jawab pertanyaan berikut untuk mengukur tingkat pemahaman Anda.</p>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 dark:bg-slate-900 dark:border-slate-800">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t("Evaluasi Pemahaman Modul", "Module Comprehension Evaluation")}</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t("Jawab pertanyaan berikut untuk mengukur tingkat pemahaman Anda.", "Answer the following questions to measure your comprehension level.")}</p>
 
             <div className="space-y-4 pt-2">
               {sampleQuestions.map((q, idx) => (
-                <div key={q.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-                  <p className="text-xs font-bold text-slate-800">{idx + 1}. {q.pertanyaan}</p>
+                <div key={q.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 dark:bg-slate-800 dark:border-slate-700">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{idx + 1}. {q.pertanyaan}</p>
                   <div className="space-y-2">
                     {q.options.map((opt) => (
-                      <label key={opt.id} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                      <label key={opt.id} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer dark:text-slate-300">
                         <input
                           type="radio"
                           name={`q-${q.id}`}
@@ -102,54 +104,54 @@ export default function ModuleEvaluationPage() {
 
           <button
             type="submit"
-            className="w-full py-4 bg-slate-900 text-white font-bold text-xs rounded-2xl shadow-lg hover:bg-slate-800 transition"
+            className="w-full py-4 bg-slate-900 text-white font-bold text-xs rounded-2xl shadow-lg hover:bg-slate-800 transition dark:bg-slate-700 dark:hover:bg-slate-600"
           >
-            Kirim Evaluasi & Lihat Hasil
+            {t("Kirim Evaluasi & Lihat Hasil", "Submit Evaluation & View Result")}
           </button>
         </form>
       ) : (
         /* SCORE SCREEN HALAMAN EVALUASI */
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl text-center space-y-6">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl text-center space-y-6 dark:bg-slate-900 dark:border-slate-800">
           {scoreResult?.isLolos ? (
             <>
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black dark:bg-emerald-950/40 dark:text-emerald-400">
                 ✓
               </div>
               <div className="space-y-2">
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full uppercase tracking-wider">
-                  Selesai & Lolos
+                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full uppercase tracking-wider dark:bg-emerald-950/40 dark:text-emerald-300">
+                  {t("Selesai & Lolos", "Completed & Passed")}
                 </span>
-                <h2 className="text-3xl font-black text-slate-900">Skor Evaluasi: {scoreResult?.skor}</h2>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Selamat! Anda telah menyelesaikan seluruh tahapan pembelajaran dalam modul ini dengan sukses.
+                <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100">{t("Skor Evaluasi:", "Evaluation Score:")} {scoreResult?.skor}</h2>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto dark:text-slate-400">
+                  {t("Selamat! Anda telah menyelesaikan seluruh tahapan pembelajaran dalam modul ini dengan sukses.", "Congratulations! You have successfully completed all learning stages in this module.")}
                 </p>
               </div>
               <button
                 onClick={() => router.push("/modules")}
                 className="w-full py-3.5 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md hover:bg-emerald-700 transition"
               >
-                Kembali ke Katalog Modul
+                {t("Kembali ke Katalog Modul", "Back to Module Catalog")}
               </button>
             </>
           ) : (
             <>
-              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black dark:bg-rose-950/40 dark:text-rose-400">
                 ✕
               </div>
               <div className="space-y-2">
-                <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-3 py-1 rounded-full uppercase tracking-wider">
-                  Belum Lolos
+                <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-3 py-1 rounded-full uppercase tracking-wider dark:bg-rose-950/40 dark:text-rose-300">
+                  {t("Belum Lolos", "Not Passed")}
                 </span>
-                <h2 className="text-3xl font-black text-slate-900">Skor Evaluasi: {scoreResult?.skor}</h2>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Skor minimal lulus adalah 80%. Silakan pelajari ulang materi video dari awal untuk dapat mengulang evaluasi.
+                <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100">{t("Skor Evaluasi:", "Evaluation Score:")} {scoreResult?.skor}</h2>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto dark:text-slate-400">
+                  {t("Skor minimal lulus adalah 80%. Silakan pelajari ulang materi video dari awal untuk dapat mengulang evaluasi.", "The minimum passing score is 80%. Please review the video material from the beginning to retake the evaluation.")}
                 </p>
               </div>
               <button
                 onClick={() => router.push(`/modules/${moduleId}/video`)}
                 className="w-full py-3.5 bg-rose-600 text-white font-bold text-xs rounded-xl shadow-md hover:bg-rose-700 transition"
               >
-                Ulangi Pembelajaran dari Video
+                {t("Ulangi Pembelajaran dari Video", "Repeat Learning from Video")}
               </button>
             </>
           )}

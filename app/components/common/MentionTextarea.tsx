@@ -275,16 +275,16 @@ export default function MentionTextarea({
           id={listId}
           role="listbox"
           aria-label="Pilih pengguna untuk mention"
-          className={`absolute z-20 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg ${
+          className={`absolute z-20 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800 ${
             placement === "up" ? "bottom-full mb-1" : "top-full mt-1"
           }`}
         >
           {loading ? (
-            <li className="px-3 py-2 text-xs text-slate-500">Mencari pengguna...</li>
+            <li className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">Mencari pengguna...</li>
           ) : error ? (
-            <li className="px-3 py-2 text-xs text-rose-600">{error}</li>
+            <li className="px-3 py-2 text-xs text-rose-600 dark:text-rose-400">{error}</li>
           ) : results.length === 0 ? (
-            <li className="px-3 py-2 text-xs text-slate-500">Pengguna tidak ditemukan.</li>
+            <li className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">Pengguna tidak ditemukan.</li>
           ) : (
             results.map((user, index) => (
               <li
@@ -298,7 +298,7 @@ export default function MentionTextarea({
                 }}
                 onMouseEnter={() => setActiveIndex(index)}
                 className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm ${
-                  index === activeIndex ? "bg-slate-100" : "bg-white"
+                  index === activeIndex ? "bg-slate-100 dark:bg-slate-700" : "bg-white dark:bg-slate-800"
                 }`}
               >
                 {user.fotoProfil ? (
@@ -306,15 +306,15 @@ export default function MentionTextarea({
                   <img
                     src={user.fotoProfil}
                     alt={user.nama}
-                    className="h-7 w-7 shrink-0 rounded-full border border-slate-200 object-cover"
+                    className="h-7 w-7 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
                   />
                 ) : (
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-navy)] text-xs font-bold uppercase text-white">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-navy)] text-xs font-bold uppercase text-white dark:bg-blue-600">
                     {(user.nama || "U").charAt(0)}
                   </span>
                 )}
                 <span className="min-w-0 flex-1 truncate">
-                  <span className="font-semibold text-slate-800">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">
                     {user.gelar ? `${user.nama}, ${user.gelar}` : user.nama}
                   </span>
                 </span>

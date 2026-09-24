@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getModuleEvaluations } from "@/services/evaluation.service";
 import { getModuleById } from "@/services/module.service";
 import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
+import { useApp } from "@/app/context/AppContext";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -14,6 +15,7 @@ export default function ModuleEvaluationsIndexPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const { t } = useApp();
   const moduleId = params.id as string;
   const [error, setError] = useState<string | null>(null);
 
@@ -49,19 +51,19 @@ export default function ModuleEvaluationsIndexPage() {
 
         router.replace(`/modules/${moduleId}/evaluations/${target.id}`);
       } catch (err: unknown) {
-        setError(getErrorMessage(err, "Gagal mengambil data asesmen modul."));
+        setError(getErrorMessage(err, t("Gagal mengambil data asesmen modul.", "Failed to fetch module assessment data.")));
       }
     }
 
     if (moduleId) {
       redirectToTarget();
     }
-  }, [moduleId, router, searchParams]);
+  }, [moduleId, router, searchParams, t]);
 
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm">
+        <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       </div>
@@ -70,8 +72,8 @@ export default function ModuleEvaluationsIndexPage() {
 
   return (
     <div className="flex justify-center items-center min-h-[50vh]">
-      <div className="text-slate-500 text-sm animate-pulse">
-        Memuat asesmen modul...
+      <div className="text-slate-500 text-sm animate-pulse dark:text-slate-400">
+        {t("Memuat asesmen modul...", "Loading module assessment...")}
       </div>
     </div>
   );

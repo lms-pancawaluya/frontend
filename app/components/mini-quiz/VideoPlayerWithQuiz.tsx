@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 const API_BASE_URL = `${API_URL}/api`;
 
@@ -74,6 +75,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
   contentId,
   authToken,
 }) => {
+  const { t } = useApp();
   const [miniQuizzes, setMiniQuizzes] = useState<MiniQuiz[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<MiniQuiz | null>(null);
@@ -221,7 +223,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
     }));
 
     if (jawabanPayload.length < activeQuiz.questions.length) {
-      alert("Mohon jawab semua pertanyaan terlebih dahulu!");
+      alert(t("Mohon jawab semua pertanyaan terlebih dahulu!", "Please answer all questions first!"));
       return;
     }
 
@@ -244,11 +246,11 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
           setAnsweredQuizIds((prev) => [...prev, activeQuiz.id]);
         }
       } else {
-        alert(json.pesan || "Gagal mengirim jawaban.");
+        alert(json.pesan || t("Gagal mengirim jawaban.", "Failed to submit answers."));
       }
     } catch (err) {
       console.error("Submit quiz error:", err);
-      alert("Terjadi kesalahan koneksi saat mengirim jawaban.");
+      alert(t("Terjadi kesalahan koneksi saat mengirim jawaban.", "A connection error occurred while submitting answers."));
     } finally {
       setIsSubmitting(false);
     }
@@ -279,32 +281,32 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
   };
 
   return (
-    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-md border border-slate-200">
+    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-md border border-slate-200 dark:border-slate-800">
       {/* Video Container */}
       <div id={`yt-player-${contentId}`} className="w-full h-full" ref={iframeContainerRef} />
 
       {/* POP-UP MODAL KUIS */}
       {activeQuiz && (
         <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-200 dark:bg-slate-900 dark:border-slate-700">
             
             {!attemptResult ? (
               /* FORM PERTANYAAN */
               <form onSubmit={handleSubmitQuiz} className="space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
-                    Mini Quiz Pop-Up
+                <div className="border-b border-slate-100 pb-3 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded dark:bg-emerald-950/40 dark:text-emerald-300">
+                    {t("Mini Quiz Pop-Up", "Mini Quiz Pop-Up")}
                   </span>
-                  <h3 className="text-lg font-bold text-slate-800 mt-1">{activeQuiz.judul}</h3>
-                  <p className="text-xs text-slate-500">
-                    Batas Lulus: {activeQuiz.passingScore}% | Maksimal Percobaan: {activeQuiz.maxAttempts}x
+                  <h3 className="text-lg font-bold text-slate-800 mt-1 dark:text-slate-100">{activeQuiz.judul}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {t("Batas Lulus:", "Passing Threshold:")} {activeQuiz.passingScore}% | {t("Maksimal Percobaan:", "Max Attempts:")} {activeQuiz.maxAttempts}x
                   </p>
                 </div>
 
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
                   {activeQuiz.questions.map((q, idx) => (
-                    <div key={q.id} className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                      <p className="text-sm font-semibold text-slate-800">
+                    <div key={q.id} className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                         {idx + 1}. {q.pertanyaan}
                       </p>
                       <div className="space-y-1.5 pt-1">
@@ -313,8 +315,8 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                             key={opt.id}
                             className={`flex items-start gap-3 p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
                               userAnswers[q.id] === opt.id
-                                ? "bg-emerald-50 border-emerald-500 text-emerald-900 font-medium"
-                                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                                ? "bg-emerald-50 border-emerald-500 text-emerald-900 font-medium dark:bg-emerald-950/40 dark:border-emerald-600 dark:text-emerald-200"
+                                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600"
                             }`}
                           >
                             <input
@@ -338,7 +340,7 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                   disabled={isSubmitting}
                   className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-200"
                 >
-                  {isSubmitting ? "Mengirim Jawaban..." : "Submit Jawaban"}
+                  {isSubmitting ? t("Mengirim Jawaban...", "Submitting Answers...") : t("Submit Jawaban", "Submit Answers")}
                 </button>
               </form>
             ) : (
@@ -347,23 +349,23 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                 {/* KONDISI A: LULUS */}
                 {attemptResult.isLolos && (
                   <>
-                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black dark:bg-emerald-950/40 dark:text-emerald-400">
                       ✓
                     </div>
                     <div>
-                      <span className="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-                        Lulus
+                      <span className="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        {t("Lulus", "Passed")}
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
-                      <p className="text-xs text-slate-600 mt-2">
-                        Selamat! Kamu telah berhasil melampaui passing grade ({attemptResult.passingScore}%).
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{t("Skor:", "Score:")} {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2 dark:text-slate-300">
+                        {t("Selamat! Kamu telah berhasil melampaui passing grade", "Congratulations! You have successfully surpassed the passing grade")} ({attemptResult.passingScore}%).
                       </p>
                     </div>
                     <button
                       onClick={handleContinueVideo}
                       className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-200"
                     >
-                      Lanjut ke Materi Selanjutnya
+                      {t("Lanjut ke Materi Selanjutnya", "Continue to Next Material")}
                     </button>
                   </>
                 )}
@@ -371,24 +373,24 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                 {/* KONDISI B: GAGAL MASIH ADA KESEMPATAN */}
                 {!attemptResult.isLolos && !attemptResult.mustRepeat && (
                   <>
-                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black dark:bg-amber-950/40 dark:text-amber-400">
                       !
                     </div>
                     <div>
-                      <span className="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-                        Belum Lulus
+                      <span className="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-amber-950/40 dark:text-amber-300">
+                        {t("Belum Lulus", "Not Passed")}
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
-                      <p className="text-xs text-slate-600 mt-2">
-                        Skor minimal lulus adalah {attemptResult.passingScore}%. Sisa kesempatan kamu:{" "}
-                        <span className="font-bold text-amber-600">{attemptResult.sisaPercobaan} kali</span>.
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{t("Skor:", "Score:")} {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2 dark:text-slate-300">
+                        {t("Skor minimal lulus adalah", "The minimum passing score is")} {attemptResult.passingScore}%. {t("Sisa kesempatan kamu:", "Remaining attempts:")}{" "}
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{attemptResult.sisaPercobaan} {t("kali", "times")}</span>.
                       </p>
                     </div>
                     <button
                       onClick={handleRetryQuiz}
                       className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-amber-200"
                     >
-                      Coba Lagi
+                      {t("Coba Lagi", "Try Again")}
                     </button>
                   </>
                 )}
@@ -396,23 +398,23 @@ export const VideoPlayerWithQuiz: React.FC<VideoPlayerWithQuizProps> = ({
                 {/* KONDISI C: GAGAL 3X (KESEMPATAN HABIS) */}
                 {!attemptResult.isLolos && attemptResult.mustRepeat && (
                   <>
-                    <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                    <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black dark:bg-rose-950/40 dark:text-rose-400">
                       ✕
                     </div>
                     <div>
-                      <span className="inline-block bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-                        Kesempatan Habis
+                      <span className="inline-block bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 dark:bg-rose-950/40 dark:text-rose-300">
+                        {t("Kesempatan Habis", "No Attempts Left")}
                       </span>
-                      <h4 className="text-2xl font-extrabold text-slate-900">Skor: {attemptResult.skor}</h4>
-                      <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                        Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal.
+                      <h4 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{t("Skor:", "Score:")} {attemptResult.skor}</h4>
+                      <p className="text-xs text-slate-600 mt-2 leading-relaxed dark:text-slate-300">
+                        {t("Kamu telah gagal 3 kali. Kuis di-reset dan kamu wajib mempelajari ulang materi dari awal.", "You have failed 3 times. The quiz has been reset and you must re-study the material from the beginning.")}
                       </p>
                     </div>
                     <button
                       onClick={handleWatchFromBeginning}
                       className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-200"
                     >
-                      Tonton Ulang Materi
+                      {t("Tonton Ulang Materi", "Rewatch Material")}
                     </button>
                   </>
                 )}

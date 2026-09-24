@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 export default function LoginForm() {
   const router = useRouter();
+  const { t } = useApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +32,7 @@ export default function LoginForm() {
       console.log("Response dari Backend:", data);
 
       if (!res.ok) {
-        throw new Error(data.pesan || data.message || "Gagal masuk. Periksa kembali akun Anda.");
+        throw new Error(data.pesan || data.message || t("Gagal masuk. Periksa kembali akun Anda.", "Failed to sign in. Please check your account."));
       }
 
       const token = data.token || data.accessToken || data.data?.token;
@@ -57,7 +59,7 @@ export default function LoginForm() {
 
       router.push(redirectPath);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Gagal masuk. Periksa kembali akun Anda.");
+      setError(err instanceof Error ? err.message : t("Gagal masuk. Periksa kembali akun Anda.", "Failed to sign in. Please check your account."));
       setLoading(false);
     }
   };
@@ -65,7 +67,7 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
           <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -75,11 +77,11 @@ export default function LoginForm() {
 
       {/* EMAIL / NIP */}
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-          Email / NIP
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5 dark:text-slate-300">
+          {t("Email / NIP", "Email / NIP")}
         </label>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -89,19 +91,19 @@ export default function LoginForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Masukkan Email atau NIP"
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition"
+            placeholder={t("Masukkan Email atau NIP", "Enter Email or NIP")}
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
           />
         </div>
       </div>
 
       {/* PASSWORD */}
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-          Password
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5 dark:text-slate-300">
+          {t("Password", "Password")}
         </label>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
@@ -111,15 +113,15 @@ export default function LoginForm() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Masukkan password"
-            className="w-full pl-10 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition"
+            placeholder={t("Masukkan password", "Enter password")}
+            className="w-full pl-10 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition"
+            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition dark:text-slate-400 dark:hover:text-slate-200"
           >
-            {showPassword ? "Sembunyi" : "Lihat"}
+            {showPassword ? t("Sembunyi", "Hide") : t("Lihat", "Show")}
           </button>
         </div>
 
@@ -127,9 +129,9 @@ export default function LoginForm() {
         <div className="flex justify-end mt-1.5">
           <Link
             href="/forgot-password"
-            className="text-xs font-medium text-sky-600 hover:text-sky-700 hover:underline transition-colors"
+            className="text-xs font-medium text-sky-600 hover:text-sky-700 hover:underline transition-colors dark:text-sky-400 dark:hover:text-sky-300"
           >
-            Lupa Password?
+            {t("Lupa Password?", "Forgot Password?")}
           </Link>
         </div>
       </div>
@@ -146,10 +148,10 @@ export default function LoginForm() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            <span>Memproses...</span>
+            <span>{t("Memproses...", "Processing...")}</span>
           </>
         ) : (
-          "Masuk"
+          t("Masuk", "Sign In")
         )}
       </button>
     </form>

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import AdminProfileView from "./AdminProfileView";
 import GuruProfileView from "./GuruProfileView";
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 interface ProfileData {
   id: string;
@@ -54,6 +55,7 @@ function ProfilePageWithTab() {
 }
 
 function ProfilePageContent({ initialTab }: { initialTab: GuruProfileTab }) {
+  const { t } = useApp();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ function ProfilePageContent({ initialTab }: { initialTab: GuruProfileTab }) {
   const fetchProfile = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Token tidak ditemukan, silakan login kembali.");
+      setError(t("Token tidak ditemukan, silakan login kembali.", "Token not found, please log in again."));
       setLoading(false);
       return;
     }
@@ -77,14 +79,14 @@ function ProfilePageContent({ initialTab }: { initialTab: GuruProfileTab }) {
       if (json.sukses) {
         setProfile(json.data);
       } else {
-        setError(json.pesan || "Gagal memuat profil");
+        setError(json.pesan || t("Gagal memuat profil", "Failed to load profile"));
       }
     } catch {
-      setError("Gagal terhubung ke server");
+      setError(t("Gagal terhubung ke server", "Failed to connect to the server"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -105,13 +107,13 @@ function ProfilePageContent({ initialTab }: { initialTab: GuruProfileTab }) {
   if (error) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-[var(--color-pale)] p-4">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-md">
-          <p className="text-red-600 font-medium text-sm mb-4">{error}</p>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-md dark:bg-slate-900 dark:border-red-800">
+          <p className="text-red-600 font-medium text-sm mb-4 dark:text-red-400">{error}</p>
           <a
             href="/login"
             className="inline-block bg-[var(--color-navy)] text-white text-xs font-semibold px-4 py-2 rounded-xl"
           >
-            Kembali ke Login
+            {t("Kembali ke Login", "Back to Login")}
           </a>
         </div>
       </div>

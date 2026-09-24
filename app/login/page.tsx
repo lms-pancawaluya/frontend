@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
 import LoginForm from "../components/auth/LoginForm";
+import { LoginFooterText, LoginHeaderText } from "../components/auth/LoginPageText";
 
 export default function LoginPage() {
   return (
@@ -49,25 +49,12 @@ export default function LoginPage() {
       </div>
 
       {/* Card Utama Login */}
-      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20">
-        <div className="text-center mb-6">
-          <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight">
-            Selamat Datang
-          </h1>
-
-          <p className="text-sm text-gray-500 mt-1">
-            Masuk untuk melanjutkan pembelajaran Anda
-          </p>
-        </div>
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[var(--color-border-soft)] p-8 animate-fade-in relative z-20 dark:bg-slate-900/95">
+        <LoginHeaderText />
 
         <LoginForm />
 
-        <p className="text-sm text-gray-500 text-center mt-6">
-          Belum punya akun?{" "}
-          <Link href="/register" className="text-[var(--color-accent)] font-medium hover:underline">
-            Daftar di sini
-          </Link>
-        </p>
+        <LoginFooterText />
       </div>
 
     </div>

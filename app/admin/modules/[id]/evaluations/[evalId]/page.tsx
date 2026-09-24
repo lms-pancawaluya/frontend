@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getEvaluationDetail, addQuestion, updateQuestion, deleteQuestion } from "@/services/evaluation.service";
+import { useApp } from "@/app/context/AppContext";
 
 interface Option {
   id: string;
@@ -35,6 +36,7 @@ interface OptionInput {
 export default function EvaluationDetailAdminPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useApp();
   const moduleId = params.id as string;
   const evalId = params.evalId as string;
 
@@ -56,7 +58,7 @@ export default function EvaluationDetailAdminPage() {
   const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
 
   async function handleDelete(questionId: string) {
-    const confirmed = window.confirm("Yakin ingin menghapus soal ini?");
+    const confirmed = window.confirm(t("Yakin ingin menghapus soal ini?", "Are you sure you want to delete this question?"));
     if (!confirmed) return;
 
     setDeletingQuestionId(questionId);
@@ -65,7 +67,7 @@ export default function EvaluationDetailAdminPage() {
       await deleteQuestion(moduleId, questionId, evaluation?.tipe);
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Gagal menghapus soal.");
+      setFormError(err instanceof Error ? err.message : t("Gagal menghapus soal.", "Failed to delete question."));
     } finally {
       setDeletingQuestionId(null);
     }
@@ -110,7 +112,7 @@ export default function EvaluationDetailAdminPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat detail asesmen.");
+          setError(t("Gagal memuat detail asesmen.", "Failed to load assessment detail."));
         }
       } finally {
         setLoading(false);
@@ -118,7 +120,7 @@ export default function EvaluationDetailAdminPage() {
     }
 
     fetchEvaluationDetail();
-  }, [moduleId, evalId, router, refreshKey]);
+  }, [moduleId, evalId, router, refreshKey, t]);
 
   function handleOptionTextChange(index: number, value: string) {
     setOptions((prev) =>
@@ -152,7 +154,7 @@ export default function EvaluationDetailAdminPage() {
 
   function startEdit(question: Question) {
     if (question.tipe !== "pilihan_ganda") {
-      setFormError("Edit soal saat ini hanya tersedia untuk pilihan ganda.");
+      setFormError(t("Edit soal saat ini hanya tersedia untuk pilihan ganda.", "Editing questions is currently only available for multiple choice."));
       return;
     }
 
@@ -166,17 +168,17 @@ export default function EvaluationDetailAdminPage() {
 
   function validateMultipleChoice() {
     if (options.length < 2) {
-      return "Minimal 2 opsi jawaban.";
+      return t("Minimal 2 opsi jawaban.", "At least 2 answer options.");
     }
 
     const emptyOption = options.some((opt) => opt.teksOpsi.trim() === "");
     if (emptyOption) {
-      return "Semua opsi jawaban harus diisi.";
+      return t("Semua opsi jawaban harus diisi.", "All answer options must be filled in.");
     }
 
     const correctCount = options.filter((opt) => opt.isCorrect).length;
     if (correctCount !== 1) {
-      return "Pilih tepat 1 opsi sebagai jawaban benar.";
+      return t("Pilih tepat 1 opsi sebagai jawaban benar.", "Select exactly 1 option as the correct answer.");
     }
 
     return "";
@@ -222,7 +224,7 @@ export default function EvaluationDetailAdminPage() {
       if (err instanceof Error) {
         setFormError(err.message);
       } else {
-        setFormError(editingQuestionId ? "Gagal memperbarui soal." : "Gagal menambahkan soal.");
+        setFormError(editingQuestionId ? t("Gagal memperbarui soal.", "Failed to update question.") : t("Gagal menambahkan soal.", "Failed to add question."));
       }
     } finally {
       setSubmitting(false);
@@ -231,9 +233,9 @@ export default function EvaluationDetailAdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6">
-        <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
-          <svg className="w-5 h-5 animate-spin text-emerald-700" fill="none" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6 dark:bg-slate-900/60">
+        <div className="flex items-center gap-3 text-slate-500 font-medium text-sm dark:text-slate-400">
+          <svg className="w-5 h-5 animate-spin text-emerald-700 dark:text-emerald-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path
               className="opacity-75"
@@ -241,7 +243,7 @@ export default function EvaluationDetailAdminPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          Memuat evaluasi...
+          {t("Memuat evaluasi...", "Loading evaluation...")}
         </div>
       </div>
     );
@@ -249,10 +251,10 @@ export default function EvaluationDetailAdminPage() {
 
   if (error || !evaluation) {
     return (
-      <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-50/60 flex items-center justify-center p-6 dark:bg-slate-900/60">
         <div className="max-w-md mx-auto">
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
-            {error || "Asesmen tidak ditemukan."}
+          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
+            {error || t("Asesmen tidak ditemukan.", "Assessment not found.")}
           </div>
         </div>
       </div>
@@ -260,35 +262,35 @@ export default function EvaluationDetailAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-16 pt-6">
+    <div className="min-h-screen bg-slate-50/60 pb-16 pt-6 dark:bg-slate-900/60">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
         {/* Tombol Navigasi Kembali */}
         <div>
           <button
             onClick={() => router.push(`/admin/modules/${moduleId}/evaluations`)}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition-colors group bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:text-emerald-400"
           >
-            <span className="p-1 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors">
+            <span className="p-1 rounded-lg bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-700 transition-colors dark:bg-slate-700 dark:group-hover:bg-emerald-950/40 dark:text-slate-400 dark:group-hover:text-emerald-400">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </span>
-            Kembali ke Pre-Test & Post-Test
+            {t("Kembali ke Pre-Test & Post-Test", "Back to Pre-Test & Post-Test")}
           </button>
         </div>
 
         {/* Header Pre-Test/Post-Test */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4 dark:bg-slate-900 dark:border-slate-800">
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight dark:text-slate-100">
             {evaluation.judul}
           </h1>
           {(evaluation.passingScore !== undefined || evaluation.maxAttempts !== undefined) && (
-            <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+            <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
               {evaluation.passingScore !== undefined && (
-                <span>Passing Score: <span className="font-medium text-slate-700">{evaluation.passingScore}%</span></span>
+                <span>{t("Passing Score:", "Passing Score:")} <span className="font-medium text-slate-700 dark:text-slate-300">{evaluation.passingScore}%</span></span>
               )}
               {evaluation.maxAttempts !== undefined && (
-                <span>Max Attempts: <span className="font-medium text-slate-700">{evaluation.maxAttempts}</span></span>
+                <span>{t("Max Attempts:", "Max Attempts:")} <span className="font-medium text-slate-700 dark:text-slate-300">{evaluation.maxAttempts}</span></span>
               )}
             </div>
           )}
@@ -296,7 +298,7 @@ export default function EvaluationDetailAdminPage() {
 
         {/* Feedback */}
         {formError && (
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200">
+          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
             {formError}
           </div>
         )}
@@ -304,11 +306,11 @@ export default function EvaluationDetailAdminPage() {
         {/* Soal Evaluasi */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 dark:text-slate-100">
+              <svg className="w-5 h-5 text-emerald-700 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012-2" />
               </svg>
-              Soal Evaluasi
+              {t("Soal Evaluasi", "Evaluation Questions")}
             </h2>
             {!editingQuestionId && (
               <button
@@ -317,17 +319,17 @@ export default function EvaluationDetailAdminPage() {
                   setShowQuestionForm(true);
                   setFormError("");
                 }}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs sm:text-sm font-semibold rounded-full hover:bg-slate-800 transition shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs sm:text-sm font-semibold rounded-full hover:bg-slate-800 transition shadow-sm dark:bg-slate-700 dark:hover:bg-slate-600"
               >
-                + Tambah Soal
+                {t("+ Tambah Soal", "+ Add Question")}
               </button>
             )}
           </div>
 
           {evaluation.questions.length === 0 ? (
             !editingQuestionId && !showQuestionForm && (
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-                <p className="text-sm text-slate-500">Belum ada soal. Tambahkan soal pertama.</p>
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t("Belum ada soal. Tambahkan soal pertama.", "No questions yet. Add the first question.")}</p>
               </div>
             )
           ) : (
@@ -335,16 +337,16 @@ export default function EvaluationDetailAdminPage() {
               {evaluation.questions.map((q, index) => (
                 <div
                   key={q.id}
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden"
+                  className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800"
                 >
-                  <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+                  <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between dark:border-slate-800">
                     <div className="space-y-1.5">
-                      <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+                      <h3 className="font-bold text-slate-900 text-sm sm:text-base dark:text-slate-100">
                         {index + 1}. {q.pertanyaan}
                       </h3>
-                      <span className="text-xs text-slate-500 capitalize">
+                      <span className="text-xs text-slate-500 capitalize dark:text-slate-400">
                         {q.tipe.replace("_", " ")}
-                        {q.tipe === "pilihan_ganda" && ` • ${q.options.length} opsi`}
+                        {q.tipe === "pilihan_ganda" && ` • ${q.options.length} ${t("opsi", "options")}`}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -352,17 +354,17 @@ export default function EvaluationDetailAdminPage() {
                         type="button"
                         onClick={() => startEdit(q)}
                         disabled={q.tipe !== "pilihan_ganda" || submitting}
-                        className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-800 dark:disabled:text-slate-600"
                       >
-                        {q.tipe === "pilihan_ganda" ? "Edit" : "Edit belum tersedia"}
+                        {q.tipe === "pilihan_ganda" ? t("Edit", "Edit") : t("Edit belum tersedia", "Edit not yet available")}
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDelete(q.id)}
                         disabled={deletingQuestionId === q.id}
-                        className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
+                        className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30"
                       >
-                        {deletingQuestionId === q.id ? "Menghapus..." : "Hapus"}
+                        {deletingQuestionId === q.id ? t("Menghapus...", "Deleting...") : t("Hapus", "Delete")}
                       </button>
                     </div>
                   </div>
@@ -374,10 +376,10 @@ export default function EvaluationDetailAdminPage() {
 
         {/* Form Tambah/Edit Soal */}
         {(showQuestionForm || editingQuestionId) && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                {editingQuestionId ? "Edit Soal" : "Tambah Soal Baru"}
+              <h3 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">
+                {editingQuestionId ? t("Edit Soal", "Edit Question") : t("Tambah Soal Baru", "Add New Question")}
               </h3>
               {editingQuestionId && (
                 <button
@@ -386,48 +388,48 @@ export default function EvaluationDetailAdminPage() {
                     setShowQuestionForm(false);
                     resetForm();
                   }}
-                  className="text-xs text-slate-500 hover:text-slate-700 font-medium"
+                  className="text-xs text-slate-500 hover:text-slate-700 font-medium dark:text-slate-400 dark:hover:text-slate-200"
                 >
-                  Batal
+                  {t("Batal", "Cancel")}
                 </button>
               )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">
-                  Pertanyaan
+                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
+                  {t("Pertanyaan", "Question")}
                 </label>
                 <textarea
                   value={pertanyaan}
                   onChange={(e) => setPertanyaan(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   rows={2}
-                  placeholder="Masukkan pertanyaan..."
+                  placeholder={t("Masukkan pertanyaan...", "Enter question...")}
                   required
                 />
               </div>
 
               {!editingQuestionId && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">
-                    Tipe Soal
+                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
+                    {t("Tipe Soal", "Question Type")}
                   </label>
                   <select
                     value={tipe}
                     onChange={(e) => setTipe(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   >
-                    <option value="pilihan_ganda">Pilihan Ganda</option>
-                    <option value="esai">Esai</option>
+                    <option value="pilihan_ganda">{t("Pilihan Ganda", "Multiple Choice")}</option>
+                    <option value="esai">{t("Esai", "Essay")}</option>
                   </select>
                 </div>
               )}
 
               {(editingQuestionId || tipe === "pilihan_ganda") && (
                 <div className="space-y-3">
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Opsi Jawaban (pilih 1 sebagai jawaban benar)
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider dark:text-slate-300">
+                    {t("Opsi Jawaban (pilih 1 sebagai jawaban benar)", "Answer Options (select 1 as the correct answer)")}
                   </label>
                   <div className="flex flex-col gap-2">
                     {options.map((opt, index) => (
@@ -443,15 +445,15 @@ export default function EvaluationDetailAdminPage() {
                           type="text"
                           value={opt.teksOpsi}
                           onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                          className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                          placeholder={`Opsi ${index + 1}`}
+                          className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                          placeholder={`${t("Opsi", "Option")} ${index + 1}`}
                           required
                         />
                         {options.length > 2 && (
                           <button
                             type="button"
                             onClick={() => handleRemoveOption(index)}
-                            className="text-xs text-red-500 hover:text-red-700"
+                            className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                           >
                             ✕
                           </button>
@@ -464,9 +466,9 @@ export default function EvaluationDetailAdminPage() {
                     <button
                       type="button"
                       onClick={handleAddOption}
-                      className="text-xs text-slate-600 hover:text-slate-800 font-medium"
+                      className="text-xs text-slate-600 hover:text-slate-800 font-medium dark:text-slate-300 dark:hover:text-slate-100"
                     >
-                      + Tambah Opsi
+                      {t("+ Tambah Opsi", "+ Add Option")}
                     </button>
                   )}
                 </div>
@@ -476,17 +478,17 @@ export default function EvaluationDetailAdminPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
                 >
-                  {submitting ? "Menyimpan..." : editingQuestionId ? "Simpan Perubahan" : "Tambah Soal"}
+                  {submitting ? t("Menyimpan...", "Saving...") : editingQuestionId ? t("Simpan Perubahan", "Save Changes") : t("Tambah Soal", "Add Question")}
                 </button>
                 {!editingQuestionId && (
                   <button
                     type="button"
                     onClick={() => setShowQuestionForm(false)}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-slate-50 transition"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    Batal
+                    {t("Batal", "Cancel")}
                   </button>
                 )}
               </div>
@@ -495,25 +497,25 @@ export default function EvaluationDetailAdminPage() {
         )}
 
         {/* Area Aksi Admin */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-6">
-            <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+          <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-6 dark:text-slate-100">
+            <svg className="w-5 h-5 text-emerald-700 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.488c.457-.66 1.245-.904 2.054-.65A17.267 17.267 0 0115 5.5c0 1.005-.2 2.001-.606 2.933A7.5 7.5 0 017 12.5a7.5 0 01-2 5.36l-2.744 2.744a1 1 0 01-1.415-.001l-.003-.003a1 1 0 01-.001-1.414l1.742-1.742A5.5 5.5 0 017.5 10.5c0-1.057.094-2.103.286-3.114z" />
             </svg>
-            Aksi Pengelolaan
+            {t("Aksi Pengelolaan", "Management Actions")}
           </h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => router.push(`/admin/modules/${moduleId}`)}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-2xl shadow-sm transition"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-2xl shadow-sm transition dark:bg-slate-700 dark:hover:bg-slate-600"
             >
-              Edit Modul
+              {t("Edit Modul", "Edit Module")}
             </button>
             <button
               onClick={() => setShowQuestionForm(true)}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-2xl shadow-sm transition dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Tambah Soal
+              {t("Tambah Soal", "Add Question")}
             </button>
           </div>
         </div>

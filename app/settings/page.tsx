@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useApp } from "@/app/context/AppContext";
+import { getNotificationPreference, updateNotificationPreference } from "@/services/user.service";
 import { Sun, Moon, Monitor, Globe } from "lucide-react";
 
 type TabType = "preferences" | "notifications";
@@ -37,6 +38,72 @@ function SettingsPageWithTab() {
 function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
   const { theme, setTheme, language, setLanguage, t } = useApp();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
+  const [loadingPreference, setLoadingPreference] = useState(true);
+  const [savingPreference, setSavingPreference] = useState(false);
+  const [preferenceError, setPreferenceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPreference() {
+      setLoadingPreference(true);
+      setPreferenceError(null);
+
+      try {
+        const data = await getNotificationPreference();
+        if (!active) return;
+        setNotificationsEnabled(Boolean(data?.notificationsEnabled));
+      } catch (err) {
+        if (!active) return;
+        setNotificationsEnabled(null);
+        setPreferenceError(
+          err instanceof Error
+            ? err.message
+            : language === "en"
+              ? "Failed to load notification preference."
+              : "Gagal mengambil preferensi notifikasi."
+        );
+      } finally {
+        if (active) setLoadingPreference(false);
+      }
+    }
+
+    loadPreference();
+
+    return () => {
+      active = false;
+    };
+  }, [language]);
+
+  const handleToggleNotifications = async () => {
+    if (notificationsEnabled === null || savingPreference || loadingPreference) return;
+
+    const previous = notificationsEnabled;
+    const next = !previous;
+
+    setSavingPreference(true);
+    setPreferenceError(null);
+    setNotificationsEnabled(next);
+
+    try {
+      const data = await updateNotificationPreference(next);
+      setNotificationsEnabled(Boolean(data?.notificationsEnabled));
+    } catch (err) {
+      setNotificationsEnabled(previous);
+      setPreferenceError(
+        err instanceof Error
+          ? err.message
+          : t("Gagal memperbarui preferensi notifikasi.", "Failed to update notification preference.")
+      );
+    } finally {
+      setSavingPreference(false);
+    }
+  };
+
+  const preferenceBusy = loadingPreference || savingPreference;
+  const preferenceUnavailable = notificationsEnabled === null && !loadingPreference;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -173,7 +240,7 @@ function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
                   >
                     <div className="flex items-center gap-2.5">
                       <Globe className="w-4 h-4 text-red-500" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-white">Bahasa Indonesia</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-white">{t("Bahasa Indonesia", "Indonesian")}</span>
                     </div>
                     {language === "id" && <span className="w-2 h-2 rounded-full bg-[#0047A5]"></span>}
                   </button>
@@ -189,7 +256,7 @@ function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
                   >
                     <div className="flex items-center gap-2.5">
                       <Globe className="w-4 h-4 text-blue-500" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-white">English (US)</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-white">{t("English (US)", "English (US)")}</span>
                     </div>
                     {language === "en" && <span className="w-2 h-2 rounded-full bg-[#0047A5]"></span>}
                   </button>
@@ -216,23 +283,53 @@ function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
                     {t("Notifikasi", "Notifications")}
                   </p>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    {t("Pengaturan notifikasi belum tersedia.", "Notification settings are not available yet.")}
+                    {t(
+                      "Aktifkan atau nonaktifkan pengiriman notifikasi baru untuk akun Anda.",
+                      "Enable or disable delivery of new notifications for your account."
+                    )}
                   </p>
                 </div>
 
-                {/* Toggle disabled: preference notification belum punya backend source of truth. */}
                 <button
                   type="button"
-                  disabled
-                  aria-disabled="true"
-                  aria-label={t("Notifikasi (belum tersedia)", "Notifications (not available)")}
-                  title={t("Pengaturan notifikasi belum tersedia.", "Notification settings are not available yet.")}
-                  className="relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200 bg-slate-300 dark:bg-slate-700 opacity-60 cursor-not-allowed focus:outline-none"
+                  role="switch"
+                  aria-checked={notificationsEnabled === true}
+                  disabled={preferenceBusy || preferenceUnavailable}
+                  aria-busy={preferenceBusy}
+                  aria-label={t("Notifikasi", "Notifications")}
+                  onClick={handleToggleNotifications}
+                  className={`relative inline-flex h-6 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0047A5] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
+                    notificationsEnabled ? "bg-[#0047A5]" : "bg-slate-300 dark:bg-slate-700"
+                  } ${preferenceBusy || preferenceUnavailable ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
                 >
-                  <span className="text-[9px] font-bold text-white absolute right-1.5">Off</span>
-                  <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-md translate-x-1" />
+                  <span className="text-[9px] font-bold text-white absolute left-1.5">
+                    {notificationsEnabled === true ? t("Aktif", "On") : ""}
+                  </span>
+                  <span className="text-[9px] font-bold text-white absolute right-1.5">
+                    {notificationsEnabled === false ? t("Nonaktif", "Off") : ""}
+                  </span>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-md ${
+                      notificationsEnabled ? "translate-x-7" : "translate-x-1"
+                    }`}
+                  />
                 </button>
               </div>
+
+              {loadingPreference && (
+                <p className="text-[11px] text-slate-400">
+                  {t("Memuat preferensi notifikasi...", "Loading notification preference...")}
+                </p>
+              )}
+
+              {preferenceError && (
+                <div className="p-3.5 rounded-xl text-xs font-medium border flex items-center gap-2.5 bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
+                  <svg className="w-4 h-4 text-rose-600 shrink-0 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{preferenceError}</span>
+                </div>
+              )}
             </div>
           )}
         </div>

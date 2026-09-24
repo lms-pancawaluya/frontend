@@ -8,6 +8,7 @@ import Header from "@/app/components/common/Header";
 import { getModules } from "@/services/module.service";
 import { getUsers, getUsersProgressAll } from "@/services/user.service";
 import { getAllTickets } from "@/services/helpdesk.service";
+import { useApp } from "@/app/context/AppContext";
 
 interface User {
   id: string;
@@ -60,22 +61,23 @@ interface DashboardStats {
 
 const OPEN_TICKET = new Set(["open", "terbuka", "baru", "new", "in_progress", "proses", "diproses", "pending"]);
 
-function ticketSubject(t: TicketLite): string {
-  return t.subject || t.subjek || t.judul || "(Tanpa subjek)";
+function ticketSubject(t: TicketLite, tr: (id: string, en: string) => string): string {
+  return t.subject || t.subjek || t.judul || tr("(Tanpa subjek)", "(No subject)");
 }
 
-function timeAgo(iso?: string): string {
+function timeAgo(iso?: string, t?: (id: string, en: string) => string): string {
   if (!iso) return "";
   const d = new Date(iso);
-  const t = d.getTime();
-  if (Number.isNaN(t)) return "";
-  const min = Math.floor((Date.now() - t) / 60000);
-  if (min < 1) return "Baru saja";
-  if (min < 60) return `${min} menit lalu`;
+  const t2 = d.getTime();
+  if (Number.isNaN(t2)) return "";
+  const tr = t ?? ((id: string) => id);
+  const min = Math.floor((Date.now() - t2) / 60000);
+  if (min < 1) return tr("Baru saja", "Just now");
+  if (min < 60) return tr(`${min} menit lalu`, `${min} minutes ago`);
   const jam = Math.floor(min / 60);
-  if (jam < 24) return `${jam} jam lalu`;
+  if (jam < 24) return tr(`${jam} jam lalu`, `${jam} hours ago`);
   const hari = Math.floor(jam / 24);
-  if (hari < 30) return `${hari} hari lalu`;
+  if (hari < 30) return tr(`${hari} hari lalu`, `${hari} days ago`);
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -104,6 +106,7 @@ const ICONS = {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const { t } = useApp();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -133,7 +136,7 @@ export default function AdminDashboardPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat profil admin.");
+          setError(t("Gagal memuat profil admin.", "Failed to load admin profile."));
         }
       } finally {
         setLoading(false);
@@ -141,7 +144,7 @@ export default function AdminDashboardPage() {
     }
 
     checkAdminAuth();
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     let active = true;
@@ -180,8 +183,8 @@ export default function AdminDashboardPage() {
         const avgProgress = withProg.length ? Math.round(sum / withProg.length) : null;
 
         const ticketList = tickets as TicketLite[];
-        const ticketPerluTindak = ticketList.filter((t) =>
-          OPEN_TICKET.has(String(t.status || "").toLowerCase())
+        const ticketPerluTindak = ticketList.filter((tk) =>
+          OPEN_TICKET.has(String(tk.status || "").toLowerCase())
         ).length;
 
         const activities: ActivityItem[] = [
@@ -190,18 +193,18 @@ export default function AdminDashboardPage() {
             .map((g) => ({
               id: `user-${g.id}`,
               kind: "user" as const,
-              title: "Guru baru terdaftar",
-              desc: `${g.nama} mendaftar sebagai guru.`,
+              title: t("Guru baru terdaftar", "New teacher registered"),
+              desc: `${g.nama} ${t("mendaftar sebagai guru.", "registered as a teacher.")}`,
               time: new Date(g.createdAt as string).getTime(),
             })),
           ...ticketList
-            .filter((t) => t.createdAt || t.created_at)
-            .map((t, i) => ({
-              id: `ticket-${t.id ?? i}`,
+            .filter((t2) => t2.createdAt || t2.created_at)
+            .map((t2, i) => ({
+              id: `ticket-${t2.id ?? i}`,
               kind: "ticket" as const,
-              title: "Tiket bantuan baru",
-              desc: t.user?.nama ? `${t.user.nama}: ${ticketSubject(t)}` : ticketSubject(t),
-              time: new Date((t.createdAt || t.created_at) as string).getTime(),
+              title: t("Tiket bantuan baru", "New helpdesk ticket"),
+              desc: t2.user?.nama ? `${t2.user.nama}: ${ticketSubject(t2, t)}` : ticketSubject(t2, t),
+              time: new Date((t2.createdAt || t2.created_at) as string).getTime(),
             })),
         ]
           .filter((a) => !Number.isNaN(a.time))
@@ -227,16 +230,16 @@ export default function AdminDashboardPage() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, t]);
 
   if (loading) {
-    return <p className="text-center mt-16 text-gray-500">Memuat Dashboard Admin...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">{t("Memuat Dashboard Admin...", "Loading Admin Dashboard...")}</p>;
   }
 
   if (error) {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       </div>
@@ -245,43 +248,43 @@ export default function AdminDashboardPage() {
 
   const kpis = [
     {
-      label: "Total Modul",
+      label: t("Total Modul", "Total Modules"),
       value: stats?.modulCount ?? 0,
-      sub: "modul pembelajaran",
-      subClass: "text-gray-400",
+      sub: t("modul pembelajaran", "learning modules"),
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.modules,
-      iconWrap: "bg-blue-100 text-blue-600",
-      card: "border-blue-100 bg-blue-50/40",
+      iconWrap: "bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      card: "border-blue-100 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20",
     },
     {
-      label: "Total Guru",
+      label: t("Total Guru", "Total Teachers"),
       value: stats?.guruCount ?? 0,
-      sub: "guru terdaftar",
-      subClass: "text-gray-400",
+      sub: t("guru terdaftar", "registered teachers"),
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.users,
-      iconWrap: "bg-emerald-100 text-emerald-600",
-      card: "border-emerald-100 bg-emerald-50/40",
+      iconWrap: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+      card: "border-emerald-100 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20",
     },
     {
-      label: "Tiket Bantuan",
+      label: t("Tiket Bantuan", "Helpdesk Tickets"),
       value: stats?.ticketTotal ?? 0,
       sub:
         stats && stats.ticketPerluTindak > 0
-          ? `${stats.ticketPerluTindak} perlu ditindaklanjuti`
-          : "tidak ada antrean",
-      subClass: stats && stats.ticketPerluTindak > 0 ? "text-red-500 font-medium" : "text-gray-400",
+          ? t(`${stats.ticketPerluTindak} perlu ditindaklanjuti`, `${stats.ticketPerluTindak} need follow-up`)
+          : t("tidak ada antrean", "no queue"),
+      subClass: stats && stats.ticketPerluTindak > 0 ? "text-red-500 font-medium dark:text-red-400" : "text-gray-400 dark:text-slate-500",
       icon: ICONS.helpdesk,
-      iconWrap: "bg-red-100 text-red-600",
-      card: "border-red-100 bg-red-50/40",
+      iconWrap: "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400",
+      card: "border-red-100 bg-red-50/40 dark:border-red-900 dark:bg-red-950/20",
     },
     {
-      label: "Rata-rata Progress",
+      label: t("Rata-rata Progress", "Average Progress"),
       value: stats?.avgProgress === null || stats?.avgProgress === undefined ? "—" : `${stats.avgProgress}%`,
-      sub: "seluruh guru",
-      subClass: "text-gray-400",
+      sub: t("seluruh guru", "all teachers"),
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.monitoring,
-      iconWrap: "bg-amber-100 text-amber-600",
-      card: "border-amber-100 bg-amber-50/40",
+      iconWrap: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+      card: "border-amber-100 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20",
     },
   ];
 
@@ -299,43 +302,43 @@ export default function AdminDashboardPage() {
       : { background: "#e5e7eb" };
 
   const legend = [
-    { label: "Selesai", count: dist.selesai, dot: "bg-emerald-500" },
-    { label: "Dalam Progres", count: dist.progres, dot: "bg-blue-500" },
-    { label: "Belum Mulai", count: dist.belum, dot: "bg-amber-500" },
+    { label: t("Selesai", "Completed"), count: dist.selesai, dot: "bg-emerald-500" },
+    { label: t("Dalam Progres", "In Progress"), count: dist.progres, dot: "bg-blue-500" },
+    { label: t("Belum Mulai", "Not Started"), count: dist.belum, dot: "bg-amber-500" },
   ];
 
   const adminMenu = [
     {
-      title: "Kelola Modul Pembelajaran",
-      desc: "Buat, ubah, dan susun modul, materi teks, serta video pembelajaran.",
+      title: t("Kelola Modul Pembelajaran", "Manage Learning Modules"),
+      desc: t("Buat, ubah, dan susun modul, materi teks, serta video pembelajaran.", "Create, edit, and organize modules, text materials, and learning videos."),
       href: "/admin/modules",
       icon: ICONS.modules,
-      iconWrap: "bg-blue-100 text-blue-600",
-      arrow: "bg-blue-50 text-blue-600",
+      iconWrap: "bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      arrow: "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
     },
     {
-      title: "Kelola Akun Guru",
-      desc: "Lihat daftar guru terdaftar dan pantau progres pengerjaan modul mereka.",
+      title: t("Kelola Akun Guru", "Manage Teacher Accounts"),
+      desc: t("Lihat daftar guru terdaftar dan pantau progres pengerjaan modul mereka.", "View the list of registered teachers and monitor their module progress."),
       href: "/admin/users",
       icon: ICONS.users,
-      iconWrap: "bg-emerald-100 text-emerald-600",
-      arrow: "bg-emerald-50 text-emerald-600",
+      iconWrap: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+      arrow: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400",
     },
     {
-      title: "Kelola Tiket Bantuan (Helpdesk)",
-      desc: "Tinjau kendala teknis dari Guru, kirim tanggapan balasan, dan kelola status tiket.",
+      title: t("Kelola Tiket Bantuan (Helpdesk)", "Manage Helpdesk Tickets"),
+      desc: t("Tinjau kendala teknis dari Guru, kirim tanggapan balasan, dan kelola status tiket.", "Review technical issues from Teachers, send replies, and manage ticket status."),
       href: "/admin/helpdesk",
       icon: ICONS.helpdesk,
-      iconWrap: "bg-red-100 text-red-600",
-      arrow: "bg-red-50 text-red-600",
+      iconWrap: "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400",
+      arrow: "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
     },
     {
-      title: "Monitoring Pembelajaran",
-          desc: "Pantau progres pembelajaran (course) tiap guru: Pre-Test, materi, dan Post-Test.",
+      title: t("Monitoring Pembelajaran", "Learning Monitoring"),
+          desc: t("Pantau progres pembelajaran (course) tiap guru: Pre-Test, materi, dan Post-Test.", "Monitor each teacher's learning (course) progress: Pre-Test, materials, and Post-Test."),
       href: "/admin/checklist/report",
       icon: ICONS.monitoring,
-      iconWrap: "bg-amber-100 text-amber-600",
-      arrow: "bg-amber-50 text-amber-600",
+      iconWrap: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+      arrow: "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400",
     },
   ];
 
@@ -353,15 +356,15 @@ export default function AdminDashboardPage() {
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/15 backdrop-blur-md border border-white/20 rounded-full text-[11px] font-bold text-amber-300">
               <span className="w-2 h-2 rounded-full bg-[#F3BF10] animate-pulse" />
-              Portal Administrasi LMS
+              {t("Portal Administrasi LMS", "LMS Administration Portal")}
             </div>
 
             <h1 className="font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
-              Selamat datang, {user?.nama ?? "Admin"}.
+              {t("Selamat datang,", "Welcome,")} {user?.nama ?? "Admin"}.
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-100/90 leading-relaxed">
-              Kelola modul pembelajaran, akun guru, monitoring, dan layanan bantuan LMS Panca Waluya.
+              {t("Kelola modul pembelajaran, akun guru, monitoring, dan layanan bantuan LMS Panca Waluya.", "Manage learning modules, teacher accounts, monitoring, and helpdesk services for LMS Panca Waluya.")}
             </p>
           </div>
 
@@ -370,7 +373,7 @@ export default function AdminDashboardPage() {
               href="/admin/modules"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#F3BF10] hover:bg-amber-400 text-[#0047A5] text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg hover:shadow-amber-400/20 transition-all duration-200"
             >
-              <span>Kelola Sistem</span>
+              <span>{t("Kelola Sistem", "Manage System")}</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -388,11 +391,11 @@ export default function AdminDashboardPage() {
                 {kpi.icon}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-gray-500">{kpi.label}</p>
+                <p className="truncate text-xs font-medium text-gray-500 dark:text-slate-400">{kpi.label}</p>
                 {statsLoading ? (
-                  <span className="mt-2 block h-7 w-14 animate-pulse rounded bg-gray-200" />
+                  <span className="mt-2 block h-7 w-14 animate-pulse rounded bg-gray-200 dark:bg-slate-700" />
                 ) : (
-                  <p className="mt-0.5 text-2xl font-bold text-[var(--color-navy)]">{kpi.value}</p>
+                  <p className="mt-0.5 text-2xl font-bold text-[var(--color-navy)] dark:text-slate-100">{kpi.value}</p>
                 )}
                 <p className={`mt-0.5 truncate text-[11px] ${kpi.subClass}`}>{kpi.sub}</p>
               </div>
@@ -404,31 +407,31 @@ export default function AdminDashboardPage() {
       {/* Monitoring + Aktivitas */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Monitoring Pembelajaran */}
-        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm dark:bg-slate-900">
           <div className="mb-6 flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">
-              <span className="text-[var(--color-accent)]">{ICONS.monitoring}</span>
-              Monitoring Pembelajaran
+            <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">
+              <span className="text-[var(--color-accent)] dark:text-blue-400">{ICONS.monitoring}</span>
+              {t("Monitoring Pembelajaran", "Learning Monitoring")}
             </h2>
             <Link
               href="/admin/checklist/report"
-              className="shrink-0 rounded-lg border border-[var(--color-border-soft)] px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-[var(--color-pale)] hover:text-[var(--color-navy)]"
+              className="shrink-0 rounded-lg border border-[var(--color-border-soft)] px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-[var(--color-pale)] hover:text-[var(--color-navy)] dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             >
-              Lihat Detail →
+              {t("Lihat Detail →", "View Detail →")}
             </Link>
           </div>
 
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
             <div className="relative h-40 w-40 shrink-0 rounded-full" style={donutStyle}>
-              <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-white text-center shadow-inner">
+              <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-white text-center shadow-inner dark:bg-slate-900">
                 {statsLoading ? (
-                  <span className="h-6 w-12 animate-pulse rounded bg-gray-200" />
+                  <span className="h-6 w-12 animate-pulse rounded bg-gray-200 dark:bg-slate-700" />
                 ) : (
-                  <span className="text-2xl font-bold text-[var(--color-navy)]">
+                  <span className="text-2xl font-bold text-[var(--color-navy)] dark:text-slate-100">
                     {stats?.avgProgress === null || stats?.avgProgress === undefined ? "—" : `${stats.avgProgress}%`}
                   </span>
                 )}
-                <span className="text-[11px] text-gray-400">Rata-rata Progress</span>
+                <span className="text-[11px] text-gray-400 dark:text-slate-500">{t("Rata-rata Progress", "Average Progress")}</span>
               </div>
             </div>
 
@@ -436,9 +439,9 @@ export default function AdminDashboardPage() {
               {legend.map((l) => (
                 <li key={l.label} className="flex items-center gap-3 text-sm">
                   <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${l.dot}`} />
-                  <span className="flex-1 text-gray-600">{l.label}</span>
-                  <span className="font-medium text-gray-500">{l.count} guru</span>
-                  <span className="w-10 text-right font-bold text-[var(--color-navy)]">
+                  <span className="flex-1 text-gray-600 dark:text-slate-300">{l.label}</span>
+                  <span className="font-medium text-gray-500 dark:text-slate-400">{l.count} {t("guru", "teachers")}</span>
+                  <span className="w-10 text-right font-bold text-[var(--color-navy)] dark:text-slate-100">
                     {Math.round(share(l.count))}%
                   </span>
                 </li>
@@ -446,28 +449,28 @@ export default function AdminDashboardPage() {
             </ul>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border-soft)] pt-4 text-xs text-gray-500">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border-soft)] pt-4 text-xs text-gray-500 dark:text-slate-400">
             <span>
-              Total Guru Aktif · <span className="font-bold text-[var(--color-navy)]">{stats?.guruCount ?? 0} guru</span>
+              {t("Total Guru Aktif", "Total Active Teachers")} · <span className="font-bold text-[var(--color-navy)] dark:text-slate-100">{stats?.guruCount ?? 0} {t("guru", "teachers")}</span>
             </span>
             <span>
-              Modul Aktif · <span className="font-bold text-[var(--color-navy)]">{stats?.modulCount ?? 0} modul</span>
+              {t("Modul Aktif", "Active Modules")} · <span className="font-bold text-[var(--color-navy)] dark:text-slate-100">{stats?.modulCount ?? 0} {t("modul", "modules")}</span>
             </span>
           </div>
         </section>
 
         {/* Aktivitas Terbaru */}
-        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm">
-          <h2 className="mb-4 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">
-            Aktivitas Terbaru
+        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm dark:bg-slate-900">
+          <h2 className="mb-4 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">
+            {t("Aktivitas Terbaru", "Recent Activity")}
           </h2>
 
           {statsLoading ? (
             <ul className="space-y-4">
               {[0, 1, 2, 3].map((i) => (
                 <li key={i} className="flex items-center gap-3">
-                  <span className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-gray-100" />
-                  <span className="h-4 flex-1 animate-pulse rounded bg-gray-100" />
+                  <span className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-gray-100 dark:bg-slate-800" />
+                  <span className="h-4 flex-1 animate-pulse rounded bg-gray-100 dark:bg-slate-800" />
                 </li>
               ))}
             </ul>
@@ -477,22 +480,22 @@ export default function AdminDashboardPage() {
                 <li key={a.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                   <span
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                      a.kind === "user" ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600"
+                      a.kind === "user" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400"
                     }`}
                   >
                     {a.kind === "user" ? ICONS.users : ICONS.helpdesk}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[var(--color-navy)]">{a.title}</p>
-                    <p className="truncate text-xs text-gray-500">{a.desc}</p>
+                    <p className="text-sm font-semibold text-[var(--color-navy)] dark:text-slate-100">{a.title}</p>
+                    <p className="truncate text-xs text-gray-500 dark:text-slate-400">{a.desc}</p>
                   </div>
-                  <span className="shrink-0 text-[11px] text-gray-400">{timeAgo(new Date(a.time).toISOString())}</span>
+                  <span className="shrink-0 text-[11px] text-gray-400 dark:text-slate-500">{timeAgo(new Date(a.time).toISOString(), t)}</span>
                 </li>
               ))}
             </ul>
           ) : (
             <div className="py-12 text-center">
-              <p className="text-sm text-gray-500">Belum ada aktivitas terbaru.</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">{t("Belum ada aktivitas terbaru.", "No recent activity yet.")}</p>
             </div>
           )}
         </section>
@@ -500,23 +503,23 @@ export default function AdminDashboardPage() {
 
       {/* Menu Cepat */}
       <section>
-        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--color-navy)]">
-          Menu Cepat
+        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--color-navy)] dark:text-slate-100">
+          {t("Menu Cepat", "Quick Menu")}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {adminMenu.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="group flex flex-col rounded-2xl border border-[var(--color-border-soft)] bg-white p-5 shadow-sm transition hover:shadow-md"
+              className="group flex flex-col rounded-2xl border border-[var(--color-border-soft)] bg-white p-5 shadow-sm transition hover:shadow-md dark:bg-slate-900 dark:hover:border-slate-700"
             >
               <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${item.iconWrap}`}>
                 {item.icon}
               </span>
-              <h3 className="text-sm font-semibold text-[var(--color-navy)] group-hover:text-[var(--color-accent)]">
+              <h3 className="text-sm font-semibold text-[var(--color-navy)] group-hover:text-[var(--color-accent)] dark:text-slate-100">
                 {item.title}
               </h3>
-              <p className="mt-1 flex-1 text-xs leading-relaxed text-gray-500">{item.desc}</p>
+              <p className="mt-1 flex-1 text-xs leading-relaxed text-gray-500 dark:text-slate-400">{item.desc}</p>
               <span
                 className={`mt-4 flex h-8 w-8 items-center justify-center rounded-full transition group-hover:translate-x-0.5 ${item.arrow}`}
               >

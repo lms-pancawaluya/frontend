@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getModules } from "@/services/module.service";
 import { getCourses } from "@/services/course.service";
 import type { Course } from "@/types/course";
+import { useApp } from "@/app/context/AppContext";
 
 interface ModuleCard {
   id: string;
@@ -48,12 +49,12 @@ interface CourseApiItem extends Course {
 type UnknownRecord = Record<string, unknown>;
 
 const BADGE_COLORS: Record<string, string> = {
-  cageur: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  bageur: "bg-blue-100 text-blue-800 border-blue-200",
-  bener: "bg-amber-100 text-amber-800 border-amber-200",
-  singer: "bg-purple-100 text-purple-800 border-purple-200",
-  pinter: "bg-rose-100 text-rose-800 border-rose-200",
-  umum: "bg-slate-100 text-slate-800 border-slate-200",
+  cageur: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+  bageur: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+  bener: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+  singer: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+  pinter: "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
+  umum: "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
 };
 
 function capitalize(value: string): string {
@@ -62,7 +63,7 @@ function capitalize(value: string): string {
 }
 
 /** Mapping respons API (module.service) ke bentuk kartu UI sesuai instruksi BE */
-function mapApiModules(apiData: ModuleApiItem[]): ModuleCard[] {
+function mapApiModules(apiData: ModuleApiItem[], tr: (id: string, en: string) => string): ModuleCard[] {
   if (!Array.isArray(apiData)) return [];
   return apiData.map((item, idx) => {
     const rawCategory = item.aspekPancawaluya || item.kategori || "umum";
@@ -70,8 +71,8 @@ function mapApiModules(apiData: ModuleApiItem[]): ModuleCard[] {
 
     return {
       id: item.id,
-      code: `Modul ${item.urutan ?? idx + 1}`,
-      title: item.judul || "Modul Pembelajaran",
+      code: `${tr("Modul", "Module")} ${item.urutan ?? idx + 1}`,
+      title: item.judul || tr("Modul Pembelajaran", "Learning Module"),
       description: item.deskripsi || "",
       category: capitalize(categoryKey) as ModuleCard["category"],
       progress: item.status === "selesai" ? 100 : 0,
@@ -102,6 +103,7 @@ function extractArray<T>(res: unknown): T[] {
 }
 
 export default function ModulesPage() {
+  const { t } = useApp();
   const [courses, setCourses] = useState<CourseWithModules[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"semua" | "proses" | "selesai">("semua");
@@ -129,7 +131,7 @@ export default function ModulesPage() {
                 rawModules = extractArray<ModuleApiItem>(modulesRes);
               }
 
-              const modules = mapApiModules(rawModules);
+              const modules = mapApiModules(rawModules, t);
               return { ...course, modules } as CourseWithModules;
             })
           );
@@ -146,7 +148,7 @@ export default function ModulesPage() {
     }
 
     fetchData();
-  }, []);
+  }, [t]);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -183,7 +185,7 @@ export default function ModulesPage() {
   const totalCompleted = allModules.filter((m) => m.progress === 100).length;
 
   return (
-    <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50/80 pb-20 pt-8 relative overflow-hidden dark:bg-slate-900/80">
       {/* BACKGROUND DEKORATIF DISDIK JABAR */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-20 -left-20 w-96 h-96 bg-[#0047A5]/10 rounded-full blur-3xl" />
@@ -200,79 +202,78 @@ export default function ModulesPage() {
               LMS Panca Waluya Jabar
             </span>
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              Modul Pembelajaran Guru
+              {t("Modul Pembelajaran Guru", "Teacher Learning Modules")}
             </h1>
             <p className="text-slate-100 text-xs sm:text-sm leading-relaxed opacity-90">
-              Tingkatkan kompetensi pendidik melalui 5 pilar karakter Sunda (Cageur, Bageur, Bener,
-              Singer, Pinter) secara terstruktur dan terukur.
+              {t("Tingkatkan kompetensi pendidik melalui 5 pilar karakter Sunda (Cageur, Bageur, Bener, Singer, Pinter) secara terstruktur dan terukur.", "Improve educator competencies through the 5 pillars of Sundanese character (Cageur, Bageur, Bener, Singer, Pinter) in a structured and measurable way.")}
             </p>
           </div>
 
           {/* STATS OVERVIEW */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-white/15 text-xs">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Total Course</p>
-              <p className="text-xl font-extrabold mt-0.5">{courses.length} Course</p>
+              <p className="text-white/70 font-medium">{t("Total Course", "Total Courses")}</p>
+              <p className="text-xl font-extrabold mt-0.5">{courses.length} {t("Course", "Courses")}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Total Modul</p>
-              <p className="text-xl font-extrabold mt-0.5">{totalModules} Modul</p>
+              <p className="text-white/70 font-medium">{t("Total Modul", "Total Modules")}</p>
+              <p className="text-xl font-extrabold mt-0.5">{totalModules} {t("Modul", "Modules")}</p>
               <p className="text-white/60 font-medium mt-0.5">
-                {totalCompleted} / {totalModules} Selesai
+                {totalCompleted} / {totalModules} {t("Selesai", "Completed")}
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-              <p className="text-white/70 font-medium">Sertifikat Kelulusan</p>
-              <p className="text-xl font-extrabold mt-0.5 text-amber-300">Belum Tersedia</p>
+              <p className="text-white/70 font-medium">{t("Sertifikat Kelulusan", "Completion Certificate")}</p>
+              <p className="text-xl font-extrabold mt-0.5 text-amber-300">{t("Belum Tersedia", "Not Available Yet")}</p>
             </div>
           </div>
         </div>
 
         {/* KONTROL PENCARIAN & FILTER */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl dark:bg-slate-800">
             <button
               onClick={() => setActiveTab("semua")}
               className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === "semua"
-                  ? "bg-white text-slate-800 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-slate-100"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              Semua Modul
+              {t("Semua Modul", "All Modules")}
             </button>
             <button
               onClick={() => setActiveTab("proses")}
               className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === "proses"
-                  ? "bg-white text-slate-800 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-slate-100"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              Sedang Dipelajari
+              {t("Sedang Dipelajari", "In Progress")}
             </button>
             <button
               onClick={() => setActiveTab("selesai")}
               className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === "selesai"
-                  ? "bg-white text-slate-800 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-slate-100"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              Selesai
+              {t("Selesai", "Completed")}
             </button>
           </div>
 
           <div className="relative flex-1 max-w-xs">
             <input
               type="text"
-              placeholder="Cari course atau materi modul..."
+              placeholder={t("Cari course atau materi modul...", "Search course or module material...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+              className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
             />
             <svg
-              className="w-4 h-4 text-slate-400 absolute left-3 top-2.5"
+              className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 dark:text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -291,15 +292,15 @@ export default function ModulesPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {[1, 2].map((i) => (
-              <div key={i} className="bg-white rounded-3xl h-64 animate-pulse p-6 border border-slate-200" />
+              <div key={i} className="bg-white rounded-3xl h-64 animate-pulse p-6 border border-slate-200 dark:bg-slate-900 dark:border-slate-800" />
             ))}
           </div>
         ) : visibleCourses.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8">
-            <p className="text-slate-500 text-sm font-medium">
+          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8 dark:bg-slate-900 dark:border-slate-800">
+            <p className="text-slate-500 text-sm font-medium dark:text-slate-400">
               {courses.length === 0
-                ? "Belum ada course yang tersedia dari backend."
-                : "Tidak ada course yang sesuai dengan pencarian Anda."}
+                ? t("Belum ada course yang tersedia dari backend.", "No courses available from the backend yet.")
+                : t("Tidak ada course yang sesuai dengan pencarian Anda.", "No courses match your search.")}
             </p>
           </div>
         ) : (
@@ -308,23 +309,23 @@ export default function ModulesPage() {
               <Link
                 key={course.id}
                 href={`/modules/courses/${course.id}`}
-                className="group bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col transition-all hover:border-emerald-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                className="group bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col transition-all hover:border-emerald-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 dark:bg-slate-900 dark:border-slate-800"
               >
                 {/* Header Card Course */}
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-800 border border-sky-200">
-                      {course.mode === "offline" ? "Tatap Muka" : "Online"}
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-800 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800">
+                      {course.mode === "offline" ? t("Tatap Muka", "In Person") : t("Online", "Online")}
                     </span>
                     {course.hasCertificate && (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200">
-                        Bersertifikat
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                        {t("Bersertifikat", "With Certificate")}
                       </span>
                     )}
                   </div>
-                  <h2 className="font-bold text-slate-900 text-lg leading-snug">{course.judul}</h2>
+                  <h2 className="font-bold text-slate-900 text-lg leading-snug dark:text-slate-100">{course.judul}</h2>
                   {course.deskripsi && (
-                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed line-clamp-2">
+                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed line-clamp-2 dark:text-slate-400">
                       {course.deskripsi}
                     </p>
                   )}
@@ -332,14 +333,14 @@ export default function ModulesPage() {
                   {/* Progress Course */}
                   <div className="mt-4 space-y-1.5">
                     <div className="flex justify-between items-center text-[11px] font-medium">
-                      <span className="text-slate-500">
-                        Progres Course · {course.modules.length} Modul
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {t("Progres Course", "Course Progress")} · {course.modules.length} {t("Modul", "Modules")}
                       </span>
-                      <span className="text-slate-800 font-bold">
+                      <span className="text-slate-800 font-bold dark:text-slate-200">
                         {course.progressPercentage ?? 0}%
                       </span>
                     </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden dark:bg-slate-800">
                       <div
                         className="h-full bg-emerald-600 rounded-full transition-all duration-500"
                         style={{ width: `${course.progressPercentage ?? 0}%` }}
@@ -347,10 +348,10 @@ export default function ModulesPage() {
                     </div>
                   </div>
 
-                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
-                    Lihat Detail Course
+                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                    {t("Lihat Detail Course", "View Course Detail")}
                     <svg
-                      className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"
+                      className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all dark:text-slate-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"

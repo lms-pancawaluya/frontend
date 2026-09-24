@@ -10,6 +10,7 @@ import {
 } from "@/services/notification.service";
 import { Bell, CheckCircle2, MessageSquare, Info, FileText, Loader2, AlertCircle } from "lucide-react";
 import { resolveNotificationDestination } from "@/lib/notification-navigation";
+import { useApp } from "@/app/context/AppContext";
 
 interface NotificationItem {
   id: string;
@@ -23,6 +24,7 @@ interface NotificationItem {
 
 export default function NotificationDropdown() {
   const router = useRouter();
+  const { t } = useApp();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -82,7 +84,7 @@ export default function NotificationDropdown() {
         setUnreadCount(list.filter((n) => !n.isRead).length);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Gagal memuat notifikasi");
+      setError(err instanceof Error ? err.message : t("Gagal memuat notifikasi", "Failed to load notifications"));
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +154,7 @@ export default function NotificationDropdown() {
       case "COMMENT_MENTION":
         return <MessageSquare className="w-5 h-5 text-green-500" />;
       default:
-        return <Bell className="w-5 h-5 text-slate-500" />;
+        return <Bell className="w-5 h-5 text-slate-500 dark:text-slate-400" />;
     }
   };
 
@@ -171,28 +173,28 @@ export default function NotificationDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all"
-        aria-label="Notifikasi"
+        className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+        aria-label={t("Notifikasi", "Notifications")}
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
+          <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 flex flex-col max-h-[85vh] overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-            <h3 className="font-semibold text-slate-800 text-sm">Notifikasi</h3>
+        <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 flex flex-col max-h-[85vh] overflow-hidden dark:bg-slate-900 dark:border-slate-700">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/50">
+            <h3 className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t("Notifikasi", "Notifications")}</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="text-[11px] font-medium text-[#0047A5] hover:text-blue-800 transition flex items-center gap-1"
+                className="text-[11px] font-medium text-[#0047A5] hover:text-blue-800 transition flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300"
               >
                 <CheckCircle2 className="w-3 h-3" />
-                Tandai semua dibaca
+                {t("Tandai semua dibaca", "Mark all as read")}
               </button>
             )}
           </div>
@@ -201,53 +203,53 @@ export default function NotificationDropdown() {
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2">
                 <Loader2 className="w-6 h-6 text-[#0047A5] animate-spin" />
-                <p className="text-xs text-slate-500">Memuat notifikasi...</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t("Memuat notifikasi...", "Loading notifications...")}</p>
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2 text-center px-4">
                 <AlertCircle className="w-8 h-8 text-red-400" />
-                <p className="text-xs text-slate-600">{error}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300">{error}</p>
                 <button
                   onClick={fetchNotifications}
-                  className="mt-2 text-xs font-medium text-[#0047A5] hover:underline"
+                  className="mt-2 text-xs font-medium text-[#0047A5] hover:underline dark:text-blue-400"
                 >
-                  Coba lagi
+                  {t("Coba lagi", "Try again")}
                 </button>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                  <Bell className="w-6 h-6 text-slate-300" />
+                <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 dark:bg-slate-800">
+                  <Bell className="w-6 h-6 text-slate-300 dark:text-slate-600" />
                 </div>
-                <p className="text-sm font-medium text-slate-700">Belum ada notifikasi</p>
-                <p className="text-xs text-slate-500 mt-1">Notifikasi baru akan muncul di sini</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Belum ada notifikasi", "No notifications yet")}</p>
+                <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">{t("Notifikasi baru akan muncul di sini", "New notifications will appear here")}</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
                     onClick={() => handleMarkAsRead(notification.id, notification.type, notification.linkUrl)}
-                    className={`flex items-start gap-3 p-4 hover:bg-slate-50 transition cursor-pointer ${
-                      !notification.isRead ? "bg-blue-50/30" : ""
+                    className={`flex items-start gap-3 p-4 hover:bg-slate-50 transition cursor-pointer dark:hover:bg-slate-800/60 ${
+                      !notification.isRead ? "bg-blue-50/30 dark:bg-blue-500/10" : ""
                     }`}
                   >
                     <div className="shrink-0 mt-0.5">
                       {getIconForType(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!notification.isRead ? "font-semibold text-slate-800" : "font-medium text-slate-700"}`}>
+                      <p className={`text-sm ${!notification.isRead ? "font-semibold text-slate-800 dark:text-slate-100" : "font-medium text-slate-700 dark:text-slate-300"}`}>
                         {notification.title}
                       </p>
-                      <p className={`text-xs mt-0.5 line-clamp-2 ${!notification.isRead ? "text-slate-600" : "text-slate-500"}`}>
+                      <p className={`text-xs mt-0.5 line-clamp-2 ${!notification.isRead ? "text-slate-600 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"}`}>
                         {notification.message}
                       </p>
-                      <p className="text-[10px] text-slate-400 mt-1.5 font-medium">
+                      <p className="text-[10px] text-slate-400 mt-1.5 font-medium dark:text-slate-500">
                         {formatTime(notification.createdAt)}
                       </p>
                     </div>
                     {!notification.isRead && (
-                      <div className="w-2 h-2 rounded-full bg-[#0047A5] shrink-0 mt-1.5 shadow-sm"></div>
+                      <div className="w-2 h-2 rounded-full bg-[#0047A5] shrink-0 mt-1.5 shadow-sm dark:bg-blue-400"></div>
                     )}
                   </div>
                 ))}

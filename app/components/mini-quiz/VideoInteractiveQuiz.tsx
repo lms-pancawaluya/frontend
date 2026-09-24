@@ -11,6 +11,7 @@ interface VideoInteractiveQuizProps {
 }
 
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 const API_BASE_URL = `${API_URL}/api`;
 
@@ -20,6 +21,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
   authToken,
   onQuizCompleted,
 }) => {
+  const { t } = useApp();
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [quizzes, setQuizzes] = useState<MiniQuiz[]>([]);
@@ -95,7 +97,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
     if (!activeQuiz) return;
 
     if (Object.keys(selectedAnswers).length < activeQuiz.questions.length) {
-      setErrorMessage("Pilih jawaban untuk semua pertanyaan sebelum mengirim.");
+      setErrorMessage(t("Pilih jawaban untuk semua pertanyaan sebelum mengirim.", "Select an answer for all questions before submitting."));
       return;
     }
 
@@ -129,10 +131,10 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
           if (onQuizCompleted) onQuizCompleted();
         }
       } else {
-        setErrorMessage(result.pesan || "Terjadi kesalahan saat mengirim jawaban.");
+        setErrorMessage(result.pesan || t("Terjadi kesalahan saat mengirim jawaban.", "An error occurred while submitting answers."));
       }
     } catch {
-      setErrorMessage("Gagal terhubung ke server.");
+      setErrorMessage(t("Gagal terhubung ke server.", "Failed to connect to the server."));
     } finally {
       setIsSubmitting(false);
     }
@@ -180,11 +182,11 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
       {/* Pop-up Modal Kuis */}
       {activeQuiz && (
         <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full shadow-xl border border-slate-200 text-slate-800">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">{activeQuiz.judul}</h3>
-              <span className="text-xs bg-sky-100 text-sky-800 px-2.5 py-1 rounded-full font-medium">
-                Passing Grade: {activeQuiz.passingScore}%
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full shadow-xl border border-slate-200 text-slate-800 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{activeQuiz.judul}</h3>
+              <span className="text-xs bg-sky-100 text-sky-800 px-2.5 py-1 rounded-full font-medium dark:bg-sky-950/40 dark:text-sky-300">
+                {t("Passing Grade:", "Passing Grade:")} {activeQuiz.passingScore}%
               </span>
             </div>
 
@@ -200,20 +202,20 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                 {/* LULUS */}
                 {attemptResult.isLolos && (
                   <div className="space-y-3">
-                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto dark:bg-emerald-950/40 dark:text-emerald-400">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-emerald-600">Selamat! Kamu Lolos</h4>
-                    <p className="text-sm text-slate-600">
-                      Nilai: <span className="font-bold text-slate-900">{attemptResult.skor}</span> ({attemptResult.benar} dari {attemptResult.totalSoal} benar)
+                    <h4 className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{t("Selamat! Kamu Lolos", "Congratulations! You Passed")}</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      {t("Nilai:", "Score:")} <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> ({attemptResult.benar} {t("dari", "of")} {attemptResult.totalSoal} {t("benar", "correct")})
                     </p>
                     <button
                       onClick={handleContinueVideo}
                       className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg transition-colors"
                     >
-                      Lanjutkan Video
+                      {t("Lanjutkan Video", "Continue Video")}
                     </button>
                   </div>
                 )}
@@ -221,20 +223,20 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                 {/* GAGAL, BISA RETRY */}
                 {!attemptResult.isLolos && !attemptResult.mustRepeat && (
                   <div className="space-y-3">
-                    <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto dark:bg-amber-950/40 dark:text-amber-400">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-amber-600">Belum Mencapai Passing Grade</h4>
-                    <p className="text-sm text-slate-600">
-                      Nilai: <span className="font-bold text-slate-900">{attemptResult.skor}</span> | Sisa Percobaan: <span className="font-bold text-amber-600">{attemptResult.sisaPercobaan}x</span>
+                    <h4 className="text-lg font-bold text-amber-600 dark:text-amber-400">{t("Belum Mencapai Passing Grade", "Has Not Reached Passing Grade")}</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      {t("Nilai:", "Score:")} <span className="font-bold text-slate-900 dark:text-slate-100">{attemptResult.skor}</span> | {t("Sisa Percobaan:", "Remaining Attempts:")} <span className="font-bold text-amber-600 dark:text-amber-400">{attemptResult.sisaPercobaan}x</span>
                     </p>
                     <button
                       onClick={handleRetryQuiz}
                       className="btn-primary w-full py-2.5 px-4 text-sm"
                     >
-                      Coba Lagi
+                      {t("Coba Lagi", "Try Again")}
                     </button>
                   </div>
                 )}
@@ -242,20 +244,20 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                 {/* GAGAL 3X (MUST REPEAT) */}
                 {!attemptResult.isLolos && attemptResult.mustRepeat && (
                   <div className="space-y-3">
-                    <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto dark:bg-rose-950/40 dark:text-rose-400">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-bold text-rose-600">Kesempatan Habis</h4>
-                    <p className="text-sm text-slate-600 leading-relaxed">
-                      Kamu gagal 3 kali berturut-turut. Silakan tonton ulang materi video dari awal untuk mengulang kuis.
+                    <h4 className="text-lg font-bold text-rose-600 dark:text-rose-400">{t("Kesempatan Habis", "No Attempts Left")}</h4>
+                    <p className="text-sm text-slate-600 leading-relaxed dark:text-slate-300">
+                      {t("Kamu gagal 3 kali berturut-turut. Silakan tonton ulang materi video dari awal untuk mengulang kuis.", "You failed 3 times in a row. Please rewatch the video material from the beginning to retake the quiz.")}
                     </p>
                     <button
                       onClick={handleRestartVideo}
                       className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm rounded-lg transition-colors"
                     >
-                      Tonton Ulang Video
+                      {t("Tonton Ulang Video", "Rewatch Video")}
                     </button>
                   </div>
                 )}
@@ -265,7 +267,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
               <form onSubmit={handleSubmitQuiz} className="space-y-4">
                 {activeQuiz.questions.map((q, idx) => (
                   <div key={q.id} className="space-y-2">
-                    <p className="text-sm font-semibold text-slate-800">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                       {idx + 1}. {q.pertanyaan}
                     </p>
                     <div className="space-y-1.5">
@@ -276,8 +278,8 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                             key={opt.id}
                             className={`flex items-center p-3 rounded-lg border text-sm cursor-pointer transition-all ${
                               isChecked
-                                ? "bg-sky-50 border-sky-500 text-sky-900 font-medium"
-                                : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700"
+                                ? "bg-sky-50 border-sky-500 text-sky-900 font-medium dark:bg-sky-950/40 dark:border-sky-600 dark:text-sky-200"
+                                : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300"
                             }`}
                           >
                             <input
@@ -302,7 +304,7 @@ export const VideoInteractiveQuiz: React.FC<VideoInteractiveQuizProps> = ({
                     disabled={isSubmitting}
                     className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-medium text-sm rounded-lg transition-colors"
                   >
-                    {isSubmitting ? "Mengirim..." : "Kirim Jawaban"}
+                    {isSubmitting ? t("Mengirim...", "Sending...") : t("Kirim Jawaban", "Submit Answers")}
                   </button>
                 </div>
               </form>

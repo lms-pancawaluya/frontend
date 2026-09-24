@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getModules, deleteModule } from "@/services/module.service";
 import { getCourses } from "@/services/course.service";
 import { buildManageableCourseIdSet, getCourseModulePermissions, getStoredUser } from "@/lib/rbac";
+import { useApp } from "@/app/context/AppContext";
 
 interface Module {
   id: string;
@@ -21,15 +22,16 @@ interface Module {
 }
 
 const aspekColor: Record<string, string> = {
-  cageur: "bg-green-100 text-green-700",
-  bageur: "bg-blue-100 text-blue-700",
-  bener: "bg-yellow-100 text-yellow-700",
-  pinter: "bg-purple-100 text-purple-700",
-  singer: "bg-red-100 text-red-700",
+  cageur: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300",
+  bageur: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
+  bener: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-300",
+  pinter: "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300",
+  singer: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
 };
 
 export default function AdminModulesPage() {
   const router = useRouter();
+  const { t } = useApp();
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -78,7 +80,7 @@ export default function AdminModulesPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat daftar modul.");
+          setError(t("Gagal memuat daftar modul.", "Failed to load module list."));
         }
       } finally {
         setLoading(false);
@@ -86,10 +88,10 @@ export default function AdminModulesPage() {
     }
 
     fetchData();
-  }, [router]);
+  }, [router, t]);
 
   async function handleDelete(id: string, judul: string) {
-    const confirmed = window.confirm(`Yakin ingin menghapus modul "${judul}"?`);
+    const confirmed = window.confirm(t(`Yakin ingin menghapus modul "${judul}"?`, `Are you sure you want to delete the module "${judul}"?`));
     if (!confirmed) return;
 
     setDeletingId(id);
@@ -101,7 +103,7 @@ export default function AdminModulesPage() {
       if (err instanceof Error) {
         alert(err.message);
       } else {
-        alert("Gagal menghapus modul.");
+        alert(t("Gagal menghapus modul.", "Failed to delete module."));
       }
     } finally {
       setDeletingId(null);
@@ -109,13 +111,13 @@ export default function AdminModulesPage() {
   }
 
   if (loading) {
-    return <p className="text-center mt-16 text-gray-500">Memuat daftar modul...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">{t("Memuat daftar modul...", "Loading module list...")}</p>;
   }
 
   if (error) {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           {error}
         </div>
       </div>
@@ -134,21 +136,21 @@ export default function AdminModulesPage() {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)]">
-          Kelola Modul
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] dark:text-slate-100">
+          {t("Kelola Modul", "Manage Modules")}
         </h1>
         {permissions.canCreate && (
           <Link
             href="/admin/modules/new"
             className="bg-[var(--color-navy)] text-white text-sm px-4 py-2 rounded-full hover:opacity-90 transition"
           >
-            + Tambah Modul
+            {t("+ Tambah Modul", "+ Add Module")}
           </Link>
         )}
       </div>
 
       <div className="relative w-full sm:max-w-sm mb-6">
-        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 dark:text-slate-500">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
           </svg>
@@ -157,16 +159,16 @@ export default function AdminModulesPage() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari nama atau deskripsi modul..."
-          aria-label="Cari nama atau deskripsi modul"
-          className="w-full rounded-full border border-[var(--color-border-soft)] bg-white py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15"
+          placeholder={t("Cari nama atau deskripsi modul...", "Search module name or description...")}
+          aria-label={t("Cari nama atau deskripsi modul", "Search module name or description")}
+          className="w-full rounded-full border border-[var(--color-border-soft)] bg-white py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
         />
         {searchQuery && (
           <button
             type="button"
             onClick={() => setSearchQuery("")}
-            aria-label="Bersihkan pencarian"
-            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label={t("Bersihkan pencarian", "Clear search")}
+            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:text-slate-300"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -176,9 +178,9 @@ export default function AdminModulesPage() {
       </div>
 
       {modules.length === 0 ? (
-        <p className="text-center text-gray-500 mt-8">Belum ada modul tersedia.</p>
+        <p className="text-center text-gray-500 mt-8 dark:text-slate-400">{t("Belum ada modul tersedia.", "No modules available yet.")}</p>
       ) : filteredModules.length === 0 ? (
-        <p className="text-center text-gray-500 mt-8">Modul tidak ditemukan</p>
+        <p className="text-center text-gray-500 mt-8 dark:text-slate-400">{t("Modul tidak ditemukan", "Module not found")}</p>
       ) : (
         <div className="flex flex-col gap-3">
           {filteredModules
@@ -191,7 +193,7 @@ export default function AdminModulesPage() {
               return (
               <div
                 key={mod.id}
-                className="border border-[var(--color-border-soft)] rounded-2xl p-5 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-md transition"
+                className="border border-[var(--color-border-soft)] rounded-2xl p-5 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-md transition dark:bg-slate-900 dark:hover:border-slate-700"
               >
                 {manageable ? (
                   <Link
@@ -199,40 +201,40 @@ export default function AdminModulesPage() {
                     className="flex-1 min-w-0 cursor-pointer"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-400">#{mod.urutan}</span>
+                      <span className="text-xs text-gray-400 dark:text-slate-500">#{mod.urutan}</span>
                       <span
                         className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
-                          aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700"
+                          aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                       >
                         {mod.aspekPancawaluya}
                       </span>
                     </div>
-                    <p className="font-medium text-[var(--color-navy)] truncate">{mod.judul}</p>
-                    <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{mod.deskripsi}</p>
-                    <div className="text-xs text-gray-400 flex gap-3 mt-1">
-                      <span>{mod._count.contents} konten</span>
-                      <span>{mod._count.evaluations} asesmen</span>
+                    <p className="font-medium text-[var(--color-navy)] truncate dark:text-slate-100">{mod.judul}</p>
+                    <p className="text-sm text-gray-500 line-clamp-1 mt-0.5 dark:text-slate-400">{mod.deskripsi}</p>
+                    <div className="text-xs text-gray-400 flex gap-3 mt-1 dark:text-slate-500">
+                      <span>{mod._count.contents} {t("konten", "contents")}</span>
+                      <span>{mod._count.evaluations} {t("asesmen", "assessments")}</span>
                     </div>
                   </Link>
                 ) : (
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-400">#{mod.urutan}</span>
+                      <span className="text-xs text-gray-400 dark:text-slate-500">#{mod.urutan}</span>
                       <span
                         className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
-                          aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700"
+                          aspekColor[mod.aspekPancawaluya] || "bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                       >
                         {mod.aspekPancawaluya}
                       </span>
                     </div>
-                    <p className="font-medium text-[var(--color-navy)] truncate">{mod.judul}</p>
-                    <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{mod.deskripsi}</p>
-                    <div className="text-xs text-gray-400 flex gap-3 mt-1">
-                      <span>{mod._count.contents} konten</span>
-                      <span>{mod._count.evaluations} asesmen</span>
-                      <span className="text-amber-600">Bukan course Anda</span>
+                    <p className="font-medium text-[var(--color-navy)] truncate dark:text-slate-100">{mod.judul}</p>
+                    <p className="text-sm text-gray-500 line-clamp-1 mt-0.5 dark:text-slate-400">{mod.deskripsi}</p>
+                    <div className="text-xs text-gray-400 flex gap-3 mt-1 dark:text-slate-500">
+                      <span>{mod._count.contents} {t("konten", "contents")}</span>
+                      <span>{mod._count.evaluations} {t("asesmen", "assessments")}</span>
+                      <span className="text-amber-600 dark:text-amber-400">{t("Bukan course Anda", "Not your course")}</span>
                     </div>
                   </div>
                 )}
@@ -241,17 +243,17 @@ export default function AdminModulesPage() {
                   <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <Link
                       href={`/admin/modules/${mod.id}`}
-                      className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition"
+                      className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition dark:text-slate-200 dark:hover:bg-slate-800"
                     >
-                      Edit
+                      {t("Edit", "Edit")}
                     </Link>
                     {permissions.canDelete && (
                       <button
                         onClick={() => handleDelete(mod.id, mod.judul)}
                         disabled={deletingId === mod.id}
-                        className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200"
+                        className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30 dark:disabled:text-slate-600 dark:disabled:border-slate-700"
                       >
-                        {deletingId === mod.id ? "Menghapus..." : "Hapus"}
+                        {deletingId === mod.id ? t("Menghapus...", "Deleting...") : t("Hapus", "Delete")}
                       </button>
                     )}
                   </div>

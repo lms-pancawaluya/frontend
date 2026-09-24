@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getProfile } from "@/services/auth.service";
 import Header from "@/app/components/common/Header";
 import { getUsers, getUsersProgressAll } from "@/services/user.service";
+import { useApp } from "@/app/context/AppContext";
 
 interface User {
   id: string;
@@ -72,6 +73,7 @@ const ICONS = {
 
 export default function PengajarDashboardPage() {
   const router = useRouter();
+  const { t } = useApp();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -95,13 +97,13 @@ export default function PengajarDashboardPage() {
         const profile = await getProfile();
         setUser(profile);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat profil.");
+        setError(err instanceof Error ? err.message : t("Gagal memuat profil.", "Failed to load profile."));
       } finally {
         setLoading(false);
       }
     }
     checkAuth();
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     let active = true;
@@ -157,44 +159,44 @@ export default function PengajarDashboardPage() {
   }, [user]);
 
   if (loading) {
-    return <p className="text-center mt-16 text-gray-500">Memuat Dashboard Pengajar...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">{t("Memuat Dashboard Pengajar...", "Loading Instructor Dashboard...")}</p>;
   }
 
   if (error) {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
-        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200">{error}</div>
+        <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">{error}</div>
       </div>
     );
   }
 
   const kpis = [
     {
-      label: "Guru Dikelola",
+      label: t("Guru Dikelola", "Teachers Managed"),
       value: stats?.guruCount ?? 0,
-      sub: "dalam sekolah Anda",
-      subClass: "text-gray-400",
+      sub: t("dalam sekolah Anda", "in your school"),
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.users,
-      iconWrap: "bg-emerald-100 text-emerald-600",
-      card: "border-emerald-100 bg-emerald-50/40",
+      iconWrap: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+      card: "border-emerald-100 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20",
     },
     {
-      label: "Rata-rata Progress",
+      label: t("Rata-rata Progress", "Average Progress"),
       value: stats?.avgProgress === null || stats?.avgProgress === undefined ? "—" : `${stats.avgProgress}%`,
-      sub: "pengerjaan modul",
-      subClass: "text-gray-400",
+      sub: t("pengerjaan modul", "module completion"),
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.monitoring,
-      iconWrap: "bg-amber-100 text-amber-600",
-      card: "border-amber-100 bg-amber-50/40",
+      iconWrap: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+      card: "border-amber-100 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20",
     },
     {
-      label: "Modul Tuntas",
+      label: t("Modul Tuntas", "Completed Modules"),
       value: statsLoading ? "—" : `${stats?.evaluasiSelesai ?? 0}/${stats?.guruCount ?? 0}`,
-      sub: "guru menuntaskan modul",
-      subClass: "text-gray-400",
+      sub: t("guru menuntaskan modul", "teachers completed modules"),
+      subClass: "text-gray-400 dark:text-slate-500",
       icon: ICONS.check,
-      iconWrap: "bg-blue-100 text-blue-600",
-      card: "border-blue-100 bg-blue-50/40",
+      iconWrap: "bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      card: "border-blue-100 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20",
     },
   ];
 
@@ -212,35 +214,35 @@ export default function PengajarDashboardPage() {
       : { background: "#e5e7eb" };
 
   const legend = [
-    { label: "Selesai", count: dist.selesai, dot: "bg-emerald-500" },
-    { label: "Dalam Progres", count: dist.progres, dot: "bg-blue-500" },
-    { label: "Belum Mulai", count: dist.belum, dot: "bg-amber-500" },
+    { label: t("Selesai", "Completed"), count: dist.selesai, dot: "bg-emerald-500" },
+    { label: t("Dalam Progres", "In Progress"), count: dist.progres, dot: "bg-blue-500" },
+    { label: t("Belum Mulai", "Not Started"), count: dist.belum, dot: "bg-amber-500" },
   ];
 
   const menu = [
     {
-      title: "Kelola Guru",
-      desc: "Lihat dan perbarui data guru di sekolah Anda.",
+      title: t("Kelola Guru", "Manage Teachers"),
+      desc: t("Lihat dan perbarui data guru di sekolah Anda.", "View and update teacher data in your school."),
       href: "/pengajar/guru",
       icon: ICONS.users,
-      iconWrap: "bg-emerald-100 text-emerald-600",
-      arrow: "bg-emerald-50 text-emerald-600",
+      iconWrap: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+      arrow: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400",
     },
     {
-      title: "Monitoring Pembelajaran",
-      desc: "Pantau progres pembelajaran (course) tiap guru binaan.",
+      title: t("Monitoring Pembelajaran", "Learning Monitoring"),
+      desc: t("Pantau progres pembelajaran (course) tiap guru binaan.", "Monitor each supervised teacher's learning (course) progress."),
       href: "/pengajar/monitoring",
       icon: ICONS.monitoring,
-      iconWrap: "bg-amber-100 text-amber-600",
-      arrow: "bg-amber-50 text-amber-600",
+      iconWrap: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+      arrow: "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400",
     },
     {
-      title: "Diskusi/Komentar Modul",
-      desc: "Ikuti diskusi modul dan berikan tanggapan untuk guru.",
+      title: t("Diskusi/Komentar Modul", "Module Discussion/Comments"),
+      desc: t("Ikuti diskusi modul dan berikan tanggapan untuk guru.", "Join module discussions and provide feedback for teachers."),
       href: "/pengajar/diskusi",
       icon: ICONS.chat,
-      iconWrap: "bg-blue-100 text-blue-600",
-      arrow: "bg-blue-50 text-blue-600",
+      iconWrap: "bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      arrow: "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
     },
   ];
 
@@ -257,11 +259,11 @@ export default function PengajarDashboardPage() {
           <div className="max-w-2xl space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[11px] font-bold text-amber-300 backdrop-blur-md">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#F3BF10]" />
-              Portal Pembinaan Pengajar
+              {t("Portal Pembinaan Pengajar", "Instructor Coaching Portal")}
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Selamat datang, {user?.nama ?? "Pengajar"}.</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{t("Selamat datang,", "Welcome,")} {user?.nama ?? "Pengajar"}.</h1>
             <p className="text-xs leading-relaxed text-slate-100/90 sm:text-sm">
-              Bina dan pantau perkembangan guru{user?.sekolah ? ` di ${user.sekolah}` : ""}: progres modul, hasil Pre-Test/Post-Test, dan diskusi.
+              {t("Bina dan pantau perkembangan guru", "Coach and monitor teacher development")}{user?.sekolah ? ` ${t("di", "at")} ${user.sekolah}` : ""}: {t("progres modul, hasil Pre-Test/Post-Test, dan diskusi.", "module progress, Pre-Test/Post-Test results, and discussions.")}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3 self-start md:self-auto">
@@ -269,7 +271,7 @@ export default function PengajarDashboardPage() {
               href="/pengajar/monitoring"
               className="inline-flex items-center gap-2 rounded-2xl bg-[#F3BF10] px-6 py-3 text-xs font-extrabold text-[#0047A5] shadow-lg transition-all duration-200 hover:bg-amber-400 sm:text-sm"
             >
-              <span>Mulai Monitoring</span>
+              <span>{t("Mulai Monitoring", "Start Monitoring")}</span>
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -285,11 +287,11 @@ export default function PengajarDashboardPage() {
             <div className="flex items-start gap-3">
               <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${kpi.iconWrap}`}>{kpi.icon}</span>
               <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-gray-500">{kpi.label}</p>
+                <p className="truncate text-xs font-medium text-gray-500 dark:text-slate-400">{kpi.label}</p>
                 {statsLoading ? (
-                  <span className="mt-2 block h-7 w-14 animate-pulse rounded bg-gray-200" />
+                  <span className="mt-2 block h-7 w-14 animate-pulse rounded bg-gray-200 dark:bg-slate-700" />
                 ) : (
-                  <p className="mt-0.5 text-2xl font-bold text-[var(--color-navy)]">{kpi.value}</p>
+                  <p className="mt-0.5 text-2xl font-bold text-[var(--color-navy)] dark:text-slate-100">{kpi.value}</p>
                 )}
                 <p className={`mt-0.5 truncate text-[11px] ${kpi.subClass}`}>{kpi.sub}</p>
               </div>
@@ -300,60 +302,60 @@ export default function PengajarDashboardPage() {
 
       {/* Monitoring donut + quick access */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm dark:bg-slate-900">
           <div className="mb-6 flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">
-              <span className="text-[var(--color-accent)]">{ICONS.monitoring}</span>
-              Monitoring Pembelajaran
+            <h2 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">
+              <span className="text-[var(--color-accent)] dark:text-blue-400">{ICONS.monitoring}</span>
+              {t("Monitoring Pembelajaran", "Learning Monitoring")}
             </h2>
             <Link
               href="/pengajar/monitoring"
-              className="shrink-0 rounded-lg border border-[var(--color-border-soft)] px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-[var(--color-pale)] hover:text-[var(--color-navy)]"
+              className="shrink-0 rounded-lg border border-[var(--color-border-soft)] px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-[var(--color-pale)] hover:text-[var(--color-navy)] dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             >
-              Lihat Detail →
+              {t("Lihat Detail →", "View Detail →")}
             </Link>
           </div>
           <div className="flex flex-col items-center gap-6 sm:flex-row">
             <div className="relative h-40 w-40 shrink-0 rounded-full" style={donutStyle}>
-              <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-white text-center shadow-inner">
+              <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-white text-center shadow-inner dark:bg-slate-900">
                 {statsLoading ? (
-                  <span className="h-6 w-12 animate-pulse rounded bg-gray-200" />
+                  <span className="h-6 w-12 animate-pulse rounded bg-gray-200 dark:bg-slate-700" />
                 ) : (
-                  <span className="text-2xl font-bold text-[var(--color-navy)]">
+                  <span className="text-2xl font-bold text-[var(--color-navy)] dark:text-slate-100">
                     {stats?.avgProgress === null || stats?.avgProgress === undefined ? "—" : `${stats.avgProgress}%`}
                   </span>
                 )}
-                <span className="text-[11px] text-gray-400">Rata-rata</span>
+                <span className="text-[11px] text-gray-400 dark:text-slate-500">{t("Rata-rata", "Average")}</span>
               </div>
             </div>
             <ul className="w-full flex-1 space-y-3">
               {legend.map((l) => (
                 <li key={l.label} className="flex items-center gap-3 text-sm">
                   <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${l.dot}`} />
-                  <span className="flex-1 text-gray-600">{l.label}</span>
-                  <span className="font-medium text-gray-500">{l.count} guru</span>
-                  <span className="w-10 text-right font-bold text-[var(--color-navy)]">{Math.round(share(l.count))}%</span>
+                  <span className="flex-1 text-gray-600 dark:text-slate-300">{l.label}</span>
+                  <span className="font-medium text-gray-500 dark:text-slate-400">{l.count} {t("guru", "teachers")}</span>
+                  <span className="w-10 text-right font-bold text-[var(--color-navy)] dark:text-slate-100">{Math.round(share(l.count))}%</span>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="mt-6 border-t border-[var(--color-border-soft)] pt-4 text-xs text-gray-500">
-            Total Guru Binaan · <span className="font-bold text-[var(--color-navy)]">{stats?.guruCount ?? 0} guru</span>
+          <div className="mt-6 border-t border-[var(--color-border-soft)] pt-4 text-xs text-gray-500 dark:text-slate-400">
+            {t("Total Guru Binaan", "Total Supervised Teachers")} · <span className="font-bold text-[var(--color-navy)] dark:text-slate-100">{stats?.guruCount ?? 0} {t("guru", "teachers")}</span>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm">
-          <h2 className="mb-4 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)]">Akses Cepat</h2>
+        <section className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 shadow-sm dark:bg-slate-900">
+          <h2 className="mb-4 font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">{t("Akses Cepat", "Quick Access")}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {menu.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="group flex flex-col rounded-2xl border border-[var(--color-border-soft)] bg-white p-4 shadow-sm transition hover:shadow-md"
+                className="group flex flex-col rounded-2xl border border-[var(--color-border-soft)] bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-slate-900 dark:hover:border-slate-700"
               >
                 <span className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${item.iconWrap}`}>{item.icon}</span>
-                <h3 className="text-sm font-semibold text-[var(--color-navy)] group-hover:text-[var(--color-accent)]">{item.title}</h3>
-                <p className="mt-1 flex-1 text-xs leading-relaxed text-gray-500">{item.desc}</p>
+                <h3 className="text-sm font-semibold text-[var(--color-navy)] group-hover:text-[var(--color-accent)] dark:text-slate-100">{item.title}</h3>
+                <p className="mt-1 flex-1 text-xs leading-relaxed text-gray-500 dark:text-slate-400">{item.desc}</p>
                 <span className={`mt-3 flex h-8 w-8 items-center justify-center rounded-full transition group-hover:translate-x-0.5 ${item.arrow}`}>
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />

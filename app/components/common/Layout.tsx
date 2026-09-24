@@ -120,9 +120,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             role="dialog"
             aria-modal="true"
             aria-label="Navigasi Aplikasi"
-            className="absolute inset-y-0 left-0 w-72 max-w-[82%] overflow-y-auto border-r border-[var(--color-border-soft)] bg-white shadow-2xl"
+            className="absolute inset-y-0 left-0 w-72 max-w-[82%] overflow-y-auto border-r border-[var(--color-border-soft)] bg-white shadow-2xl dark:bg-slate-900"
           >
-            <Suspense fallback={<div className="h-full w-full bg-white" />}>
+            <Suspense fallback={<div className="h-full w-full bg-white dark:bg-slate-900" />}>
               <Sidebar onNavigate={() => setDrawerOpen(false)} />
             </Suspense>
           </div>
@@ -132,21 +132,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main content column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile/tablet: single menu trigger (hidden on desktop) */}
-        <div className="flex items-center gap-3 border-b border-[var(--color-border-soft)] bg-white/80 px-4 py-2.5 backdrop-blur min-[801px]:hidden">
+        <div className="flex items-center gap-3 border-b border-[var(--color-border-soft)] bg-white/80 px-4 py-2.5 backdrop-blur min-[801px]:hidden dark:bg-slate-900/80">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-label="Buka menu navigasi"
             aria-expanded={drawerOpen}
             aria-controls="app-sidebar-drawer"
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--color-border-soft)] px-3 text-sm font-medium text-[var(--color-navy)] transition hover:bg-[var(--color-pale)]"
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--color-border-soft)] px-3 text-sm font-medium text-[var(--color-navy)] transition hover:bg-[var(--color-pale)] dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
             <span>Menu</span>
           </button>
-          <span className="font-[family-name:var(--font-display)] text-sm font-semibold text-[var(--color-navy)]">
+          <span className="font-[family-name:var(--font-display)] text-sm font-semibold text-[var(--color-navy)] dark:text-slate-200">
             LMS Pancawaluya
           </span>
         </div>

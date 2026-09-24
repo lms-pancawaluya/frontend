@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getModuleById } from "@/services/module.service";
 import { isMaterialLocked, isPostTestLocked, readModuleStageProgress } from "@/lib/moduleStages";
+import { useApp } from "@/app/context/AppContext";
 
 interface ModuleStageGuardProps {
   /** Module yang sedang diakses. */
@@ -29,6 +30,7 @@ interface ModuleStageGuardProps {
  */
 export default function ModuleStageGuard({ moduleId, stage, children }: ModuleStageGuardProps) {
   const router = useRouter();
+  const { t } = useApp();
   const [status, setStatus] = useState<"checking" | "allowed" | "blocked" | "error">("checking");
 
   useEffect(() => {
@@ -76,17 +78,17 @@ export default function ModuleStageGuard({ moduleId, stage, children }: ModuleSt
   if (status === "error") {
     return (
       <div className="mx-auto max-w-md p-6">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          Gagal memuat status tahapan modul. Silakan coba lagi.
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+          {t("Gagal memuat status tahapan modul. Silakan coba lagi.", "Failed to load module stage status. Please try again.")}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3 text-slate-500">
+    <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3 text-slate-500 dark:text-slate-400">
       <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      <p className="text-xs font-medium">Memeriksa akses materi...</p>
+      <p className="text-xs font-medium">{t("Memeriksa akses materi...", "Checking material access...")}</p>
     </div>
   );
 }
