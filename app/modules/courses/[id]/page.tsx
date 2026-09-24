@@ -14,6 +14,7 @@ import CourseFeedbackForm from "@/app/components/common/CourseFeedbackForm";
 import { renderCommentText } from "@/lib/mention";
 import {
   claimCertificate,
+  generateCertificate,
   getCertificateById,
   getUserCertificates,
 } from "@/services/certificate.service";
@@ -333,19 +334,27 @@ export default function GuruCourseDetailPage() {
 
     setCertificateBusy(true);
     try {
-      if (!certificate) {
-        await claimCertificate(id);
+      let current: UserCertificate | null = null;
+      if (!certificate || !certificate.id) {
+        current = (await claimCertificate(id)) as UserCertificate;
+      } else {
+        current = (await generateCertificate(certificate.id)) as UserCertificate;
       }
-      // Selalu refresh dari BE agar UI memakai status & fileUrl terbaru.
-      const list = (await getUserCertificates()) as UserCertificate[];
-      let current = list.find((item) => item.courseId === id) ?? null;
-      if (current && !current.fileUrl && current.id) {
-        try {
-          current = (await getCertificateById(current.id)) as UserCertificate;
-        } catch {
-          // pertahankan record dari daftar
+
+      if (!current || !current.fileUrl) {
+        const list = (await getUserCertificates()) as UserCertificate[];
+        const refreshed = list.find((item) => item.courseId === id) ?? null;
+        if (refreshed && !refreshed.fileUrl && refreshed.id) {
+          try {
+            current = (await getCertificateById(refreshed.id)) as UserCertificate;
+          } catch {
+            current = refreshed;
+          }
+        } else if (refreshed) {
+          current = refreshed;
         }
       }
+
       setCertificate(current);
 
       if (current?.fileUrl) {

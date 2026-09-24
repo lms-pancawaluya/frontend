@@ -229,6 +229,38 @@ export async function getCertificateById(certificateId) {
  * BE mengembalikan claim/sertifikat yang sudah ada bila sudah pernah di-claim).
  * Mengembalikan { id, courseId, status, fileUrl } terbaru dari BE.
  */
+export async function generateCertificate(certificateId) {
+  if (!certificateId) {
+    throw new Error("Certificate ID wajib diisi.");
+  }
+
+  const token = getAuthToken();
+  const response = await fetchApi(`${API_URL}/api/certificates/${certificateId}/generate`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  let result = null;
+  try {
+    result = await response.json();
+  } catch {
+    result = null;
+  }
+
+  if (!response.ok || result?.sukses === false || result === null) {
+    throw new Error(
+      result?.pesan || result?.message || `Gagal generate sertifikat (status ${response.status}).`
+    );
+  }
+
+  const certData = result?.data ?? result;
+  const normalized = normalizeUserCertificate(certData);
+  return {
+    ...normalized,
+    id: normalized?.id || String(certificateId),
+  };
+}
+
 export async function claimCertificate(courseId) {
   if (!courseId) {
     throw new Error("Course ID wajib diisi.");
@@ -253,5 +285,16 @@ export async function claimCertificate(courseId) {
     );
   }
 
-  return normalizeUserCertificate(result?.data ?? result);
+  const certData = result?.data ?? result;
+  const certId = certData?.id || certData?.certificateId || certData?.certificate_id;
+
+  if (!certId) {
+    throw new Error("Gagal mendapatkan ID sertifikat dari respons claim.");
+  }
+
+  const generateResult = await generateCertificate(certId);
+  return {
+    ...generateResult,
+    courseId: generateResult?.courseId || String(courseId),
+  };
 }
