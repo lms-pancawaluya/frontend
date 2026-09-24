@@ -95,9 +95,7 @@ function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
       setPreferenceError(
         err instanceof Error
           ? err.message
-          : language === "en"
-            ? "Failed to update notification preference."
-            : "Gagal memperbarui preferensi notifikasi."
+          : t("Gagal memperbarui preferensi notifikasi.", "Failed to update notification preference.")
       );
     } finally {
       setSavingPreference(false);
@@ -242,7 +240,7 @@ function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
                   >
                     <div className="flex items-center gap-2.5">
                       <Globe className="w-4 h-4 text-red-500" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-white">Bahasa Indonesia</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-white">{t("Bahasa Indonesia", "Indonesian")}</span>
                     </div>
                     {language === "id" && <span className="w-2 h-2 rounded-full bg-[#0047A5]"></span>}
                   </button>
@@ -258,7 +256,7 @@ function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
                   >
                     <div className="flex items-center gap-2.5">
                       <Globe className="w-4 h-4 text-blue-500" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-white">English (US)</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-white">{t("English (US)", "English (US)")}</span>
                     </div>
                     {language === "en" && <span className="w-2 h-2 rounded-full bg-[#0047A5]"></span>}
                   </button>
@@ -305,10 +303,10 @@ function SettingsPageContent({ initialTab }: { initialTab: TabType }) {
                   } ${preferenceBusy || preferenceUnavailable ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
                 >
                   <span className="text-[9px] font-bold text-white absolute left-1.5">
-                    {notificationsEnabled === true ? "On" : ""}
+                    {notificationsEnabled === true ? t("Aktif", "On") : ""}
                   </span>
                   <span className="text-[9px] font-bold text-white absolute right-1.5">
-                    {notificationsEnabled === false ? "Off" : ""}
+                    {notificationsEnabled === false ? t("Nonaktif", "Off") : ""}
                   </span>
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-md ${

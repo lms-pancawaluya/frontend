@@ -4,6 +4,7 @@ import { useState, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
 import { formatNipDisplay } from "@/lib/formatNip";
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 interface ProgressItem {
   status: string;
@@ -243,6 +244,7 @@ export default function GuruProfileView(props: GuruProfileProps) {
 }
 
 function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress = false }: GuruProfileProps) {
+  const { t } = useApp();
   const getToken = () => localStorage.getItem("token") || "";
 
   const [initialProfileState] = useState(() => getInitialProfileState(profile));
@@ -297,26 +299,26 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
     e.preventDefault();
 
     if (!formData.nama.trim()) {
-      setMessage({ type: "error", text: "Mohon lengkapi form Nama Lengkap" });
+      setMessage({ type: "error", text: t("Mohon lengkapi form Nama Lengkap", "Please complete the Full Name field") });
       return;
     }
     if (!formData.email.trim()) {
-      setMessage({ type: "error", text: "Mohon lengkapi form Email" });
+      setMessage({ type: "error", text: t("Mohon lengkapi form Email", "Please complete the Email field") });
       return;
     }
     if (!formData.sekolah.trim()) {
-      setMessage({ type: "error", text: "Mohon pilih atau isi asal Sekolah Anda" });
+      setMessage({ type: "error", text: t("Mohon pilih atau isi asal Sekolah Anda", "Please select or enter your School of origin") });
       return;
     }
     if (!formData.noHp.trim()) {
-      setMessage({ type: "error", text: "Mohon lengkapi form Nomor HP" });
+      setMessage({ type: "error", text: t("Mohon lengkapi form Nomor HP", "Please complete the Phone Number field") });
       return;
     }
 
     if (!formData.email.trim().toLowerCase().endsWith("@gmail.com")) {
       setMessage({
         type: "error",
-        text: "Email harus berakhiran @gmail.com (contoh: nama@gmail.com)",
+        text: t("Email harus berakhiran @gmail.com (contoh: nama@gmail.com)", "Email must end with @gmail.com (example: nama@gmail.com)"),
       });
       return;
     }
@@ -324,14 +326,14 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
     if (!formData.noHp.startsWith("08")) {
       setMessage({
         type: "error",
-        text: "Nomor HP harus diawali dengan 08",
+        text: t("Nomor HP harus diawali dengan 08", "Phone number must start with 08"),
       });
       return;
     }
     if (formData.noHp.length < 10) {
       setMessage({
         type: "error",
-        text: "Nomor HP minimal 10 digit",
+        text: t("Nomor HP minimal 10 digit", "Phone number must be at least 10 digits"),
       });
       return;
     }
@@ -366,13 +368,13 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       if (json.sukses) {
-        setMessage({ type: "success", text: json.pesan || "Profil berhasil diperbarui" });
+        setMessage({ type: "success", text: json.pesan || t("Profil berhasil diperbarui", "Profile updated successfully") });
         onRefresh();
       } else {
-        setMessage({ type: "error", text: json.pesan || "Gagal memperbarui profil" });
+        setMessage({ type: "error", text: json.pesan || t("Gagal memperbarui profil", "Failed to update profile") });
       }
     } catch {
-      setMessage({ type: "error", text: "Terjadi kesalahan koneksi" });
+      setMessage({ type: "error", text: t("Terjadi kesalahan koneksi", "A connection error occurred") });
     } finally {
       setSavingProfile(false);
     }
@@ -395,13 +397,13 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
       const json = await res.json();
       if (json.sukses) {
-        setMessage({ type: "success", text: json.pesan || "Password berhasil diubah" });
+        setMessage({ type: "success", text: json.pesan || t("Password berhasil diubah", "Password changed successfully") });
         setPasswordData({ passwordLama: "", passwordBaru: "" });
       } else {
-        setMessage({ type: "error", text: json.pesan || "Gagal mengubah password" });
+        setMessage({ type: "error", text: json.pesan || t("Gagal mengubah password", "Failed to change password") });
       }
     } catch {
-      setMessage({ type: "error", text: "Terjadi kesalahan koneksi" });
+      setMessage({ type: "error", text: t("Terjadi kesalahan koneksi", "A connection error occurred") });
     } finally {
       setSavingPassword(false);
     }
@@ -412,7 +414,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: "Ukuran file maksimal 5MB" });
+      setMessage({ type: "error", text: t("Ukuran file maksimal 5MB", "Maximum file size is 5MB") });
       return;
     }
 
@@ -431,13 +433,13 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
       const json = await res.json();
       if (json.sukses) {
-        setMessage({ type: "success", text: "Foto profil berhasil diperbarui" });
+        setMessage({ type: "success", text: t("Foto profil berhasil diperbarui", "Profile photo updated successfully") });
         onRefresh();
       } else {
-        setMessage({ type: "error", text: json.pesan || "Gagal mengunggah foto" });
+        setMessage({ type: "error", text: json.pesan || t("Gagal mengunggah foto", "Failed to upload photo") });
       }
     } catch {
-      setMessage({ type: "error", text: "Gagal mengunggah foto profil" });
+      setMessage({ type: "error", text: t("Gagal mengunggah foto profil", "Failed to upload profile photo") });
     } finally {
       setUploadingFoto(false);
     }
@@ -466,7 +468,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               <div className="relative shrink-0">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-white/20 shadow-lg bg-white/10 backdrop-blur-md flex items-center justify-center">
                   {profile.fotoProfil ? (
-                    <Image src={profile.fotoProfil} alt="Foto Profil" fill className="object-cover" />
+                    <Image src={profile.fotoProfil} alt={t("Foto Profil", "Profile Photo")} fill className="object-cover" />
                   ) : (
                     <span className="text-3xl font-extrabold text-[#419AD6]">
                       {profile.nama?.charAt(0) || "G"}
@@ -474,7 +476,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                   )}
                   {uploadingFoto && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-[10px] text-white font-medium">
-                      Mengunggah...
+                      {t("Mengunggah...", "Uploading...")}
                     </div>
                   )}
                 </div>
@@ -494,10 +496,10 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                   <svg className="w-4 h-4 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
                   </svg>
-                  {formData.sekolah || "Sekolah Belum Diatur"}
+                  {formData.sekolah || t("Sekolah Belum Diatur", "School Not Set")}
                 </p>
                 <p className="text-[11px] text-slate-200/70 font-mono">
-                  NIP: {formData.nip ? formatNipDisplay(formData.nip) : "Belum diatur"}
+                  NIP: {formData.nip ? formatNipDisplay(formData.nip) : t("Belum diatur", "Not set")}
                 </p>
               </div>
             </div>
@@ -506,19 +508,19 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
           {/* 3 WIDGET KARTU DI DALAM BANNER */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2">
             <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4">
-              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">Peran Akun</p>
-              <p className="text-lg font-bold text-white mt-1 capitalize">{profile.role || "Pendidik"}</p>
+              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">{t("Peran Akun", "Account Role")}</p>
+              <p className="text-lg font-bold text-white mt-1 capitalize">{profile.role || t("Pendidik", "Educator")}</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4">
-              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">Total Modul Dikelola</p>
-              <p className="text-lg font-bold text-white mt-1">{totalModul} Modul</p>
+              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">{t("Total Modul Dikelola", "Total Modules Managed")}</p>
+              <p className="text-lg font-bold text-white mt-1">{totalModul} {t("Modul", "Modules")}</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4">
-              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">Status Verifikasi NIP</p>
+              <p className="text-[11px] text-white/70 font-semibold uppercase tracking-wider">{t("Status Verifikasi NIP", "NIP Verification Status")}</p>
               <p className="text-lg font-bold text-white mt-1">
-                {formData.nip ? "Terverifikasi" : "Belum Set"}
+                {formData.nip ? t("Terverifikasi", "Verified") : t("Belum Set", "Not Set")}
               </p>
             </div>
           </div>
@@ -557,7 +559,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           }`}
         >
-          Data Pribadi & Instansi
+          {t("Data Pribadi & Instansi", "Personal & Institution Data")}
         </button>
 
         {!hideProgress && (
@@ -569,7 +571,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             }`}
           >
-            Progress Pembelajaran
+            {t("Progress Pembelajaran", "Learning Progress")}
           </button>
         )}
 
@@ -581,7 +583,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           }`}
         >
-          Keamanan Akun
+          {t("Keamanan Akun", "Account Security")}
         </button>
       </div>
 
@@ -589,20 +591,20 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
       {activeTab === "profil" && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Informasi Profil Pendidik</h2>
-            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Kelola data personal dan instansi pendidikan di Jawa Barat.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("Informasi Profil Pendidik", "Educator Profile Information")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">{t("Kelola data personal dan instansi pendidikan di Jawa Barat.", "Manage personal data and educational institutions in West Java.")}</p>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-5">
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Nama Lengkap</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Nama Lengkap", "Full Name")}</label>
                 <input
                   type="text"
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   required
-                  placeholder="Masukkan Nama Lengkap"
+                  placeholder={t("Masukkan Nama Lengkap", "Enter Full Name")}
                   className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 />
               </div>
@@ -610,7 +612,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Email Resmi (@gmail.com)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Email Resmi (@gmail.com)", "Official Email (@gmail.com)")}</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -622,7 +624,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">NIP (Nomor Induk Pegawai)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("NIP (Nomor Induk Pegawai)", "NIP (Employee Identification Number)")}</label>
                 <input
                   type="text"
                   value={formatNipDisplay(formData.nip)}
@@ -630,7 +632,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                   readOnly
                   className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none font-mono dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
-                <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">NIP terverifikasi secara resmi.</p>
+                <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">{t("NIP terverifikasi secara resmi.", "NIP officially verified.")}</p>
               </div>
             </div>
 
@@ -641,7 +643,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                   <svg className="w-4 h-4 text-[#0047A5] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
                   </svg>
-                  Instansi Sekolah Wilayah Jawa Barat
+                  {t("Instansi Sekolah Wilayah Jawa Barat", "West Java Region School Institution")}
                 </label>
                 <button
                   type="button"
@@ -652,7 +654,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                   }}
                   className="text-xs text-[#0047A5] hover:text-[#002B66] font-semibold transition-colors dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  {ketikManual ? "Pilih dari Daftar Wilayah" : "Sekolah tidak ada? Ketik manual"}
+                  {ketikManual ? t("Pilih dari Daftar Wilayah", "Select from Region List") : t("Sekolah tidak ada? Ketik manual", "School not listed? Type manually")}
                 </button>
               </div>
 
@@ -660,13 +662,13 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                 <div className="space-y-3">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Kabupaten / Kota</label>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Kabupaten / Kota", "Regency / City")}</label>
                       <select
                         value={selectedDaerah}
                         onChange={handleDaerahChange}
                         className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                       >
-                        <option value="">-- Pilih Kab/Kota --</option>
+                        <option value="">{t("-- Pilih Kab/Kota --", "-- Select Regency/City --")}</option>
                         {Object.keys(DATA_SEKOLAH_JABAR).map((kota, idx) => (
                           <option key={idx} value={kota}>
                             {kota}
@@ -676,14 +678,14 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Nama Sekolah</label>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Nama Sekolah", "School Name")}</label>
                       <select
                         value={formData.sekolah}
                         disabled={!selectedDaerah}
                         onChange={handleSekolahSelect}
                         className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:disabled:bg-slate-900"
                       >
-                        <option value="">-- Pilih Sekolah --</option>
+                        <option value="">{t("-- Pilih Sekolah --", "-- Select School --")}</option>
                         {selectedDaerah &&
                           DATA_SEKOLAH_JABAR[selectedDaerah]?.map((s, idx) => (
                             <option key={idx} value={s.nama}>
@@ -696,7 +698,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
                   {formData.alamatSekolah && (
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Alamat Sekolah</label>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Alamat Sekolah", "School Address")}</label>
                       <textarea
                         value={formData.alamatSekolah}
                         readOnly
@@ -709,23 +711,23 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               ) : (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Nama Sekolah</label>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Nama Sekolah", "School Name")}</label>
                     <input
                       type="text"
                       value={formData.sekolah}
                       onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
-                      placeholder="Contoh: SMA Negeri 1 Bandung"
+                      placeholder={t("Contoh: SMA Negeri 1 Bandung", "Example: SMA Negeri 1 Bandung")}
                       required
                       className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">Alamat Sekolah</label>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Alamat Sekolah", "School Address")}</label>
                     <input
                       type="text"
                       value={formData.alamatSekolah}
                       onChange={(e) => setFormData({ ...formData, alamatSekolah: e.target.value })}
-                      placeholder="Masukkan jalan, kecamatan, kabupaten/kota"
+                      placeholder={t("Masukkan jalan, kecamatan, kabupaten/kota", "Enter street, district, regency/city")}
                       className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     />
                   </div>
@@ -734,7 +736,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Nomor WhatsApp/HP Aktif</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Nomor WhatsApp/HP Aktif", "Active WhatsApp/Phone Number")}</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -754,7 +756,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                 disabled={savingProfile}
                 className="bg-[#0047A5] hover:bg-[#002B66] text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-60"
               >
-                {savingProfile ? "Memproses..." : "Simpan Perubahan Profil"}
+                {savingProfile ? t("Memproses...", "Processing...") : t("Simpan Perubahan Profil", "Save Profile Changes")}
               </button>
             </div>
           </form>
@@ -765,8 +767,8 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
       {!hideProgress && activeTab === "progres" && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Progres Pembelajaran Panca Waluya</h2>
-            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Sertifikasi & kelengkapan modul karakter Sunda.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("Progres Pembelajaran Panca Waluya", "Panca Waluya Learning Progress")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">{t("Sertifikasi & kelengkapan modul karakter Sunda.", "Sundanese character module certification & completion.")}</p>
           </div>
 
           {profile.progress && profile.progress.length > 0 ? (
@@ -789,7 +791,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                      <span>Progres Kelulusan</span>
+                      <span>{t("Progres Kelulusan", "Completion Progress")}</span>
                       <span className="font-bold text-[#109B51]">100%</span>
                     </div>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden dark:bg-slate-800">
@@ -801,7 +803,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                     <svg className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Selesai: {item.completedAt ? new Date(item.completedAt).toLocaleDateString("id-ID") : "-"}
+                    {t("Selesai:", "Completed:")} {item.completedAt ? new Date(item.completedAt).toLocaleDateString("id-ID") : "-"}
                   </p>
                 </div>
               ))}
@@ -811,8 +813,8 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
               <svg className="w-12 h-12 text-slate-300 mx-auto mb-3 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Belum ada modul yang diselesaikan</p>
-              <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">Selesaikan modul pelatihan Anda untuk memperbarui progres di sini.</p>
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t("Belum ada modul yang diselesaikan", "No modules completed yet")}</p>
+              <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">{t("Selesaikan modul pelatihan Anda untuk memperbarui progres di sini.", "Complete your training modules to update progress here.")}</p>
             </div>
           )}
         </div>
@@ -822,13 +824,13 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
       {activeTab === "keamanan" && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Keamanan & Kata Sandi</h2>
-            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.</p>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("Keamanan & Kata Sandi", "Security & Password")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">{t("Jaga kerahasiaan kata sandi akun LMS Anda secara berkala.", "Keep your LMS account password confidential regularly.")}</p>
           </div>
 
           <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-xl">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Password Saat Ini</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Password Saat Ini", "Current Password")}</label>
               <input
                 type="password"
                 value={passwordData.passwordLama}
@@ -840,7 +842,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">Password Baru</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Password Baru", "New Password")}</label>
               <input
                 type="password"
                 value={passwordData.passwordBaru}
@@ -857,7 +859,7 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                 disabled={savingPassword}
                 className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
               >
-                {savingPassword ? "Memperbarui..." : "Update Password Akun"}
+                {savingPassword ? t("Memperbarui...", "Updating...") : t("Update Password Akun", "Update Account Password")}
               </button>
             </div>
           </form>
