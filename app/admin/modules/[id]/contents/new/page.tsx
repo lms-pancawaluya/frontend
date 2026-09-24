@@ -5,10 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { createContent, uploadPdf } from "@/services/content.service";
 import { validatePdfFile } from "@/lib/pdf";
 import { validateExternalUrl } from "@/lib/link";
+import { useApp } from "@/app/context/AppContext";
 
 export default function NewContentPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useApp();
   const moduleId = params.id as string;
 
   const [formData, setFormData] = useState({
@@ -61,7 +63,7 @@ export default function NewContentPage() {
       setFormData((prev) => ({ ...prev, konten: url }));
       setPdfFileName(file.name);
     } catch (err) {
-      setPdfError(err instanceof Error ? err.message : "Gagal mengunggah file PDF.");
+      setPdfError(err instanceof Error ? err.message : t("Gagal mengunggah file PDF.", "Failed to upload the PDF file."));
       setPdfFileName("");
     } finally {
       setUploadingPdf(false);
@@ -73,7 +75,7 @@ export default function NewContentPage() {
     setError("");
 
     if (formData.tipe === "pdf" && !formData.konten) {
-      setError("Silakan unggah file PDF terlebih dahulu.");
+      setError(t("Silakan unggah file PDF terlebih dahulu.", "Please upload the PDF file first."));
       return;
     }
 
@@ -94,7 +96,7 @@ export default function NewContentPage() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Gagal menambahkan konten.");
+        setError(t("Gagal menambahkan konten.", "Failed to add content."));
       }
     } finally {
       setLoading(false);
@@ -107,11 +109,11 @@ export default function NewContentPage() {
       onClick={() => router.push(`/admin/modules/${moduleId}`)}
       className="text-sm text-[var(--color-accent)] hover:underline mb-6 dark:text-blue-400"
     >
-      ← Kembali ke edit modul
+      ← {t("Kembali ke edit modul", "Back to edit module")}
     </button>
 
     <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-6 dark:text-slate-100">
-      Tambah Konten Baru
+      {t("Tambah Konten Baru", "Add New Content")}
     </h1>
 
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -122,7 +124,7 @@ export default function NewContentPage() {
       )}
 
       <div>
-        <label htmlFor="judul" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Judul Konten</label>
+        <label htmlFor="judul" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Judul Konten", "Content Title")}</label>
         <input
           id="judul"
           type="text"
@@ -130,13 +132,13 @@ export default function NewContentPage() {
           value={formData.judul}
           onChange={handleChange}
           className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
-          placeholder="Pengantar Konsep Bageur"
+          placeholder={t("Pengantar Konsep Bageur", "Introduction to the Bageur Concept")}
           required
         />
       </div>
 
       <div>
-        <label htmlFor="tipe" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Tipe Konten</label>
+        <label htmlFor="tipe" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Tipe Konten", "Content Type")}</label>
         <select
           id="tipe"
           name="tipe"
@@ -144,17 +146,17 @@ export default function NewContentPage() {
           onChange={handleChange}
           className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
         >
-          <option value="teks">Teks</option>
-          <option value="video">Video (YouTube)</option>
-          <option value="pdf">PDF</option>
-          <option value="link">Link</option>
+          <option value="teks">{t("Teks", "Text")}</option>
+          <option value="video">{t("Video (YouTube)", "Video (YouTube)")}</option>
+          <option value="pdf">{t("PDF", "PDF")}</option>
+          <option value="link">{t("Link", "Link")}</option>
         </select>
       </div>
 
       {formData.tipe === "link" ? (
         <div>
           <label htmlFor="konten" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">
-            URL Link
+            {t("URL Link", "Link URL")}
           </label>
           <input
             id="konten"
@@ -168,12 +170,12 @@ export default function NewContentPage() {
             required
           />
           <p id="konten-link-help" className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-            Masukkan URL eksternal lengkap (http:// atau https://).
+            {t("Masukkan URL eksternal lengkap (http:// atau https://).", "Enter the full external URL (http:// or https://).")}
           </p>
         </div>
       ) : formData.tipe === "pdf" ? (
         <div>
-          <label htmlFor="file-pdf" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">File PDF</label>
+          <label htmlFor="file-pdf" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("File PDF", "PDF File")}</label>
           <input
             id="file-pdf"
             type="file"
@@ -183,19 +185,19 @@ export default function NewContentPage() {
             className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-[var(--color-navy)] file:px-4 file:py-1.5 file:text-white disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
             aria-describedby="file-pdf-help"
           />
-          <p id="file-pdf-help" className="mt-1 text-xs text-gray-500 dark:text-slate-400">Format PDF, maksimal 10MB.</p>
-          {uploadingPdf && <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Mengunggah file PDF...</p>}
+          <p id="file-pdf-help" className="mt-1 text-xs text-gray-500 dark:text-slate-400">{t("Format PDF, maksimal 10MB.", "PDF format, maximum 10MB.")}</p>
+          {uploadingPdf && <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{t("Mengunggah file PDF...", "Uploading PDF file...")}</p>}
           {pdfError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{pdfError}</p>}
           {!uploadingPdf && !pdfError && formData.konten && (
             <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
-              {pdfFileName ? `${pdfFileName} — ` : ""}File PDF berhasil diunggah.
+              {pdfFileName ? `${pdfFileName} — ` : ""}{t("File PDF berhasil diunggah.", "PDF file uploaded successfully.")}
             </p>
           )}
         </div>
       ) : (
         <div>
           <label htmlFor="konten" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">
-            {formData.tipe === "video" ? "Link Video YouTube" : "Isi Konten"}
+            {formData.tipe === "video" ? t("Link Video YouTube", "YouTube Video Link") : t("Isi Konten", "Content Body")}
           </label>
           <textarea
             id="konten"
@@ -207,7 +209,7 @@ export default function NewContentPage() {
             placeholder={
               formData.tipe === "video"
                 ? "https://youtu.be/..."
-                : "Tulis isi materi pembelajaran di sini..."
+                : t("Tulis isi materi pembelajaran di sini...", "Write the learning material content here...")
             }
             required
           />
@@ -215,7 +217,7 @@ export default function NewContentPage() {
       )}
 
       <div>
-        <label htmlFor="urutan" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Urutan</label>
+        <label htmlFor="urutan" className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Urutan", "Order")}</label>
         <input
           id="urutan"
           type="number"
@@ -233,7 +235,7 @@ export default function NewContentPage() {
         disabled={loading || uploadingPdf}
         className="bg-[var(--color-navy)] text-white py-2.5 rounded-full font-medium hover:opacity-90 transition disabled:bg-gray-400 mt-2"
       >
-        {loading ? "Menyimpan..." : "Simpan Konten"}
+        {loading ? t("Menyimpan...", "Saving...") : t("Simpan Konten", "Save Content")}
       </button>
     </form>
   </div>

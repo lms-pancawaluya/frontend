@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUserById, updateUser, resetUserPassword } from "@/services/user.service";
 import { formatNipDisplay } from "@/lib/formatNip";
+import { useApp } from "@/app/context/AppContext";
 
 const statusOptions = ["aktif", "nonaktif", "pensiun", "wafat"];
 
@@ -23,6 +24,7 @@ interface UserDetail {
 export default function EditUserPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useApp();
   const id = params.id as string;
 
   const [user, setUser] = useState<UserDetail | null>(null);
@@ -73,7 +75,7 @@ export default function EditUserPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat data pengguna.");
+          setError(t("Gagal memuat data pengguna.", "Failed to load user data."));
         }
       } finally {
         setLoadingData(false);
@@ -81,7 +83,7 @@ export default function EditUserPage() {
     }
 
     loadData();
-  }, [id, router]);
+  }, [id, router, t]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,12 +98,12 @@ export default function EditUserPage() {
         kecamatan: formData.kecamatan,
         status: formData.status,
       });
-      setMessage({ type: "success", text: "Data guru berhasil diperbarui." });
+      setMessage({ type: "success", text: t("Data guru berhasil diperbarui.", "Teacher data updated successfully.") });
     } catch (err) {
       if (err instanceof Error) {
         setMessage({ type: "error", text: err.message });
       } else {
-        setMessage({ type: "error", text: "Gagal memperbarui data guru." });
+        setMessage({ type: "error", text: t("Gagal memperbarui data guru.", "Failed to update teacher data.") });
       }
     } finally {
       setSaving(false);
@@ -113,7 +115,7 @@ export default function EditUserPage() {
     setPasswordMessage(null);
 
     if (passwordBaru.length < 8) {
-      setPasswordMessage({ type: "error", text: "Password baru minimal 8 karakter." });
+      setPasswordMessage({ type: "error", text: t("Password baru minimal 8 karakter.", "New password must be at least 8 characters.") });
       return;
     }
 
@@ -121,13 +123,13 @@ export default function EditUserPage() {
 
     try {
       await resetUserPassword(id, passwordBaru);
-      setPasswordMessage({ type: "success", text: "Password guru berhasil direset." });
+      setPasswordMessage({ type: "success", text: t("Password guru berhasil direset.", "Teacher password reset successfully.") });
       setPasswordBaru("");
     } catch (err) {
       if (err instanceof Error) {
         setPasswordMessage({ type: "error", text: err.message });
       } else {
-        setPasswordMessage({ type: "error", text: "Gagal mereset password." });
+        setPasswordMessage({ type: "error", text: t("Gagal mereset password.", "Failed to reset password.") });
       }
     } finally {
       setResetting(false);
@@ -135,7 +137,7 @@ export default function EditUserPage() {
   }
 
   if (loadingData) {
-    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memuat data pengguna...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">{t("Memuat data pengguna...", "Loading user data...")}</p>;
   }
 
   if (error) {
@@ -152,15 +154,15 @@ export default function EditUserPage() {
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/admin/users" className="text-sm text-gray-500 hover:text-[var(--color-navy)] transition dark:text-slate-400 dark:hover:text-slate-200">
-          ← Kembali
+          ← {t("Kembali", "Back")}
         </Link>
       </div>
 
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-1 dark:text-slate-100">
-          Edit Akun Guru
+          {t("Edit Akun Guru", "Edit Teacher Account")}
         </h1>
-        <p className="text-gray-500 dark:text-slate-400">Ubah email, sekolah, dan status akun guru</p>
+        <p className="text-gray-500 dark:text-slate-400">{t("Ubah email, sekolah, dan status akun guru", "Change email, school, and teacher account status")}</p>
       </div>
 
       {/* Form Edit Data */}
@@ -176,7 +178,7 @@ export default function EditUserPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Nama</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Nama", "Name")}</label>
               <input
                 type="text"
                 value={user?.nama || ""}
@@ -187,7 +189,7 @@ export default function EditUserPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">NIP (Nomor Induk Pegawai)</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("NIP (Nomor Induk Pegawai)", "NIP (Employee Identification Number)")}</label>
               <input
                 type="text"
                 value={formatNipDisplay(user?.nip)}
@@ -195,12 +197,12 @@ export default function EditUserPage() {
                 readOnly
                 className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-500 cursor-not-allowed outline-none select-none font-mono dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
               />
-              <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">NIP bersifat permanen dan tidak dapat diubah.</p>
+              <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">{t("NIP bersifat permanen dan tidak dapat diubah.", "NIP is permanent and cannot be changed.")}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Email</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Email", "Email")}</label>
             <input
               type="email"
               value={formData.email}
@@ -211,42 +213,42 @@ export default function EditUserPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Sekolah</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Sekolah", "School")}</label>
             <input
               type="text"
               value={formData.sekolah}
               onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
-              placeholder="Contoh: SMA Negeri 1 Bandung"
+              placeholder={t("Contoh: SMA Negeri 1 Bandung", "Example: SMA Negeri 1 Bandung")}
               className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Kota/Kabupaten</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Kota/Kabupaten", "City/Regency")}</label>
               <input
                 type="text"
                 value={formData.kotaKab}
                 onChange={(e) => setFormData({ ...formData, kotaKab: e.target.value })}
-                placeholder="Contoh: Kota Bandung"
+                placeholder={t("Contoh: Kota Bandung", "Example: Bandung City")}
                 className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Kecamatan</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Kecamatan", "District")}</label>
               <input
                 type="text"
                 value={formData.kecamatan}
                 onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
-                placeholder="Contoh: Coblong"
+                placeholder={t("Contoh: Coblong", "Example: Coblong")}
                 className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Status</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Status", "Status")}</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -266,7 +268,7 @@ export default function EditUserPage() {
               disabled={saving}
               className="bg-[var(--color-navy)] text-white text-sm px-5 py-2.5 rounded-full hover:opacity-90 transition disabled:opacity-60"
             >
-              {saving ? "Menyimpan..." : "Simpan Perubahan"}
+              {saving ? t("Menyimpan...", "Saving...") : t("Simpan Perubahan", "Save Changes")}
             </button>
           </div>
         </form>
@@ -274,8 +276,8 @@ export default function EditUserPage() {
 
       {/* Reset Password */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-[var(--color-border-soft)] dark:bg-slate-900">
-        <h2 className="text-lg font-bold text-[var(--color-navy)] mb-1 dark:text-slate-100">Reset Password</h2>
-        <p className="text-sm text-gray-500 mb-4 dark:text-slate-400">Atur password baru untuk akun guru ini (minimal 8 karakter).</p>
+        <h2 className="text-lg font-bold text-[var(--color-navy)] mb-1 dark:text-slate-100">{t("Reset Password", "Reset Password")}</h2>
+        <p className="text-sm text-gray-500 mb-4 dark:text-slate-400">{t("Atur password baru untuk akun guru ini (minimal 8 karakter).", "Set a new password for this teacher account (minimum 8 characters).")}</p>
 
         {passwordMessage && (
           <div className={`mb-4 p-3 rounded-xl text-sm font-medium border ${
@@ -287,14 +289,14 @@ export default function EditUserPage() {
 
         <form onSubmit={handleResetPassword} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Password Baru</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Password Baru", "New Password")}</label>
             <input
               type="password"
               value={passwordBaru}
               onChange={(e) => setPasswordBaru(e.target.value)}
               minLength={8}
               required
-              placeholder="Minimal 8 karakter"
+              placeholder={t("Minimal 8 karakter", "Minimum 8 characters")}
               className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-amber-500 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             />
           </div>
@@ -305,7 +307,7 @@ export default function EditUserPage() {
               disabled={resetting}
               className="bg-amber-500 text-white text-sm px-5 py-2.5 rounded-full hover:bg-amber-600 transition disabled:opacity-60"
             >
-              {resetting ? "Mereset..." : "Reset Password"}
+              {resetting ? t("Mereset...", "Resetting...") : t("Reset Password", "Reset Password")}
             </button>
           </div>
         </form>

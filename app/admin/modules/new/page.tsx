@@ -6,12 +6,14 @@ import { createModule } from "@/services/module.service";
 import { getCourses } from "@/services/course.service";
 import { canManageCourse, getCourseModulePermissions } from "@/lib/rbac";
 import type { Course } from "@/types/course";
+import { useApp } from "@/app/context/AppContext";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
 
 function NewModuleForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useApp();
   const preselectedCourseId = searchParams.get("courseId") || "";
 
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -93,7 +95,7 @@ function NewModuleForm() {
     setError("");
 
     if (!formData.courseId) {
-      setError("Pilih course terlebih dahulu — setiap modul harus terhubung ke sebuah course.");
+      setError(t("Pilih course terlebih dahulu — setiap modul harus terhubung ke sebuah course.", "Select a course first — every module must be linked to a course."));
       return;
     }
 
@@ -106,7 +108,7 @@ function NewModuleForm() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Gagal menambahkan modul.");
+        setError(t("Gagal menambahkan modul.", "Failed to add module."));
       }
     } finally {
       setLoading(false);
@@ -114,7 +116,7 @@ function NewModuleForm() {
   }
 
   if (checkingAccess) {
-    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memeriksa akses...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">{t("Memeriksa akses...", "Checking access...")}</p>;
   }
 
   return (
@@ -123,11 +125,11 @@ function NewModuleForm() {
       onClick={() => router.push("/admin/modules")}
       className="text-sm text-[var(--color-accent)] hover:underline mb-6 dark:text-blue-400"
     >
-      ← Kembali ke daftar modul
+      ← {t("Kembali ke daftar modul", "Back to module list")}
     </button>
 
     <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-6 dark:text-slate-100">
-      Tambah Modul Baru
+      {t("Tambah Modul Baru", "Add New Module")}
     </h1>
 
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -138,7 +140,7 @@ function NewModuleForm() {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Course</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Course", "Course")}</label>
         <select
           name="courseId"
           value={formData.courseId}
@@ -148,7 +150,7 @@ function NewModuleForm() {
           required
         >
           <option value="" disabled>
-            {loadingCourses ? "Memuat daftar course..." : "Pilih course"}
+            {loadingCourses ? t("Memuat daftar course...", "Loading course list...") : t("Pilih course", "Select course")}
           </option>
           {courses.map((course) => (
             <option key={course.id} value={course.id}>
@@ -158,39 +160,39 @@ function NewModuleForm() {
         </select>
         {!loadingCourses && courses.length === 0 && (
           <p className="text-xs text-amber-600 mt-1 dark:text-amber-400">
-            Belum ada course. Buat course terlebih dahulu sebelum menambah modul.
+            {t("Belum ada course. Buat course terlebih dahulu sebelum menambah modul.", "No courses yet. Create a course first before adding a module.")}
           </p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Judul Modul</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Judul Modul", "Module Title")}</label>
         <input
           type="text"
           name="judul"
           value={formData.judul}
           onChange={handleChange}
           className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
-          placeholder="Modul Bageur - Percaya Diri & Kolaborasi"
+          placeholder={t("Modul Bageur - Percaya Diri & Kolaborasi", "Modul Bageur - Confidence & Collaboration")}
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Deskripsi</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Deskripsi", "Description")}</label>
         <textarea
           name="deskripsi"
           value={formData.deskripsi}
           onChange={handleChange}
           className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
           rows={4}
-          placeholder="Jelaskan isi modul ini secara singkat..."
+          placeholder={t("Jelaskan isi modul ini secara singkat...", "Briefly describe this module's content...")}
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Aspek Pancawaluya</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Aspek Pancawaluya", "Pancawaluya Aspect")}</label>
         <select
           name="aspekPancawaluya"
           value={formData.aspekPancawaluya}
@@ -206,7 +208,7 @@ function NewModuleForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">Urutan</label>
+        <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Urutan", "Order")}</label>
         <input
           type="number"
           name="urutan"
@@ -223,7 +225,7 @@ function NewModuleForm() {
         disabled={loading || loadingCourses}
         className="bg-[var(--color-navy)] text-white py-2.5 rounded-full font-medium hover:opacity-90 transition disabled:bg-gray-400 mt-2"
       >
-        {loading ? "Menyimpan..." : "Simpan Modul"}
+        {loading ? t("Menyimpan...", "Saving...") : t("Simpan Modul", "Save Module")}
       </button>
     </form>
   </div>
@@ -231,8 +233,10 @@ function NewModuleForm() {
 }
 
 export default function NewModulePage() {
+  const { t } = useApp();
+
   return (
-    <Suspense fallback={<p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memuat halaman...</p>}>
+    <Suspense fallback={<p className="text-center mt-16 text-gray-500 dark:text-slate-400">{t("Memuat halaman...", "Loading page...")}</p>}>
       <NewModuleForm />
     </Suspense>
   );

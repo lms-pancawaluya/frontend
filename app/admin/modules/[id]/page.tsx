@@ -11,6 +11,7 @@ import { getCourseById } from "@/services/course.service";
 import { canManageCourse } from "@/lib/rbac";
 import { buildPdfFileName, downloadPdfFile, loadPdfPreviewObjectUrl, validatePdfFile } from "@/lib/pdf";
 import { validateExternalUrl } from "@/lib/link";
+import { useApp } from "@/app/context/AppContext";
 
 interface ModuleDetail {
   id: string;
@@ -78,6 +79,7 @@ function getYoutubeEmbedUrl(url: string): string {
 export default function AdminModuleDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useApp();
   const id = params.id as string;
 
   const [module, setModule] = useState<ModuleDetail | null>(null);
@@ -200,7 +202,7 @@ export default function AdminModuleDetailPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat detail modul.");
+          setError(t("Gagal memuat detail modul.", "Failed to load module detail."));
         }
       } finally {
         setLoading(false);
@@ -208,7 +210,7 @@ export default function AdminModuleDetailPage() {
     }
 
     fetchData();
-  }, [id, loadEvaluations]);
+  }, [id, loadEvaluations, t]);
 
   if (loading) {
     return (
@@ -232,14 +234,14 @@ export default function AdminModuleDetailPage() {
     return (
       <div className="max-w-md mx-auto mt-16 p-6 text-center">
         <div className="bg-amber-50 text-amber-700 text-sm px-4 py-3 rounded-lg border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-          Module ini berada pada Course yang bukan milik Anda, sehingga tidak dapat dikelola. Hubungi Admin jika perlu.
+          {t("Module ini berada pada Course yang bukan milik Anda, sehingga tidak dapat dikelola. Hubungi Admin jika perlu.", "This module belongs to a Course that is not yours, so it cannot be managed. Contact an Admin if needed.")}
         </div>
         <button
           type="button"
           onClick={() => router.push("/admin/modules")}
           className="mt-4 text-sm text-emerald-700 hover:underline dark:text-emerald-400"
         >
-          ← Kembali ke daftar modul
+          ← {t("Kembali ke daftar modul", "Back to module list")}
         </button>
       </div>
     );
@@ -249,7 +251,7 @@ export default function AdminModuleDetailPage() {
     return (
       <div className="max-w-md mx-auto mt-16 p-4">
         <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
-          {error || "Modul tidak ditemukan."}
+          {error || t("Modul tidak ditemukan.", "Module not found.")}
         </div>
       </div>
     );
@@ -280,11 +282,11 @@ export default function AdminModuleDetailPage() {
         aspekPancawaluya: nextModule.aspekPancawaluya,
         urutan: nextModule.urutan,
       });
-      setModuleMessage({ type: "success", text: "Informasi modul berhasil diperbarui." });
+      setModuleMessage({ type: "success", text: t("Informasi modul berhasil diperbarui.", "Module information updated successfully.") });
     } catch (err) {
       setModuleMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Gagal memperbarui modul.",
+        text: err instanceof Error ? err.message : t("Gagal memperbarui modul.", "Failed to update module."),
       });
     } finally {
       setSavingModule(false);
@@ -325,7 +327,7 @@ export default function AdminModuleDetailPage() {
       setContentData((prev) => ({ ...prev, konten: url }));
       setPdfFileName(file.name);
     } catch (err) {
-      setPdfMessage(err instanceof Error ? err.message : "Gagal mengunggah file PDF.");
+      setPdfMessage(err instanceof Error ? err.message : t("Gagal mengunggah file PDF.", "Failed to upload the PDF file."));
       setPdfFileName("");
     } finally {
       setPdfUploadingId(null);
@@ -338,7 +340,7 @@ export default function AdminModuleDetailPage() {
     try {
       await downloadPdfFile(content.konten, buildPdfFileName(content.judul, content.konten));
     } catch (err) {
-      setDownloadError((prev) => ({ ...prev, [content.id]: err instanceof Error ? err.message : "Gagal mengunduh file PDF." }));
+      setDownloadError((prev) => ({ ...prev, [content.id]: err instanceof Error ? err.message : t("Gagal mengunduh file PDF.", "Failed to download the PDF file.") }));
     } finally {
       setDownloadingContentId(null);
     }
@@ -381,7 +383,7 @@ export default function AdminModuleDetailPage() {
       setPreviewUrl(objectUrl);
     } catch (err) {
       if (previewRequestRef.current === requestId) {
-        setPreviewError((prev) => ({ ...prev, [content.id]: err instanceof Error ? err.message : "Gagal memuat pratinjau PDF." }));
+        setPreviewError((prev) => ({ ...prev, [content.id]: err instanceof Error ? err.message : t("Gagal memuat pratinjau PDF.", "Failed to load the PDF preview.") }));
       }
     } finally {
       if (previewRequestRef.current === requestId) setPreviewLoading(false);
@@ -392,7 +394,7 @@ export default function AdminModuleDetailPage() {
     e.preventDefault();
     if (!editingContentId) return;
     if (contentData.tipe === "pdf" && !contentData.konten) {
-      setPdfMessage("Silakan unggah file PDF terlebih dahulu.");
+      setPdfMessage(t("Silakan unggah file PDF terlebih dahulu.", "Please upload the PDF file first."));
       return;
     }
     if (contentData.tipe === "link") {
@@ -410,23 +412,23 @@ export default function AdminModuleDetailPage() {
       setContents((prev) => prev.map((content) => content.id === editingContentId ? { ...content, ...contentData, ...updated } : content));
       setEditingContentId(null);
       setPdfFileName("");
-      setContentMessage("Learning Material berhasil diperbarui.");
+      setContentMessage(t("Learning Material berhasil diperbarui.", "Learning Material updated successfully."));
     } catch (err) {
-      setContentMessage(err instanceof Error ? err.message : "Gagal memperbarui Learning Material.");
+      setContentMessage(err instanceof Error ? err.message : t("Gagal memperbarui Learning Material.", "Failed to update Learning Material."));
     } finally {
       setContentBusy(false);
     }
   }
 
   async function handleContentDelete(content: ContentItem) {
-    if (!window.confirm(`Yakin ingin menghapus konten "${content.judul}"?`)) return;
+    if (!window.confirm(t(`Yakin ingin menghapus konten "${content.judul}"?`, `Are you sure you want to delete the content "${content.judul}"?`))) return;
     if (previewContentId === content.id) closePdfPreview();
     setContentBusy(true);
     try {
       await deleteContent(content.id);
       setContents((prev) => prev.filter((item) => item.id !== content.id));
     } catch (err) {
-      setContentMessage(err instanceof Error ? err.message : "Gagal menghapus Learning Material.");
+      setContentMessage(err instanceof Error ? err.message : t("Gagal menghapus Learning Material.", "Failed to delete Learning Material."));
     } finally {
       setContentBusy(false);
     }
@@ -442,14 +444,14 @@ export default function AdminModuleDetailPage() {
       setEvaluationTitle("");
       setShowEvaluationForm(false);
     } catch (err) {
-      setEvaluationMessage(err instanceof Error ? err.message : "Gagal membuat asesmen.");
+      setEvaluationMessage(err instanceof Error ? err.message : t("Gagal membuat asesmen.", "Failed to create assessment."));
     } finally {
       setEvaluationBusy(false);
     }
   }
 
   async function handleEvaluationDelete(evaluationId: string, title: string, type: "pre_test" | "post_test") {
-    if (!window.confirm(`Yakin ingin menghapus ${title} ini? Semua soal di dalamnya juga akan terhapus.`)) return;
+    if (!window.confirm(t(`Yakin ingin menghapus ${title} ini? Semua soal di dalamnya juga akan terhapus.`, `Are you sure you want to delete this ${title}? All questions inside will also be deleted.`))) return;
     setEvaluationDeletingId(evaluationId);
     setEvaluationMessage("");
     setEvaluationDeleteError((prev) => ({ ...prev, [type]: "" }));
@@ -460,7 +462,7 @@ export default function AdminModuleDetailPage() {
     } catch (err) {
       setEvaluationDeleteError((prev) => ({
         ...prev,
-        [type]: err instanceof Error ? err.message : `Gagal menghapus ${title}.`,
+        [type]: err instanceof Error ? err.message : t(`Gagal menghapus ${title}.`, `Failed to delete ${title}.`),
       }));
     } finally {
       setEvaluationDeletingId(null);
@@ -497,10 +499,10 @@ export default function AdminModuleDetailPage() {
   }
 
   function validateEvaluationQuestionForm() {
-    if (!evaluationQuestionForm?.pertanyaan.trim()) return "Pertanyaan wajib diisi.";
-    if (evaluationQuestionForm.options.length < 2) return "Minimal 2 opsi jawaban.";
-    if (evaluationQuestionForm.options.some((option) => !option.teksOpsi.trim())) return "Semua opsi jawaban harus diisi.";
-    if (evaluationQuestionForm.options.filter((option) => option.isCorrect).length !== 1) return "Pilih tepat 1 jawaban benar.";
+    if (!evaluationQuestionForm?.pertanyaan.trim()) return t("Pertanyaan wajib diisi.", "Question is required.");
+    if (evaluationQuestionForm.options.length < 2) return t("Minimal 2 opsi jawaban.", "At least 2 answer options.");
+    if (evaluationQuestionForm.options.some((option) => !option.teksOpsi.trim())) return t("Semua opsi jawaban harus diisi.", "All answer options must be filled in.");
+    if (evaluationQuestionForm.options.filter((option) => option.isCorrect).length !== 1) return t("Pilih tepat 1 jawaban benar.", "Select exactly 1 correct answer.");
     return "";
   }
 
@@ -524,21 +526,21 @@ export default function AdminModuleDetailPage() {
       refreshEvaluationQuestions(evaluationQuestionForm.evaluationId, refreshed.questions || []);
       setEvaluationQuestionForm(null);
     } catch (err) {
-      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationQuestionForm.evaluationId]: err instanceof Error ? err.message : "Gagal menyimpan soal." }));
+      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationQuestionForm.evaluationId]: err instanceof Error ? err.message : t("Gagal menyimpan soal.", "Failed to save question.") }));
     } finally {
       setEvaluationQuestionBusy(false);
     }
   }
 
   async function removeEvaluationQuestion(evaluationId: string, questionId: string) {
-    if (!window.confirm("Hapus soal ini?")) return;
+    if (!window.confirm(t("Hapus soal ini?", "Delete this question?"))) return;
     setEvaluationQuestionDeletingId(questionId);
     try {
       await deleteEvaluationQuestion(id, questionId, getEvaluationTipe(evaluationId));
       const refreshed = await getEvaluationDetail(id, evaluationId) as EvaluationItem;
       refreshEvaluationQuestions(evaluationId, refreshed.questions || []);
     } catch (err) {
-      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationId]: err instanceof Error ? err.message : "Gagal menghapus soal." }));
+      setEvaluationQuestionError((prev) => ({ ...prev, [evaluationId]: err instanceof Error ? err.message : t("Gagal menghapus soal.", "Failed to delete question.") }));
     } finally {
       setEvaluationQuestionDeletingId(null);
     }
@@ -550,7 +552,7 @@ export default function AdminModuleDetailPage() {
     if (videoQuizzes[contentId]) return;
     setInteractiveLoading(contentId);
     try { const quizzes = await getMiniQuizzesByContent(contentId); setVideoQuizzes((prev) => ({ ...prev, [contentId]: quizzes })); }
-    catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal memuat Pertanyaan Interaktif." })); }
+    catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : t("Gagal memuat Pertanyaan Interaktif.", "Failed to load Interactive Questions.") })); }
     finally { setInteractiveLoading(null); }
   }
 
@@ -559,30 +561,30 @@ export default function AdminModuleDetailPage() {
     if (!checkpointForm) return;
     const timestampSeconds = parseTimestamp(checkpointForm.timestamp);
     if (timestampSeconds === null) {
-      setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: "Gunakan format waktu MM:SS yang valid." }));
+      setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: t("Gunakan format waktu MM:SS yang valid.", "Use a valid MM:SS time format.") }));
       return;
     }
     try {
       if (!checkpointForm.judul.trim()) {
-        setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: "Nama checkpoint wajib diisi." }));
+        setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: t("Nama checkpoint wajib diisi.", "Checkpoint name is required.") }));
         return;
       }
       const checkpoint = await createMiniQuiz(checkpointForm.contentId, { judul: checkpointForm.judul.trim(), timestampSeconds, passingScore: 80, maxAttempts: 3 });
       setVideoQuizzes((prev) => ({ ...prev, [checkpointForm.contentId]: [...(prev[checkpointForm.contentId] || []), checkpoint] }));
       setCheckpointForm(null);
     } catch (err) {
-      setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: err instanceof Error ? err.message : "Gagal membuat checkpoint video." }));
+      setInteractiveError((prev) => ({ ...prev, [checkpointForm.contentId]: err instanceof Error ? err.message : t("Gagal membuat checkpoint video.", "Failed to create video checkpoint.") }));
     }
   }
 
   async function removeCheckpoint(contentId: string, quizId: string) {
-    if (!window.confirm("Hapus checkpoint ini beserta semua pertanyaan di dalamnya?")) return;
+    if (!window.confirm(t("Hapus checkpoint ini beserta semua pertanyaan di dalamnya?", "Delete this checkpoint along with all questions inside?"))) return;
     setInteractiveDeletingId(quizId);
     try {
       await deleteMiniQuiz(quizId);
       setVideoQuizzes((prev) => ({ ...prev, [contentId]: (prev[contentId] || []).filter((quiz) => quiz.id !== quizId) }));
     } catch (err) {
-      setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal menghapus checkpoint." }));
+      setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : t("Gagal menghapus checkpoint.", "Failed to delete checkpoint.") }));
     } finally {
       setInteractiveDeletingId(null);
     }
@@ -592,7 +594,7 @@ export default function AdminModuleDetailPage() {
     e.preventDefault();
     if (!interactiveForm) return;
     if (interactiveForm.options.length < 2 || interactiveForm.options.some((option) => !option.teksOpsi.trim()) || interactiveForm.options.filter((option) => option.isCorrect).length !== 1) {
-      setInteractiveError((prev) => ({ ...prev, [expandedVideoId!]: "Pertanyaan harus memiliki minimal 2 opsi terisi dan tepat 1 jawaban benar." }));
+      setInteractiveError((prev) => ({ ...prev, [expandedVideoId!]: t("Pertanyaan harus memiliki minimal 2 opsi terisi dan tepat 1 jawaban benar.", "The question must have at least 2 filled options and exactly 1 correct answer.") }));
       return;
     }
     const payload = { pertanyaan: interactiveForm.pertanyaan, options: interactiveForm.options };
@@ -605,13 +607,13 @@ export default function AdminModuleDetailPage() {
       const refreshed = await getMiniQuizzesByContent(expandedVideoId!);
       setVideoQuizzes((prev) => ({ ...prev, [expandedVideoId!]: refreshed }));
       setInteractiveForm(null);
-    } catch (err) { setInteractiveError((prev) => ({ ...prev, [expandedVideoId!]: err instanceof Error ? err.message : "Gagal menyimpan Pertanyaan Interaktif." })); }
+    } catch (err) { setInteractiveError((prev) => ({ ...prev, [expandedVideoId!]: err instanceof Error ? err.message : t("Gagal menyimpan Pertanyaan Interaktif.", "Failed to save Interactive Question.") })); }
   }
 
   async function removeInteractiveQuestion(contentId: string, questionId: string) {
-    if (!window.confirm("Hapus Pertanyaan Interaktif ini?")) return;
+    if (!window.confirm(t("Hapus Pertanyaan Interaktif ini?", "Delete this Interactive Question?"))) return;
     try { await deleteQuestion(questionId); setVideoQuizzes((prev) => ({ ...prev, [contentId]: (prev[contentId] || []).map((quiz) => ({ ...quiz, questions: (quiz.questions || []).filter((question) => question.id !== questionId) })) })); }
-    catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : "Gagal menghapus Pertanyaan Interaktif." })); }
+    catch (err) { setInteractiveError((prev) => ({ ...prev, [contentId]: err instanceof Error ? err.message : t("Gagal menghapus Pertanyaan Interaktif.", "Failed to delete Interactive Question.") })); }
   }
 
   const preTestEvaluations = evaluations.filter((evaluation) => evaluation.tipe === "pre_test");
@@ -631,7 +633,7 @@ export default function AdminModuleDetailPage() {
       <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5 dark:bg-slate-900 dark:border-slate-800">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{title}</h2>
-          {items.length === 0 && <button type="button" onClick={() => openEvaluationForm(type)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full dark:bg-slate-700">+ Buat {title}</button>}
+          {items.length === 0 && <button type="button" onClick={() => openEvaluationForm(type)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full dark:bg-slate-700">{t(`+ Buat ${title}`, `+ Create ${title}`)}</button>}
         </div>
         {evaluationMessage && isActiveForm && <p className="text-sm text-red-600 dark:text-red-400">{evaluationMessage}</p>}
         {evaluationDeleteError[type] && <p className="text-sm text-red-600 dark:text-red-400">{evaluationDeleteError[type]}</p>}
@@ -640,7 +642,7 @@ export default function AdminModuleDetailPage() {
             <input
               value={evaluationTitle}
               onChange={(e) => setEvaluationTitle(e.target.value)}
-              placeholder={`Judul ${title}`}
+              placeholder={`${t("Judul", "Title")} ${title}`}
               className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               required
             />
@@ -651,7 +653,7 @@ export default function AdminModuleDetailPage() {
               value={passingScore}
               onChange={(e) => setPassingScore(Number(e.target.value))}
               className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-              aria-label="Passing Score"
+              aria-label={t("Passing Score", "Passing Score")}
             />
             <input
               type="number"
@@ -659,19 +661,19 @@ export default function AdminModuleDetailPage() {
               value={maxAttempts}
               onChange={(e) => setMaxAttempts(Number(e.target.value))}
               className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-              aria-label="Max Attempts"
+              aria-label={t("Max Attempts", "Max Attempts")}
             />
             <button
               type="submit"
               disabled={evaluationBusy}
               className="px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60"
             >
-              {evaluationBusy ? "Membuat..." : "Simpan"}
+              {evaluationBusy ? t("Membuat...", "Creating...") : t("Simpan", "Save")}
             </button>
           </form>
         )}
         {items.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada {title} untuk modul ini.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t(`Belum ada ${title} untuk modul ini.`, `No ${title} for this module yet.`)}</p>
         ) : (
           <div className="space-y-3">
             {items.map((evaluation) => {
@@ -685,19 +687,19 @@ export default function AdminModuleDetailPage() {
                       <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{evaluation.judul}</p>
                       <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1 dark:text-slate-400">
                         <span>{title}</span>
-                        <span>{questions.length} soal</span>
-                        {evaluation.passingScore !== undefined && <span>Passing Score: {evaluation.passingScore}%</span>}
-                        {evaluation.maxAttempts !== undefined && <span>Max Attempts: {evaluation.maxAttempts}</span>}
+                        <span>{questions.length} {t("soal", "questions")}</span>
+                        {evaluation.passingScore !== undefined && <span>{t("Passing Score:", "Passing Score:")} {evaluation.passingScore}%</span>}
+                        {evaluation.maxAttempts !== undefined && <span>{t("Max Attempts:", "Max Attempts:")} {evaluation.maxAttempts}</span>}
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button type="button" onClick={() => startEvaluationQuestionForm(evaluation.id)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">+ Tambah Soal</button>
-                      <button type="button" onClick={() => handleEvaluationDelete(evaluation.id, title, type)} disabled={evaluationDeletingId === evaluation.id} className="px-4 py-2 border border-red-200 text-red-600 text-xs font-semibold rounded-full text-center hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30">{evaluationDeletingId === evaluation.id ? "Menghapus..." : "Hapus"}</button>
+                      <button type="button" onClick={() => startEvaluationQuestionForm(evaluation.id)} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full text-center">{t("+ Tambah Soal", "+ Add Question")}</button>
+                      <button type="button" onClick={() => handleEvaluationDelete(evaluation.id, title, type)} disabled={evaluationDeletingId === evaluation.id} className="px-4 py-2 border border-red-200 text-red-600 text-xs font-semibold rounded-full text-center hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30">{evaluationDeletingId === evaluation.id ? t("Menghapus...", "Deleting...") : t("Hapus", "Delete")}</button>
                     </div>
                   </div>
                   {evaluationQuestionError[evaluation.id] && <p className="text-sm text-red-600 dark:text-red-400">{evaluationQuestionError[evaluation.id]}</p>}
                   {questions.length === 0 ? (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada soal untuk {title} ini.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t(`Belum ada soal untuk ${title} ini.`, `No questions for this ${title} yet.`)}</p>
                   ) : (
                     <div className="space-y-3">
                       {questions.map((question, index) => (
@@ -705,17 +707,17 @@ export default function AdminModuleDetailPage() {
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div>
                               <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{index + 1}. {question.pertanyaan}</p>
-                              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">{(question.options || []).length} opsi</p>
+                              <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">{(question.options || []).length} {t("opsi", "options")}</p>
                             </div>
                             <div className="flex gap-2">
-                              <button type="button" onClick={() => startEvaluationQuestionEdit(evaluation.id, question)} className="text-xs font-semibold text-slate-600 dark:text-slate-300">Edit</button>
-                              <button type="button" onClick={() => removeEvaluationQuestion(evaluation.id, question.id)} disabled={evaluationQuestionDeletingId === question.id} className="text-xs font-semibold text-red-600 disabled:opacity-60 dark:text-red-400">{evaluationQuestionDeletingId === question.id ? "Menghapus..." : "Hapus"}</button>
+                              <button type="button" onClick={() => startEvaluationQuestionEdit(evaluation.id, question)} className="text-xs font-semibold text-slate-600 dark:text-slate-300">{t("Edit", "Edit")}</button>
+                              <button type="button" onClick={() => removeEvaluationQuestion(evaluation.id, question.id)} disabled={evaluationQuestionDeletingId === question.id} className="text-xs font-semibold text-red-600 disabled:opacity-60 dark:text-red-400">{evaluationQuestionDeletingId === question.id ? t("Menghapus...", "Deleting...") : t("Hapus", "Delete")}</button>
                             </div>
                           </div>
                           <div className="space-y-2">
                             {(question.options || []).map((option, optionIndex) => (
                               <p key={option.id || optionIndex} className={`text-xs rounded-lg px-3 py-2 ${option.isCorrect ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
-                                {option.teksOpsi || option.teks || "Opsi kosong"}{option.isCorrect ? " • Jawaban benar" : ""}
+                                {option.teksOpsi || option.teks || t("Opsi kosong", "Empty option")}{option.isCorrect ? t(" • Jawaban benar", " • Correct answer") : ""}
                               </p>
                             ))}
                           </div>
@@ -725,20 +727,20 @@ export default function AdminModuleDetailPage() {
                   )}
                   {activeForm && (
                     <form onSubmit={saveEvaluationQuestion} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 dark:border-slate-700 dark:bg-slate-800">
-                      <textarea value={evaluationQuestionForm.pertanyaan} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, pertanyaan: e.target.value })} className="w-full border border-slate-200 rounded-xl p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" placeholder="Pertanyaan" rows={2} required />
+                      <textarea value={evaluationQuestionForm.pertanyaan} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, pertanyaan: e.target.value })} className="w-full border border-slate-200 rounded-xl p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" placeholder={t("Pertanyaan", "Question")} rows={2} required />
                       <div className="space-y-2">
                         {evaluationQuestionForm.options.map((option, optionIndex) => (
                           <div key={optionIndex} className="flex gap-2">
                             <input type="radio" name={`correct-${evaluation.id}`} checked={option.isCorrect} onChange={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === optionIndex })) })} />
-                            <input value={option.teksOpsi} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => itemIndex === optionIndex ? { ...item, teksOpsi: e.target.value } : item) })} className="flex-1 border border-slate-200 rounded-xl p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" placeholder={`Opsi ${optionIndex + 1}`} required />
-                            {evaluationQuestionForm.options.length > 2 && <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.filter((_, itemIndex) => itemIndex !== optionIndex) })} className="text-xs text-red-600 dark:text-red-400">Hapus</button>}
+                            <input value={option.teksOpsi} onChange={(e) => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.map((item, itemIndex) => itemIndex === optionIndex ? { ...item, teksOpsi: e.target.value } : item) })} className="flex-1 border border-slate-200 rounded-xl p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" placeholder={`${t("Opsi", "Option")} ${optionIndex + 1}`} required />
+                            {evaluationQuestionForm.options.length > 2 && <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: evaluationQuestionForm.options.filter((_, itemIndex) => itemIndex !== optionIndex) })} className="text-xs text-red-600 dark:text-red-400">{t("Hapus", "Delete")}</button>}
                           </div>
                         ))}
                       </div>
-                      <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: [...evaluationQuestionForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700 dark:text-emerald-400">+ Tambah Opsi</button>
+                      <button type="button" onClick={() => setEvaluationQuestionForm({ ...evaluationQuestionForm, options: [...evaluationQuestionForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700 dark:text-emerald-400">{t("+ Tambah Opsi", "+ Add Option")}</button>
                       <div className="flex gap-2">
-                        <button type="submit" disabled={evaluationQuestionBusy} className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs disabled:opacity-60">{evaluationQuestionBusy ? "Menyimpan..." : evaluationQuestionForm.questionId ? "Simpan Perubahan" : "Tambah Soal"}</button>
-                        <button type="button" onClick={() => setEvaluationQuestionForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">Batal</button>
+                        <button type="submit" disabled={evaluationQuestionBusy} className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs disabled:opacity-60">{evaluationQuestionBusy ? t("Menyimpan...", "Saving...") : evaluationQuestionForm.questionId ? t("Simpan Perubahan", "Save Changes") : t("Tambah Soal", "Add Question")}</button>
+                        <button type="button" onClick={() => setEvaluationQuestionForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">{t("Batal", "Cancel")}</button>
                       </div>
                     </form>
                   )}
@@ -765,7 +767,7 @@ export default function AdminModuleDetailPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </span>
-            Kembali ke Kelola Modul
+            {t("Kembali ke Kelola Modul", "Back to Manage Modules")}
           </button>
         </div>
 
@@ -787,19 +789,19 @@ export default function AdminModuleDetailPage() {
 
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl font-normal">
               {module.deskripsi ||
-                "Modul ini membahas tentang pembentukan kesemaptaan fisik yang lebih baik sehingga energi tersalurkan untuk mengoptimalkan ketahanan fisik, disertai penguatan mental spiritual yang mendorong tanggung jawab terhadap sesama, alam, dan Tuhan Yang Maha Kuasa."}
+                t("Modul ini membahas tentang pembentukan kesemaptaan fisik yang lebih baik sehingga energi tersalurkan untuk mengoptimalkan ketahanan fisik, disertai penguatan mental spiritual yang mendorong tanggung jawab terhadap sesama, alam, dan Tuhan Yang Maha Kuasa.", "This module discusses building better physical fitness so that energy is channeled to optimize physical endurance, accompanied by spiritual mental strengthening that encourages responsibility toward others, nature, and God Almighty.")}
             </p>
           </div>
         </div>
 
          {/* Informasi Modul */}
          <form onSubmit={handleModuleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
-           <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">Informasi Modul</h2>
+           <h2 className="text-base font-bold text-slate-900 tracking-tight dark:text-slate-100">{t("Informasi Modul", "Module Information")}</h2>
            {moduleMessage && <div className={`text-sm px-4 py-3 rounded-xl border ${moduleMessage.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" : "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800"}`}>{moduleMessage.text}</div>}
            <div className="space-y-4">
               <div>
                 <label htmlFor="judul" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
-                  Judul Modul
+                  {t("Judul Modul", "Module Title")}
                 </label>
                 <input
                   id="judul"
@@ -812,7 +814,7 @@ export default function AdminModuleDetailPage() {
               </div>
               <div>
                 <label htmlFor="deskripsi" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
-                  Deskripsi
+                  {t("Deskripsi", "Description")}
                 </label>
                 <textarea
                   id="deskripsi"
@@ -827,7 +829,7 @@ export default function AdminModuleDetailPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="aspekPancawaluya" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
-                    Aspek Pancawaluya
+                    {t("Aspek Pancawaluya", "Pancawaluya Aspect")}
                   </label>
                   <select
                     id="aspekPancawaluya"
@@ -845,7 +847,7 @@ export default function AdminModuleDetailPage() {
                 </div>
                 <div>
                   <label htmlFor="urutan" className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">
-                    Urutan Modul
+                    {t("Urutan Modul", "Module Order")}
                   </label>
                   <input
                     id="urutan"
@@ -860,10 +862,10 @@ export default function AdminModuleDetailPage() {
                 </div>
               </div>
            </div>
-           <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? "Menyimpan..." : "Simpan Perubahan"}</button></div>
+           <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? t("Menyimpan...", "Saving...") : t("Simpan Perubahan", "Save Changes")}</button></div>
          </form>
 
-        {renderEvaluationSection("Pre-Test", "pre_test", preTestEvaluations)}
+        {renderEvaluationSection(t("Pre-Test", "Pre-Test"), "pre_test", preTestEvaluations)}
 
         {/* Konten Pembelajaran - Kartu */}
         <div className="space-y-6">
@@ -872,19 +874,19 @@ export default function AdminModuleDetailPage() {
               <svg className="w-5 h-5 text-emerald-700 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              Konten Pembelajaran
+              {t("Konten Pembelajaran", "Learning Content")}
             </h2>
             <Link
               href={`/admin/modules/${module.id}/contents/new`}
               className="text-xs sm:text-sm bg-slate-900 text-white px-4 py-2 rounded-full font-semibold hover:bg-slate-800 transition shadow-sm"
             >
-              + Tambah Konten
+              {t("+ Tambah Konten", "+ Add Content")}
             </Link>
           </div>
 
           {contents.length === 0 ? (
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-              <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada konten untuk modul ini.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t("Belum ada konten untuk modul ini.", "No content for this module yet.")}</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -927,14 +929,14 @@ export default function AdminModuleDetailPage() {
                              }}
                              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                            >
-                             <option value="teks">Text</option>
-                             <option value="video">Video</option>
-                             <option value="pdf">PDF</option>
-                             <option value="link">Link</option>
-                           </select>
-                           {contentData.tipe === "pdf" ? (
-                             <div>
-                               <label htmlFor={`pdf-file-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">File PDF</label>
+                              <option value="teks">{t("Teks", "Text")}</option>
+                              <option value="video">{t("Video", "Video")}</option>
+                              <option value="pdf">{t("PDF", "PDF")}</option>
+                              <option value="link">{t("Link", "Link")}</option>
+                            </select>
+                            {contentData.tipe === "pdf" ? (
+                              <div>
+                                <label htmlFor={`pdf-file-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("File PDF", "PDF File")}</label>
                                <input
                                  id={`pdf-file-${content.id}`}
                                  type="file"
@@ -944,18 +946,18 @@ export default function AdminModuleDetailPage() {
                                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm file:mr-3 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-1.5 file:text-white disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:file:bg-slate-700"
                                  aria-describedby={`pdf-file-help-${content.id}`}
                                />
-                               <p id={`pdf-file-help-${content.id}`} className="mt-1 text-xs text-slate-500 dark:text-slate-400">Format PDF, maksimal 10MB.</p>
-                               {pdfUploadingId === content.id && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mengunggah file PDF...</p>}
-                               {pdfMessage && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{pdfMessage}</p>}
-                               {pdfUploadingId !== content.id && !pdfMessage && contentData.konten && (
-                                 <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
-                                   {pdfFileName ? `${pdfFileName} — ` : ""}File PDF berhasil diunggah.
-                                 </p>
-                               )}
-                             </div>
-                           ) : contentData.tipe === "link" ? (
-                             <div>
-                               <label htmlFor={`link-url-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">URL Link</label>
+                                <p id={`pdf-file-help-${content.id}`} className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t("Format PDF, maksimal 10MB.", "PDF format, maximum 10MB.")}</p>
+                                {pdfUploadingId === content.id && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t("Mengunggah file PDF...", "Uploading PDF file...")}</p>}
+                                {pdfMessage && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{pdfMessage}</p>}
+                                {pdfUploadingId !== content.id && !pdfMessage && contentData.konten && (
+                                  <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
+                                    {pdfFileName ? `${pdfFileName} — ` : ""}{t("File PDF berhasil diunggah.", "PDF file uploaded successfully.")}
+                                  </p>
+                                )}
+                              </div>
+                            ) : contentData.tipe === "link" ? (
+                              <div>
+                                <label htmlFor={`link-url-${content.id}`} className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("URL Link", "Link URL")}</label>
                                <input
                                  id={`link-url-${content.id}`}
                                  type="url"
@@ -966,7 +968,7 @@ export default function AdminModuleDetailPage() {
                                  aria-describedby={`link-url-help-${content.id}`}
                                  required
                                />
-                               <p id={`link-url-help-${content.id}`} className="mt-1 text-xs text-slate-500 dark:text-slate-400">Masukkan URL eksternal lengkap (http:// atau https://).</p>
+                                <p id={`link-url-help-${content.id}`} className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t("Masukkan URL eksternal lengkap (http:// atau https://).", "Enter the full external URL (http:// or https://).")}</p>
                              </div>
                            ) : (
                              <textarea
@@ -986,12 +988,12 @@ export default function AdminModuleDetailPage() {
                              required
                            />
                            <div className="flex gap-2">
-                             <button type="submit" disabled={contentBusy || pdfUploadingId === content.id} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">
-                               Simpan
-                             </button>
-                             <button type="button" onClick={cancelContentEdit} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                               Batal
-                             </button>
+                              <button type="submit" disabled={contentBusy || pdfUploadingId === content.id} className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl disabled:opacity-60">
+                                {t("Simpan", "Save")}
+                              </button>
+                              <button type="button" onClick={cancelContentEdit} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                {t("Batal", "Cancel")}
+                              </button>
                            </div>
                          </form>
                        ) : content.tipe === "video" ? (
@@ -1007,13 +1009,13 @@ export default function AdminModuleDetailPage() {
                         <div className="space-y-3">
                           {!content.konten && (
                             <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
-                              File PDF belum tersedia untuk materi ini.
+                              {t("File PDF belum tersedia untuk materi ini.", "PDF file is not yet available for this material.")}
                             </p>
                           )}
                           {content.konten && previewContentId === content.id && (
                             <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
                               {previewLoading ? (
-                                <div className="flex h-[480px] items-center justify-center text-sm text-slate-500 dark:text-slate-400">Memuat pratinjau PDF...</div>
+                                <div className="flex h-[480px] items-center justify-center text-sm text-slate-500 dark:text-slate-400">{t("Memuat pratinjau PDF...", "Loading PDF preview...")}</div>
                               ) : previewError[content.id] ? (
                                 <div className="flex h-[480px] flex-col items-center justify-center gap-3 p-6 text-center">
                                   <p className="text-sm text-red-600 dark:text-red-400">{previewError[content.id]}</p>
@@ -1023,7 +1025,7 @@ export default function AdminModuleDetailPage() {
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                                   >
-                                    Buka PDF di tab baru
+                                    {t("Buka PDF di tab baru", "Open PDF in new tab")}
                                   </a>
                                 </div>
                               ) : previewUrl ? (
@@ -1042,7 +1044,7 @@ export default function AdminModuleDetailPage() {
                               disabled={!content.konten || downloadingContentId === content.id}
                               className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                              {downloadingContentId === content.id ? "Mengunduh..." : "Download PDF"}
+                              {downloadingContentId === content.id ? t("Mengunduh...", "Downloading...") : t("Download PDF", "Download PDF")}
                             </button>
                             {content.konten && (
                               <button
@@ -1052,7 +1054,7 @@ export default function AdminModuleDetailPage() {
                                 aria-expanded={previewContentId === content.id}
                                 className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-full hover:bg-slate-50 transition disabled:opacity-60 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                               >
-                                {previewContentId === content.id ? "Tutup Preview" : previewLoading && previewContentId === content.id ? "Memuat..." : "Preview PDF"}
+                                {previewContentId === content.id ? t("Tutup Preview", "Close Preview") : previewLoading && previewContentId === content.id ? t("Memuat...", "Loading...") : t("Preview PDF", "Preview PDF")}
                               </button>
                             )}
                           </div>
@@ -1062,12 +1064,12 @@ export default function AdminModuleDetailPage() {
                         <div className="space-y-3">
                           {content.konten ? (
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tautan Eksternal</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t("Tautan Eksternal", "External Link")}</p>
                               <p className="mt-1 text-sm text-slate-700 break-all dark:text-slate-300">{content.konten}</p>
                             </div>
                           ) : (
                             <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
-                              URL link belum tersedia untuk materi ini.
+                              {t("URL link belum tersedia untuk materi ini.", "Link URL is not yet available for this material.")}
                             </p>
                           )}
                           {content.konten && (
@@ -1078,7 +1080,7 @@ export default function AdminModuleDetailPage() {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition"
                               >
-                                Buka Link
+                                {t("Buka Link", "Open Link")}
                               </a>
                             </div>
                           )}
@@ -1097,7 +1099,7 @@ export default function AdminModuleDetailPage() {
                               onClick={() => startContentEdit(content)}
                               className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             >
-                              Edit
+                              {t("Edit", "Edit")}
                             </button>
                             <button
                               type="button"
@@ -1105,7 +1107,7 @@ export default function AdminModuleDetailPage() {
                               disabled={contentBusy}
                               className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg disabled:opacity-60 dark:text-red-400 dark:border-red-800"
                             >
-                              Hapus
+                              {t("Hapus", "Delete")}
                             </button>
                             {content.tipe === "video" && (
                               <button
@@ -1113,7 +1115,7 @@ export default function AdminModuleDetailPage() {
                                 onClick={() => toggleInteractiveQuestions(content.id)}
                                 className="px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 rounded-lg dark:text-emerald-400 dark:border-emerald-800"
                               >
-                                {expandedVideoId === content.id ? "Tutup Pertanyaan Interaktif" : "Kelola Pertanyaan Interaktif"}
+                                {expandedVideoId === content.id ? t("Tutup Pertanyaan Interaktif", "Close Interactive Questions") : t("Kelola Pertanyaan Interaktif", "Manage Interactive Questions")}
                               </button>
                             )}
                           </div>
@@ -1123,9 +1125,9 @@ export default function AdminModuleDetailPage() {
                             <div className="space-y-2">
                               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                 <div>
-                                  <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">Pertanyaan Interaktif</h4>
+                                  <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">{t("Pertanyaan Interaktif", "Interactive Questions")}</h4>
                                   <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
-                                    Tambahkan checkpoint pada waktu tertentu di video untuk menampilkan pertanyaan kepada peserta.
+                                    {t("Tambahkan checkpoint pada waktu tertentu di video untuk menampilkan pertanyaan kepada peserta.", "Add checkpoints at specific times in the video to show questions to participants.")}
                                   </p>
                                 </div>
                                 <button
@@ -1133,53 +1135,53 @@ export default function AdminModuleDetailPage() {
                                   onClick={() => setCheckpointForm({ contentId: content.id, judul: "", timestamp: "" })}
                                   className="shrink-0 text-sm font-semibold text-emerald-700 border border-emerald-200 rounded-xl px-4 py-2 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/40"
                                 >
-                                  + Tambah Checkpoint
+                                  {t("+ Tambah Checkpoint", "+ Add Checkpoint")}
                                 </button>
                               </div>
                               {checkpointForm?.contentId === content.id && (
                                 <form onSubmit={saveCheckpoint} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4 dark:border-slate-700 dark:bg-slate-800">
-                                  <h5 className="text-sm font-bold text-slate-900 dark:text-slate-100">Tambah Checkpoint</h5>
+                                  <h5 className="text-sm font-bold text-slate-900 dark:text-slate-100">{t("Tambah Checkpoint", "Add Checkpoint")}</h5>
                                   <div>
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Nama Checkpoint</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Nama Checkpoint", "Checkpoint Name")}</label>
                                     <input
                                       value={checkpointForm.judul}
                                       onChange={(e) => setCheckpointForm({ ...checkpointForm, judul: e.target.value })}
-                                      placeholder="Nama checkpoint"
+                                      placeholder={t("Nama checkpoint", "Checkpoint name")}
                                       className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                       required
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">Waktu Video</label>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1 dark:text-slate-300">{t("Waktu Video", "Video Time")}</label>
                                     <input
                                       value={checkpointForm.timestamp}
                                       onChange={(e) => setCheckpointForm({ ...checkpointForm, timestamp: e.target.value })}
                                       placeholder="MM:SS"
                                       inputMode="numeric"
                                       pattern="\d+:\d{2}"
-                                      aria-label="Waktu checkpoint MM:SS"
+                                      aria-label={t("Waktu checkpoint MM:SS", "Checkpoint time MM:SS")}
                                       className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                       required
                                     />
                                   </div>
                                   <div className="flex justify-end gap-2">
                                     <button type="button" onClick={() => setCheckpointForm(null)} className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-xl bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                      Batal
+                                      {t("Batal", "Cancel")}
                                     </button>
                                     <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">
-                                      Simpan Checkpoint
+                                      {t("Simpan Checkpoint", "Save Checkpoint")}
                                     </button>
                                   </div>
                                 </form>
                               )}
                             </div>
                             {interactiveLoading === content.id ? (
-                              <p className="text-xs text-slate-500 dark:text-slate-400">Memuat...</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{t("Memuat...", "Loading...")}</p>
                             ) : interactiveError[content.id] ? (
                               <p className="text-xs text-red-600 dark:text-red-400">{interactiveError[content.id]}</p>
                             ) : (videoQuizzes[content.id] || []).length === 0 ? (
                               <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
-                                Belum ada checkpoint pada video ini.
+                                {t("Belum ada checkpoint pada video ini.", "No checkpoints on this video yet.")}
                               </p>
                             ) : (
                               <div className="space-y-4">
@@ -1187,21 +1189,21 @@ export default function AdminModuleDetailPage() {
                                   <div key={quiz.id} className="rounded-2xl border border-slate-200 p-5 space-y-5 dark:border-slate-700">
                                     <div className="flex items-start justify-between gap-4">
                                       <div>
-                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Checkpoint</p>
-                                        <h5 className="text-base font-bold text-slate-900 mt-1 dark:text-slate-100">{quiz.judul || "Checkpoint tanpa nama"}</h5>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t("Checkpoint", "Checkpoint")}</p>
+                                        <h5 className="text-base font-bold text-slate-900 mt-1 dark:text-slate-100">{quiz.judul || t("Checkpoint tanpa nama", "Unnamed checkpoint")}</h5>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300">
                                           {formatTimestamp(quiz.timestampSeconds)}
                                         </span>
-                                        <button type="button" onClick={() => removeCheckpoint(content.id, quiz.id)} disabled={interactiveDeletingId === quiz.id} className="text-xs font-semibold text-red-600 border border-red-200 px-2 py-1 rounded-lg hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30">Hapus</button>
+                                        <button type="button" onClick={() => removeCheckpoint(content.id, quiz.id)} disabled={interactiveDeletingId === quiz.id} className="text-xs font-semibold text-red-600 border border-red-200 px-2 py-1 rounded-lg hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30">{t("Hapus", "Delete")}</button>
                                       </div>
                                     </div>
                                     {(quiz.questions || []).length === 0 ? (
-                                      <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada pertanyaan pada checkpoint ini.</p>
+                                      <p className="text-sm text-slate-500 dark:text-slate-400">{t("Belum ada pertanyaan pada checkpoint ini.", "No questions on this checkpoint yet.")}</p>
                                     ) : (
                                       <div className="space-y-3">
-                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pertanyaan Interaktif</p>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t("Pertanyaan Interaktif", "Interactive Questions")}</p>
                                         {(quiz.questions || []).map((question) => (
                                           <div key={question.id} className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
                                             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{question.pertanyaan}</p>
@@ -1211,10 +1213,10 @@ export default function AdminModuleDetailPage() {
                                                 onClick={() => setInteractiveForm({ quizId: quiz.id, questionId: question.id, pertanyaan: question.pertanyaan, options: question.options.map(({ teksOpsi, isCorrect }) => ({ teksOpsi, isCorrect })) })}
                                                 className="text-xs font-semibold text-slate-600 dark:text-slate-300"
                                               >
-                                                Edit
+                                                {t("Edit", "Edit")}
                                               </button>
                                               <button type="button" onClick={() => removeInteractiveQuestion(content.id, question.id)} className="text-xs font-semibold text-red-600 dark:text-red-400">
-                                                Hapus
+                                                {t("Hapus", "Delete")}
                                               </button>
                                             </div>
                                           </div>
@@ -1226,7 +1228,7 @@ export default function AdminModuleDetailPage() {
                                       onClick={() => setInteractiveForm({ quizId: quiz.id, pertanyaan: "", options: [{ teksOpsi: "", isCorrect: true }, { teksOpsi: "", isCorrect: false }] })}
                                       className="text-sm font-semibold text-emerald-700 text-right dark:text-emerald-400"
                                     >
-                                      + Tambah Pertanyaan
+                                      {t("+ Tambah Pertanyaan", "+ Add Question")}
                                     </button>
                                   </div>
                                 ))}
@@ -1238,7 +1240,7 @@ export default function AdminModuleDetailPage() {
                                   value={interactiveForm.pertanyaan}
                                   onChange={(e) => setInteractiveForm({ ...interactiveForm, pertanyaan: e.target.value })}
                                   className="w-full border border-slate-200 rounded-xl p-2 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                                  placeholder="Pertanyaan"
+                                  placeholder={t("Pertanyaan", "Question")}
                                   required
                                 />
                                 {interactiveForm.options.map((option, index) => (
@@ -1247,7 +1249,7 @@ export default function AdminModuleDetailPage() {
                                       value={option.teksOpsi}
                                       onChange={(e) => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => itemIndex === index ? { ...item, teksOpsi: e.target.value } : item) })}
                                       className="flex-1 border border-slate-200 rounded-xl p-2 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                                      placeholder={`Opsi ${index + 1}`}
+                                      placeholder={`${t("Opsi", "Option")} ${index + 1}`}
                                       required
                                     />
                                     <button
@@ -1255,21 +1257,21 @@ export default function AdminModuleDetailPage() {
                                       onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.map((item, itemIndex) => ({ ...item, isCorrect: itemIndex === index })) })}
                                       className={`text-xs px-2 rounded-lg ${option.isCorrect ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "border border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400"}`}
                                     >
-                                      {option.isCorrect ? "Benar" : "Tandai benar"}
+                                      {option.isCorrect ? t("Benar", "Correct") : t("Tandai benar", "Mark correct")}
                                     </button>
                                     {interactiveForm.options.length > 2 && (
                                       <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: interactiveForm.options.filter((_, itemIndex) => itemIndex !== index) })} className="text-xs text-red-600 dark:text-red-400">
-                                        Hapus
+                                        {t("Hapus", "Delete")}
                                       </button>
                                     )}
                                   </div>
                                 ))}
                                 <button type="button" onClick={() => setInteractiveForm({ ...interactiveForm, options: [...interactiveForm.options, { teksOpsi: "", isCorrect: false }] })} className="text-xs text-emerald-700 dark:text-emerald-400">
-                                  + Tambah opsi
+                                  {t("+ Tambah opsi", "+ Add option")}
                                 </button>
                                 <div className="flex gap-2">
-                                  <button type="submit" className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs">Simpan</button>
-                                  <button type="button" onClick={() => setInteractiveForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">Batal</button>
+                                  <button type="submit" className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs">{t("Simpan", "Save")}</button>
+                                  <button type="button" onClick={() => setInteractiveForm(null)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">{t("Batal", "Cancel")}</button>
                                 </div>
                               </form>
                             )}
@@ -1284,7 +1286,7 @@ export default function AdminModuleDetailPage() {
           )}
         </div>
 
-        {renderEvaluationSection("Post-Test", "post_test", postTestEvaluations)}
+        {renderEvaluationSection(t("Post-Test", "Post-Test"), "post_test", postTestEvaluations)}
 
       </div>
     </div>

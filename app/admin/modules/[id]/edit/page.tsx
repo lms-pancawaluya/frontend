@@ -8,6 +8,7 @@ import { deleteContent, updateContent } from "@/services/content.service";
 import { getCourseById } from "@/services/course.service";
 import { validateExternalUrl } from "@/lib/link";
 import { canManageCourse, getCourseModulePermissions } from "@/lib/rbac";
+import { useApp } from "@/app/context/AppContext";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
 
@@ -22,6 +23,7 @@ interface ContentItem {
 export default function EditModulePage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useApp();
   const id = params.id as string;
 
   const [formData, setFormData] = useState({
@@ -121,7 +123,7 @@ export default function EditModulePage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat data modul.");
+          setError(t("Gagal memuat data modul.", "Failed to load module data."));
         }
       } finally {
         setLoadingData(false);
@@ -129,7 +131,7 @@ export default function EditModulePage() {
     }
 
     loadData();
-  }, [id, checkingAccess]);
+  }, [id, checkingAccess, t]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -153,7 +155,7 @@ export default function EditModulePage() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Gagal memperbarui modul.");
+        setError(t("Gagal memperbarui modul.", "Failed to update module."));
       }
     } finally {
       setSaving(false);
@@ -161,7 +163,7 @@ export default function EditModulePage() {
   }
 
   async function handleDeleteContent(contentId: string, judul: string) {
-    const confirmed = window.confirm(`Yakin ingin menghapus konten "${judul}"?`);
+    const confirmed = window.confirm(t(`Yakin ingin menghapus konten "${judul}"?`, `Are you sure you want to delete the content "${judul}"?`));
     if (!confirmed) return;
 
     setDeletingId(contentId);
@@ -173,7 +175,7 @@ export default function EditModulePage() {
       if (err instanceof Error) {
         alert(err.message);
       } else {
-        alert("Gagal menghapus konten.");
+        alert(t("Gagal menghapus konten.", "Failed to delete content."));
       }
     } finally {
       setDeletingId(null);
@@ -231,12 +233,12 @@ export default function EditModulePage() {
       setEditingContentId(null);
       setContentMessage({
         type: "success",
-        text: "Konten berhasil diperbarui.",
+        text: t("Konten berhasil diperbarui.", "Content updated successfully."),
       });
     } catch (err) {
       setContentMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Gagal memperbarui konten.",
+        text: err instanceof Error ? err.message : t("Gagal memperbarui konten.", "Failed to update content."),
       });
     } finally {
       setSavingContent(false);
@@ -255,7 +257,7 @@ export default function EditModulePage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          Memuat data modul...
+          {t("Memuat data modul...", "Loading module data...")}
         </div>
       </div>
     );
@@ -265,14 +267,14 @@ export default function EditModulePage() {
     return (
       <div className="mx-auto mt-16 max-w-md p-6 text-center">
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-          Module ini berada pada Course yang bukan milik Anda, sehingga tidak dapat diedit. Hubungi Admin jika perlu.
+          {t("Module ini berada pada Course yang bukan milik Anda, sehingga tidak dapat diedit. Hubungi Admin jika perlu.", "This module belongs to a Course that is not yours, so it cannot be edited. Contact an Admin if needed.")}
         </div>
         <button
           type="button"
           onClick={() => router.push("/admin/modules")}
           className="mt-4 text-sm text-emerald-700 hover:underline dark:text-emerald-400"
         >
-          ← Kembali ke daftar modul
+          ← {t("Kembali ke daftar modul", "Back to module list")}
         </button>
       </div>
     );
@@ -292,17 +294,17 @@ export default function EditModulePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </span>
-            Kembali ke Detail Modul
+            {t("Kembali ke Detail Modul", "Back to Module Detail")}
           </button>
         </div>
 
         {/* Judul Halaman */}
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight dark:text-slate-100">
-            Edit Modul
+            {t("Edit Modul", "Edit Module")}
           </h1>
           <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
-            Perbarui informasi modul pembelajaran Pancawaluya di bawah ini.
+            {t("Perbarui informasi modul pembelajaran Pancawaluya di bawah ini.", "Update the Pancawaluya learning module information below.")}
           </p>
         </div>
 
@@ -320,13 +322,13 @@ export default function EditModulePage() {
               <svg className="w-5 h-5 text-emerald-700 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-.01M13 12h-.01M13 8h-.01M5 20h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2zm7-14V4a1 1 0 00-1-1h-2a1 1 0 00-1 1v3m3 0h-1.5" />
               </svg>
-              Informasi Modul
+              {t("Informasi Modul", "Module Information")}
             </h2>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
-                  Judul Modul
+                  {t("Judul Modul", "Module Title")}
                 </label>
                 <input
                   type="text"
@@ -340,7 +342,7 @@ export default function EditModulePage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
-                  Deskripsi
+                  {t("Deskripsi", "Description")}
                 </label>
                 <textarea
                   name="deskripsi"
@@ -355,7 +357,7 @@ export default function EditModulePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
-                    Aspek Pancawaluya
+                    {t("Aspek Pancawaluya", "Pancawaluya Aspect")}
                   </label>
                   <select
                     name="aspekPancawaluya"
@@ -373,7 +375,7 @@ export default function EditModulePage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
-                    Urutan Modul
+                    {t("Urutan Modul", "Module Order")}
                   </label>
                   <input
                     type="number"
@@ -394,14 +396,14 @@ export default function EditModulePage() {
                 onClick={() => router.push(`/admin/modules/${id}`)}
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Batal
+                {t("Batal", "Cancel")}
               </button>
               <button
                 type="submit"
                 disabled={saving}
                 className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed dark:bg-slate-700 dark:hover:bg-slate-600"
               >
-                {saving ? "Menyimpan..." : "Simpan Perubahan"}
+                {saving ? t("Menyimpan...", "Saving...") : t("Simpan Perubahan", "Save Changes")}
               </button>
             </div>
           </div>
@@ -414,13 +416,13 @@ export default function EditModulePage() {
               <svg className="w-5 h-5 text-emerald-700 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              Konten Pembelajaran
+              {t("Konten Pembelajaran", "Learning Content")}
             </h2>
             <Link
               href={`/admin/modules/${id}/contents/new`}
               className="text-xs sm:text-sm bg-slate-900 text-white px-4 py-2 rounded-full font-semibold hover:bg-slate-800 transition shadow-sm dark:bg-slate-700 dark:hover:bg-slate-600"
             >
-              + Tambah Konten
+              {t("+ Tambah Konten", "+ Add Content")}
             </Link>
           </div>
 
@@ -438,7 +440,7 @@ export default function EditModulePage() {
 
           {contents.length === 0 ? (
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-              <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada konten untuk modul ini.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t("Belum ada konten untuk modul ini.", "No content for this module yet.")}</p>
             </div>
           ) : (
             <div className="space-y-5">
@@ -466,7 +468,7 @@ export default function EditModulePage() {
                         <form onSubmit={handleUpdateContent} className="space-y-4">
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
-                              Judul Konten
+                              {t("Judul Konten", "Content Title")}
                             </label>
                             <input
                               type="text"
@@ -480,7 +482,7 @@ export default function EditModulePage() {
 
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
-                              Tipe Konten
+                              {t("Tipe Konten", "Content Type")}
                             </label>
                             <select
                               name="tipe"
@@ -488,19 +490,19 @@ export default function EditModulePage() {
                               onChange={handleEditContentChange}
                               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm capitalize focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             >
-                              <option value="teks">Teks</option>
-                              <option value="video">Video (YouTube)</option>
-                              <option value="link">Link</option>
+                              <option value="teks">{t("Teks", "Text")}</option>
+                              <option value="video">{t("Video (YouTube)", "Video (YouTube)")}</option>
+                              <option value="link">{t("Link", "Link")}</option>
                             </select>
                           </div>
 
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
                               {editContentData.tipe === "video"
-                                ? "Link Video YouTube"
+                                ? t("Link Video YouTube", "YouTube Video Link")
                                 : editContentData.tipe === "link"
-                                ? "URL Link"
-                                : "Isi Konten"}
+                                ? t("URL Link", "Link URL")
+                                : t("Isi Konten", "Content Body")}
                             </label>
                             {editContentData.tipe === "link" ? (
                               <input
@@ -525,14 +527,14 @@ export default function EditModulePage() {
                             )}
                             {editContentData.tipe === "link" && (
                               <p id="edit-content-link-help" className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                                Masukkan URL eksternal lengkap (http:// atau https://).
+                                {t("Masukkan URL eksternal lengkap (http:// atau https://).", "Enter the full external URL (http:// or https://).")}
                               </p>
                             )}
                           </div>
 
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
-                              Urutan
+                              {t("Urutan", "Order")}
                             </label>
                             <input
                               type="number"
@@ -551,7 +553,7 @@ export default function EditModulePage() {
                               disabled={savingContent}
                               className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition disabled:opacity-50 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-800"
                             >
-                              {savingContent ? "Menyimpan..." : "Simpan"}
+                              {savingContent ? t("Menyimpan...", "Saving...") : t("Simpan", "Save")}
                             </button>
                             <button
                               type="button"
@@ -559,7 +561,7 @@ export default function EditModulePage() {
                               disabled={savingContent}
                               className="text-xs text-gray-500 hover:underline disabled:opacity-50 dark:text-slate-400"
                             >
-                              Batal
+                              {t("Batal", "Cancel")}
                             </button>
                           </div>
                         </form>
@@ -578,12 +580,12 @@ export default function EditModulePage() {
                             <div className="space-y-3">
                               {content.konten ? (
                                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800">
-                                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Tautan Eksternal</p>
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{t("Tautan Eksternal", "External Link")}</p>
                                   <p className="mt-1 text-sm text-slate-700 break-all dark:text-slate-300">{content.konten}</p>
                                 </div>
                               ) : (
                                 <p className="text-sm text-slate-500 rounded-2xl border border-dashed border-slate-200 p-5 dark:text-slate-400 dark:border-slate-700">
-                                  URL link belum tersedia untuk materi ini.
+                                  {t("URL link belum tersedia untuk materi ini.", "Link URL is not yet available for this material.")}
                                 </p>
                               )}
                               {content.konten && (
@@ -593,7 +595,7 @@ export default function EditModulePage() {
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full hover:bg-slate-800 transition dark:bg-slate-700 dark:hover:bg-slate-600"
                                 >
-                                  Buka Link
+                                  {t("Buka Link", "Open Link")}
                                 </a>
                               )}
                             </div>
@@ -611,14 +613,14 @@ export default function EditModulePage() {
                               disabled={savingContent || deletingId === content.id}
                               className="text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition disabled:opacity-50 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-800"
                             >
-                              Edit Konten
+                              {t("Edit Konten", "Edit Content")}
                             </button>
                             <button
                               onClick={() => handleDeleteContent(content.id, content.judul)}
                               disabled={deletingId === content.id || savingContent}
                               className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30"
                             >
-                              {deletingId === content.id ? "Menghapus..." : "Hapus"}
+                              {deletingId === content.id ? t("Menghapus...", "Deleting...") : t("Hapus", "Delete")}
                             </button>
                           </div>
                         </>

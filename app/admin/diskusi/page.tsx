@@ -11,6 +11,7 @@ import type {
 } from "@/types/comment";
 import MentionTextarea, { type MentionSelection } from "@/app/components/common/MentionTextarea";
 import { renderCommentText } from "@/lib/mention";
+import { useApp } from "@/app/context/AppContext";
 
 interface CourseItem {
   id: string;
@@ -18,12 +19,13 @@ interface CourseItem {
   mode?: string;
 }
 
-function roleLabel(role?: string): string {
+function roleLabel(role?: string, t?: (id: string, en: string) => string): string {
+  const tr = t ?? ((id: string) => id);
   const r = String(role || "").toLowerCase();
   if (r === "admin") return "Admin";
-  if (r === "pengajar") return "Pengajar";
-  if (r === "guru") return "Guru";
-  return role || "Pengguna";
+  if (r === "pengajar") return tr("Pengajar", "Instructor");
+  if (r === "guru") return tr("Guru", "Teacher");
+  return role || tr("Pengguna", "User");
 }
 
 function roleBadgeClass(role?: string): string {
@@ -41,9 +43,10 @@ function formatDateTime(raw?: string): string {
   return d.toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function userName(user?: CommentUser): string {
-  if (!user) return "Pengguna";
-  return user.gelar ? `${user.nama ?? "Pengguna"}, ${user.gelar}` : user.nama ?? "Pengguna";
+function userName(user?: CommentUser, t?: (id: string, en: string) => string): string {
+  const tr = t ?? ((id: string) => id);
+  if (!user) return tr("Pengguna", "User");
+  return user.gelar ? `${user.nama ?? tr("Pengguna", "User")}, ${user.gelar}` : user.nama ?? tr("Pengguna", "User");
 }
 
 function userPhoto(user?: CommentUser): string {
@@ -59,8 +62,9 @@ function commentAuthor(comment: DiscussionComment): CommentUser | undefined {
 }
 
 export default function AdminDiskusiPage() {
+  const { t } = useApp();
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{t("Memuat...", "Loading...")}</div>}>
       <AdminDiskusiContent />
     </Suspense>
   );
@@ -69,6 +73,7 @@ export default function AdminDiskusiPage() {
 function AdminDiskusiContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useApp();
   const courseIdFromUrl = searchParams.get("courseId") || searchParams.get("course");
   // commentId dari notifikasi diskusi untuk scroll/highlight komentar terkait.
   const focusedCommentId = searchParams.get("commentId") || "";
@@ -113,13 +118,13 @@ function AdminDiskusiContent() {
         setCourses(list);
         if (list.length > 0 && !courseIdFromUrl) setSelectedCourseId(list[0].id);
       } catch (err) {
-        setCommentsError(err instanceof Error ? err.message : "Gagal memuat daftar course.");
+        setCommentsError(err instanceof Error ? err.message : t("Gagal memuat daftar course.", "Failed to load course list."));
       } finally {
         setCoursesLoading(false);
       }
     }
     fetchCourses();
-  }, [courseIdFromUrl, router]);
+  }, [courseIdFromUrl, router, t]);
 
   // Muat diskusi Course-level. Response BE sudah nested via `replies[]`.
   const loadDiscussion = useCallback(async (courseId: string) => {
@@ -129,11 +134,11 @@ function AdminDiskusiContent() {
       const data = await getCourseComments(courseId);
       setComments(Array.isArray(data) ? (data as DiscussionComment[]) : []);
     } catch (err) {
-      setCommentsError(err instanceof Error ? err.message : "Gagal memuat diskusi course.");
+      setCommentsError(err instanceof Error ? err.message : t("Gagal memuat diskusi course.", "Failed to load course discussion."));
     } finally {
       setCommentsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!selectedCourseId) return;
@@ -147,7 +152,7 @@ function AdminDiskusiContent() {
         setComments(Array.isArray(data) ? (data as DiscussionComment[]) : []);
       } catch (err) {
         if (!active) return;
-        setCommentsError(err instanceof Error ? err.message : "Gagal memuat diskusi course.");
+        setCommentsError(err instanceof Error ? err.message : t("Gagal memuat diskusi course.", "Failed to load course discussion."));
       } finally {
         if (active) setCommentsLoading(false);
       }
@@ -156,7 +161,7 @@ function AdminDiskusiContent() {
     return () => {
       active = false;
     };
-  }, [selectedCourseId]);
+  }, [selectedCourseId, t]);
 
   // Buka/scroll ke komentar terkait saat datang dari notifikasi (?commentId=).
   // Retry singkat karena komentar bisa muncul setelah bagian awal dimuat.
@@ -211,7 +216,7 @@ function AdminDiskusiContent() {
       setNewCommentMentions([]);
       await loadDiscussion(selectedCourseId);
     } catch (err) {
-      setPostError(err instanceof Error ? err.message : "Gagal mengirim komentar.");
+      setPostError(err instanceof Error ? err.message : t("Gagal mengirim komentar.", "Failed to send comment."));
     } finally {
       setPosting(false);
     }
@@ -234,21 +239,21 @@ function AdminDiskusiContent() {
       setReplyToId(null);
       await loadDiscussion(selectedCourseId);
     } catch (err) {
-      setReplyError(err instanceof Error ? err.message : "Gagal mengirim balasan.");
+      setReplyError(err instanceof Error ? err.message : t("Gagal mengirim balasan.", "Failed to send reply."));
     } finally {
       setPostingReply(false);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus komentar ini?")) return;
+    if (!window.confirm(t("Apakah Anda yakin ingin menghapus komentar ini?", "Are you sure you want to delete this comment?"))) return;
 
     try {
       setDeletingId(id);
       await deleteComment(id);
       if (selectedCourseId) await loadDiscussion(selectedCourseId);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Gagal menghapus komentar.");
+      alert(err instanceof Error ? err.message : t("Gagal menghapus komentar.", "Failed to delete comment."));
     } finally {
       setDeletingId(null);
     }
@@ -272,19 +277,19 @@ function AdminDiskusiContent() {
     <div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)] dark:text-slate-100">
-          Moderasi Diskusi Course
+          {t("Moderasi Diskusi Course", "Course Discussion Moderation")}
         </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">Pantau, ikuti diskusi, dan kelola komentar pada seluruh course.</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">{t("Pantau, ikuti diskusi, dan kelola komentar pada seluruh course.", "Monitor, join discussions, and manage comments across all courses.")}</p>
       </div>
 
       <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-4 shadow-sm sm:p-6 dark:bg-slate-900">
         <label htmlFor="course-select" className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">
-          Pilih Course
+          {t("Pilih Course", "Select Course")}
         </label>
         {coursesLoading ? (
           <div className="h-11 w-full animate-pulse rounded-xl bg-gray-100 dark:bg-slate-800" />
         ) : courses.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-slate-400">Belum ada course tersedia.</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400">{t("Belum ada course tersedia.", "No courses available yet.")}</p>
         ) : (
           <select
             id="course-select"
@@ -311,10 +316,10 @@ function AdminDiskusiContent() {
             <svg className="w-5 h-5 text-[var(--color-navy)] dark:text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z" />
             </svg>
-            <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">Utas Diskusi</h2>
+            <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-[var(--color-navy)] dark:text-slate-100">{t("Utas Diskusi", "Discussion Thread")}</h2>
           </div>
           <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full dark:bg-slate-800 dark:text-slate-400">
-            {comments.length} diskusi
+            {comments.length} {t("diskusi", "discussions")}
           </span>
         </div>
 
@@ -322,7 +327,7 @@ function AdminDiskusiContent() {
         {selectedCourseId && (
           <form onSubmit={handlePost} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3 dark:border-slate-700 dark:bg-slate-800/60">
             <label htmlFor="new-comment" className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">
-              Tulis Komentar
+              {t("Tulis Komentar", "Write Comment")}
             </label>
             {postError && <p className="mb-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">{postError}</p>}
             <MentionTextarea
@@ -331,7 +336,7 @@ function AdminDiskusiContent() {
               onChange={setNewComment}
               onMentionsChange={setNewCommentMentions}
               rows={3}
-              placeholder="Bagikan tanggapan, arahan, atau jawaban untuk course ini... Ketik @ untuk menyebut pengguna"
+              placeholder={t("Bagikan tanggapan, arahan, atau jawaban untuk course ini... Ketik @ untuk menyebut pengguna", "Share feedback, direction, or answers for this course... Type @ to mention a user")}
               className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             />
             <div className="flex justify-end">
@@ -340,7 +345,7 @@ function AdminDiskusiContent() {
                 disabled={posting || !newComment.trim()}
                 className="rounded-xl bg-[var(--color-navy)] px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60"
               >
-                {posting ? "Mengirim..." : "Kirim Komentar"}
+                {posting ? t("Mengirim...", "Sending...") : t("Kirim Komentar", "Send Comment")}
               </button>
             </div>
           </form>
@@ -349,20 +354,20 @@ function AdminDiskusiContent() {
         {/* Daftar diskusi (nested) — langsung setelah composer */}
         {commentsLoading ? (
           <div className="rounded-2xl border border-[var(--color-border-soft)] bg-white p-6 text-center text-sm text-gray-500 dark:bg-slate-900 dark:text-slate-400">
-            Memuat diskusi...
+            {t("Memuat diskusi...", "Loading discussion...")}
           </div>
         ) : commentsError ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{commentsError}</div>
         ) : comments.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-gray-500 dark:border-slate-700 dark:text-slate-400">
-            Belum ada diskusi pada course ini.
+            {t("Belum ada diskusi pada course ini.", "No discussion on this course yet.")}
           </div>
         ) : (
           <ul className="space-y-3">
             {comments.map((c) => {
               const cUser = commentAuthor(c);
               const foto = userPhoto(cUser);
-              const nama = userName(cUser);
+              const nama = userName(cUser, t);
               const isDeleting = deletingId === c.id;
               const replies = Array.isArray(c.replies) ? c.replies : [];
 
@@ -388,7 +393,7 @@ function AdminDiskusiContent() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-bold text-[var(--color-navy)] dark:text-slate-100">{nama}</span>
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(cUser?.role)}`}>
-                            {roleLabel(cUser?.role)}
+                            {roleLabel(cUser?.role, t)}
                           </span>
                           {c.createdAt && <span className="text-[11px] text-gray-400 dark:text-slate-500">{formatDateTime(c.createdAt)}</span>}
                         </div>
@@ -399,7 +404,7 @@ function AdminDiskusiContent() {
                             onClick={() => (replyToId === c.id ? cancelReply() : startReply(c.id))}
                             className="text-xs font-semibold text-[var(--color-navy)] hover:text-emerald-700 dark:text-slate-200 dark:hover:text-emerald-400"
                           >
-                            {replyToId === c.id ? "Batal" : "Balas"}
+                            {replyToId === c.id ? t("Batal", "Cancel") : t("Balas", "Reply")}
                           </button>
                         </div>
 
@@ -415,7 +420,7 @@ function AdminDiskusiContent() {
                               onChange={setReplyText}
                               onMentionsChange={setReplyMentions}
                               rows={2}
-                              placeholder="Tulis balasan... Ketik @ untuk menyebut pengguna"
+                              placeholder={t("Tulis balasan... Ketik @ untuk menyebut pengguna", "Write a reply... Type @ to mention a user")}
                               className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                             />
                             <div className="flex justify-end">
@@ -424,7 +429,7 @@ function AdminDiskusiContent() {
                                 disabled={postingReply || !replyText.trim()}
                                 className="rounded-lg bg-[var(--color-navy)] px-4 py-2 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-60"
                               >
-                                {postingReply ? "Mengirim..." : "Kirim Balasan"}
+                                {postingReply ? t("Mengirim...", "Sending...") : t("Kirim Balasan", "Send Reply")}
                               </button>
                             </div>
                           </form>
@@ -435,8 +440,8 @@ function AdminDiskusiContent() {
                       onClick={() => handleDelete(c.id)}
                       disabled={isDeleting}
                       className="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:text-slate-500 dark:hover:bg-rose-950/30"
-                      title="Hapus komentar"
-                      aria-label="Hapus komentar"
+                      title={t("Hapus komentar", "Delete comment")}
+                      aria-label={t("Hapus komentar", "Delete comment")}
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -450,7 +455,7 @@ function AdminDiskusiContent() {
                       {replies.map((reply) => {
                         const rUser = commentAuthor(reply);
                         const rfoto = userPhoto(rUser);
-                        const rnama = userName(rUser);
+                        const rnama = userName(rUser, t);
                         const isReplyDeleting = deletingId === reply.id;
 
                         return (
@@ -474,7 +479,7 @@ function AdminDiskusiContent() {
                                   <div className="flex flex-wrap items-center gap-2">
                                     <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{rnama}</span>
                                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(rUser?.role)}`}>
-                                      {roleLabel(rUser?.role)}
+                                       {roleLabel(rUser?.role, t)}
                                     </span>
                                     {reply.createdAt && <span className="text-[11px] text-gray-400 dark:text-slate-500">{formatDateTime(reply.createdAt)}</span>}
                                   </div>
@@ -485,8 +490,8 @@ function AdminDiskusiContent() {
                                 onClick={() => handleDelete(reply.id)}
                                 disabled={isReplyDeleting}
                                 className="shrink-0 rounded-lg p-1.5 text-gray-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:text-slate-500 dark:hover:bg-rose-950/30"
-                                title="Hapus balasan"
-                                aria-label="Hapus balasan"
+                                title={t("Hapus balasan", "Delete reply")}
+                                aria-label={t("Hapus balasan", "Delete reply")}
                               >
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

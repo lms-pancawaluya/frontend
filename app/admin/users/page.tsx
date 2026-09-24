@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUsers, deleteUser } from "@/services/user.service";
+import { useApp } from "@/app/context/AppContext";
 
 interface UserItem {
   id: string;
@@ -34,15 +35,17 @@ function isManagedStaff(role?: string): boolean {
   return r === "guru" || r === "pengajar";
 }
 
-function getRoleBadge(role?: string): { label: string; className: string } {
+function getRoleBadge(role?: string, t?: (id: string, en: string) => string): { label: string; className: string } {
+  const tr = t ?? ((id: string) => id);
   const r = normalizeRole(role);
-  if (r === "pengajar") return { label: "Pengajar", className: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" };
-  if (r === "guru") return { label: "Guru", className: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" };
+  if (r === "pengajar") return { label: tr("Pengajar", "Instructor"), className: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" };
+  if (r === "guru") return { label: tr("Guru", "Teacher"), className: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" };
   return { label: role || "—", className: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300" };
 }
 
 export default function AdminUsersPage() {
   const router = useRouter();
+  const { t } = useApp();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -124,7 +127,7 @@ export default function AdminUsersPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Gagal memuat data pengguna.");
+          setError(t("Gagal memuat data pengguna.", "Failed to load user data."));
         }
       } finally {
         if (active) {
@@ -139,10 +142,10 @@ export default function AdminUsersPage() {
     return () => {
       active = false;
     };
-  }, [debouncedQuery, filterSekolah, filterKota, filterDaerah, filterStatus, filterRole, router]);
+  }, [debouncedQuery, filterSekolah, filterKota, filterDaerah, filterStatus, filterRole, router, t]);
 
   async function handleDelete(id: string, nama: string) {
-    const confirmed = window.confirm(`Yakin ingin menghapus akun guru "${nama}"?`);
+    const confirmed = window.confirm(t(`Yakin ingin menghapus akun guru "${nama}"?`, `Are you sure you want to delete the teacher account "${nama}"?`));
     if (!confirmed) return;
 
     setDeletingId(id);
@@ -154,7 +157,7 @@ export default function AdminUsersPage() {
       if (err instanceof Error) {
         alert(err.message);
       } else {
-        alert("Gagal menghapus pengguna.");
+        alert(t("Gagal menghapus pengguna.", "Failed to delete user."));
       }
     } finally {
       setDeletingId(null);
@@ -172,7 +175,7 @@ export default function AdminUsersPage() {
   };
 
   if (initialLoading) {
-    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memuat data pengguna...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">{t("Memuat data pengguna...", "Loading user data...")}</p>;
   }
 
   if (error) {
@@ -193,20 +196,20 @@ export default function AdminUsersPage() {
     return true;
   });
 
-  const roleLabel = filterRole === "guru" ? "Guru" : filterRole === "pengajar" ? "Pengajar" : "Guru/Pengajar";
-  const emptyLabel = filterRole ? `${roleLabel} tidak ditemukan.` : "Guru/Pengajar tidak ditemukan.";
+  const roleLabel = filterRole === "guru" ? t("Guru", "Teacher") : filterRole === "pengajar" ? t("Pengajar", "Instructor") : t("Guru/Pengajar", "Teacher/Instructor");
+  const emptyLabel = filterRole ? t(`${roleLabel} tidak ditemukan.`, `${roleLabel} not found.`) : t("Guru/Pengajar tidak ditemukan.", "Teacher/Instructor not found.");
 
   return (
     <div className="max-w-5xl mx-auto p-6">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-medium text-[var(--color-navy)] mb-2 dark:text-slate-100">
-        Kelola Akun Guru
+        {t("Kelola Akun Guru", "Manage Teacher Accounts")}
       </h1>
-      <p className="text-gray-500 mb-8 dark:text-slate-400">Daftar guru dan pengajar terdaftar di sistem</p>
+      <p className="text-gray-500 mb-8 dark:text-slate-400">{t("Daftar guru dan pengajar terdaftar di sistem", "List of teachers and instructors registered in the system")}</p>
 
       <div className="bg-white rounded-2xl border border-[var(--color-border-soft)] shadow-sm p-6 mb-6 space-y-4 dark:bg-slate-900">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 space-y-1.5">
-            <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Cari</label>
+            <label className="text-xs font-bold text-slate-600 dark:text-slate-300">{t("Cari", "Search")}</label>
             <div className="relative w-full">
               <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 dark:text-slate-500">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,8 +220,8 @@ export default function AdminUsersPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari nama, NIP, atau email..."
-                aria-label="Cari nama, NIP, atau email"
+                placeholder={t("Cari nama, NIP, atau email...", "Search name, NIP, or email...")}
+                aria-label={t("Cari nama, NIP, atau email", "Search name, NIP, or email")}
                 className="w-full rounded-xl border border-[var(--color-border-soft)] bg-slate-50 py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:bg-white focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:bg-slate-800 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
               />
               {searchQuery && (
@@ -228,7 +231,7 @@ export default function AdminUsersPage() {
                     setSearchQuery("");
                     setDebouncedQuery("");
                   }}
-                  aria-label="Bersihkan pencarian"
+                  aria-label={t("Bersihkan pencarian", "Clear search")}
                   className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:text-slate-300"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,7 +244,7 @@ export default function AdminUsersPage() {
 
           <div className="w-full md:w-48 space-y-1.5">
             <label htmlFor="filter-status" className="text-xs font-bold text-slate-600 dark:text-slate-300">
-              Filter Status
+              {t("Filter Status", "Filter Status")}
             </label>
             <select
               id="filter-status"
@@ -249,17 +252,17 @@ export default function AdminUsersPage() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
-              <option value="">Semua Status</option>
-              <option value="aktif">Aktif</option>
-              <option value="nonaktif">Nonaktif</option>
-              <option value="pensiun">Pensiun</option>
-              <option value="wafat">Wafat</option>
+              <option value="">{t("Semua Status", "All Status")}</option>
+              <option value="aktif">{t("Aktif", "Active")}</option>
+              <option value="nonaktif">{t("Nonaktif", "Inactive")}</option>
+              <option value="pensiun">{t("Pensiun", "Retired")}</option>
+              <option value="wafat">{t("Wafat", "Deceased")}</option>
             </select>
           </div>
 
           <div className="w-full md:w-48 space-y-1.5">
             <label htmlFor="filter-role" className="text-xs font-bold text-slate-600 dark:text-slate-300">
-              Filter Role
+              {t("Filter Role", "Filter Role")}
             </label>
             <select
               id="filter-role"
@@ -267,9 +270,9 @@ export default function AdminUsersPage() {
               onChange={(e) => setFilterRole(e.target.value)}
               className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
-              <option value="">Semua</option>
-              <option value="guru">Guru</option>
-              <option value="pengajar">Pengajar</option>
+              <option value="">{t("Semua", "All")}</option>
+              <option value="guru">{t("Guru", "Teacher")}</option>
+              <option value="pengajar">{t("Pengajar", "Instructor")}</option>
             </select>
           </div>
         </div>
@@ -277,7 +280,7 @@ export default function AdminUsersPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <label htmlFor="filter-kota" className="text-xs font-bold text-slate-600 dark:text-slate-300">
-              Filter Kota/Kabupaten
+              {t("Filter Kota/Kabupaten", "Filter City/Regency")}
             </label>
             <select
               id="filter-kota"
@@ -285,7 +288,7 @@ export default function AdminUsersPage() {
               onChange={(e) => setFilterKota(e.target.value)}
               className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
-              <option value="">Semua Kota/Kabupaten</option>
+              <option value="">{t("Semua Kota/Kabupaten", "All Cities/Regencies")}</option>
               {allCities.map((city) => (
                 <option key={city} value={city}>
                   {city}
@@ -296,7 +299,7 @@ export default function AdminUsersPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="filter-daerah" className="text-xs font-bold text-slate-600 dark:text-slate-300">
-              Filter Daerah/Kecamatan
+              {t("Filter Daerah/Kecamatan", "Filter Region/District")}
             </label>
             <select
               id="filter-daerah"
@@ -304,7 +307,7 @@ export default function AdminUsersPage() {
               onChange={(e) => setFilterDaerah(e.target.value)}
               className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
-              <option value="">Semua Daerah/Kecamatan</option>
+              <option value="">{t("Semua Daerah/Kecamatan", "All Regions/Districts")}</option>
               {allRegions.map((region) => (
                 <option key={region} value={region}>
                   {region}
@@ -315,7 +318,7 @@ export default function AdminUsersPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="filter-sekolah" className="text-xs font-bold text-slate-600 dark:text-slate-300">
-              Filter Sekolah
+              {t("Filter Sekolah", "Filter School")}
             </label>
             <select
               id="filter-sekolah"
@@ -323,7 +326,7 @@ export default function AdminUsersPage() {
               onChange={(e) => setFilterSekolah(e.target.value)}
               className="w-full text-sm bg-slate-50 border border-[var(--color-border-soft)] rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]/15 transition-all text-gray-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800"
             >
-              <option value="">Semua Sekolah</option>
+              <option value="">{t("Semua Sekolah", "All Schools")}</option>
               {allSchools.map((school) => (
                 <option key={school} value={school}>
                   {school}
@@ -343,7 +346,7 @@ export default function AdminUsersPage() {
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Bersihkan Filter & Pencarian
+              {t("Bersihkan Filter & Pencarian", "Clear Filters & Search")}
             </button>
           </div>
         )}
@@ -354,19 +357,19 @@ export default function AdminUsersPage() {
           <table className="w-full text-sm">
             <thead className="bg-[var(--color-pale)] border-b border-[var(--color-border-soft)]">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Nama</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Sekolah</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Email</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Role</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Status</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">Aksi</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">{t("Nama", "Name")}</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">{t("Sekolah", "School")}</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">{t("Email", "Email")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">{t("Role", "Role")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">{t("Status", "Status")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--color-navy)] whitespace-nowrap dark:text-slate-200">{t("Aksi", "Action")}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-slate-400">
-                    Memuat data pengguna...
+                    {t("Memuat data pengguna...", "Loading user data...")}
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
@@ -377,7 +380,7 @@ export default function AdminUsersPage() {
                 </tr>
               ) : (
                 filteredUsers.map((u) => {
-                  const roleBadge = getRoleBadge(u.role);
+                  const roleBadge = getRoleBadge(u.role, t);
 
                   return (
                     <tr key={u.id} className="border-b border-[var(--color-border-soft)] last:border-0">
@@ -410,14 +413,14 @@ export default function AdminUsersPage() {
                             href={`/admin/users/${u.id}`}
                             className="text-sm border border-[var(--color-border-soft)] text-[var(--color-navy)] px-3 py-1.5 rounded-full hover:bg-gray-50 transition dark:text-slate-200 dark:hover:bg-slate-800"
                           >
-                            Edit
+                            {t("Edit", "Edit")}
                           </Link>
                           <button
                             onClick={() => handleDelete(u.id, u.nama)}
                             disabled={deletingId === u.id}
                             className="text-sm text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition disabled:text-gray-400 disabled:border-gray-200 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30 dark:disabled:text-slate-600 dark:disabled:border-slate-700"
                           >
-                            {deletingId === u.id ? "Menghapus..." : "Hapus"}
+                            {deletingId === u.id ? t("Menghapus...", "Deleting...") : t("Hapus", "Delete")}
                           </button>
                         </div>
                       </td>
