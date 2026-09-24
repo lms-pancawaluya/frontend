@@ -7,7 +7,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getCourseById } from "@/services/course.service";
 import { getModuleById, getModuleContents, getModules } from "@/services/module.service";
 import { getModuleEvaluations } from "@/services/evaluation.service";
-import { getCourseComments, postComment } from "@/services/comment.service";
+import { deleteComment, getCourseComments, postComment } from "@/services/comment.service";
 import type { Comment as DiscussionComment, CommentUser } from "@/types/comment";
 import MentionTextarea, { type MentionSelection } from "@/app/components/common/MentionTextarea";
 import CourseFeedbackForm from "@/app/components/common/CourseFeedbackForm";
@@ -140,6 +140,45 @@ export default function GuruCourseDetailPage() {
   const [replyMentions, setReplyMentions] = useState<MentionSelection[]>([]);
   const [postingReply, setPostingReply] = useState(false);
   const [replyPostError, setReplyPostError] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [currentUserRole, setCurrentUserRole] = useState<string>("");
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const u = JSON.parse(raw);
+        setCurrentUserId(u.id ? String(u.id) : "");
+        setCurrentUserRole(u.role ? String(u.role).toLowerCase() : "");
+      }
+    } catch {
+      setCurrentUserId("");
+      setCurrentUserRole("");
+    }
+  }, []);
+
+  function canDeleteComment(comment: DiscussionComment): boolean {
+    if (currentUserRole === "admin") return true;
+    const author = comment.user || comment.author || comment.pengirim;
+    const ownerId = author?.id;
+    return Boolean(currentUserId && ownerId && String(ownerId) === String(currentUserId));
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!window.confirm(t("Apakah Anda yakin ingin menghapus komentar ini?", "Are you sure you want to delete this comment?"))) return;
+
+    setDeletingCommentId(commentId);
+    try {
+      await deleteComment(commentId);
+      await loadDiscussion(id);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : t("Gagal menghapus komentar.", "Failed to delete comment."));
+    } finally {
+      setDeletingCommentId(null);
+    }
+  }
 
   const loadStageProgress = useCallback(async (modulesList: CourseModule[]) => {
     // GET /api/modules/:id adalah contract stage completion BE. Jangan gunakan
@@ -983,123 +1022,155 @@ export default function GuruCourseDetailPage() {
                         : "border-slate-200/80 dark:border-slate-800"
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      {photo ? (
-                        <Image
-                          src={photo}
-                          alt={name}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
-                        />
-                      ) : (
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold uppercase text-white">
-                          {name.charAt(0)}
-                        </span>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{name}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(user?.role)}`}>
-                            {roleLabel(user?.role, t)}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        {photo ? (
+                          <Image
+                            src={photo}
+                            alt={name}
+                            width={40}
+                            height={40}
+                            className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
+                          />
+                        ) : (
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold uppercase text-white">
+                            {name.charAt(0)}
                           </span>
-                          {comment.createdAt && (
-                            <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatCommentDateTime(comment.createdAt)}</span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{name}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(user?.role)}`}>
+                              {roleLabel(user?.role, t)}
+                            </span>
+                            {comment.createdAt && (
+                              <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatCommentDateTime(comment.createdAt)}</span>
+                            )}
+                          </div>
+                          <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">{renderCommentText(text, "font-semibold text-emerald-700 dark:text-emerald-400")}</p>
+
+                          <div className="mt-2">
+                            <button
+                              type="button"
+                              onClick={() => (replyToId === comment.id ? cancelReply() : startReply(comment.id))}
+                              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+                            >
+                              {replyToId === comment.id ? t("Batal", "Cancel") : t("Balas", "Reply")}
+                            </button>
+                          </div>
+
+                          {/* Form balasan */}
+                          {replyToId === comment.id && (
+                            <form
+                              onSubmit={(e) => handlePostReply(e, comment.id)}
+                              className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2 dark:border-slate-700 dark:bg-slate-800/60"
+                            >
+                              {replyPostError && (
+                                <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">{replyPostError}</p>
+                              )}
+                              <MentionTextarea
+                                value={replyText}
+                                onChange={setReplyText}
+                                onMentionsChange={setReplyMentions}
+                                rows={2}
+                                placeholder={t("Tulis balasan... Ketik @ untuk menyebut pengguna", "Write a reply... Type @ to mention a user")}
+                                className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                              />
+                              <div className="flex justify-end">
+                                <button
+                                  type="submit"
+                                  disabled={postingReply || !replyText.trim()}
+                                  className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:opacity-60"
+                                >
+                                  {postingReply ? t("Mengirim...", "Sending...") : t("Kirim Balasan", "Send Reply")}
+                                </button>
+                              </div>
+                            </form>
+                          )}
+
+                          {/* Balasan nested (struktur langsung dari BE) */}
+                          {replies.length > 0 && (
+                            <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4 dark:border-slate-800">
+                              {replies.map((reply) => {
+                                const replyUser = reply.user || reply.author || reply.pengirim;
+                                const replyPhoto = getCommentUserPhoto(replyUser);
+                                const replyName = getCommentUserLabel(replyUser, t);
+                                const replyContent = reply.komentar || reply.isi || reply.pesan || "";
+
+                                return (
+                                  <li
+                                    key={reply.id}
+                                    id={`comment-${reply.id}`}
+                                    className={`scroll-mt-24 rounded-xl p-3 transition ${
+                                      highlightCommentId === reply.id
+                                        ? "bg-emerald-50 ring-2 ring-emerald-300 dark:bg-emerald-950/30"
+                                        : "bg-slate-50 dark:bg-slate-800/60"
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between gap-2.5">
+                                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                        {replyPhoto ? (
+                                          <Image
+                                            src={replyPhoto}
+                                            alt={replyName}
+                                            width={32}
+                                            height={32}
+                                            className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
+                                          />
+                                        ) : (
+                                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-500 text-xs font-bold uppercase text-white">
+                                            {replyName.charAt(0)}
+                                          </span>
+                                        )}
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{replyName}</span>
+                                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(replyUser?.role)}`}>
+                                              {roleLabel(replyUser?.role, t)}
+                                            </span>
+                                            {reply.createdAt && (
+                                              <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatCommentDateTime(reply.createdAt)}</span>
+                                            )}
+                                          </div>
+                                          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">{renderCommentText(replyContent, "font-semibold text-emerald-700 dark:text-emerald-400")}</p>
+                                        </div>
+                                      </div>
+                                      {canDeleteComment(reply) && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteComment(reply.id)}
+                                          disabled={deletingCommentId === reply.id}
+                                          className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:text-slate-500 dark:hover:bg-rose-950/30"
+                                          title={t("Hapus balasan", "Delete reply")}
+                                          aria-label={t("Hapus balasan", "Delete reply")}
+                                        >
+                                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
                           )}
                         </div>
-                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">{renderCommentText(text, "font-semibold text-emerald-700 dark:text-emerald-400")}</p>
-
-                        <div className="mt-2">
-                          <button
-                            type="button"
-                            onClick={() => (replyToId === comment.id ? cancelReply() : startReply(comment.id))}
-                            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
-                          >
-                            {replyToId === comment.id ? t("Batal", "Cancel") : t("Balas", "Reply")}
-                          </button>
-                        </div>
-
-                        {/* Form balasan */}
-                        {replyToId === comment.id && (
-                          <form
-                            onSubmit={(e) => handlePostReply(e, comment.id)}
-                            className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2 dark:border-slate-700 dark:bg-slate-800/60"
-                          >
-                            {replyPostError && (
-                              <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">{replyPostError}</p>
-                            )}
-                            <MentionTextarea
-                              value={replyText}
-                              onChange={setReplyText}
-                              onMentionsChange={setReplyMentions}
-                              rows={2}
-                              placeholder={t("Tulis balasan... Ketik @ untuk menyebut pengguna", "Write a reply... Type @ to mention a user")}
-                              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                            />
-                            <div className="flex justify-end">
-                              <button
-                                type="submit"
-                                disabled={postingReply || !replyText.trim()}
-                                className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:opacity-60"
-                              >
-                                {postingReply ? t("Mengirim...", "Sending...") : t("Kirim Balasan", "Send Reply")}
-                              </button>
-                            </div>
-                          </form>
-                        )}
-
-                        {/* Balasan nested (struktur langsung dari BE) */}
-                        {replies.length > 0 && (
-                          <ul className="mt-3 space-y-3 border-l-2 border-slate-100 pl-4 dark:border-slate-800">
-                            {replies.map((reply) => {
-                              const replyUser = reply.user || reply.author || reply.pengirim;
-                              const replyPhoto = getCommentUserPhoto(replyUser);
-                              const replyName = getCommentUserLabel(replyUser, t);
-                              const replyContent = reply.komentar || reply.isi || reply.pesan || "";
-
-                              return (
-                                <li
-                                  key={reply.id}
-                                  id={`comment-${reply.id}`}
-                                  className={`scroll-mt-24 rounded-xl p-3 transition ${
-                                    highlightCommentId === reply.id
-                                      ? "bg-emerald-50 ring-2 ring-emerald-300 dark:bg-emerald-950/30"
-                                      : "bg-slate-50 dark:bg-slate-800/60"
-                                  }`}
-                                >
-                                  <div className="flex items-start gap-2.5">
-                                    {replyPhoto ? (
-                                      <Image
-                                        src={replyPhoto}
-                                        alt={replyName}
-                                        width={32}
-                                        height={32}
-                                        className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700"
-                                      />
-                                    ) : (
-                                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-500 text-xs font-bold uppercase text-white">
-                                        {replyName.charAt(0)}
-                                      </span>
-                                    )}
-                                    <div className="min-w-0 flex-1">
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{replyName}</span>
-                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${roleBadgeClass(replyUser?.role)}`}>
-                                          {roleLabel(replyUser?.role, t)}
-                                        </span>
-                                        {reply.createdAt && (
-                                          <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatCommentDateTime(reply.createdAt)}</span>
-                                        )}
-                                      </div>
-                                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">{renderCommentText(replyContent, "font-semibold text-emerald-700 dark:text-emerald-400")}</p>
-                                    </div>
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
                       </div>
+                      {canDeleteComment(comment) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteComment(comment.id)}
+                          disabled={deletingCommentId === comment.id}
+                          className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:text-slate-500 dark:hover:bg-rose-950/30"
+                          title={t("Hapus komentar", "Delete comment")}
+                          aria-label={t("Hapus komentar", "Delete comment")}
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </li>
                 );
