@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { logoutUser } from "@/services/auth.service";
 import NotificationDropdown from "./NotificationDropdown";
-import { getPagesForRole, searchPages, type SearchablePage } from "@/lib/pageRegistry";
+import { getPagesForRole, searchPages, localizePage, type SearchablePage } from "@/lib/pageRegistry";
+import { useApp } from "@/app/context/AppContext";
 
 interface User {
   id?: string;
@@ -30,6 +31,7 @@ type NavLink = {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t, language } = useApp();
 
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -102,8 +104,8 @@ export default function Header() {
   // Daftar halaman yang boleh dilihat role user saat ini, difilter oleh query
   const searchResults = useMemo<SearchablePage[]>(() => {
     const pagesForRole = getPagesForRole(user?.role);
-    return searchPages(pagesForRole, searchQuery).slice(0, 8);
-  }, [user?.role, searchQuery]);
+    return searchPages(pagesForRole, searchQuery).slice(0, 8).map((p) => localizePage(p, t));
+  }, [user?.role, searchQuery, t]);
 
   function handleSearchChange(value: string) {
     setSearchQuery(value);
@@ -144,10 +146,10 @@ export default function Header() {
 
   // Format Nama Bergelar
   const namaBerGelar = user
-    ? `${user.gelarDepan ? `${user.gelarDepan} ` : ""}${user.nama || "Pengguna"}${
+    ? `${user.gelarDepan ? `${user.gelarDepan} ` : ""}${user.nama || t("Pengguna", "User")}${
         user.gelarBelakang ? `, ${user.gelarBelakang}` : ""
       }`
-    : "Pengguna";
+    : t("Pengguna", "User");
 
   // Memeriksa seluruh opsi field photo dari backend
   const fotoUrl =
@@ -195,7 +197,7 @@ export default function Header() {
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onFocus={() => setIsSearchOpen(true)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Cari halaman: modul, profil, pengaturan..."
+                placeholder={t("Cari halaman: modul, profil, pengaturan...", "Search pages: modules, profile, settings...")}
                 className="w-full bg-slate-50/80 border border-slate-200/80 rounded-xl py-2 pl-10 pr-12 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] transition-all dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500"
               />
               {searchQuery ? (
@@ -205,7 +207,7 @@ export default function Header() {
                     handleSearchChange("");
                     searchInputRef.current?.focus();
                   }}
-                  aria-label="Hapus pencarian"
+                  aria-label={t("Hapus pencarian", "Clear search")}
                   className="absolute right-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,8 +251,8 @@ export default function Header() {
                 ) : (
                   <p className="px-4 py-3 text-xs text-slate-400">
                     {searchQuery
-                      ? `Tidak ada halaman yang cocok dengan "${searchQuery}".`
-                      : "Ketik untuk mencari halaman."}
+                      ? t(`Tidak ada halaman yang cocok dengan "${searchQuery}".`, `No pages match "${searchQuery}".`)
+                      : t("Ketik untuk mencari halaman.", "Type to search pages.")}
                   </p>
                 )}
               </div>
@@ -266,7 +268,7 @@ export default function Header() {
             {/* TOMBOL PENGATURAN CEPAT */}
             <Link
               href="/settings"
-              title="Pengaturan"
+              title={t("Pengaturan", "Settings")}
               className="p-2 text-slate-500 hover:text-[#0047A5] hover:bg-slate-100 rounded-xl transition-all dark:text-slate-400 dark:hover:text-blue-400 dark:hover:bg-slate-800"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -284,7 +286,7 @@ export default function Header() {
                 {fotoUrl && !imgError ? (
                   <Image
                     src={fotoUrl}
-                    alt={user.nama || "User Avatar"}
+                    alt={user.nama || t("Avatar Pengguna", "User Avatar")}
                     width={36}
                     height={36}
                     onError={() => setImgError(true)}
@@ -292,13 +294,13 @@ export default function Header() {
                   />
                 ) : (
                   <div className="w-9 h-9 rounded-xl bg-[#0047A5] text-white font-bold flex items-center justify-center text-xs shadow-xs">
-                    {user.nama ? user.nama.charAt(0).toUpperCase() : "G"}
+                    {user.nama ? user.nama.charAt(0).toUpperCase() : t("G", "U")}
                   </div>
                 )}
 
                 <div className="hidden min-[801px]:block">
                   <p className="text-xs font-bold text-slate-800 leading-tight dark:text-slate-100">{namaBerGelar}</p>
-                  <p className="text-[11px] text-slate-400 capitalize font-medium dark:text-slate-500">{user.role || "Pengajar"}</p>
+                  <p className="text-[11px] text-slate-400 capitalize font-medium dark:text-slate-500">{user.role || t("Pengajar", "Instructor")}</p>
                 </div>
 
                 <svg className="w-3.5 h-3.5 text-slate-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -314,14 +316,14 @@ export default function Header() {
                     onClick={() => setIsProfileOpen(false)}
                     className="block px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium dark:text-slate-200 dark:hover:bg-slate-700/60"
                   >
-                    Lihat Profil
+                    {t("Lihat Profil", "View Profile")}
                   </Link>
                   <Link 
                     href="/settings" 
                     onClick={() => setIsProfileOpen(false)}
                     className="px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center justify-between dark:text-slate-200 dark:hover:bg-slate-700/60"
                   >
-                    <span>Pengaturan</span>
+                    <span>{t("Pengaturan", "Settings")}</span>
                     <span className="w-2 h-2 rounded-full bg-[#0047A5] dark:bg-blue-400"></span>
                   </Link>
                   <div className="border-t border-slate-100 my-1 dark:border-slate-700"></div>
@@ -329,7 +331,7 @@ export default function Header() {
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 font-semibold dark:text-red-400 dark:hover:bg-red-950/30"
                   >
-                    Keluar
+                    {t("Keluar", "Log out")}
                   </button>
                 </div>
               )}
@@ -352,18 +354,18 @@ export default function Header() {
   const navLinks: NavLink[] = user
     ? isPengajar
       ? [
-          { label: "Dashboard", href: dashboardHref },
-          { label: "Profil", href: "/profile" },
+          { label: t("Dashboard", "Dashboard"), href: dashboardHref },
+          { label: t("Profil", "Profile"), href: "/profile" },
         ]
       : [
-          { label: "Dashboard", href: dashboardHref },
-          { label: "Modul", href: isAdmin ? "/admin/modules" : "/modules" },
-          { label: isAdmin ? "Helpdesk" : "Bantuan", href: isAdmin ? "/admin/helpdesk" : "/helpdesk" },
-          { label: "Profil", href: "/profile" },
+          { label: t("Dashboard", "Dashboard"), href: dashboardHref },
+          { label: t("Modul", "Modules"), href: isAdmin ? "/admin/modules" : "/modules" },
+          { label: isAdmin ? t("Helpdesk", "Helpdesk") : t("Bantuan", "Help"), href: isAdmin ? "/admin/helpdesk" : "/helpdesk" },
+          { label: t("Profil", "Profile"), href: "/profile" },
         ]
     : [
-        { label: "Login", href: "/login" },
-        { label: "Daftar", href: "/register", variant: "primary" },
+        { label: t("Masuk", "Login"), href: "/login" },
+        { label: t("Daftar", "Register"), href: "/register", variant: "primary" },
       ];
 
   return (
@@ -371,7 +373,7 @@ export default function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 min-[801px]:px-6 min-[801px]:py-4">
         <button
           type="button"
-          aria-label={menuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+          aria-label={menuOpen ? t("Tutup menu navigasi", "Close navigation menu") : t("Buka menu navigasi", "Open navigation menu")}
           aria-expanded={menuOpen}
           aria-controls="mobile-navigation"
           onClick={() => setMenuOpen((value) => !value)}
@@ -422,7 +424,7 @@ export default function Header() {
               onClick={handleLogout}
               className="rounded-full bg-[var(--color-navy)] px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
             >
-              Logout
+              {t("Keluar", "Log out")}
             </button>
           ) : null}
         </nav>
@@ -454,7 +456,7 @@ export default function Header() {
                 onClick={handleLogout}
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-navy)] px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
               >
-                Logout
+                {t("Keluar", "Log out")}
               </button>
             ) : null}
           </nav>

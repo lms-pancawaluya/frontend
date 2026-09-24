@@ -6,41 +6,45 @@
 
 export type AppRole = "admin" | "pengajar" | "guru" | string;
 
+export type TranslateFn = (idText: string, enText: string) => string;
+
 export interface SearchablePage {
   label: string;
+  labelEn: string;
   href: string;
   /** Kata kunci tambahan supaya lebih mudah ditemukan (sinonim, singkatan, dll). */
   keywords?: string[];
   /** Deskripsi singkat, ditampilkan kecil di bawah label pada dropdown hasil. */
-  description?: string;
+  description: string;
+  descriptionEn: string;
   /** Role yang bisa melihat halaman ini. Kosongkan agar tampil untuk semua role yang login. */
   roles?: AppRole[];
 }
 
 export const PAGE_REGISTRY: SearchablePage[] = [
   // ===== Umum (semua role yang login) =====
-  { label: "Profil", href: "/profile", keywords: ["akun", "biodata"], description: "Lihat & edit profil Anda" },
-  { label: "Pengaturan", href: "/settings", keywords: ["setting", "preferensi", "tema", "bahasa"], description: "Preferensi akun & tampilan" },
+  { label: "Profil", labelEn: "Profile", href: "/profile", keywords: ["akun", "biodata"], description: "Lihat & edit profil Anda", descriptionEn: "View & edit your profile" },
+  { label: "Pengaturan", labelEn: "Settings", href: "/settings", keywords: ["setting", "preferensi", "tema", "bahasa"], description: "Preferensi akun & tampilan", descriptionEn: "Account & display preferences" },
 
   // ===== Guru =====
-  { label: "Dashboard Guru", href: "/dashboard", keywords: ["beranda", "home"], roles: ["guru"] },
-  { label: "Modul Pembelajaran", href: "/modules", keywords: ["modul", "belajar", "course", "materi"], roles: ["guru"] },
-  { label: "Bantuan / Helpdesk", href: "/helpdesk", keywords: ["bantuan", "tiket", "keluhan", "support"], roles: ["guru"] },
+  { label: "Dashboard Guru", labelEn: "Teacher Dashboard", href: "/dashboard", keywords: ["beranda", "home"], roles: ["guru"], description: "", descriptionEn: "" },
+  { label: "Modul Pembelajaran", labelEn: "Learning Modules", href: "/modules", keywords: ["modul", "belajar", "course", "materi"], roles: ["guru"], description: "", descriptionEn: "" },
+  { label: "Bantuan / Helpdesk", labelEn: "Help / Helpdesk", href: "/helpdesk", keywords: ["bantuan", "tiket", "keluhan", "support"], roles: ["guru"], description: "", descriptionEn: "" },
 
   // ===== Pengajar =====
-  { label: "Dashboard Pengajar", href: "/pengajar", keywords: ["beranda", "home"], roles: ["pengajar"] },
-  { label: "Monitoring", href: "/pengajar/monitoring", keywords: ["pemantauan", "progres guru"], roles: ["pengajar"] },
-  { label: "Diskusi", href: "/pengajar/diskusi", keywords: ["forum", "tanya jawab"], roles: ["pengajar"] },
-  { label: "Data Guru", href: "/pengajar/guru", keywords: ["guru", "peserta"], roles: ["pengajar"] },
+  { label: "Dashboard Pengajar", labelEn: "Instructor Dashboard", href: "/pengajar", keywords: ["beranda", "home"], roles: ["pengajar"], description: "", descriptionEn: "" },
+  { label: "Monitoring", labelEn: "Monitoring", href: "/pengajar/monitoring", keywords: ["pemantauan", "progres guru"], roles: ["pengajar"], description: "", descriptionEn: "" },
+  { label: "Diskusi", labelEn: "Discussion", href: "/pengajar/diskusi", keywords: ["forum", "tanya jawab"], roles: ["pengajar"], description: "", descriptionEn: "" },
+  { label: "Data Guru", labelEn: "Teacher Data", href: "/pengajar/guru", keywords: ["guru", "peserta"], roles: ["pengajar"], description: "", descriptionEn: "" },
 
   // ===== Admin =====
-  { label: "Dashboard Admin", href: "/admin", keywords: ["beranda", "home"], roles: ["admin"] },
-  { label: "Kelola Course", href: "/admin/courses", keywords: ["course", "program pembelajaran"], roles: ["admin"] },
-  { label: "Kelola Modul", href: "/admin/modules", keywords: ["modul", "materi"], roles: ["admin"] },
-  { label: "Kelola Pengguna", href: "/admin/users", keywords: ["user", "akun", "guru", "pengajar"], roles: ["admin"] },
-  { label: "Manajemen Sertifikat", href: "/admin/certificates", keywords: ["sertifikat", "certificate", "template"], roles: ["admin"] },
-  { label: "Diskusi", href: "/admin/diskusi", keywords: ["forum", "tanya jawab"], roles: ["admin"] },
-  { label: "Helpdesk", href: "/admin/helpdesk", keywords: ["bantuan", "tiket", "keluhan", "support"], roles: ["admin"] },
+  { label: "Dashboard Admin", labelEn: "Admin Dashboard", href: "/admin", keywords: ["beranda", "home"], roles: ["admin"], description: "", descriptionEn: "" },
+  { label: "Kelola Course", labelEn: "Manage Courses", href: "/admin/courses", keywords: ["course", "program pembelajaran"], roles: ["admin"], description: "", descriptionEn: "" },
+  { label: "Kelola Modul", labelEn: "Manage Modules", href: "/admin/modules", keywords: ["modul", "materi"], roles: ["admin"], description: "", descriptionEn: "" },
+  { label: "Kelola Pengguna", labelEn: "Manage Users", href: "/admin/users", keywords: ["user", "akun", "guru", "pengajar"], roles: ["admin"], description: "", descriptionEn: "" },
+  { label: "Manajemen Sertifikat", labelEn: "Certificate Management", href: "/admin/certificates", keywords: ["sertifikat", "certificate", "template"], roles: ["admin"], description: "", descriptionEn: "" },
+  { label: "Diskusi", labelEn: "Discussion", href: "/admin/diskusi", keywords: ["forum", "tanya jawab"], roles: ["admin"], description: "", descriptionEn: "" },
+  { label: "Helpdesk", labelEn: "Helpdesk", href: "/admin/helpdesk", keywords: ["bantuan", "tiket", "keluhan", "support"], roles: ["admin"], description: "", descriptionEn: "" },
 ];
 
 /** Ambil daftar halaman yang boleh dilihat oleh sebuah role. */
@@ -54,10 +58,19 @@ export function searchPages(pages: SearchablePage[], query: string): SearchableP
   if (!q) return pages;
 
   return pages.filter((page) => {
-    const haystack = [page.label, page.description, ...(page.keywords || [])]
+    const haystack = [page.label, page.labelEn, page.description, page.descriptionEn, ...(page.keywords || [])]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
     return haystack.includes(q);
   });
+}
+
+/** Terjemahkan label & description dari registry sesuai bahasa aktif. */
+export function localizePage(page: SearchablePage, t: TranslateFn): SearchablePage {
+  return {
+    ...page,
+    label: t(page.label, page.labelEn),
+    description: t(page.description, page.descriptionEn),
+  };
 }
