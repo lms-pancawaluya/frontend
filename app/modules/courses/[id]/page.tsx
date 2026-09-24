@@ -20,6 +20,7 @@ import {
 } from "@/services/certificate.service";
 import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
 import type { Course, CourseModule } from "@/types/course";
+import { getScheduleStatus } from "@/lib/schedule";
 import {
   isMaterialLocked,
   isPostTestLocked,
@@ -638,6 +639,11 @@ export default function GuruCourseDetailPage() {
                 const materialLocked = isMaterialLocked(progress);
                 const postTestLocked = isPostTestLocked(progress);
 
+                const schedStatus = getScheduleStatus(module, course);
+                const isNotStarted = schedStatus === "not_started";
+                const isClosed = schedStatus === "closed";
+                const isScheduleLocked = isNotStarted || isClosed;
+
                 return (
                   <li key={module.id} className="rounded-2xl border border-slate-200/80 overflow-hidden dark:border-slate-800">
                     {/* Header (selalu tampil) */}
@@ -657,11 +663,19 @@ export default function GuruCourseDetailPage() {
                               {module.aspekPancawaluya}
                             </span>
                           )}
-                          {module.isLocked && (
+                          {isNotStarted ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                              {t("Belum Dibuka", "Not Opened")}
+                            </span>
+                          ) : isClosed ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                              {t("Sudah Ditutup", "Closed")}
+                            </span>
+                          ) : module.isLocked ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
                               {t("Terkunci", "Locked")}
                             </span>
-                          )}
+                          ) : null}
                           {isModuleCompleted ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                               {t("Selesai", "Completed")}
@@ -701,6 +715,19 @@ export default function GuruCourseDetailPage() {
                           </p>
                         </div>
 
+                        {isScheduleLocked && (
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs font-medium text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 flex items-center gap-2">
+                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>
+                              {isNotStarted
+                                ? t("Modul ini belum dibuka. Anda dapat mengakses materi saat jadwal pembelajaran dimulai.", "This module is not opened yet. Access will be available when the schedule starts.")
+                                : t("Masa akses modul ini telah berakhir.", "The access period for this module has ended.")}
+                            </span>
+                          </div>
+                        )}
+
                         {isLoadingOverview ? (
                           <p className="text-xs text-slate-500 dark:text-slate-400">{t("Memuat aktivitas modul...", "Loading module activities...")}</p>
                         ) : overviewError ? (
@@ -732,7 +759,11 @@ export default function GuruCourseDetailPage() {
                                     : t("Pre-Test belum tersedia untuk module ini.", "Pre-Test is not available for this module yet.")}
                                 </p>
                               </div>
-                              {overview?.preTestId ? (
+                              {isScheduleLocked ? (
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
+                                  {isNotStarted ? t("Belum Dibuka", "Not Opened") : t("Sudah Ditutup", "Closed")}
+                                </span>
+                              ) : overview?.preTestId ? (
                                 <Link
                                   href={`/modules/${module.id}/evaluations/${overview.preTestId}?courseId=${id}`}
                                   className={`mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-white text-xs font-semibold rounded-full transition ${
@@ -761,7 +792,11 @@ export default function GuruCourseDetailPage() {
                                   <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
                                     Learning Material
                                   </span>
-                                  {materialLocked ? (
+                              {isScheduleLocked ? (
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
+                                  {isNotStarted ? t("Belum Dibuka", "Not Opened") : t("Sudah Ditutup", "Closed")}
+                                </span>
+                              ) : materialLocked ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -813,7 +848,11 @@ export default function GuruCourseDetailPage() {
                                   <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-purple-700 dark:text-purple-400">
                                     Post-Test
                                   </span>
-                                  {postTestLocked ? (
+                              {isScheduleLocked ? (
+                                <span className="mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-400 text-xs font-semibold rounded-full cursor-not-allowed dark:bg-slate-800 dark:text-slate-500">
+                                  {isNotStarted ? t("Belum Dibuka", "Not Opened") : t("Sudah Ditutup", "Closed")}
+                                </span>
+                              ) : postTestLocked ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
