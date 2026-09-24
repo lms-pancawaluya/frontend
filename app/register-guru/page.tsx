@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import RegisterGuruForm from "../components/RegisterGuruForm";
+import { useApp } from "@/app/context/AppContext";
 
 export default function RegisterGuruPage() {
+  const { t } = useApp();
+
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-800 flex flex-col justify-between leading-normal relative overflow-hidden py-10 px-4 dark:bg-slate-900/70 dark:text-slate-200">
       {/* Background Dekoratif */}
@@ -24,11 +27,11 @@ export default function RegisterGuruPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span>Kembali ke Dashboard</span>
+            <span>{t("Kembali ke Dashboard", "Back to Dashboard")}</span>
           </Link>
 
           <span className="text-xs font-semibold text-[#109B51] bg-[#109B51]/10 border border-[#109B51]/20 px-3 py-1 rounded-full">
-            Portal LMS Guru SMA
+            {t("Portal LMS Guru SMA", "High School Teacher LMS Portal")}
           </span>
         </div>
 

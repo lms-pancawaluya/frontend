@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { cekNipGuru, cariSekolah, SekolahItem } from "@/services/registration.service";
+import { useApp } from "@/app/context/AppContext";
 
 interface FormValues {
   nip: string;
@@ -14,6 +15,7 @@ interface FormValues {
 }
 
 export default function RegisterGuruForm() {
+  const { t } = useApp();
   const { register, setValue, control, handleSubmit } = useForm<FormValues>({
     defaultValues: {
       nip: "",
@@ -65,7 +67,7 @@ export default function RegisterGuruForm() {
       if (status === 404) {
         setIsNipFound(false);
         setToastMessage(
-          "Data NIP tidak ditemukan di master data. Silakan isi data nama & sekolah secara manual."
+          t("Data NIP tidak ditemukan di master data. Silakan isi data nama & sekolah secara manual.", "NIP data not found in master data. Please fill in the name & school data manually.")
         );
         // Reset field yang terkait agar dapat diisi manual
         setValue("namaGuru", "");
@@ -74,7 +76,7 @@ export default function RegisterGuruForm() {
         setValue("kotaKab", "");
         setValue("kecamatan", "");
       } else {
-        setToastMessage("Terjadi kesalahan saat memeriksa NIP.");
+        setToastMessage(t("Terjadi kesalahan saat memeriksa NIP.", "An error occurred while checking NIP."));
       }
     } finally {
       setCheckingNip(false);
@@ -129,7 +131,7 @@ export default function RegisterGuruForm() {
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
-      <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Registrasi Data Guru</h2>
+      <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("Registrasi Data Guru", "Teacher Data Registration")}</h2>
 
       {/* Toast Notification Alert */}
       {toastMessage && (
@@ -147,12 +149,12 @@ export default function RegisterGuruForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-xs">
         {/* NIP Input */}
         <div>
-          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">NIP</label>
+          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("NIP", "NIP")}</label>
           <div className="flex gap-2">
             <input
               {...register("nip")}
               type="text"
-              placeholder="Masukkan NIP"
+              placeholder={t("Masukkan NIP", "Enter NIP")}
               onBlur={handleCekNip}
               className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
             />
@@ -162,19 +164,19 @@ export default function RegisterGuruForm() {
               disabled={checkingNip}
               className="px-4 py-2.5 bg-[#0047A5] hover:bg-[#00367d] text-white font-semibold rounded-xl disabled:opacity-50 transition-colors"
             >
-              {checkingNip ? "Memeriksa..." : "Cek NIP"}
+              {checkingNip ? t("Memeriksa...", "Checking...") : t("Cek NIP", "Check NIP")}
             </button>
           </div>
         </div>
 
         {/* Nama Guru */}
         <div>
-          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Nama Guru</label>
+          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Nama Guru", "Teacher Name")}</label>
           <input
             {...register("namaGuru")}
             type="text"
             disabled={isNipFound}
-            placeholder="Nama lengkap guru"
+            placeholder={t("Nama lengkap guru", "Teacher's full name")}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 disabled:bg-slate-100 disabled:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:disabled:bg-slate-900 dark:disabled:text-slate-400"
           />
         </div>
@@ -182,12 +184,12 @@ export default function RegisterGuruForm() {
         {/* Pencarian Sekolah (Autocomplete UI) - Hanya aktif jika NIP tidak ditemukan */}
         {!isNipFound ? (
           <div className="relative">
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Cari Sekolah</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Cari Sekolah", "Search School")}</label>
             <input
               type="text"
               value={schoolSearchQuery}
               onChange={(e) => setSchoolSearchQuery(e.target.value)}
-              placeholder="Ketik minimal 3 karakter nama sekolah..."
+              placeholder={t("Ketik minimal 3 karakter nama sekolah...", "Type at least 3 characters of the school name...")}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
             />
 
@@ -195,7 +197,7 @@ export default function RegisterGuruForm() {
             {showDropdown && (
               <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-56 overflow-y-auto py-1 dark:bg-slate-800 dark:border-slate-700">
                 {isSearchingSchool ? (
-                  <p className="p-3 text-slate-400 text-center dark:text-slate-500">Mencari sekolah...</p>
+                  <p className="p-3 text-slate-400 text-center dark:text-slate-500">{t("Mencari sekolah...", "Searching schools...")}</p>
                 ) : schoolOptions.length > 0 ? (
                   schoolOptions.map((sekolah) => (
                     <button
@@ -211,7 +213,7 @@ export default function RegisterGuruForm() {
                     </button>
                   ))
                 ) : (
-                  <p className="p-3 text-slate-400 text-center dark:text-slate-500">Sekolah tidak ditemukan</p>
+                  <p className="p-3 text-slate-400 text-center dark:text-slate-500">{t("Sekolah tidak ditemukan", "School not found")}</p>
                 )}
               </div>
             )}
@@ -221,7 +223,7 @@ export default function RegisterGuruForm() {
         {/* Detail Sekolah (Readonly Fields) */}
         <div className="grid grid-cols-2 gap-3 pt-2">
           <div>
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">NPSN Sekolah</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("NPSN Sekolah", "School NPSN")}</label>
             <input
               {...register("npsnSekolah")}
               type="text"
@@ -231,7 +233,7 @@ export default function RegisterGuruForm() {
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Nama Sekolah</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Nama Sekolah", "School Name")}</label>
             <input
               {...register("namaSekolah")}
               type="text"
@@ -241,7 +243,7 @@ export default function RegisterGuruForm() {
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Kota / Kabupaten</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Kota / Kabupaten", "City / Regency")}</label>
             <input
               {...register("kotaKab")}
               type="text"
@@ -251,7 +253,7 @@ export default function RegisterGuruForm() {
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">Kecamatan</label>
+            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Kecamatan", "District")}</label>
             <input
               {...register("kecamatan")}
               type="text"
@@ -265,7 +267,7 @@ export default function RegisterGuruForm() {
           type="submit"
           className="w-full mt-4 py-3 bg-[#109B51] hover:bg-[#0e8344] text-white font-bold rounded-xl transition-all shadow-md"
         >
-          Lanjutkan Pendaftaran
+          {t("Lanjutkan Pendaftaran", "Continue Registration")}
         </button>
       </form>
     </div>

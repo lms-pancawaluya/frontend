@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 export default function LoginForm() {
   const router = useRouter();
+  const { t } = useApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +32,7 @@ export default function LoginForm() {
       console.log("Response dari Backend:", data);
 
       if (!res.ok) {
-        throw new Error(data.pesan || data.message || "Gagal masuk. Periksa kembali akun Anda.");
+        throw new Error(data.pesan || data.message || t("Gagal masuk. Periksa kembali akun Anda.", "Failed to sign in. Please check your account."));
       }
 
       const token = data.token || data.accessToken || data.data?.token;
@@ -57,7 +59,7 @@ export default function LoginForm() {
 
       router.push(redirectPath);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Gagal masuk. Periksa kembali akun Anda.");
+      setError(err instanceof Error ? err.message : t("Gagal masuk. Periksa kembali akun Anda.", "Failed to sign in. Please check your account."));
       setLoading(false);
     }
   };
@@ -76,7 +78,7 @@ export default function LoginForm() {
       {/* EMAIL / NIP */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1.5 dark:text-slate-300">
-          Email / NIP
+          {t("Email / NIP", "Email / NIP")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -89,7 +91,7 @@ export default function LoginForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Masukkan Email atau NIP"
+            placeholder={t("Masukkan Email atau NIP", "Enter Email or NIP")}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
           />
         </div>
@@ -98,7 +100,7 @@ export default function LoginForm() {
       {/* PASSWORD */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1.5 dark:text-slate-300">
-          Password
+          {t("Password", "Password")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -111,7 +113,7 @@ export default function LoginForm() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Masukkan password"
+            placeholder={t("Masukkan password", "Enter password")}
             className="w-full pl-10 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
           />
           <button
@@ -119,7 +121,7 @@ export default function LoginForm() {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition dark:text-slate-400 dark:hover:text-slate-200"
           >
-            {showPassword ? "Sembunyi" : "Lihat"}
+            {showPassword ? t("Sembunyi", "Hide") : t("Lihat", "Show")}
           </button>
         </div>
 
@@ -129,7 +131,7 @@ export default function LoginForm() {
             href="/forgot-password"
             className="text-xs font-medium text-sky-600 hover:text-sky-700 hover:underline transition-colors dark:text-sky-400 dark:hover:text-sky-300"
           >
-            Lupa Password?
+            {t("Lupa Password?", "Forgot Password?")}
           </Link>
         </div>
       </div>
@@ -146,10 +148,10 @@ export default function LoginForm() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            <span>Memproses...</span>
+            <span>{t("Memproses...", "Processing...")}</span>
           </>
         ) : (
-          "Masuk"
+          t("Masuk", "Sign In")
         )}
       </button>
     </form>

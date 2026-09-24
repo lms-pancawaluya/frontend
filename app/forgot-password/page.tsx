@@ -9,9 +9,11 @@ import {
   verifyResetOtp,
   resetPassword,
 } from "@/services/auth.service";
+import { useApp } from "@/app/context/AppContext";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const { t } = useApp();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Form States
@@ -40,12 +42,12 @@ export default function ForgotPasswordPage() {
       await forgotPassword(email);
       setMessage({
         type: "success",
-        text: `Kode OTP 6 digit telah dikirim ke ${email}`,
+        text: t(`Kode OTP 6 digit telah dikirim ke ${email}`, `A 6-digit OTP code has been sent to ${email}`),
       });
       setStep(2);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setMessage({ type: "error", text: msg || "Gagal mengirim OTP" });
+      setMessage({ type: "error", text: msg || t("Gagal mengirim OTP", "Failed to send OTP") });
     } finally {
       setLoading(false);
     }
@@ -55,7 +57,7 @@ export default function ForgotPasswordPage() {
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otpCode.length !== 6) {
-      setMessage({ type: "error", text: "Kode OTP harus berisi 6 digit angka." });
+      setMessage({ type: "error", text: t("Kode OTP harus berisi 6 digit angka.", "The OTP code must be 6 digits.") });
       return;
     }
 
@@ -66,12 +68,12 @@ export default function ForgotPasswordPage() {
       await verifyResetOtp(email, otpCode);
       setMessage({
         type: "success",
-        text: "Kode OTP valid. Silakan buat password baru Anda.",
+        text: t("Kode OTP valid. Silakan buat password baru Anda.", "The OTP code is valid. Please create your new password."),
       });
       setStep(3);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setMessage({ type: "error", text: msg || "Kode OTP tidak valid" });
+      setMessage({ type: "error", text: msg || t("Kode OTP tidak valid", "Invalid OTP code") });
     } finally {
       setLoading(false);
     }
@@ -82,12 +84,12 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
 
     if (passwordBaru.length < 6) {
-      setMessage({ type: "error", text: "Password minimal 6 karakter." });
+      setMessage({ type: "error", text: t("Password minimal 6 karakter.", "Password must be at least 6 characters.") });
       return;
     }
 
     if (passwordBaru !== konfirmasiPassword) {
-      setMessage({ type: "error", text: "Konfirmasi password tidak cocok." });
+      setMessage({ type: "error", text: t("Konfirmasi password tidak cocok.", "Password confirmation does not match.") });
       return;
     }
 
@@ -98,7 +100,7 @@ export default function ForgotPasswordPage() {
       await resetPassword(email, passwordBaru);
       setMessage({
         type: "success",
-        text: "Password berhasil diperbarui! Mengalihkan ke halaman login...",
+        text: t("Password berhasil diperbarui! Mengalihkan ke halaman login...", "Password updated successfully! Redirecting to the login page..."),
       });
 
       setTimeout(() => {
@@ -106,7 +108,7 @@ export default function ForgotPasswordPage() {
       }, 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setMessage({ type: "error", text: msg || "Gagal mereset password" });
+      setMessage({ type: "error", text: msg || t("Gagal mereset password", "Failed to reset password") });
     } finally {
       setLoading(false);
     }
@@ -156,12 +158,12 @@ export default function ForgotPasswordPage() {
         {/* Header Title */}
         <div className="text-center space-y-1">
           <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight dark:text-slate-100">
-            Lupa Password
+            {t("Lupa Password", "Forgot Password")}
           </h1>
           <p className="text-xs text-gray-500 dark:text-slate-400">
-            {step === 1 && "Langkah 1: Masukkan email terdaftar Anda"}
-            {step === 2 && "Langkah 2: Masukkan kode OTP 6 digit dari email"}
-            {step === 3 && "Langkah 3: Buat password baru untuk akun Anda"}
+            {step === 1 && t("Langkah 1: Masukkan email terdaftar Anda", "Step 1: Enter your registered email")}
+            {step === 2 && t("Langkah 2: Masukkan kode OTP 6 digit dari email", "Step 2: Enter the 6-digit OTP code from your email")}
+            {step === 3 && t("Langkah 3: Buat password baru untuk akun Anda", "Step 3: Create a new password for your account")}
           </p>
         </div>
 
@@ -209,7 +211,7 @@ export default function ForgotPasswordPage() {
         {step === 1 && (
           <form onSubmit={handleStep1Submit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Email Terdaftar</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("Email Terdaftar", "Registered Email")}</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -219,7 +221,7 @@ export default function ForgotPasswordPage() {
                 <input
                   type="email"
                   required
-                  placeholder="Masukkan email terdaftar"
+                  placeholder={t("Masukkan email terdaftar", "Enter your registered email")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full text-xs pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
@@ -232,7 +234,7 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="w-full py-3 bg-[var(--color-navy)] hover:opacity-90 text-white font-bold text-xs rounded-xl transition-all shadow-md disabled:opacity-50 mt-2"
             >
-              {loading ? "Mengirim Kode..." : "Kirim Kode OTP"}
+              {loading ? t("Mengirim Kode...", "Sending Code...") : t("Kirim Kode OTP", "Send OTP Code")}
             </button>
           </form>
         )}
@@ -241,7 +243,7 @@ export default function ForgotPasswordPage() {
         {step === 2 && (
           <form onSubmit={handleStep2Submit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Kode OTP (6 Digit)</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("Kode OTP (6 Digit)", "OTP Code (6 Digits)")}</label>
               <input
                 type="text"
                 maxLength={6}
@@ -258,7 +260,7 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="w-full py-3 bg-[var(--color-navy)] hover:opacity-90 text-white font-bold text-xs rounded-xl transition-all shadow-md disabled:opacity-50"
             >
-              {loading ? "Memverifikasi..." : "Verifikasi OTP"}
+              {loading ? t("Memverifikasi...", "Verifying...") : t("Verifikasi OTP", "Verify OTP")}
             </button>
 
             <button
@@ -266,7 +268,7 @@ export default function ForgotPasswordPage() {
               onClick={() => setStep(1)}
               className="w-full text-xs text-gray-500 hover:text-slate-800 font-medium transition-colors dark:text-slate-400 dark:hover:text-slate-200"
             >
-              Ubah Email
+              {t("Ubah Email", "Change Email")}
             </button>
           </form>
         )}
@@ -275,7 +277,7 @@ export default function ForgotPasswordPage() {
         {step === 3 && (
           <form onSubmit={handleStep3Submit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Password Baru</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("Password Baru", "New Password")}</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,7 +287,7 @@ export default function ForgotPasswordPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="Masukkan password baru"
+                  placeholder={t("Masukkan password baru", "Enter new password")}
                   value={passwordBaru}
                   onChange={(e) => setPasswordBaru(e.target.value)}
                   className="w-full text-xs pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
@@ -295,13 +297,13 @@ export default function ForgotPasswordPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-gray-500 hover:text-gray-800 transition-colors dark:text-slate-400 dark:hover:text-slate-200"
                 >
-                  {showPassword ? "Sembunyi" : "Lihat"}
+                  {showPassword ? t("Sembunyi", "Hide") : t("Lihat", "Show")}
                 </button>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Konfirmasi Password Baru</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("Konfirmasi Password Baru", "Confirm New Password")}</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -311,7 +313,7 @@ export default function ForgotPasswordPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="Ulangi password baru"
+                  placeholder={t("Ulangi password baru", "Repeat new password")}
                   value={konfirmasiPassword}
                   onChange={(e) => setKonfirmasiPassword(e.target.value)}
                   className="w-full text-xs pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--color-navy)] focus:bg-white transition-all text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
@@ -324,19 +326,19 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="w-full py-3 bg-[var(--color-navy)] hover:opacity-90 text-white font-bold text-xs rounded-xl transition-all shadow-md disabled:opacity-50 mt-2"
             >
-              {loading ? "Menyimpan Password..." : "Simpan Password Baru"}
+              {loading ? t("Menyimpan Password...", "Saving Password...") : t("Simpan Password Baru", "Save New Password")}
             </button>
           </form>
         )}
 
         {/* Footer Back Link */}
         <p className="text-sm text-gray-500 text-center pt-2 dark:text-slate-400">
-          Kembali ke{" "}
+          {t("Kembali ke", "Back to")}{" "}
           <Link
             href="/login"
             className="text-[var(--color-accent)] font-medium hover:underline transition-colors dark:text-blue-400"
           >
-            Halaman Login
+            {t("Halaman Login", "Login Page")}
           </Link>
         </p>
 

@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 export default function RegisterForm() {
   const router = useRouter();
+  const { t } = useApp();
   const [formData, setFormData] = useState({
     nama: "",
     nip: "",
@@ -48,7 +50,7 @@ export default function RegisterForm() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Konfirmasi password tidak cocok.");
+      setError(t("Konfirmasi password tidak cocok.", "Password confirmation does not match."));
       return;
     }
 
@@ -70,12 +72,12 @@ export default function RegisterForm() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.pesan || data.message || "Gagal mendaftar. Silakan coba lagi.");
+        throw new Error(data.pesan || data.message || t("Gagal mendaftar. Silakan coba lagi.", "Failed to register. Please try again."));
       }
 
       router.push(`/otp?email=${encodeURIComponent(formData.email)}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Gagal mendaftar. Silakan coba lagi.");
+      setError(err instanceof Error ? err.message : t("Gagal mendaftar. Silakan coba lagi.", "Failed to register. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ export default function RegisterForm() {
       {/* NAMA LENGKAP */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
-          Nama Lengkap
+          {t("Nama Lengkap", "Full Name")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -109,7 +111,7 @@ export default function RegisterForm() {
             required
             value={formData.nama}
             onChange={handleChange}
-            placeholder="Nama lengkap Anda"
+            placeholder={t("Nama lengkap Anda", "Your full name")}
             className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
           />
         </div>
@@ -118,7 +120,7 @@ export default function RegisterForm() {
       {/* NIP (AUTO FORMATTING WITH DASHES) */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
-          NIP (Nomor Induk Pegawai)
+          {t("NIP (Nomor Induk Pegawai)", "NIP (Employee Identification Number)")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -133,7 +135,7 @@ export default function RegisterForm() {
             required
             value={formData.nip}
             onChange={handleChange}
-            placeholder="Nomor Induk Pegawai"
+            placeholder={t("Nomor Induk Pegawai", "Employee Identification Number")}
             className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
           />
         </div>
@@ -142,7 +144,7 @@ export default function RegisterForm() {
       {/* EMAIL */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
-          Email
+          {t("Email", "Email")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -165,7 +167,7 @@ export default function RegisterForm() {
       {/* PASSWORD */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
-          Password
+          {t("Password", "Password")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -179,7 +181,7 @@ export default function RegisterForm() {
             required
             value={formData.password}
             onChange={handleChange}
-            placeholder="Buat password"
+            placeholder={t("Buat password", "Create password")}
             className="w-full pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
           />
           <button
@@ -187,7 +189,7 @@ export default function RegisterForm() {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition dark:text-slate-400 dark:hover:text-slate-200"
           >
-            {showPassword ? "Sembunyi" : "Lihat"}
+            {showPassword ? t("Sembunyi", "Hide") : t("Lihat", "Show")}
           </button>
         </div>
       </div>
@@ -195,7 +197,7 @@ export default function RegisterForm() {
       {/* KONFIRMASI PASSWORD */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
-          Konfirmasi Password
+          {t("Konfirmasi Password", "Confirm Password")}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -209,7 +211,7 @@ export default function RegisterForm() {
             required
             value={formData.confirmPassword}
             onChange={handleChange}
-            placeholder="Ulangi password Anda"
+            placeholder={t("Ulangi password Anda", "Repeat your password")}
             className="w-full pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
           />
           <button
@@ -217,7 +219,7 @@ export default function RegisterForm() {
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition dark:text-slate-400 dark:hover:text-slate-200"
           >
-            {showConfirmPassword ? "Sembunyi" : "Lihat"}
+            {showConfirmPassword ? t("Sembunyi", "Hide") : t("Lihat", "Show")}
           </button>
         </div>
       </div>
@@ -233,10 +235,10 @@ export default function RegisterForm() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            <span>Mendaftarkan...</span>
+            <span>{t("Mendaftarkan...", "Registering...")}</span>
           </>
         ) : (
-          "Daftar"
+          t("Daftar", "Register")
         )}
       </button>
     </form>

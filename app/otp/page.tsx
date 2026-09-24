@@ -6,10 +6,12 @@ import Link from "next/link";
 import Image from "next/image";
 
 import { API_URL, fetchApi } from "@/lib/api";
+import { useApp } from "@/app/context/AppContext";
 
 function OtpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useApp();
   const email = searchParams.get("email") || "";
 
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
@@ -72,7 +74,7 @@ function OtpContent() {
     e.preventDefault();
     const code = otp.join("");
     if (code.length < 6) {
-      setError("Silakan masukkan 6 digit kode OTP secara lengkap.");
+      setError(t("Silakan masukkan 6 digit kode OTP secara lengkap.", "Please enter all 6 digits of the OTP code."));
       return;
     }
 
@@ -90,13 +92,13 @@ function OtpContent() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.pesan || data.message || "Kode OTP salah atau telah kadaluwarsa.");
+        throw new Error(data.pesan || data.message || t("Kode OTP salah atau telah kadaluwarsa.", "The OTP code is incorrect or has expired."));
       }
 
       router.push("/login?verified=true");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Kode OTP salah. Silakan coba lagi.";
-      setError(message || "Kode OTP salah. Silakan coba lagi.");
+      const message = err instanceof Error ? err.message : t("Kode OTP salah. Silakan coba lagi.", "Incorrect OTP code. Please try again.");
+      setError(message || t("Kode OTP salah. Silakan coba lagi.", "Incorrect OTP code. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -127,12 +129,12 @@ function OtpContent() {
         </div>
 
         <h1 className="font-[family-name:var(--font-heading,var(--font-display))] text-2xl font-bold text-[var(--color-navy)] tracking-tight dark:text-slate-100">
-          Verifikasi Kode OTP
+          {t("Verifikasi Kode OTP", "Verify OTP Code")}
         </h1>
 
         <p className="text-sm text-gray-500 mt-1 leading-relaxed dark:text-slate-400">
-          Masukkan 6 digit kode verifikasi yang telah dikirim ke email{" "}
-          <span className="font-semibold text-slate-800 break-all dark:text-slate-200">{email || "Anda"}</span>
+          {t("Masukkan 6 digit kode verifikasi yang telah dikirim ke email", "Enter the 6-digit verification code sent to the email")}{" "}
+          <span className="font-semibold text-slate-800 break-all dark:text-slate-200">{email || t("Anda", "you")}</span>
         </p>
       </div>
 
@@ -190,34 +192,35 @@ function OtpContent() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              <span>Memverifikasi...</span>
+              <span>{t("Memverifikasi...", "Verifying...")}</span>
             </>
           ) : (
-            "Verifikasi OTP"
+            t("Verifikasi OTP", "Verify OTP")
           )}
         </button>
       </form>
 
       <div className="text-center space-y-2 pt-5 border-t border-slate-100 mt-6 text-xs text-gray-500 dark:border-slate-800 dark:text-slate-400">
         <p>
-          Tidak menerima kode?{" "}
+          {t("Tidak menerima kode?", "Didn't receive the code?")}{" "}
           {canResend ? (
             <button
               type="button"
               onClick={handleResend}
               className="text-[var(--color-accent)] font-semibold hover:underline dark:text-blue-400"
             >
-              Kirim Ulang OTP
+              {t("Kirim Ulang OTP", "Resend OTP")}
             </button>
           ) : (
             <span className="text-gray-400 dark:text-slate-500">
-              Kirim ulang dalam <strong className="text-slate-700 dark:text-slate-300">{timer} detik</strong>
+              {t("Kirim ulang dalam", "Resend in")}{" "}
+              <strong className="text-slate-700 dark:text-slate-300">{timer} {t("detik", "seconds")}</strong>
             </span>
           )}
         </p>
         <div>
           <Link href="/login" className="text-gray-400 hover:text-gray-600 text-xs font-medium transition dark:text-slate-500 dark:hover:text-slate-300">
-            ← Kembali ke Login
+            {t("← Kembali ke Login", "← Back to Login")}
           </Link>
         </div>
       </div>
@@ -226,6 +229,8 @@ function OtpContent() {
 }
 
 export default function OtpPage() {
+  const { t } = useApp();
+
   return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-[var(--color-pale)] px-4 py-10 relative overflow-hidden">
       {/* BACKGROUND GAMBAR SAMAR */}
@@ -270,7 +275,7 @@ export default function OtpPage() {
       </div>
 
       {/* CARD UTAMA OTP */}
-      <Suspense fallback={<p className="text-sm text-slate-500 z-20 dark:text-slate-400">Memuat halaman OTP...</p>}>
+      <Suspense fallback={<p className="text-sm text-slate-500 z-20 dark:text-slate-400">{t("Memuat halaman OTP...", "Loading OTP page...")}</p>}>
         <OtpContent />
       </Suspense>
     </div>
