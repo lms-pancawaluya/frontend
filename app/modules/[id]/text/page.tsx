@@ -163,12 +163,29 @@ function ModuleTextPageContent() {
     try {
       await completeContent(material.id);
       await refreshMaterialStatus();
+      await getModuleById(moduleId).catch(() => null);
       router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));
     } catch (err) {
       setCompleteError(err instanceof Error ? err.message : t("Gagal menandai materi selesai.", "Failed to mark the material as complete."));
     } finally {
       setIsCompleting(false);
     }
+  }
+
+  async function handleNext() {
+    if (material?.id && !isMaterialCompleted) {
+      setIsCompleting(true);
+      try {
+        await completeContent(material.id);
+        await refreshMaterialStatus();
+        await getModuleById(moduleId).catch(() => null);
+      } catch (err) {
+        console.warn("Gagal menyelesaikan materi:", err);
+      } finally {
+        setIsCompleting(false);
+      }
+    }
+    router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));
   }
 
   async function handleTogglePreview() {
@@ -355,8 +372,9 @@ function ModuleTextPageContent() {
         </div>
 
         <button
-          onClick={() => router.push(getMaterialRoute(moduleId, materials, currentIndex + 1))}
-          className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition dark:bg-slate-700 dark:hover:bg-slate-600"
+          onClick={handleNext}
+          disabled={isCompleting}
+          className="px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-800 transition disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
         >
           {currentIndex + 1 < materials.length ? t("Materi Berikutnya", "Next Material") : t("Kembali ke Detail Course", "Back to Course Detail")}
         </button>

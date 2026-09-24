@@ -6,6 +6,7 @@ import Link from "next/link";
 import Header from "@/app/components/common/Header";
 import { getModules } from "@/services/module.service";
 import { getProgress } from "@/services/progress.service";
+import { getCourses } from "@/services/course.service";
 
 interface User {
   id: string;
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   });
   const [totalModules, setTotalModules] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
+  const [courseProgressPercent, setCourseProgressPercent] = useState<number | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(true);
 
   useEffect(() => {
@@ -53,12 +55,27 @@ export default function DashboardPage() {
 
     async function fetchDashboardData() {
       try {
-        const [modulesData, progressData] = await Promise.all([
-          getModules(),
-          getProgress(),
+        const [coursesData, modulesData, progressData] = await Promise.all([
+          getCourses().catch(() => []),
+          getModules().catch(() => []),
+          getProgress().catch(() => []),
         ]);
 
+        const coursesArr = Array.isArray(coursesData)
+          ? coursesData
+          : Array.isArray((coursesData as { data?: unknown }).data)
+          ? ((coursesData as { data: unknown[] }).data as { progressPercentage?: number }[])
+          : [];
         setTotalModules(modulesData.length);
+
+        if (coursesArr.length > 0) {
+          const avg = Math.round(
+            coursesArr.reduce((acc, c) => acc + (c.progressPercentage ?? 0), 0) / coursesArr.length
+          );
+          setCourseProgressPercent(avg);
+        } else {
+          setCourseProgressPercent(null);
+        }
 
         const selesai = progressData.filter(
           (p: { status: string }) => p.status === "selesai"
@@ -81,8 +98,7 @@ export default function DashboardPage() {
   // Format Nama Lengkap beserta Gelar
   const namaBerGelar = user.gelar ? `${user.nama}, ${user.gelar}` : user.nama;
 
-  const progressPercent =
-    totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+  const progressPercent = courseProgressPercent ?? 0;
 
   return (
     <div className="min-h-screen bg-[var(--color-pale)] text-slate-800 flex flex-col justify-between leading-normal dark:text-slate-200">

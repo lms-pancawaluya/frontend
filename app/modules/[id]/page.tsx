@@ -388,13 +388,14 @@ function ModuleVideoPageContent() {
     try {
       await completeContent(contentId);
       await refreshMaterialStatus();
+      await getModuleById(moduleId).catch(() => null);
       return true;
     } catch (err) {
       completionSentRef.current = false;
       console.warn("Gagal menyelesaikan materi video:", err);
       return false;
     }
-  }, [refreshMaterialStatus]);
+  }, [moduleId, refreshMaterialStatus]);
 
   const goToNextMaterial = useCallback(() => {
     router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));

@@ -485,6 +485,8 @@ export default function GuruCourseDetailPage() {
 
   const isOffline = course.mode?.toLowerCase() === "offline";
 
+  const courseProgressPercent = course.progressPercentage ?? 0;
+
   // Eligibility sepenuhnya mengikuti BE: course harus menawarkan sertifikat
   // (hasCertificate) dan seluruh modul dilaporkan selesai oleh BE.
   const modulesCompleted = isCourseCompletedByBackend(modules, stageProgress);
@@ -574,10 +576,14 @@ export default function GuruCourseDetailPage() {
           </div>
 
           {/* Ringkasan Course */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-white/15 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/15 text-xs">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
               <p className="text-white/70 font-medium">{t("Mode", "Mode")}</p>
               <p className="text-lg font-extrabold mt-0.5 capitalize">{course.mode || "—"}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+              <p className="text-white/70 font-medium">{t("Progress Course", "Course Progress")}</p>
+              <p className="text-lg font-extrabold mt-0.5">{courseProgressPercent}%</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
               <p className="text-white/70 font-medium">{t("Sertifikat", "Certificate")}</p>
