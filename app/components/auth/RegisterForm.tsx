@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL, fetchApi } from "@/lib/api";
+import { lookupMasterGuru, registerGuru } from "@/services/registration.service";
 import { useApp } from "@/app/context/AppContext";
 
 export default function RegisterForm() {
   const router = useRouter();
   const { t } = useApp();
   const [formData, setFormData] = useState({
-    nama: "",
     nip: "",
     email: "",
     password: "",
@@ -17,21 +16,22 @@ export default function RegisterForm() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [checkingNip, setCheckingNip] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
-  // Helper untuk format otomatis NIP: YYYY-MM-DD-YYYY-MM-X-NNN
   const formatNIP = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 18);
     const parts = [];
 
-    if (digits.length > 0) parts.push(digits.slice(0, 4));   // Tahun Lahir (YYYY)
-    if (digits.length > 4) parts.push(digits.slice(4, 6));   // Bulan Lahir (MM)
-    if (digits.length > 6) parts.push(digits.slice(6, 8));   // Tanggal Lahir (DD)
-    if (digits.length > 8) parts.push(digits.slice(8, 12));  // Tahun TMT (YYYY)
-    if (digits.length > 12) parts.push(digits.slice(12, 14)); // Bulan TMT (MM)
-    if (digits.length > 14) parts.push(digits.slice(14, 15)); // Jenis Kelamin (X)
-    if (digits.length > 15) parts.push(digits.slice(15, 18)); // No. Urut (NNN)
+    if (digits.length > 0) parts.push(digits.slice(0, 4));
+    if (digits.length > 4) parts.push(digits.slice(4, 6));
+    if (digits.length > 6) parts.push(digits.slice(6, 8));
+    if (digits.length > 8) parts.push(digits.slice(8, 12));
+    if (digits.length > 12) parts.push(digits.slice(12, 14));
+    if (digits.length > 14) parts.push(digits.slice(14, 15));
+    if (digits.length > 15) parts.push(digits.slice(15, 18));
 
     return parts.join("-");
   };
@@ -43,6 +43,34 @@ export default function RegisterForm() {
       setFormData((prev) => ({ ...prev, nip: formatNIP(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleCekNip = async () => {
+    const nipRaw = formData.nip.trim();
+    if (!nipRaw) {
+      setError(t("Masukkan NIP terlebih dahulu.", "Please enter NIP first."));
+      return;
+    }
+
+    setCheckingNip(true);
+    setError(null);
+    setInfoMsg(null);
+
+    try {
+      const data = await lookupMasterGuru(nipRaw);
+      const namaGuru = data.nama || data.namaGuru || data.nama_guru || "";
+      const sekolah = data.sekolah || data.namaSekolah || data.nama_sekolah || "";
+      const detail = [namaGuru, sekolah].filter(Boolean).join(" - ");
+      setInfoMsg(
+        detail
+          ? `${t("Data Guru ditemukan:", "Teacher data found:")} ${detail}`
+          : t("Data NIP ditemukan di Master Guru.", "NIP data found in Master Guru.")
+      );
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("Data NIP tidak ditemukan.", "NIP data not found."));
+    } finally {
+      setCheckingNip(false);
     }
   };
 
@@ -58,22 +86,11 @@ export default function RegisterForm() {
     setError(null);
 
     try {
-      const res = await fetchApi(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nama: formData.nama,
-          nip: formData.nip, // Mengirim format ber-strip atau bisa gunakan .replace(/\D/g, "") jika backend butuh angka saja
-          email: formData.email,
-          password: formData.password,
-        }),
+      await registerGuru({
+        nip: formData.nip,
+        email: formData.email,
+        password: formData.password,
       });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.pesan || data.message || t("Gagal mendaftar. Silakan coba lagi.", "Failed to register. Please try again."));
-      }
 
       router.push(`/otp?email=${encodeURIComponent(formData.email)}`);
     } catch (err: unknown) {
@@ -86,7 +103,7 @@ export default function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3.5">
       {error && (
-        <div className="alert-error flex items-center gap-2">
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
           <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -94,54 +111,48 @@ export default function RegisterForm() {
         </div>
       )}
 
-      {/* NAMA LENGKAP */}
-      <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
-          {t("Nama Lengkap", "Full Name")}
-        </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            name="nama"
-            required
-            value={formData.nama}
-            onChange={handleChange}
-            placeholder={t("Nama lengkap Anda", "Your full name")}
-            className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
-          />
+      {infoMsg && (
+        <div className="p-3 bg-sky-50 border border-sky-200 text-sky-800 text-xs rounded-xl flex items-center gap-2 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{infoMsg}</span>
         </div>
-      </div>
+      )}
 
-      {/* NIP (AUTO FORMATTING WITH DASHES) */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
           {t("NIP (Nomor Induk Pegawai)", "NIP (Employee Identification Number)")}
         </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6" />
-            </svg>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              name="nip"
+              maxLength={24}
+              required
+              value={formData.nip}
+              onChange={handleChange}
+              placeholder={t("Nomor Induk Pegawai", "Employee Identification Number")}
+              className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
+            />
           </div>
-          <input
-            type="text"
-            name="nip"
-            maxLength={24} // 18 digit + 6 strip
-            required
-            value={formData.nip}
-            onChange={handleChange}
-            placeholder={t("Nomor Induk Pegawai", "Employee Identification Number")}
-            className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
-          />
+          <button
+            type="button"
+            onClick={handleCekNip}
+            disabled={checkingNip}
+            className="px-3.5 py-2.5 bg-[#0047A5] hover:bg-[#00367d] text-white text-xs font-semibold rounded-xl disabled:opacity-50 transition-colors shrink-0"
+          >
+            {checkingNip ? t("Memeriksa...", "Checking...") : t("Cek NIP", "Check NIP")}
+          </button>
         </div>
       </div>
 
-      {/* EMAIL */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
           {t("Email", "Email")}
@@ -164,7 +175,6 @@ export default function RegisterForm() {
         </div>
       </div>
 
-      {/* PASSWORD */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
           {t("Password", "Password")}
@@ -194,7 +204,6 @@ export default function RegisterForm() {
         </div>
       </div>
 
-      {/* KONFIRMASI PASSWORD */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
           {t("Konfirmasi Password", "Confirm Password")}

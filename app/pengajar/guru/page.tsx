@@ -76,9 +76,20 @@ export default function PengajarGuruPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)] dark:text-slate-100">{t("Kelola Guru", "Manage Teachers")}</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">{t("Daftar guru binaan di sekolah Anda (otomatis sesuai lingkup akun Anda).", "List of supervised teachers in your school (automatically scoped to your account).")}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)] dark:text-slate-100">{t("Kelola Guru", "Manage Teachers")}</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">{t("Daftar guru binaan di sekolah Anda (otomatis sesuai lingkup akun Anda).", "List of supervised teachers in your school (automatically scoped to your account).")}</p>
+        </div>
+        <Link
+          href="/register-guru"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--color-navy)] text-white font-semibold text-sm rounded-xl hover:opacity-90 transition shadow-sm self-start sm:self-auto shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>{t("Tambah Guru", "Add Teacher")}</span>
+        </Link>
       </div>
 
       {error && (
