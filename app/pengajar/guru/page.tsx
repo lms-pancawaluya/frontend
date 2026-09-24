@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUsers } from "@/services/user.service";
+import { useApp } from "@/app/context/AppContext";
 
 interface GuruItem {
   id: string;
@@ -25,6 +26,7 @@ const statusColor: Record<string, string> = {
 
 export default function PengajarGuruPage() {
   const router = useRouter();
+  const { t } = useApp();
   const [guru, setGuru] = useState<GuruItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -50,16 +52,16 @@ export default function PengajarGuruPage() {
         const data = await getUsers();
         setGuru((data as GuruItem[]).filter((u) => u.role === "guru"));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat data guru.");
+        setError(err instanceof Error ? err.message : t("Gagal memuat data guru.", "Failed to load teacher data."));
       } finally {
         setLoading(false);
       }
     }
     fetchGuru();
-  }, [router]);
+  }, [router, t]);
 
   if (loading) {
-    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">Memuat data guru...</p>;
+    return <p className="text-center mt-16 text-gray-500 dark:text-slate-400">{t("Memuat data guru...", "Loading teacher data...")}</p>;
   }
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -75,8 +77,8 @@ export default function PengajarGuruPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
       <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)] dark:text-slate-100">Kelola Guru</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">Daftar guru binaan di sekolah Anda (otomatis sesuai lingkup akun Anda).</p>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--color-navy)] dark:text-slate-100">{t("Kelola Guru", "Manage Teachers")}</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">{t("Daftar guru binaan di sekolah Anda (otomatis sesuai lingkup akun Anda).", "List of supervised teachers in your school (automatically scoped to your account).")}</p>
       </div>
 
       {error && (
@@ -93,15 +95,15 @@ export default function PengajarGuruPage() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari nama, email, atau sekolah..."
-          aria-label="Cari guru"
+          placeholder={t("Cari nama, email, atau sekolah...", "Search name, email, or school...")}
+          aria-label={t("Cari guru", "Search teacher")}
           className="w-full rounded-xl border border-[var(--color-border-soft)] bg-white py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-[var(--color-navy)] focus:ring-2 focus:ring-[var(--color-navy)]/15 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
         />
         {searchQuery && (
           <button
             type="button"
             onClick={() => setSearchQuery("")}
-            aria-label="Bersihkan pencarian"
+            aria-label={t("Bersihkan pencarian", "Clear search")}
             className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 transition-colors hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,18 +118,18 @@ export default function PengajarGuruPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-[var(--color-border-soft)] bg-[var(--color-pale)]">
               <tr>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">Nama</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">Sekolah</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">Email</th>
-                <th className="whitespace-nowrap px-4 py-3 text-center font-medium text-[var(--color-navy)] dark:text-slate-200">Status</th>
-                <th className="whitespace-nowrap px-4 py-3 text-center font-medium text-[var(--color-navy)] dark:text-slate-200">Aksi</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">{t("Nama", "Name")}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">{t("Sekolah", "School")}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-[var(--color-navy)] dark:text-slate-200">{t("Email", "Email")}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-center font-medium text-[var(--color-navy)] dark:text-slate-200">{t("Status", "Status")}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-center font-medium text-[var(--color-navy)] dark:text-slate-200">{t("Aksi", "Action")}</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-10 text-center text-sm text-gray-500 dark:text-slate-400">
-                    {guru.length === 0 ? "Belum ada guru dalam lingkup Anda." : "Guru tidak ditemukan."}
+                    {guru.length === 0 ? t("Belum ada guru dalam lingkup Anda.", "No teachers in your scope yet.") : t("Guru tidak ditemukan.", "Teacher not found.")}
                   </td>
                 </tr>
               ) : (
@@ -150,7 +152,7 @@ export default function PengajarGuruPage() {
                         href={`/pengajar/guru/${g.id}`}
                         className="rounded-full border border-[var(--color-border-soft)] px-3 py-1.5 text-sm text-[var(--color-navy)] transition hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-800"
                       >
-                        Detail
+                        {t("Detail", "Detail")}
                       </Link>
                     </td>
                   </tr>

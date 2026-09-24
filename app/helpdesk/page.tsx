@@ -11,6 +11,7 @@ import {
 } from "@/services/helpdesk.service";
 import { getCourses } from "@/services/course.service";
 import CourseFeedbackForm from "@/app/components/common/CourseFeedbackForm";
+import { useApp } from "@/app/context/AppContext";
 
 // Bentuk tiket dari backend belum dikonfirmasi sepenuhnya, jadi seluruh
 // field bersifat opsional dan dirender secara defensif (pola fallback nama
@@ -67,8 +68,8 @@ function getTicketNumber(t: Ticket): string {
   return str.length > 12 ? `#${str.slice(0, 8)}` : `#${str}`;
 }
 
-function getSubject(t: Ticket): string {
-  return t.subject || t.subjek || t.judul || "(Tanpa subjek)";
+function getSubject(t: Ticket, tr: (id: string, en: string) => string): string {
+  return t.subject || t.subjek || t.judul || tr("(Tanpa subjek)", "(No subject)");
 }
 
 function getCategory(t: Ticket): string {
@@ -107,32 +108,32 @@ function formatDateTime(raw?: string): string {
 // Badge status mengikuti konvensi warna repo (aktif/selesai=hijau,
 // proses=amber, tutup=abu). Nilai status tiket belum dikonfirmasi backend,
 // jadi pemetaan bersifat toleran dengan default netral.
-function getStatusBadge(status?: string): { label: string; className: string } {
+function getStatusBadge(status?: string, tr: (id: string, en: string) => string = (id) => id): { label: string; className: string } {
   const s = String(status || "").toLowerCase();
 
   if (["open", "terbuka", "baru", "new"].some((k) => s.includes(k))) {
-    return { label: status || "Terbuka", className: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800" };
+    return { label: status || tr("Terbuka", "Open"), className: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800" };
   }
   if (
     ["progress", "proses", "diproses", "pending", "menunggu"].some((k) => s.includes(k))
   ) {
-    return { label: status || "Diproses", className: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800" };
+    return { label: status || tr("Diproses", "In Progress"), className: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800" };
   }
   if (["resolved", "selesai", "closed", "tutup", "done"].some((k) => s.includes(k))) {
-    return { label: status || "Selesai", className: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" };
+    return { label: status || tr("Selesai", "Resolved"), className: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" };
   }
   return {
-    label: status || "Tidak diketahui",
+    label: status || tr("Tidak diketahui", "Unknown"),
     className: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
   };
 }
 
-function getSenderRoleLabel(role?: string): string {
+function getSenderRoleLabel(role?: string, tr: (id: string, en: string) => string = (id) => id): string {
   const r = String(role || "").toLowerCase();
-  if (r === "guru") return "Guru";
+  if (r === "guru") return tr("Guru", "Teacher");
   if (r === "admin") return "Admin";
-  if (r === "pengajar") return "Pengajar";
-  return role || "Peserta";
+  if (r === "pengajar") return tr("Pengajar", "Instructor");
+  return role || tr("Peserta", "Participant");
 }
 
 /**
@@ -176,32 +177,35 @@ function isRequesterReplyBlocked(replies: Reply[]): boolean {
 }
 
 // Konten Quick Tutorial (statis, tanpa API). Penjelasan singkat untuk guru.
-const TUTORIAL_ITEMS: { title: string; body: string }[] = [
-  {
-    title: "Cara membuat tiket",
-    body: "Klik tombol \"Buat Tiket\" di bagian atas halaman. Isi Subjek (ringkasan singkat kendala), Kategori, dan Deskripsi selengkap mungkin, lalu klik \"Kirim Tiket\". Tiket yang berhasil dibuat langsung muncul di daftar tiket Anda.",
-  },
-  {
-    title: "Cara melihat dan membalas tiket",
-    body: "Klik salah satu tiket pada daftar untuk membuka detail tiket. Di dalam pop-up, Anda dapat melihat informasi tiket, membaca percakapan, dan mengirim balasan. Anda dapat mengirim maksimal 2 pesan berturut-turut pada satu tiket. Setelah mengirim 2 pesan berturut-turut, Anda perlu menunggu balasan dari Admin terlebih dahulu sebelum dapat mengirim pesan berikutnya.",
-  },
-  {
-    title: "Arti status tiket",
-    body: "Open (biru): tiket baru diterima dan belum diproses. In Progress (kuning): tiket sedang ditangani oleh tim/fasilitator. Resolved (hijau): kendala sudah ditangani. Closed (hijau): tiket ditutup. Status di luar itu ditampilkan netral (abu-abu). Guru tidak dapat mengubah status tiket.",
-  },
-  {
-    title: "Saran & Masukan",
-    body: "Gunakan fitur Saran & Masukan untuk menyampaikan masukan atau saran perbaikan terhadap sebuah Course — bukan untuk kendala teknis (gunakan tiket bantuan untuk itu). Batasnya berlaku per Course: untuk setiap Course, Anda hanya dapat mengirim 1 kali saran & masukan dalam periode 7×24 jam (7 hari) untuk mencegah spam. Jika masih dalam periode tersebut, Anda perlu menunggu sampai masa tunggu selesai sebelum dapat mengirim saran & masukan lagi untuk Course yang sama. Anda tetap dapat mengirim saran & masukan untuk Course lain.",
-  },
-  {
-    title: "Kapan sebaiknya membuat tiket",
-    body: "Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan Pre-Test atau Post-Test, atau masalah pada akun. Untuk masukan atau saran umum terhadap sebuah Course, gunakan fitur Saran & Masukan, bukan tiket bantuan.",
-  },
-];
+function getTutorialItems(t: (id: string, en: string) => string): { title: string; body: string }[] {
+  return [
+    {
+      title: t("Cara membuat tiket", "How to create a ticket"),
+      body: t("Klik tombol \"Buat Tiket\" di bagian atas halaman. Isi Subjek (ringkasan singkat kendala), Kategori, dan Deskripsi selengkap mungkin, lalu klik \"Kirim Tiket\". Tiket yang berhasil dibuat langsung muncul di daftar tiket Anda.", "Click the \"Create Ticket\" button at the top of the page. Fill in the Subject (a brief summary of the issue), Category, and Description as completely as possible, then click \"Send Ticket\". Successfully created tickets appear immediately in your ticket list."),
+    },
+    {
+      title: t("Cara melihat dan membalas tiket", "How to view and reply to a ticket"),
+      body: t("Klik salah satu tiket pada daftar untuk membuka detail tiket. Di dalam pop-up, Anda dapat melihat informasi tiket, membaca percakapan, dan mengirim balasan. Anda dapat mengirim maksimal 2 pesan berturut-turut pada satu tiket. Setelah mengirim 2 pesan berturut-turut, Anda perlu menunggu balasan dari Admin terlebih dahulu sebelum dapat mengirim pesan berikutnya.", "Click any ticket in the list to open the ticket detail. In the pop-up, you can view ticket information, read the conversation, and send replies. You can send a maximum of 2 consecutive messages on a single ticket. After sending 2 consecutive messages, you must wait for a reply from an Admin before you can send your next message."),
+    },
+    {
+      title: t("Arti status tiket", "Ticket status meanings"),
+      body: t("Open (biru): tiket baru diterima dan belum diproses. In Progress (kuning): tiket sedang ditangani oleh tim/fasilitator. Resolved (hijau): kendala sudah ditangani. Closed (hijau): tiket ditutup. Status di luar itu ditampilkan netral (abu-abu). Guru tidak dapat mengubah status tiket.", "Open (blue): the ticket has just been received and not yet processed. In Progress (yellow): the ticket is being handled by the team/facilitator. Resolved (green): the issue has been handled. Closed (green): the ticket is closed. Any other status is displayed neutrally (gray). Teachers cannot change the ticket status."),
+    },
+    {
+      title: t("Saran & Masukan", "Feedback & Suggestions"),
+      body: t("Gunakan fitur Saran & Masukan untuk menyampaikan masukan atau saran perbaikan terhadap sebuah Course — bukan untuk kendala teknis (gunakan tiket bantuan untuk itu). Batasnya berlaku per Course: untuk setiap Course, Anda hanya dapat mengirim 1 kali saran & masukan dalam periode 7×24 jam (7 hari) untuk mencegah spam. Jika masih dalam periode tersebut, Anda perlu menunggu sampai masa tunggu selesai sebelum dapat mengirim saran & masukan lagi untuk Course yang sama. Anda tetap dapat mengirim saran & masukan untuk Course lain.", "Use the Feedback & Suggestions feature to share input or improvement suggestions for a Course — not for technical issues (use a helpdesk ticket for that). The limit applies per Course: for each Course, you can submit feedback & suggestions only once within a 7×24 hour (7 days) period to prevent spam. If you are still within that period, you must wait until the waiting period ends before you can submit feedback & suggestions again for the same Course. You can still submit feedback & suggestions for other Courses."),
+    },
+    {
+      title: t("Kapan sebaiknya membuat tiket", "When you should create a ticket"),
+      body: t("Buatlah tiket bila Anda mengalami kendala teknis yang tidak dapat diselesaikan sendiri — misalnya video atau materi tidak terbuka, error saat mengerjakan Pre-Test atau Post-Test, atau masalah pada akun. Untuk masukan atau saran umum terhadap sebuah Course, gunakan fitur Saran & Masukan, bukan tiket bantuan.", "Create a ticket if you experience a technical issue you cannot resolve yourself — for example, a video or material that won't open, an error during a Pre-Test or Post-Test, or an account problem. For general input or suggestions about a Course, use the Feedback & Suggestions feature, not a helpdesk ticket."),
+    },
+  ];
+}
 
 export default function HelpdeskPage() {
+  const { t } = useApp();
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{t("Memuat...", "Loading...")}</div>}>
       <HelpdeskContent />
     </Suspense>
   );
@@ -209,6 +213,7 @@ export default function HelpdeskPage() {
 
 function HelpdeskContent() {
   const searchParams = useSearchParams();
+  const { t } = useApp();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -268,7 +273,7 @@ function HelpdeskContent() {
         setTickets(Array.isArray(data) ? data : []);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Gagal memuat daftar tiket.");
+        setError(err instanceof Error ? err.message : t("Gagal memuat daftar tiket.", "Failed to load ticket list."));
       } finally {
         if (active) setLoading(false);
       }
@@ -278,7 +283,7 @@ function HelpdeskContent() {
     return () => {
       active = false;
     };
-  }, [refreshKey]);
+  }, [refreshKey, t]);
 
   // ---------- Fetch daftar course (konteks Saran & Masukan) ----------
 
@@ -299,7 +304,7 @@ function HelpdeskContent() {
         if (mapped.length > 0) setSelectedCourseId(mapped[0].id);
       } catch (err) {
         if (!active) return;
-        setCoursesError(err instanceof Error ? err.message : "Gagal memuat daftar course.");
+        setCoursesError(err instanceof Error ? err.message : t("Gagal memuat daftar course.", "Failed to load course list."));
       } finally {
         if (active) setCoursesLoading(false);
       }
@@ -309,7 +314,7 @@ function HelpdeskContent() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   // ---------- Fetch master kategori tiket ----------
 
@@ -326,7 +331,7 @@ function HelpdeskContent() {
       } catch (err) {
         if (!active) return;
         setCategoriesError(
-          err instanceof Error ? err.message : "Gagal memuat kategori tiket."
+          err instanceof Error ? err.message : t("Gagal memuat kategori tiket.", "Failed to load ticket categories.")
         );
       } finally {
         if (active) setCategoriesLoading(false);
@@ -337,7 +342,7 @@ function HelpdeskContent() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   // ---------- Modal Buat Tiket ----------
 
@@ -360,18 +365,18 @@ function HelpdeskContent() {
     // Kategori wajib dipilih dari master BE. Jika kategori gagal dimuat,
     // jangan submit dengan kategori yang tidak valid.
     if (categoriesError) {
-      setFormError("Kategori tiket gagal dimuat. Muat ulang halaman untuk mencoba lagi.");
+      setFormError(t("Kategori tiket gagal dimuat. Muat ulang halaman untuk mencoba lagi.", "Failed to load ticket categories. Reload the page to try again."));
       return;
     }
 
     if (!subject.trim() || !category.trim() || !description.trim()) {
-      setFormError("Subjek, kategori, dan deskripsi wajib diisi.");
+      setFormError(t("Subjek, kategori, dan deskripsi wajib diisi.", "Subject, category, and description are required."));
       return;
     }
 
     const isValidCategory = ticketCategories.some((c) => c.value === category);
     if (!isValidCategory) {
-      setFormError("Silakan pilih kategori tiket yang valid.");
+      setFormError(t("Silakan pilih kategori tiket yang valid.", "Please select a valid ticket category."));
       return;
     }
 
@@ -384,10 +389,10 @@ function HelpdeskContent() {
         description: description.trim(),
       });
       setShowCreateModal(false);
-      setSuccessMsg("Tiket berhasil dibuat.");
+      setSuccessMsg(t("Tiket berhasil dibuat.", "Ticket created successfully."));
       setRefreshKey((k) => k + 1);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Gagal membuat tiket.");
+      setFormError(err instanceof Error ? err.message : t("Gagal membuat tiket.", "Failed to create ticket."));
     } finally {
       setSubmitting(false);
     }
@@ -402,7 +407,7 @@ function HelpdeskContent() {
       const data = await getTicketDetail(ticketId);
       setDetailTicket((data || null) as TicketDetail | null);
     } catch (err) {
-      setDetailError(err instanceof Error ? err.message : "Gagal memuat detail tiket.");
+      setDetailError(err instanceof Error ? err.message : t("Gagal memuat detail tiket.", "Failed to load ticket detail."));
     } finally {
       setDetailLoading(false);
     }
@@ -450,7 +455,7 @@ function HelpdeskContent() {
   async function handleReply(e: React.FormEvent) {
     e.preventDefault();
     if (!replyMessage.trim()) {
-      setReplyError("Pesan balasan tidak boleh kosong.");
+      setReplyError(t("Pesan balasan tidak boleh kosong.", "Reply message cannot be empty."));
       return;
     }
     if (!detailTicketId) return;
@@ -463,7 +468,7 @@ function HelpdeskContent() {
       // Perbarui percakapan tanpa reload halaman.
       await fetchTicketDetail(detailTicketId);
     } catch (err) {
-      setReplyError(err instanceof Error ? err.message : "Gagal mengirim balasan.");
+      setReplyError(err instanceof Error ? err.message : t("Gagal mengirim balasan.", "Failed to send reply."));
     } finally {
       setReplySending(false);
     }
@@ -472,7 +477,7 @@ function HelpdeskContent() {
   // Derived state detail modal
   const detailReplies = detailTicket?.replies || [];
   const detailCategory = detailTicket ? getCategory(detailTicket) : "";
-  const detailBadge = detailTicket ? getStatusBadge(detailTicket.status) : null;
+  const detailBadge = detailTicket ? getStatusBadge(detailTicket.status, t) : null;
   const detailDescription = detailTicket ? getDescription(detailTicket) : "";
   const ticketIsClosed = detailTicket ? isTicketClosed(detailTicket.status) : false;
   const requesterBlocked = isRequesterReplyBlocked(detailReplies);
@@ -499,19 +504,18 @@ function HelpdeskContent() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span>Kembali ke Dashboard</span>
+              <span>{t("Kembali ke Dashboard", "Back to Dashboard")}</span>
             </a>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="max-w-2xl space-y-3">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md text-amber-300 border border-white/20">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                  Pusat Bantuan Guru
+                  {t("Pusat Bantuan Guru", "Teacher Help Center")}
                 </span>
-                <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Bantuan / Tiket</h1>
+                <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">{t("Bantuan / Tiket", "Help / Tickets")}</h1>
                 <p className="text-slate-100 text-xs sm:text-sm leading-relaxed opacity-90">
-                  Ajukan kendala teknis atau pertanyaan seputar pembelajaran. Pantau status tiket yang
-                  telah Anda buat di bawah ini.
+                  {t("Ajukan kendala teknis atau pertanyaan seputar pembelajaran. Pantau status tiket yang telah Anda buat di bawah ini.", "Submit technical issues or learning-related questions. Track the status of tickets you have created below.")}
                 </p>
               </div>
 
@@ -522,7 +526,7 @@ function HelpdeskContent() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
                 </svg>
-                <span>Buat Tiket</span>
+                <span>{t("Buat Tiket", "Create Ticket")}</span>
               </button>
             </div>
           </div>
@@ -540,7 +544,7 @@ function HelpdeskContent() {
             <button
               onClick={() => setSuccessMsg("")}
               className="text-emerald-500 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
-              aria-label="Tutup notifikasi"
+              aria-label={t("Tutup notifikasi", "Close notification")}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -556,7 +560,7 @@ function HelpdeskContent() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            Memuat daftar tiket...
+            {t("Memuat daftar tiket...", "Loading ticket list...")}
           </div>
         ) : error ? (
           <div className="bg-white rounded-3xl border border-slate-200/80 p-8 space-y-4 text-center dark:bg-slate-900 dark:border-slate-800">
@@ -566,7 +570,7 @@ function HelpdeskContent() {
                 onClick={() => setRefreshKey((k) => k + 1)}
                 className="text-xs font-semibold text-[#0047A5] hover:text-[#109B51] transition-colors dark:text-blue-400 dark:hover:text-emerald-400"
               >
-                Coba lagi
+                {t("Coba lagi", "Try again")}
               </button>
             </div>
           </div>
@@ -577,31 +581,30 @@ function HelpdeskContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">Belum ada tiket.</p>
+            <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">{t("Belum ada tiket.", "No tickets yet.")}</p>
             <p className="text-slate-400 text-xs dark:text-slate-500">
-              Klik <span className="font-semibold text-slate-500 dark:text-slate-400">Buat Tiket</span> untuk mengajukan
-              bantuan pertama Anda.
+              {t("Klik", "Click")} <span className="font-semibold text-slate-500 dark:text-slate-400">{t("Buat Tiket", "Create Ticket")}</span> {t("untuk mengajukan bantuan pertama Anda.", "to submit your first help request.")}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {tickets.map((t, idx) => {
-              const badge = getStatusBadge(t.status);
+            {tickets.map((tk, idx) => {
+              const badge = getStatusBadge(tk.status, t);
               const rowInner = (
                 <>
                   <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md dark:bg-slate-800 dark:text-slate-500">
-                        {getTicketNumber(t)}
+                        {getTicketNumber(tk)}
                       </span>
                       <span className="text-[11px] font-semibold text-[#0047A5] bg-[#419AD6]/10 border border-[#419AD6]/20 px-2 py-0.5 rounded-md">
-                        {getCategory(t)}
+                        {getCategory(tk)}
                       </span>
                     </div>
                     <h3 className="text-sm font-bold text-slate-900 leading-snug truncate dark:text-slate-100">
-                      {getSubject(t)}
+                      {getSubject(tk, t)}
                     </h3>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">Dibuat {getCreatedDate(t)}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{t("Dibuat", "Created")} {getCreatedDate(tk)}</p>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
@@ -610,7 +613,7 @@ function HelpdeskContent() {
                     >
                       {badge.label}
                     </span>
-                    {t.id && (
+                    {tk.id && (
                       <svg
                         className="w-4 h-4 text-slate-300 dark:text-slate-600"
                         fill="none"
@@ -627,11 +630,11 @@ function HelpdeskContent() {
               const rowClass =
                 "bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200 dark:bg-slate-900 dark:border-slate-800";
 
-              return t.id ? (
+              return tk.id ? (
                 <button
-                  key={t.id}
+                  key={tk.id}
                   type="button"
-                  onClick={() => handleOpenDetailModal(t.id!)}
+                  onClick={() => handleOpenDetailModal(tk.id!)}
                   className={`${rowClass} hover:border-[#419AD6]/60 hover:shadow-md w-full text-left cursor-pointer`}
                 >
                   {rowInner}
@@ -662,23 +665,22 @@ function HelpdeskContent() {
               />
             </svg>
             <h2 id="saran-masukan-heading" className="text-sm font-bold text-slate-700 dark:text-slate-200">
-              Saran &amp; Masukan
+              {t("Saran & Masukan", "Feedback & Suggestions")}
             </h2>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 space-y-4 dark:bg-slate-900 dark:border-slate-800">
             <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
-              Sampaikan saran dan masukan untuk sebuah course. Untuk kendala teknis, gunakan
-              fitur tiket bantuan di atas.
+              {t("Sampaikan saran dan masukan untuk sebuah course. Untuk kendala teknis, gunakan fitur tiket bantuan di atas.", "Share feedback and suggestions for a course. For technical issues, use the helpdesk ticket feature above.")}
             </p>
 
             {coursesLoading ? (
-              <p className="text-xs text-slate-400 dark:text-slate-500">Memuat daftar course...</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">{t("Memuat daftar course...", "Loading course list...")}</p>
             ) : coursesError ? (
               <p className="text-xs text-rose-500 dark:text-rose-400">{coursesError}</p>
             ) : courses.length === 0 ? (
               <p className="text-xs italic text-slate-400 dark:text-slate-500">
-                Belum ada course yang tersedia untuk diberi saran &amp; masukan.
+                {t("Belum ada course yang tersedia untuk diberi saran & masukan.", "No courses available to give feedback & suggestions yet.")}
               </p>
             ) : (
               <>
@@ -687,7 +689,7 @@ function HelpdeskContent() {
                     htmlFor="saran-course-select"
                     className="text-xs font-semibold text-slate-600 dark:text-slate-300"
                   >
-                    Pilih Course <span className="text-red-500">*</span>
+                    {t("Pilih Course", "Select Course")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="saran-course-select"
@@ -732,12 +734,12 @@ function HelpdeskContent() {
               />
             </svg>
             <h2 id="tutorial-heading" className="text-sm font-bold text-slate-700 dark:text-slate-200">
-              Panduan Singkat
+              {t("Panduan Singkat", "Quick Guide")}
             </h2>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden dark:bg-slate-900 dark:border-slate-800 dark:divide-slate-800">
-            {TUTORIAL_ITEMS.map((item, idx) => {
+            {getTutorialItems(t).map((item, idx) => {
               const isOpen = openTutorials.includes(idx);
               const panelId = `tutorial-panel-${idx}`;
               const btnId = `tutorial-btn-${idx}`;
@@ -798,12 +800,12 @@ function HelpdeskContent() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Buat Tiket Baru</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{t("Buat Tiket Baru", "Create New Ticket")}</h2>
               <button
                 onClick={handleCloseCreateModal}
                 disabled={submitting}
                 className="text-slate-400 hover:text-slate-600 disabled:opacity-50 dark:hover:text-slate-200"
-                aria-label="Tutup"
+                aria-label={t("Tutup", "Close")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -816,14 +818,14 @@ function HelpdeskContent() {
 
               <div className="space-y-1.5">
                 <label htmlFor="create-subject" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  Subjek <span className="text-red-500">*</span>
+                  {t("Subjek", "Subject")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="create-subject"
                   type="text"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Ringkasan singkat kendala Anda"
+                  placeholder={t("Ringkasan singkat kendala Anda", "A brief summary of your issue")}
                   className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                   required
                 />
@@ -831,11 +833,11 @@ function HelpdeskContent() {
 
               <div className="space-y-1.5">
                 <label htmlFor="create-category" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  Kategori <span className="text-red-500">*</span>
+                  {t("Kategori", "Category")} <span className="text-red-500">*</span>
                 </label>
                 {categoriesLoading ? (
                   <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700">
-                    Memuat kategori...
+                    {t("Memuat kategori...", "Loading categories...")}
                   </p>
                 ) : categoriesError ? (
                   <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
@@ -843,7 +845,7 @@ function HelpdeskContent() {
                   </p>
                 ) : ticketCategories.length === 0 ? (
                   <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700">
-                    Kategori tiket belum tersedia.
+                    {t("Kategori tiket belum tersedia.", "Ticket categories not available yet.")}
                   </p>
                 ) : (
                   <select
@@ -854,7 +856,7 @@ function HelpdeskContent() {
                     required
                   >
                     <option value="" disabled>
-                      Pilih kategori
+                      {t("Pilih kategori", "Select category")}
                     </option>
                     {ticketCategories.map((c) => (
                       <option key={c.value} value={c.value}>
@@ -867,14 +869,14 @@ function HelpdeskContent() {
 
               <div className="space-y-1.5">
                 <label htmlFor="create-description" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  Deskripsi <span className="text-red-500">*</span>
+                  {t("Deskripsi", "Description")} <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="create-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
-                  placeholder="Jelaskan kendala Anda selengkap mungkin..."
+                  placeholder={t("Jelaskan kendala Anda selengkap mungkin...", "Describe your issue in as much detail as possible...")}
                   className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all resize-y dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                   required
                 />
@@ -887,14 +889,14 @@ function HelpdeskContent() {
                   disabled={submitting}
                   className="text-sm text-slate-600 hover:text-slate-800 font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 dark:text-slate-300 dark:hover:text-slate-100"
                 >
-                  Batal
+                  {t("Batal", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="inline-flex items-center gap-2 text-sm bg-[#109B51] hover:bg-[#0e8847] text-white font-semibold px-5 py-2.5 rounded-xl shadow-md transition-colors duration-200 disabled:opacity-60"
                 >
-                  {submitting ? "Mengirim..." : "Kirim Tiket"}
+                  {submitting ? t("Mengirim...", "Sending...") : t("Kirim Tiket", "Send Ticket")}
                 </button>
               </div>
             </form>
@@ -914,12 +916,12 @@ function HelpdeskContent() {
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0 dark:border-slate-800">
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Detail Tiket</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{t("Detail Tiket", "Ticket Detail")}</h2>
               <button
                 onClick={handleCloseDetailModal}
                 disabled={replySending}
                 className="text-slate-400 hover:text-slate-600 disabled:opacity-50 dark:hover:text-slate-200"
-                aria-label="Tutup"
+                aria-label={t("Tutup", "Close")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -935,7 +937,7 @@ function HelpdeskContent() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Memuat detail tiket...
+                  {t("Memuat detail tiket...", "Loading ticket detail...")}
                 </div>
               ) : detailError ? (
                 <div className="text-center space-y-3 py-8">
@@ -945,13 +947,13 @@ function HelpdeskContent() {
                       onClick={() => fetchTicketDetail(detailTicketId)}
                       className="text-xs font-semibold text-[#0047A5] hover:text-[#109B51] transition-colors dark:text-blue-400 dark:hover:text-emerald-400"
                     >
-                      Coba lagi
+                      {t("Coba lagi", "Try again")}
                     </button>
                   </div>
                 </div>
               ) : !detailTicket ? (
                 <div className="text-center py-8">
-                  <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">Tiket tidak ditemukan.</p>
+                  <p className="text-slate-600 text-sm font-semibold dark:text-slate-300">{t("Tiket tidak ditemukan.", "Ticket not found.")}</p>
                 </div>
               ) : (
                 <>
@@ -978,7 +980,7 @@ function HelpdeskContent() {
                     </div>
 
                     <h3 className="text-base font-extrabold text-slate-900 leading-snug dark:text-slate-100">
-                      {getSubject(detailTicket)}
+                      {getSubject(detailTicket, t)}
                     </h3>
 
                     {detailDescription && (
@@ -989,7 +991,7 @@ function HelpdeskContent() {
 
                     <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap dark:text-slate-500">
                       {detailTicket.user?.nama && (
-                        <span>Dibuat oleh {detailTicket.user.nama}</span>
+                        <span>{t("Dibuat oleh", "Created by")} {detailTicket.user.nama}</span>
                       )}
                       {(detailTicket.createdAt || detailTicket.created_at) && (
                         <span>• {formatDateTime(detailTicket.createdAt || detailTicket.created_at)}</span>
@@ -999,13 +1001,13 @@ function HelpdeskContent() {
 
                   {/* Percakapan */}
                   <div className="space-y-3">
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Percakapan</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">{t("Percakapan", "Conversation")}</h3>
 
                     {detailReplies.length === 0 ? (
                       <div className="text-center py-8 bg-slate-50/60 rounded-2xl border border-slate-100 dark:bg-slate-800/60 dark:border-slate-700">
-                        <p className="text-slate-500 text-sm font-medium dark:text-slate-400">Belum ada balasan pada tiket ini.</p>
+                        <p className="text-slate-500 text-sm font-medium dark:text-slate-400">{t("Belum ada balasan pada tiket ini.", "No replies on this ticket yet.")}</p>
                         <p className="text-slate-400 text-xs mt-1 dark:text-slate-500">
-                          Tulis pesan di bawah untuk memulai percakapan.
+                          {t("Tulis pesan di bawah untuk memulai percakapan.", "Write a message below to start the conversation.")}
                         </p>
                       </div>
                     ) : (
@@ -1026,7 +1028,7 @@ function HelpdeskContent() {
                               >
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                                   <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                                    {r.sender?.nama || "Pengguna"}
+                                    {r.sender?.nama || t("Pengguna", "User")}
                                   </span>
                                   <span
                                     className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
@@ -1035,7 +1037,7 @@ function HelpdeskContent() {
                                         : "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
                                     }`}
                                   >
-                                    {getSenderRoleLabel(r.sender?.role)}
+                                    {getSenderRoleLabel(r.sender?.role, t)}
                                   </span>
                                 </div>
                                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap break-words dark:text-slate-300">
@@ -1056,16 +1058,16 @@ function HelpdeskContent() {
                   {/* Form Balasan */}
                   {ticketIsClosed ? (
                     <div className="text-center py-3 text-sm text-slate-400 font-medium bg-slate-50/60 rounded-2xl border border-slate-100 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-500">
-                      Tiket sudah ditutup. Tidak dapat mengirim balasan.
+                      {t("Tiket sudah ditutup. Tidak dapat mengirim balasan.", "The ticket is closed. You cannot send a reply.")}
                     </div>
                   ) : requesterBlocked ? (
                     <div className="text-center py-3 text-sm text-amber-700 font-medium bg-amber-50 rounded-2xl border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                      Anda sudah mengirim 2 pesan. Silakan tunggu balasan admin.
+                      {t("Anda sudah mengirim 2 pesan. Silakan tunggu balasan admin.", "You have sent 2 messages. Please wait for an admin reply.")}
                     </div>
                   ) : (
                     <form onSubmit={handleReply} className="space-y-3">
                       <label htmlFor="detail-reply" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                        Tulis Balasan
+                        {t("Tulis Balasan", "Write a Reply")}
                       </label>
                       {replyError && <p className="alert-error">{replyError}</p>}
                       <textarea
@@ -1073,7 +1075,7 @@ function HelpdeskContent() {
                         value={replyMessage}
                         onChange={(e) => setReplyMessage(e.target.value)}
                         rows={3}
-                        placeholder="Ketik pesan balasan Anda..."
+                        placeholder={t("Ketik pesan balasan Anda...", "Type your reply message...")}
                         className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#419AD6]/40 transition-all resize-y dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:bg-slate-800"
                         required
                       />
@@ -1083,7 +1085,7 @@ function HelpdeskContent() {
                           disabled={replySending}
                           className="inline-flex items-center gap-2 text-sm bg-[#109B51] hover:bg-[#0e8847] text-white font-semibold px-5 py-2.5 rounded-xl shadow-md transition-colors duration-200 disabled:opacity-60"
                         >
-                          {replySending ? "Mengirim..." : "Kirim Balasan"}
+                          {replySending ? t("Mengirim...", "Sending...") : t("Kirim Balasan", "Send Reply")}
                         </button>
                       </div>
                     </form>
