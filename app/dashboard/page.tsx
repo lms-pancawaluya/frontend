@@ -7,6 +7,7 @@ import Link from "next/link";
 import Header from "@/app/components/common/Header";
 import { getModules } from "@/services/module.service";
 import { getProgress } from "@/services/progress.service";
+import { getCourses } from "@/services/course.service";
 import { useApp } from "@/app/context/AppContext";
 
 interface User {
@@ -67,6 +68,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [totalModules, setTotalModules] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
+  const [courseProgressPercent, setCourseProgressPercent] = useState<number | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -88,15 +90,30 @@ export default function DashboardPage() {
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoadingProgress(true);
-      const [modulesData, progressData] = await Promise.all([
-        getModules(),
-        getProgress(),
+      const [coursesData, modulesData, progressData] = await Promise.all([
+        getCourses().catch(() => []),
+        getModules().catch(() => []),
+        getProgress().catch(() => []),
       ]);
 
+      const coursesArr = Array.isArray(coursesData)
+        ? coursesData
+        : Array.isArray((coursesData as { data?: unknown }).data)
+        ? ((coursesData as { data: unknown[] }).data as { progressPercentage?: number }[])
+        : [];
       const modulesArr = Array.isArray(modulesData) ? modulesData : [];
       const progressArr = Array.isArray(progressData) ? progressData : [];
 
       setTotalModules(modulesArr.length);
+
+      if (coursesArr.length > 0) {
+        const avg = Math.round(
+          coursesArr.reduce((acc, c) => acc + (c.progressPercentage ?? 0), 0) / coursesArr.length
+        );
+        setCourseProgressPercent(avg);
+      } else {
+        setCourseProgressPercent(null);
+      }
 
       const selesai = progressArr.filter((p: unknown) => {
         const pp = p as { status?: string; isCompleted?: boolean; selesai?: boolean };
@@ -193,8 +210,7 @@ export default function DashboardPage() {
       ? t("Selamat sore", "Good evening")
       : t("Selamat malam", "Good evening");
 
-  const progressPercent =
-    totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+  const progressPercent = courseProgressPercent ?? 0;
 
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-800 flex flex-col justify-between leading-normal relative overflow-hidden dark:bg-slate-900/70 dark:text-slate-200">

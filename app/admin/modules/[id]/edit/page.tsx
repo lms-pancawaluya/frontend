@@ -12,6 +12,10 @@ import { useApp } from "@/app/context/AppContext";
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer", "umum"];
 
+function dateInputValue(value?: string | null) {
+  return value ? String(value).slice(0, 10) : "";
+}
+
 interface ContentItem {
   id: string;
   judul: string;
@@ -31,6 +35,8 @@ export default function EditModulePage() {
     deskripsi: "",
     aspekPancawaluya: "cageur",
     urutan: 1,
+    tanggalMulai: "",
+    tanggalSelesai: "",
   });
 
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -116,6 +122,8 @@ export default function EditModulePage() {
           deskripsi: moduleData.deskripsi || "",
           aspekPancawaluya: moduleData.aspekPancawaluya,
           urutan: moduleData.urutan,
+          tanggalMulai: dateInputValue(moduleData.tanggalMulai || moduleData.startDate || moduleData.waktuMulai),
+          tanggalSelesai: dateInputValue(moduleData.tanggalSelesai || moduleData.endDate || moduleData.waktuSelesai),
         });
 
         setContents(contentsData);
@@ -149,7 +157,11 @@ export default function EditModulePage() {
     setSaving(true);
 
     try {
-      await updateModule(id, formData);
+      await updateModule(id, {
+        ...formData,
+        tanggalMulai: formData.tanggalMulai || null,
+        tanggalSelesai: formData.tanggalSelesai || null,
+      });
       router.push(`/admin/modules/${id}`);
     } catch (err) {
       if (err instanceof Error) {
@@ -388,6 +400,36 @@ export default function EditModulePage() {
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
+                    {t("Tanggal Mulai Modul (Opsional)", "Module Start Date (Optional)")}
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggalMulai"
+                    value={formData.tanggalMulai}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider dark:text-slate-300">
+                    {t("Tanggal Selesai Modul (Opsional)", "Module End Date (Optional)")}
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggalSelesai"
+                    value={formData.tanggalSelesai}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t("Kosongkan jadwal modul jika ingin mengikuti jadwal Course.", "Leave module schedule blank to follow Course schedule.")}
+              </p>
             </div>
 
             <div className="flex justify-end pt-2 gap-3">

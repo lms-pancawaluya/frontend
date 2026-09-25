@@ -9,7 +9,9 @@ import {
   submitEvaluation,
 } from "@/services/evaluation.service";
 import { getModuleById } from "@/services/module.service";
+import { getCourseById } from "@/services/course.service";
 import { isPostTestLocked, readModuleStageProgress, type ModuleStageProgress } from "@/lib/moduleStages";
+import { getScheduleStatus, type ScheduleStatus } from "@/lib/schedule";
 import {
   isPreTest,
   isPostTest,
@@ -41,6 +43,8 @@ export default function EvaluationDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   // Validasi prerequisite Post-Test berbasis progress BE (bukan sekadar lock tombol).
   const [stageBlocked, setStageBlocked] = useState(false);
+  const [scheduleBlocked, setScheduleBlocked] = useState(false);
+  const [scheduleLockReason, setScheduleLockReason] = useState<ScheduleStatus>("open");
   // Status stage terbaru dari BE (source of truth), di-refresh setelah submit.
   const [moduleStage, setModuleStage] = useState<ModuleStageProgress>({});
   const [courseId, setCourseId] = useState<string | null>(courseIdFromUrl);
@@ -68,8 +72,8 @@ export default function EvaluationDetailPage() {
       setLoading(true);
       setLoadError(null);
       setStageBlocked(false);
+      setScheduleBlocked(false);
       try {
-        // Ambil data module & daftar evaluasi & detail soal secara paralel.
         const [moduleData, list, detail] = await Promise.all([
           getModuleById(moduleId).catch(() => null),
           getModuleEvaluations(moduleId) as Promise<EvaluationSummary[]>,
@@ -77,8 +81,21 @@ export default function EvaluationDetailPage() {
         ]);
 
         const moduleCourseId = moduleData?.courseId || moduleData?.course_id || null;
+        let courseData = null;
         if (moduleCourseId) {
           setCourseId(moduleCourseId);
+          try {
+            courseData = await getCourseById(moduleCourseId);
+          } catch {
+            courseData = null;
+          }
+        }
+
+        const schedStatus = getScheduleStatus(moduleData, courseData);
+        if (schedStatus !== "open") {
+          setScheduleLockReason(schedStatus);
+          setScheduleBlocked(true);
+          return;
         }
 
         const currentSummary = Array.isArray(list)
@@ -204,6 +221,30 @@ export default function EvaluationDetailPage() {
   }
 
   const courseDetailUrl = courseId ? `/modules/courses/${courseId}` : `/modules?moduleId=${moduleId}`;
+
+  if (scheduleBlocked) {
+    const isNotStarted = scheduleLockReason === "not_started";
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-8 space-y-3 dark:border-amber-800 dark:bg-amber-950/40">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 mb-1">
+            {isNotStarted ? t("Belum Dibuka", "Not Opened Yet") : t("Sudah Ditutup", "Closed")}
+          </span>
+          <p className="text-xs font-medium text-amber-900 dark:text-amber-200 leading-relaxed">
+            {isNotStarted
+              ? t("Modul ini belum dapat diakses karena jadwal pembelajaran belum dimulai.", "This module cannot be accessed yet because the schedule has not started.")
+              : t("Masa akses modul ini telah berakhir.", "The access period for this module has ended.")}
+          </p>
+          <button
+            onClick={() => router.push(courseDetailUrl)}
+            className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-full transition dark:bg-slate-700 dark:hover:bg-slate-600"
+          >
+            {t("Kembali ke Detail Course", "Back to Course Detail")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (stageBlocked) {
     return (

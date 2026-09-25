@@ -1,273 +1,287 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { cekNipGuru, cariSekolah, SekolahItem } from "@/services/registration.service";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { lookupMasterGuru, registerGuru } from "@/services/registration.service";
 import { useApp } from "@/app/context/AppContext";
 
-interface FormValues {
-  nip: string;
-  namaGuru: string;
-  npsnSekolah: string;
-  namaSekolah: string;
-  kotaKab: string;
-  kecamatan: string;
-}
-
 export default function RegisterGuruForm() {
+  const router = useRouter();
   const { t } = useApp();
-  const { register, setValue, control, handleSubmit } = useForm<FormValues>({
-    defaultValues: {
-      nip: "",
-      namaGuru: "",
-      npsnSekolah: "",
-      namaSekolah: "",
-      kotaKab: "",
-      kecamatan: "",
-    },
+  const [formData, setFormData] = useState({
+    nip: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
-
-  // State Kontrol UI
-  const [isNipFound, setIsNipFound] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [checkingNip, setCheckingNip] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
-  // State Autocomplete Sekolah
-  const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
-  const [schoolOptions, setSchoolOptions] = useState<SekolahItem[]>([]);
-  const [isSearchingSchool, setIsSearchingSchool] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const formatNIP = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 18);
+    const parts = [];
+    if (digits.length > 0) parts.push(digits.slice(0, 4));
+    if (digits.length > 4) parts.push(digits.slice(4, 6));
+    if (digits.length > 6) parts.push(digits.slice(6, 8));
+    if (digits.length > 8) parts.push(digits.slice(8, 12));
+    if (digits.length > 12) parts.push(digits.slice(12, 14));
+    if (digits.length > 14) parts.push(digits.slice(14, 15));
+    if (digits.length > 15) parts.push(digits.slice(15, 18));
+    return parts.join("-");
+  };
 
-  const watchNip = useWatch({ control, name: "nip" });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === "nip") {
+      setFormData((prev) => ({ ...prev, nip: formatNIP(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
-  // Handler 1: Cek Nip saat Event onBlur / Klik Tombol
   const handleCekNip = async () => {
-    if (!watchNip || watchNip.trim() === "") return;
+    const nipRaw = formData.nip.trim();
+    if (!nipRaw) {
+      setError(t("Masukkan NIP terlebih dahulu.", "Please enter NIP first."));
+      return;
+    }
 
     setCheckingNip(true);
-    setToastMessage(null);
+    setError(null);
+    setInfoMsg(null);
 
     try {
-      const res = await cekNipGuru(watchNip);
-      if (res.success && res.data) {
-        // Auto-fill form
-        setValue("namaGuru", res.data.namaGuru);
-        setValue("npsnSekolah", res.data.npsnSekolah);
-        setValue("namaSekolah", res.data.namaSekolah);
-        setValue("kotaKab", res.data.kotaKab);
-        setValue("kecamatan", res.data.kecamatan);
-
-        setIsNipFound(true);
-      }
+      const data = await lookupMasterGuru(nipRaw);
+      const namaGuru = data.nama || data.namaGuru || data.nama_guru || "";
+      const sekolah = data.sekolah || data.namaSekolah || data.nama_sekolah || "";
+      const detail = [namaGuru, sekolah].filter(Boolean).join(" - ");
+      setInfoMsg(
+        detail
+          ? `${t("Data Guru ditemukan:", "Teacher data found:")} ${detail}`
+          : t("Data NIP ditemukan di Master Guru.", "NIP data found in Master Guru.")
+      );
     } catch (err: unknown) {
-      const status = err && typeof err === "object" && "response" in err
-        ? (err.response as { status?: number }).status
-        : undefined;
-
-      if (status === 404) {
-        setIsNipFound(false);
-        setToastMessage(
-          t("Data NIP tidak ditemukan di master data. Silakan isi data nama & sekolah secara manual.", "NIP data not found in master data. Please fill in the name & school data manually.")
-        );
-        // Reset field yang terkait agar dapat diisi manual
-        setValue("namaGuru", "");
-        setValue("npsnSekolah", "");
-        setValue("namaSekolah", "");
-        setValue("kotaKab", "");
-        setValue("kecamatan", "");
-      } else {
-        setToastMessage(t("Terjadi kesalahan saat memeriksa NIP.", "An error occurred while checking NIP."));
-      }
+      setError(err instanceof Error ? err.message : t("Data NIP tidak ditemukan.", "NIP data not found."));
     } finally {
       setCheckingNip(false);
     }
   };
 
-  // Handler 2: Debounce Search Sekolah (~300ms)
-  const fetchSekolah = useCallback(async (query: string) => {
-    if (query.trim().length < 3) {
-      setSchoolOptions([]);
-      setShowDropdown(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (formData.password !== formData.confirmPassword) {
+      setError(t("Konfirmasi password tidak cocok.", "Password confirmation does not match."));
       return;
     }
 
-    setIsSearchingSchool(true);
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
     try {
-      const res = await cariSekolah(query);
-      if (res.success) {
-        setSchoolOptions(res.data || []);
-        setShowDropdown(true);
-      }
-    } catch (error) {
-      console.error("Gagal mengambil data sekolah:", error);
+      await registerGuru({
+        nip: formData.nip,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      setSuccessMsg(t("Registrasi Guru berhasil!", "Teacher registration successful!"));
+
+      setTimeout(() => {
+        const rawUser = localStorage.getItem("user");
+        let role = "";
+        if (rawUser) {
+          try {
+            role = JSON.parse(rawUser)?.role || "";
+          } catch {
+            role = "";
+          }
+        }
+
+        if (role === "admin") {
+          router.push("/admin/users");
+        } else if (role === "pengajar") {
+          router.push("/pengajar/guru");
+        } else {
+          router.push("/login");
+        }
+      }, 1500);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("Gagal mendaftar. Silakan coba lagi.", "Failed to register. Please try again."));
     } finally {
-      setIsSearchingSchool(false);
+      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      if (!isNipFound) {
-        void fetchSekolah(schoolSearchQuery);
-      }
-    }, 300);
-
-    return () => clearTimeout(handler);
-  }, [schoolSearchQuery, isNipFound, fetchSekolah]);
-
-  // Handler ketika user memilih sekolah dari dropdown
-  const handleSelectSekolah = (sekolah: SekolahItem) => {
-    setValue("npsnSekolah", sekolah.npsn);
-    setValue("namaSekolah", sekolah.nama);
-    setValue("kotaKab", sekolah.kotaKab);
-    setValue("kecamatan", sekolah.kecamatan);
-    setSchoolSearchQuery(sekolah.nama);
-    setShowDropdown(false);
-  };
-
-  const onSubmit = (data: FormValues) => {
-    console.log("Data Pendaftaran disubmit:", data);
   };
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
-      <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("Registrasi Data Guru", "Teacher Data Registration")}</h2>
+      <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+        {t("Registrasi Data Guru", "Teacher Data Registration")}
+      </h2>
 
-      {/* Toast Notification Alert */}
-      {toastMessage && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl flex items-start justify-between gap-2 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-          <span>{toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="font-bold text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-200"
-          >
-            ✕
-          </button>
+      {error && (
+        <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-xs">
-        {/* NIP Input */}
+      {infoMsg && (
+        <div className="p-3.5 bg-sky-50 border border-sky-200 text-sky-800 text-xs rounded-xl flex items-center gap-2 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{infoMsg}</span>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl flex items-center gap-2 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>{successMsg}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         <div>
-          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("NIP", "NIP")}</label>
+          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">
+            {t("NIP (Nomor Induk Pegawai)", "NIP (Employee Identification Number)")}
+          </label>
           <div className="flex gap-2">
-            <input
-              {...register("nip")}
-              type="text"
-              placeholder={t("Masukkan NIP", "Enter NIP")}
-              onBlur={handleCekNip}
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
-            />
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                name="nip"
+                maxLength={24}
+                required
+                value={formData.nip}
+                onChange={handleChange}
+                placeholder={t("Masukkan NIP", "Enter NIP")}
+                className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+              />
+            </div>
             <button
               type="button"
               onClick={handleCekNip}
               disabled={checkingNip}
-              className="px-4 py-2.5 bg-[#0047A5] hover:bg-[#00367d] text-white font-semibold rounded-xl disabled:opacity-50 transition-colors"
+              className="px-4 py-2.5 bg-[#0047A5] hover:bg-[#00367d] text-white font-semibold rounded-xl disabled:opacity-50 transition-colors shrink-0"
             >
               {checkingNip ? t("Memeriksa...", "Checking...") : t("Cek NIP", "Check NIP")}
             </button>
           </div>
         </div>
 
-        {/* Nama Guru */}
         <div>
-          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Nama Guru", "Teacher Name")}</label>
-          <input
-            {...register("namaGuru")}
-            type="text"
-            disabled={isNipFound}
-            placeholder={t("Nama lengkap guru", "Teacher's full name")}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 disabled:bg-slate-100 disabled:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:disabled:bg-slate-900 dark:disabled:text-slate-400"
-          />
+          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">
+            {t("Email", "Email")}
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <input
+              type="email"
+              name="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="nama@gmail.com"
+              className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+            />
+          </div>
         </div>
 
-        {/* Pencarian Sekolah (Autocomplete UI) - Hanya aktif jika NIP tidak ditemukan */}
-        {!isNipFound ? (
+        <div>
+          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">
+            {t("Password", "Password")}
+          </label>
           <div className="relative">
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Cari Sekolah", "Search School")}</label>
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
             <input
-              type="text"
-              value={schoolSearchQuery}
-              onChange={(e) => setSchoolSearchQuery(e.target.value)}
-              placeholder={t("Ketik minimal 3 karakter nama sekolah...", "Type at least 3 characters of the school name...")}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              placeholder={t("Buat password", "Create password")}
+              className="w-full pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
             />
-
-            {/* Dropdown Options */}
-            {showDropdown && (
-              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-56 overflow-y-auto py-1 dark:bg-slate-800 dark:border-slate-700">
-                {isSearchingSchool ? (
-                  <p className="p-3 text-slate-400 text-center dark:text-slate-500">{t("Mencari sekolah...", "Searching schools...")}</p>
-                ) : schoolOptions.length > 0 ? (
-                  schoolOptions.map((sekolah) => (
-                    <button
-                      type="button"
-                      key={sekolah.id}
-                      onClick={() => handleSelectSekolah(sekolah)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors dark:hover:bg-slate-700/60 dark:border-slate-700"
-                    >
-                      <p className="font-bold text-slate-800 dark:text-slate-100">{sekolah.nama}</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                        NPSN: {sekolah.npsn} | {sekolah.kecamatan}, {sekolah.kotaKab}
-                      </p>
-                    </button>
-                  ))
-                ) : (
-                  <p className="p-3 text-slate-400 text-center dark:text-slate-500">{t("Sekolah tidak ditemukan", "School not found")}</p>
-                )}
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              {showPassword ? t("Sembunyi", "Hide") : t("Lihat", "Show")}
+            </button>
           </div>
-        ) : null}
+        </div>
 
-        {/* Detail Sekolah (Readonly Fields) */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("NPSN Sekolah", "School NPSN")}</label>
+        <div>
+          <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">
+            {t("Konfirmasi Password", "Confirm Password")}
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
             <input
-              {...register("npsnSekolah")}
-              type="text"
-              disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              required
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder={t("Ulangi password Anda", "Repeat your password")}
+              className="w-full pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
             />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Nama Sekolah", "School Name")}</label>
-            <input
-              {...register("namaSekolah")}
-              type="text"
-              disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Kota / Kabupaten", "City / Regency")}</label>
-            <input
-              {...register("kotaKab")}
-              type="text"
-              disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1 dark:text-slate-300">{t("Kecamatan", "District")}</label>
-            <input
-              {...register("kecamatan")}
-              type="text"
-              disabled
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-600 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
-            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium transition dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              {showConfirmPassword ? t("Sembunyi", "Hide") : t("Lihat", "Show")}
+            </button>
           </div>
         </div>
 
         <button
           type="submit"
-          className="w-full mt-4 py-3 bg-[#109B51] hover:bg-[#0e8344] text-white font-bold rounded-xl transition-all shadow-md"
+          disabled={loading}
+          className="w-full mt-4 py-3 bg-[#109B51] hover:bg-[#0e8344] text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {t("Lanjutkan Pendaftaran", "Continue Registration")}
+          {loading ? (
+            <>
+              <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span>{t("Mendaftarkan...", "Registering...")}</span>
+            </>
+          ) : (
+            t("Daftar Akun Guru", "Register Teacher Account")
+          )}
         </button>
       </form>
     </div>

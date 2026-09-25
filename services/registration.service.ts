@@ -1,12 +1,19 @@
-import axios from "axios";
+import { API_URL, fetchApi } from "@/lib/api";
 
-const api = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL || ""}/api`,
-  headers: {
+function getToken() {
+  return typeof window !== "undefined" ? localStorage.getItem("token") : "";
+}
+
+function getJsonHeaders() {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true",
-  },
-});
+  };
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 export interface CekNipResponse {
   success: boolean;
@@ -35,13 +42,40 @@ export interface CariSekolahResponse {
 }
 
 export const cekNipGuru = async (nip: string): Promise<CekNipResponse> => {
-  const response = await api.get<CekNipResponse>(`/guru/cek-nip/${nip}`);
-  return response.data;
+  const response = await fetchApi(`${API_URL}/api/guru/cek-nip/${nip}`, {
+    headers: getJsonHeaders(),
+  });
+  return response.json();
 };
 
 export const cariSekolah = async (keyword: string): Promise<CariSekolahResponse> => {
-  const response = await api.get<CariSekolahResponse>(`/guru/cari-sekolah`, {
-    params: { q: keyword },
+  const response = await fetchApi(`${API_URL}/api/guru/cari-sekolah?q=${encodeURIComponent(keyword)}`, {
+    headers: getJsonHeaders(),
   });
-  return response.data;
+  return response.json();
 };
+
+export async function lookupMasterGuru(nip: string) {
+  const response = await fetchApi(`${API_URL}/api/master-guru/lookup?nip=${encodeURIComponent(nip)}`, {
+    method: "GET",
+    headers: getJsonHeaders(),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.sukses === false || data.success === false) {
+    throw new Error(data.pesan || data.message || "Data NIP tidak ditemukan.");
+  }
+  return data.data || data;
+}
+
+export async function registerGuru(payload: { nip: string; email: string; password: string }) {
+  const response = await fetchApi(`${API_URL}/api/auth/register-guru`, {
+    method: "POST",
+    headers: getJsonHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.sukses === false || data.success === false) {
+    throw new Error(data.pesan || data.message || "Gagal mendaftarkan guru.");
+  }
+  return data;
+}

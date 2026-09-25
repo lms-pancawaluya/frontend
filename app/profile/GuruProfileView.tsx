@@ -249,8 +249,6 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
 
   const [initialProfileState] = useState(() => getInitialProfileState(profile));
   const [formData, setFormData] = useState(initialProfileState.formData);
-  const [selectedDaerah, setSelectedDaerah] = useState<string>(initialProfileState.selectedDaerah);
-  const [ketikManual, setKetikManual] = useState<boolean>(initialProfileState.ketikManual);
 
   const [activeTab, setActiveTab] = useState<"profil" | "progres" | "keamanan">(
     initialTab || "profil"
@@ -277,37 +275,11 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
     setFormData((prev) => ({ ...prev, noHp: value }));
   };
 
-  const handleDaerahChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const daerah = e.target.value;
-    setSelectedDaerah(daerah);
-    setFormData((prev) => ({ ...prev, sekolah: "", alamatSekolah: "" }));
-  };
-
-  const handleSekolahSelect = (e: ChangeEvent<HTMLSelectElement>) => {
-    const namaSekolah = e.target.value;
-    const listSekolah = DATA_SEKOLAH_JABAR[selectedDaerah] || [];
-    const itemTarget = listSekolah.find((s) => s.nama === namaSekolah);
-
-    setFormData((prev) => ({
-      ...prev,
-      sekolah: namaSekolah,
-      alamatSekolah: itemTarget ? itemTarget.alamat : "",
-    }));
-  };
-
   const handleUpdateProfile = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nama.trim()) {
-      setMessage({ type: "error", text: t("Mohon lengkapi form Nama Lengkap", "Please complete the Full Name field") });
-      return;
-    }
     if (!formData.email.trim()) {
       setMessage({ type: "error", text: t("Mohon lengkapi form Email", "Please complete the Email field") });
-      return;
-    }
-    if (!formData.sekolah.trim()) {
-      setMessage({ type: "error", text: t("Mohon pilih atau isi asal Sekolah Anda", "Please select or enter your School of origin") });
       return;
     }
     if (!formData.noHp.trim()) {
@@ -342,13 +314,19 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
     setMessage(null);
 
     try {
+      const updatePayload = {
+        email: formData.email,
+        noHp: formData.noHp,
+        gelar: formData.gelar,
+      };
+
       const res = await fetchApi(`${API_URL}/api/users/profile/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(updatePayload),
       });
 
       const json = await res.json();
@@ -357,13 +335,9 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
       const parsedUser = existingUser ? JSON.parse(existingUser) : {};
       const updatedUser = {
         ...parsedUser,
-        nama: formData.nama,
-        gelar: formData.gelar,
         email: formData.email,
-        nip: formData.nip,
-        sekolah: formData.sekolah,
-        alamatSekolah: formData.alamatSekolah,
         noHp: formData.noHp,
+        gelar: formData.gelar,
       };
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
@@ -596,17 +570,29 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-5">
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-2">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Nama Lengkap", "Full Name")}</label>
                 <input
                   type="text"
                   value={formData.nama}
-                  onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                  required
-                  placeholder={t("Masukkan Nama Lengkap", "Enter Full Name")}
-                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  disabled
+                  readOnly
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 />
+                <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">{t("Nama terdaftar secara resmi dan tidak dapat diubah.", "Name is officially registered and cannot be changed.")}</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 dark:text-slate-300">{t("Instansi Sekolah", "School Institution")}</label>
+                <input
+                  type="text"
+                  value={formData.sekolah || t("Sekolah Belum Diatur", "School Not Set")}
+                  disabled
+                  readOnly
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-100 text-slate-500 cursor-not-allowed outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                />
+                <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">{t("Data sekolah terdaftar secara resmi di Master Guru.", "School data is officially registered in Master Guru.")}</p>
               </div>
             </div>
 
@@ -634,105 +620,6 @@ function GuruProfileViewContent({ profile, onRefresh, initialTab, hideProgress =
                 />
                 <p className="text-[11px] text-slate-400 mt-1 dark:text-slate-500">{t("NIP terverifikasi secara resmi.", "NIP officially verified.")}</p>
               </div>
-            </div>
-
-            {/* BOX PILIH SEKOLAH & WILAYAH DISDIK JABAR */}
-            <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-4 dark:bg-slate-800/80 dark:border-slate-700">
-              <div className="flex justify-between items-center">
-                <label className="block text-xs font-bold text-slate-800 flex items-center gap-2 dark:text-slate-100">
-                  <svg className="w-4 h-4 text-[#0047A5] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0V5" />
-                  </svg>
-                  {t("Instansi Sekolah Wilayah Jawa Barat", "West Java Region School Institution")}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setKetikManual(!ketikManual);
-                    setSelectedDaerah("");
-                    setFormData((prev) => ({ ...prev, sekolah: "", alamatSekolah: "" }));
-                  }}
-                  className="text-xs text-[#0047A5] hover:text-[#002B66] font-semibold transition-colors dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  {ketikManual ? t("Pilih dari Daftar Wilayah", "Select from Region List") : t("Sekolah tidak ada? Ketik manual", "School not listed? Type manually")}
-                </button>
-              </div>
-
-              {!ketikManual ? (
-                <div className="space-y-3">
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Kabupaten / Kota", "Regency / City")}</label>
-                      <select
-                        value={selectedDaerah}
-                        onChange={handleDaerahChange}
-                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                      >
-                        <option value="">{t("-- Pilih Kab/Kota --", "-- Select Regency/City --")}</option>
-                        {Object.keys(DATA_SEKOLAH_JABAR).map((kota, idx) => (
-                          <option key={idx} value={kota}>
-                            {kota}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Nama Sekolah", "School Name")}</label>
-                      <select
-                        value={formData.sekolah}
-                        disabled={!selectedDaerah}
-                        onChange={handleSekolahSelect}
-                        className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white cursor-pointer text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:disabled:bg-slate-900"
-                      >
-                        <option value="">{t("-- Pilih Sekolah --", "-- Select School --")}</option>
-                        {selectedDaerah &&
-                          DATA_SEKOLAH_JABAR[selectedDaerah]?.map((s, idx) => (
-                            <option key={idx} value={s.nama}>
-                              {s.nama}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {formData.alamatSekolah && (
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Alamat Sekolah", "School Address")}</label>
-                      <textarea
-                        value={formData.alamatSekolah}
-                        readOnly
-                        rows={2}
-                        className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-slate-100 text-slate-600 outline-none resize-none cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Nama Sekolah", "School Name")}</label>
-                    <input
-                      type="text"
-                      value={formData.sekolah}
-                      onChange={(e) => setFormData({ ...formData, sekolah: e.target.value })}
-                      placeholder={t("Contoh: SMA Negeri 1 Bandung", "Example: SMA Negeri 1 Bandung")}
-                      required
-                      className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1 dark:text-slate-400">{t("Alamat Sekolah", "School Address")}</label>
-                    <input
-                      type="text"
-                      value={formData.alamatSekolah}
-                      onChange={(e) => setFormData({ ...formData, alamatSekolah: e.target.value })}
-                      placeholder={t("Masukkan jalan, kecamatan, kabupaten/kota", "Enter street, district, regency/city")}
-                      className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-[#0047A5]/20 focus:border-[#0047A5] outline-none bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             <div>

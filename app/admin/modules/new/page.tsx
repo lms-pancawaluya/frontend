@@ -26,6 +26,8 @@ function NewModuleForm() {
     deskripsi: "",
     aspekPancawaluya: "cageur",
     urutan: 1,
+    tanggalMulai: "",
+    tanggalSelesai: "",
   });
 
   const [error, setError] = useState("");
@@ -102,7 +104,11 @@ function NewModuleForm() {
     setLoading(true);
 
     try {
-      await createModule(formData);
+      await createModule({
+        ...formData,
+        tanggalMulai: formData.tanggalMulai || null,
+        tanggalSelesai: formData.tanggalSelesai || null,
+      });
       router.push("/admin/modules");
     } catch (err) {
       if (err instanceof Error) {
@@ -219,6 +225,32 @@ function NewModuleForm() {
           required
         />
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Tanggal Mulai (Opsional)", "Start Date (Optional)")}</label>
+          <input
+            type="date"
+            name="tanggalMulai"
+            value={formData.tanggalMulai}
+            onChange={handleChange}
+            className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[var(--color-navy)] mb-1 dark:text-slate-200">{t("Tanggal Selesai (Opsional)", "End Date (Optional)")}</label>
+          <input
+            type="date"
+            name="tanggalSelesai"
+            value={formData.tanggalSelesai}
+            onChange={handleChange}
+            className="w-full border border-[var(--color-border-soft)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+      </div>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        {t("Kosongkan jadwal modul jika ingin mengikuti jadwal Course.", "Leave module schedule blank to follow Course schedule.")}
+      </p>
 
       <button
         type="submit"

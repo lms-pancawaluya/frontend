@@ -7,12 +7,17 @@ export interface CourseModule {
   aspekPancawaluya?: string;
   urutan?: number;
   isLocked?: boolean;
+  tanggalMulai?: string;
+  tanggalSelesai?: string;
+  startDate?: string;
+  endDate?: string;
+  waktuMulai?: string;
+  waktuSelesai?: string;
   flowStatus?: {
     preTest?: string;
     postTest?: string;
   };
   progressPercentage?: number;
-  /** Per-stage completion flags provided by the backend (single source of truth). */
   preTestCompleted?: boolean;
   materialCompleted?: boolean;
   postTestCompleted?: boolean;
