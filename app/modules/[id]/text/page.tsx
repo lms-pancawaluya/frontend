@@ -164,7 +164,7 @@ function ModuleTextPageContent() {
       await completeContent(material.id);
       await refreshMaterialStatus();
       await getModuleById(moduleId).catch(() => null);
-      router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));
+      router.push(getMaterialRoute(moduleId, materials, currentIndex + 1, courseId));
     } catch (err) {
       setCompleteError(err instanceof Error ? err.message : t("Gagal menandai materi selesai.", "Failed to mark the material as complete."));
     } finally {
@@ -185,7 +185,7 @@ function ModuleTextPageContent() {
         setIsCompleting(false);
       }
     }
-    router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));
+    router.push(getMaterialRoute(moduleId, materials, currentIndex + 1, courseId));
   }
 
   async function handleTogglePreview() {

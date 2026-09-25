@@ -42,12 +42,16 @@ export function sortMaterialsByUrutan<T extends ModuleMaterial>(contents: T[]): 
 /**
  * Resolves the route for a given position in the ordered material list.
  * Video materials use the dedicated video route; every other supported
- * material uses the generic material route. Positions beyond the list route
- * to the Post-Test stage, preserving the Pre-Test → Material → Post-Test
- * sequencing.
+ * material uses the generic material route. Positions beyond the list return
+ * to the Course Detail.
  */
-export function getMaterialRoute(moduleId: string, materials: ModuleMaterial[], index: number): string {
-  if (index < 0 || index >= materials.length) return `/modules/${moduleId}/evaluations?stage=post`;
+export function getMaterialRoute(
+  moduleId: string,
+  materials: ModuleMaterial[],
+  index: number,
+  courseId?: string | null
+): string {
+  if (index < 0 || index >= materials.length) return courseId ? `/modules/courses/${courseId}` : "/modules";
   const material = materials[index];
   if (isVideoMaterial(material.tipe)) return `/modules/${moduleId}?i=${index}`;
   return `/modules/${moduleId}/text?i=${index}`;
