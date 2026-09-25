@@ -132,8 +132,16 @@ export default function AdminCourseDetailPage() {
 
   async function handleModuleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setModuleSaving(true);
     setModuleError("");
+    if (moduleForm.tanggalMulai && moduleForm.tanggalSelesai && moduleForm.tanggalSelesai <= moduleForm.tanggalMulai) {
+      setModuleError(t("Tanggal selesai modul harus setelah tanggal mulai.", "Module end date must be after start date."));
+      return;
+    }
+    if (moduleForm.tanggalMulai && course?.tanggalSelesai && moduleForm.tanggalMulai >= course.tanggalSelesai.slice(0, 10)) {
+      setModuleError(t("Tanggal mulai modul harus sebelum tanggal selesai Course.", "Module start date must be before the Course end date."));
+      return;
+    }
+    setModuleSaving(true);
     const payload = {
       ...moduleForm,
       courseId: id,

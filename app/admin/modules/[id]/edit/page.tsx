@@ -41,6 +41,7 @@ export default function EditModulePage() {
 
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [courseEndDate, setCourseEndDate] = useState("");
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
@@ -108,6 +109,7 @@ export default function EditModulePage() {
         if (courseId) {
           try {
             const course = await getCourseById(courseId);
+            setCourseEndDate(dateInputValue(course?.tanggalSelesai));
             if (!canManageCourse(currentUser.role, currentUser.id, course)) {
               setAccessDenied(true);
               return;
@@ -154,6 +156,14 @@ export default function EditModulePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (formData.tanggalMulai && formData.tanggalSelesai && formData.tanggalSelesai <= formData.tanggalMulai) {
+      setError(t("Tanggal selesai modul harus setelah tanggal mulai.", "Module end date must be after start date."));
+      return;
+    }
+    if (formData.tanggalMulai && courseEndDate && formData.tanggalMulai >= courseEndDate) {
+      setError(t("Tanggal mulai modul harus sebelum tanggal selesai Course.", "Module start date must be before the Course end date."));
+      return;
+    }
     setSaving(true);
 
     try {

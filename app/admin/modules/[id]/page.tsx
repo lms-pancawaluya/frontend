@@ -94,6 +94,7 @@ export default function AdminModuleDetailPage() {
   const [error, setError] = useState("");
   // Guard ownership: Module mewarisi ownership dari parent Course.
   const [accessDenied, setAccessDenied] = useState(false);
+  const [courseEndDate, setCourseEndDate] = useState("");
   const [formData, setFormData] = useState({
     judul: "",
     deskripsi: "",
@@ -186,6 +187,7 @@ export default function AdminModuleDetailPage() {
         if (courseId) {
           try {
             const course = await getCourseById(courseId);
+            setCourseEndDate(dateInputValue(course?.tanggalSelesai));
             if (!canManageCourse(currentUser.role, currentUser.id, course)) {
               setAccessDenied(true);
               return;
@@ -280,6 +282,14 @@ export default function AdminModuleDetailPage() {
   async function handleModuleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setModuleMessage(null);
+    if (formData.tanggalMulai && formData.tanggalSelesai && formData.tanggalSelesai <= formData.tanggalMulai) {
+      setModuleMessage({ type: "error", text: t("Tanggal selesai modul harus setelah tanggal mulai.", "Module end date must be after start date.") });
+      return;
+    }
+    if (formData.tanggalMulai && courseEndDate && formData.tanggalMulai >= courseEndDate) {
+      setModuleMessage({ type: "error", text: t("Tanggal mulai modul harus sebelum tanggal selesai Course.", "Module start date must be before the Course end date.") });
+      return;
+    }
     setSavingModule(true);
 
     try {
