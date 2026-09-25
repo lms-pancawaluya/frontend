@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { lookupMasterGuru, registerGuru } from "@/services/registration.service";
+import { lookupMasterGuru, registerPublicGuru } from "@/services/registration.service";
 import { useApp } from "@/app/context/AppContext";
 
 export default function RegisterForm() {
   const router = useRouter();
   const { t } = useApp();
   const [formData, setFormData] = useState({
+    nama: "",
     nip: "",
     email: "",
     password: "",
@@ -86,10 +87,11 @@ export default function RegisterForm() {
     setError(null);
 
     try {
-      await registerGuru({
-        nip: formData.nip,
+      await registerPublicGuru({
+        nama: formData.nama,
         email: formData.email,
         password: formData.password,
+        ...(formData.nip && { nip: formData.nip }),
       });
 
       router.push(`/otp?email=${encodeURIComponent(formData.email)}`);
@@ -122,6 +124,21 @@ export default function RegisterForm() {
 
       <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
+          {t("Nama", "Name")}
+        </label>
+        <input
+          type="text"
+          name="nama"
+          required
+          value={formData.nama}
+          onChange={handleChange}
+          placeholder={t("Masukkan nama", "Enter name")}
+          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1 dark:text-slate-300">
           {t("NIP (Nomor Induk Pegawai)", "NIP (Employee Identification Number)")}
         </label>
         <div className="flex gap-2">
@@ -135,7 +152,6 @@ export default function RegisterForm() {
               type="text"
               name="nip"
               maxLength={24}
-              required
               value={formData.nip}
               onChange={handleChange}
               placeholder={t("Nomor Induk Pegawai", "Employee Identification Number")}
