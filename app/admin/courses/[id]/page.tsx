@@ -17,6 +17,8 @@ interface CourseModule {
   deskripsi?: string;
   aspekPancawaluya?: string;
   urutan?: number;
+  tanggalMulai?: string | null;
+  tanggalSelesai?: string | null;
   courseId?: string;
   isLocked?: boolean;
   status?: string;
@@ -66,6 +68,8 @@ export default function AdminCourseDetailPage() {
     deskripsi: "",
     aspekPancawaluya: "cageur",
     urutan: 1,
+    tanggalMulai: "",
+    tanggalSelesai: "",
   });
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [moduleAddMode, setModuleAddMode] = useState<"create" | "existing" | null>(null);
@@ -103,7 +107,14 @@ export default function AdminCourseDetailPage() {
 
   function resetModuleForm() {
     setEditingModuleId(null);
-    setModuleForm({ judul: "", deskripsi: "", aspekPancawaluya: "cageur", urutan: 1 });
+    setModuleForm({
+      judul: "",
+      deskripsi: "",
+      aspekPancawaluya: "cageur",
+      urutan: 1,
+      tanggalMulai: "",
+      tanggalSelesai: "",
+    });
   }
 
   function selectExistingModule(module: CourseModule) {
@@ -121,9 +132,22 @@ export default function AdminCourseDetailPage() {
 
   async function handleModuleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setModuleSaving(true);
     setModuleError("");
-    const payload = { ...moduleForm, courseId: id };
+    if (moduleForm.tanggalMulai && moduleForm.tanggalSelesai && moduleForm.tanggalSelesai <= moduleForm.tanggalMulai) {
+      setModuleError(t("Tanggal selesai modul harus setelah tanggal mulai.", "Module end date must be after start date."));
+      return;
+    }
+    if (moduleForm.tanggalMulai && course?.tanggalSelesai && moduleForm.tanggalMulai >= course.tanggalSelesai.slice(0, 10)) {
+      setModuleError(t("Tanggal mulai modul harus sebelum tanggal selesai Course.", "Module start date must be before the Course end date."));
+      return;
+    }
+    setModuleSaving(true);
+    const payload = {
+      ...moduleForm,
+      courseId: id,
+      tanggalMulai: moduleForm.tanggalMulai || null,
+      tanggalSelesai: moduleForm.tanggalSelesai || null,
+    };
 
     try {
       if (editingModuleId) {
@@ -384,6 +408,15 @@ export default function AdminCourseDetailPage() {
             </select>
             <textarea name="deskripsi" value={moduleForm.deskripsi} onChange={handleModuleChange} placeholder={t("Deskripsi module", "Module description")} required rows={3} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm sm:col-span-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" />
             <input name="urutan" type="number" min={1} value={moduleForm.urutan} onChange={handleModuleChange} required className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" />
+            <div>
+              <label htmlFor="tanggalMulai" className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t("Tanggal Mulai (Opsional)", "Start Date (Optional)")}</label>
+              <input id="tanggalMulai" name="tanggalMulai" type="date" value={moduleForm.tanggalMulai} onChange={handleModuleChange} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" />
+            </div>
+            <div>
+              <label htmlFor="tanggalSelesai" className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t("Tanggal Selesai (Opsional)", "End Date (Optional)")}</label>
+              <input id="tanggalSelesai" name="tanggalSelesai" type="date" value={moduleForm.tanggalSelesai} onChange={handleModuleChange} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" />
+            </div>
+            <p className="text-xs text-slate-500 sm:col-span-2 dark:text-slate-400">{t("Kosongkan jadwal modul jika ingin mengikuti jadwal Course.", "Leave module schedule blank to follow Course schedule.")}</p>
             <div className="flex items-center gap-2">
               <button type="submit" disabled={moduleSaving} className="rounded-full bg-[var(--color-navy)] px-4 py-2 text-sm text-white disabled:bg-gray-400">{moduleSaving ? t("Menyimpan...", "Saving...") : t("Simpan Module Baru", "Save New Module")}</button>
               <button type="button" onClick={() => { resetModuleForm(); setModuleAddMode(null); }} className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300">{t("Batal", "Cancel")}</button>

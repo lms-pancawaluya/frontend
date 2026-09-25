@@ -398,8 +398,8 @@ function ModuleVideoPageContent() {
   }, [moduleId, refreshMaterialStatus]);
 
   const goToNextMaterial = useCallback(() => {
-    router.push(getMaterialRoute(moduleId, materials, currentIndex + 1));
-  }, [currentIndex, materials, moduleId, router]);
+    router.push(getMaterialRoute(moduleId, materials, currentIndex + 1, courseId));
+  }, [courseId, currentIndex, materials, moduleId, router]);
 
   // Inisialisasi Pemutar YouTube Iframe API
   useEffect(() => {

@@ -92,6 +92,10 @@ export default function EditCoursePage() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
+    if (formData.tanggalSelesai <= formData.tanggalMulai) {
+      setError(t("Tanggal selesai harus setelah tanggal mulai.", "End date must be after start date."));
+      return;
+    }
     setSaving(true);
 
     try {

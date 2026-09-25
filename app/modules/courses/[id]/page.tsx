@@ -20,7 +20,7 @@ import {
 } from "@/services/certificate.service";
 import { isPreTest, isPostTest, type EvaluationSummary } from "@/types/evaluation";
 import type { Course, CourseModule } from "@/types/course";
-import { getScheduleStatus } from "@/lib/schedule";
+import { getEffectiveSchedule, getScheduleStatus } from "@/lib/schedule";
 import {
   isMaterialLocked,
   isPostTestLocked,
@@ -684,6 +684,7 @@ export default function GuruCourseDetailPage() {
                 const materialLocked = isMaterialLocked(progress);
                 const postTestLocked = isPostTestLocked(progress);
 
+                const { startDate, endDate } = getEffectiveSchedule(module, course);
                 const schedStatus = getScheduleStatus(module, course);
                 const isNotStarted = schedStatus === "not_started";
                 const isClosed = schedStatus === "closed";
@@ -758,6 +759,17 @@ export default function GuruCourseDetailPage() {
                           <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line dark:text-slate-300">
                             {module.deskripsi || t("Belum ada deskripsi untuk module ini.", "No description for this module yet.")}
                           </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-3 text-xs dark:border-slate-700 dark:bg-slate-900">
+                          <div>
+                            <p className="font-semibold text-slate-500 dark:text-slate-400">{t("Dibuka", "Opens")}</p>
+                            <p className="mt-1 font-medium text-slate-700 dark:text-slate-200">{startDate?.toLocaleDateString("id-ID") ?? "—"}</p>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-500 dark:text-slate-400">{t("Ditutup", "Closes")}</p>
+                            <p className="mt-1 font-medium text-slate-700 dark:text-slate-200">{endDate?.toLocaleDateString("id-ID") ?? "—"}</p>
+                          </div>
                         </div>
 
                         {isScheduleLocked && (

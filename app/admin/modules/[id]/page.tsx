@@ -19,6 +19,8 @@ interface ModuleDetail {
   deskripsi: string;
   aspekPancawaluya: string;
   urutan: number;
+  tanggalMulai?: string | null;
+  tanggalSelesai?: string | null;
   courseId?: string | null;
 }
 
@@ -59,6 +61,10 @@ interface InteractiveQuiz { id: string; judul: string; timestampSeconds: number;
 
 const aspekOptions = ["cageur", "bageur", "bener", "pinter", "singer"];
 
+function dateInputValue(value?: string | null) {
+  return value ? String(value).slice(0, 10) : "";
+}
+
 function formatTimestamp(seconds: number): string {
   const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
   return `${Math.floor(safeSeconds / 60).toString().padStart(2, "0")}:${(safeSeconds % 60).toString().padStart(2, "0")}`;
@@ -88,11 +94,14 @@ export default function AdminModuleDetailPage() {
   const [error, setError] = useState("");
   // Guard ownership: Module mewarisi ownership dari parent Course.
   const [accessDenied, setAccessDenied] = useState(false);
+  const [courseEndDate, setCourseEndDate] = useState("");
   const [formData, setFormData] = useState({
     judul: "",
     deskripsi: "",
     aspekPancawaluya: "cageur",
     urutan: 1,
+    tanggalMulai: "",
+    tanggalSelesai: "",
   });
   const [savingModule, setSavingModule] = useState(false);
   const [moduleMessage, setModuleMessage] = useState<{
@@ -178,6 +187,7 @@ export default function AdminModuleDetailPage() {
         if (courseId) {
           try {
             const course = await getCourseById(courseId);
+            setCourseEndDate(dateInputValue(course?.tanggalSelesai));
             if (!canManageCourse(currentUser.role, currentUser.id, course)) {
               setAccessDenied(true);
               return;
@@ -194,6 +204,8 @@ export default function AdminModuleDetailPage() {
           deskripsi: moduleData.deskripsi || "",
           aspekPancawaluya: moduleData.aspekPancawaluya,
           urutan: moduleData.urutan,
+          tanggalMulai: dateInputValue(moduleData.tanggalMulai),
+          tanggalSelesai: dateInputValue(moduleData.tanggalSelesai),
         });
          setContents(contentsData);
          await loadEvaluations();
@@ -270,17 +282,32 @@ export default function AdminModuleDetailPage() {
   async function handleModuleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setModuleMessage(null);
+    if (formData.tanggalMulai && formData.tanggalSelesai && formData.tanggalSelesai <= formData.tanggalMulai) {
+      setModuleMessage({ type: "error", text: t("Tanggal selesai modul harus setelah tanggal mulai.", "Module end date must be after start date.") });
+      return;
+    }
+    if (formData.tanggalMulai && courseEndDate && formData.tanggalMulai >= courseEndDate) {
+      setModuleMessage({ type: "error", text: t("Tanggal mulai modul harus sebelum tanggal selesai Course.", "Module start date must be before the Course end date.") });
+      return;
+    }
     setSavingModule(true);
 
     try {
-      const updatedModule = await updateModule(id, formData);
-      const nextModule = { ...module, ...formData, ...(updatedModule || {}) };
+      const payload = {
+        ...formData,
+        tanggalMulai: formData.tanggalMulai || null,
+        tanggalSelesai: formData.tanggalSelesai || null,
+      };
+      const updatedModule = await updateModule(id, payload);
+      const nextModule = { ...module, ...payload, ...(updatedModule || {}) };
       setModule(nextModule);
       setFormData({
         judul: nextModule.judul,
         deskripsi: nextModule.deskripsi || "",
         aspekPancawaluya: nextModule.aspekPancawaluya,
         urutan: nextModule.urutan,
+        tanggalMulai: dateInputValue(nextModule.tanggalMulai),
+        tanggalSelesai: dateInputValue(nextModule.tanggalSelesai),
       });
       setModuleMessage({ type: "success", text: t("Informasi modul berhasil diperbarui.", "Module information updated successfully.") });
     } catch (err) {
@@ -860,9 +887,20 @@ export default function AdminModuleDetailPage() {
                     required
                   />
                 </div>
-              </div>
-           </div>
-           <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? t("Menyimpan...", "Saving...") : t("Simpan Perubahan", "Save Changes")}</button></div>
+               </div>
+               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                 <div>
+                   <label htmlFor="tanggalMulai" className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">{t("Tanggal Mulai (Opsional)", "Start Date (Optional)")}</label>
+                   <input id="tanggalMulai" type="date" name="tanggalMulai" value={formData.tanggalMulai} onChange={handleModuleChange} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
+                 </div>
+                 <div>
+                   <label htmlFor="tanggalSelesai" className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">{t("Tanggal Selesai (Opsional)", "End Date (Optional)")}</label>
+                   <input id="tanggalSelesai" type="date" name="tanggalSelesai" value={formData.tanggalSelesai} onChange={handleModuleChange} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
+                 </div>
+               </div>
+               <p className="text-xs text-slate-500 dark:text-slate-400">{t("Kosongkan jadwal modul jika ingin mengikuti jadwal Course.", "Leave module schedule blank to follow Course schedule.")}</p>
+            </div>
+            <div className="flex justify-end"><button type="submit" disabled={savingModule} className="px-6 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl disabled:opacity-60">{savingModule ? t("Menyimpan...", "Saving...") : t("Simpan Perubahan", "Save Changes")}</button></div>
          </form>
 
         {renderEvaluationSection(t("Pre-Test", "Pre-Test"), "pre_test", preTestEvaluations)}

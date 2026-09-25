@@ -100,6 +100,15 @@ function NewModuleForm() {
       setError(t("Pilih course terlebih dahulu — setiap modul harus terhubung ke sebuah course.", "Select a course first — every module must be linked to a course."));
       return;
     }
+    if (formData.tanggalMulai && formData.tanggalSelesai && formData.tanggalSelesai <= formData.tanggalMulai) {
+      setError(t("Tanggal selesai modul harus setelah tanggal mulai.", "Module end date must be after start date."));
+      return;
+    }
+    const course = courses.find((item) => item.id === formData.courseId);
+    if (formData.tanggalMulai && course?.tanggalSelesai && formData.tanggalMulai >= course.tanggalSelesai.slice(0, 10)) {
+      setError(t("Tanggal mulai modul harus sebelum tanggal selesai Course.", "Module start date must be before the Course end date."));
+      return;
+    }
 
     setLoading(true);
 

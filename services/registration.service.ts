@@ -56,7 +56,8 @@ export const cariSekolah = async (keyword: string): Promise<CariSekolahResponse>
 };
 
 export async function lookupMasterGuru(nip: string) {
-  const response = await fetchApi(`${API_URL}/api/master-guru/lookup?nip=${encodeURIComponent(nip)}`, {
+  const normalizedNip = nip.replace(/[^0-9]/g, "");
+  const response = await fetchApi(`${API_URL}/api/guru/cek-nip/${encodeURIComponent(normalizedNip)}`, {
     method: "GET",
     headers: getJsonHeaders(),
   });
@@ -71,6 +72,29 @@ export async function registerGuru(payload: { nip: string; email: string; passwo
   const response = await fetchApi(`${API_URL}/api/auth/register-guru`, {
     method: "POST",
     headers: getJsonHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.sukses === false || data.success === false) {
+    throw new Error(data.pesan || data.message || "Gagal mendaftarkan guru.");
+  }
+  return data;
+}
+
+export async function registerPublicGuru(payload: {
+  nama: string;
+  email: string;
+  password: string;
+  nip?: string;
+  schoolId?: string;
+  sekolah?: string;
+  kotaKab?: string;
+  kecamatan?: string;
+  gelar?: string;
+}) {
+  const response = await fetchApi(`${API_URL}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const data = await response.json().catch(() => ({}));
